@@ -213,7 +213,7 @@
         <h3 id="battle-status" style="color:#ff0055; padding: 8px; border-radius: 10px;">⚔️ Match Live ⚔️</h3>
         <div class="board" id="ttt-board"></div>
     </div>
-    <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
+        <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
         <h2 style="color:#ffcc00; font-size:1.1rem; margin:0 0 10px 0;">🤼 SUMO RING SMASH 🤼</h2>
         <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;">
             <div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div>
@@ -264,9 +264,22 @@
     function joinGame() {
         const u = document.getElementById('username').value.trim(); if(!u) return alert("Enter name!");
         localUsername = u;
+        localStorage.setItem('sammu_username', u);
+        localStorage.setItem('sammu_avatar', selectedAvatar);
         document.getElementById('login-screen').style.display = 'none'; document.getElementById('game-screen').style.display = 'block';
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
+
+    socket.on('connect', () => {
+        const savedName = localStorage.getItem('sammu_username');
+        const savedAvatar = localStorage.getItem('sammu_avatar');
+        if (savedName && savedAvatar) {
+            localUsername = savedName; selectedAvatar = savedAvatar;
+            if(document.getElementById('login-screen')) document.getElementById('login-screen').style.display = 'none';
+            if(document.getElementById('game-screen')) document.getElementById('game-screen').style.display = 'block';
+            myId = socket.id; socket.emit('joinRoom', { username: savedName, avatar: savedAvatar });
+        }
+    });
 
     function toggleDisco() { document.body.classList.toggle('disco-active'); }
     function sendQuickChirp(t) { socket.emit('chatMessage', t); }
@@ -281,7 +294,7 @@
     function hostStartDuel() {
         const capA = document.getElementById('select-capA').value;
         const capB = document.getElementById('select-capB').value;
-        if(!capA || !capB) return alert("Pick Captain A and Captain B to start the Tic-Tac-Toe match! ⚔️");
+        if(!capA || !capB) return alert("Pick Captain A and Captain B to start Tic-Tac-Toe! ⚔️");
         socket.emit('assignFighters', { fightA: capA, fightB: capB });
     }
 
@@ -363,8 +376,7 @@
     });
 
     socket.on('syncGame', (gameData) => {
-        currentGameState = gameData.gameState; 
-        activeTurnPickerId = gameData.currentTurnPicker;
+        currentGameState = gameData.gameState; activeTurnPickerId = gameData.currentTurnPicker;
         const hasStarted = (gameData.gameState !== 'lobby');
         
         if(document.getElementById('score-display')) document.getElementById('score-display').style.display = hasStarted ? 'flex' : 'none';
@@ -374,28 +386,19 @@
         const battleZone = document.getElementById('battle-zone');
         if(battleZone) {
             battleZone.style.display = (gameData.gameState === 'duel') ? 'block' : 'none';
-            
             if (gameData.gameState === 'duel' && gameData.tttBoard) {
-                const tttBoard = document.getElementById('ttt-board');
-                const battleStatus = document.getElementById('battle-status');
-                
+                const tttBoard = document.getElementById('ttt-board'); const battleStatus = document.getElementById('battle-status');
                 if (battleStatus && gameData.tttTurn) {
                     const activeFighter = currentPlayers.find(p => p.id === gameData.tttTurn);
                     battleStatus.innerText = activeFighter ? `⚔️ Turn: ${activeFighter.username} ⚔️` : `⚔️ Match Live ⚔️`;
                 }
-                
                 if (tttBoard) {
                     tttBoard.innerHTML = '';
                     gameData.tttBoard.forEach((cellVal, idx) => {
-                        const cellBtn = document.createElement('button');
-                        cellBtn.className = 'cell';
-                        cellBtn.style.width = '80px';
-                        cellBtn.style.height = '80px';
-                        cellBtn.style.margin = '4px';
-                        cellBtn.style.fontSize = '1.8rem';
-                        cellBtn.style.fontWeight = '900';
-                        cellBtn.innerText = cellVal || '';
-                        cellBtn.onclick = () => socket.emit('makeMove', idx);
+                        const cellBtn = document.createElement('button'); cellBtn.className = 'cell';
+                        cellBtn.style.width = '80px'; cellBtn.style.height = '80px'; cellBtn.style.margin = '4px';
+                        cellBtn.style.fontSize = '1.8rem'; cellBtn.style.fontWeight = '900';
+                        cellBtn.innerText = cellVal || ''; cellBtn.onclick = () => socket.emit('makeMove', idx);
                         tttBoard.appendChild(cellBtn);
                     });
                 }
@@ -403,9 +406,7 @@
         }
         
         const wrestler = document.getElementById('sumo-wrestler');
-        if (wrestler && gameData.sumoPosition) {
-            wrestler.style.left = gameData.sumoPosition + '%';
-        }
+        if (wrestler && gameData.sumoPosition) { wrestler.style.left = gameData.sumoPosition + '%'; }
 
         if (!hasStarted) {
             if(document.getElementById('battle-zone')) document.getElementById('battle-zone').style.display = 'none';

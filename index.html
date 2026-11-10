@@ -4,51 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sammu Games</title>
-    <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0b0b0d; color: #fff; margin: 0; padding: 12px; }
-        .container { max-width: 480px; margin: 15px auto; background: #141419; padding: 20px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 1px solid #222; }
-        h1 { text-align: center; color: #ff0055; margin-bottom: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        
-        /* Premium Big Circular Avatar Layout */
-        .avatar-select { display: flex; justify-content: center; gap: 15px; margin: 25px 0; }
-        .avatar-opt { width: 75px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; background: #1e1e24; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .avatar-opt.selected { border-color: #ff0055; background: #ff0055; transform: scale(1.15) rotate(5deg); box-shadow: 0 0 20px rgba(255, 0, 85, 0.5); }
-        
-        input, select, button { width: 100%; box-sizing: border-box; padding: 14px; margin: 10px 0; border-radius: 12px; border: none; font-size: 1rem; transition: 0.2s; }
-        input, select { background: #1e1e24; color: #fff; border: 1px solid #333; }
-        input:focus, select:focus { border-color: #ff0055; outline: none; }
-        button { background: #ff0055; color: #fff; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-        button:hover { background: #e0004c; transform: translateY(-1px); }
-        
-        /* Premium Expanded Chat Box View */
-        #chat-area { height: 260px; overflow-y: auto; background: #0b0b0d; padding: 12px; border-radius: 16px; border: 1px solid #25252d; margin-top: 15px; font-size: 0.95rem; }
-        .chat-row { margin: 6px 0; line-height: 1.4; word-break: break-word; }
-        .chat-row b { color: #ff0055; }
-        .chat-system { color: #ffc107; font-weight: bold; font-style: italic; text-align: center; }
-
-        .player-card { display: flex; align-items: center; background: #1e1e24; padding: 10px; margin: 6px 0; border-radius: 12px; border: 1px solid #2a2a35; }
-        .player-card span { font-size: 1.8rem; margin-right: 12px; width: 40px; height: 40px; background: #2a2a35; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-        
-        .score-board { display: flex; justify-content: space-between; background: linear-gradient(135deg, #ff0055, #bd003e); padding: 14px; border-radius: 14px; font-weight: bold; margin-bottom: 15px; }
-        .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 260px; margin: 20px auto; }
-        .cell { background: #1e1e24; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 900; border-radius: 14px; cursor: pointer; border: 1px solid #333; }
-        
-        .react-box { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
-        .react-btn { font-size: 2rem; background: #1e1e24; border: 1px solid #333; cursor: pointer; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .react-btn:hover { transform: scale(1.15); background: #252530; }
-
-        #floating-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; overflow: hidden; }
-        .floating-emoji { position: absolute; bottom: -50px; font-size: 3rem; animation: floatUp 2.8s cubic-bezier(0.075, 0.82, 0.165, 1) forwards; }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 15% { opacity: 1; transform: scale(1.1); } 100% { transform: translateY(-105vh) scale(1.6); opacity: 0; } }
-        label { font-size: 0.85rem; color: #aaa; font-weight: 600; text-transform: uppercase; margin-top: 5px; display: block; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="container" id="login-screen">
     <h1>Sammu Games 🎮</h1>
     <input type="text" id="username" placeholder="Enter Username..." autocomplete="off">
-    
     <label>Select Avatar Layout</label>
     <div class="avatar-select">
         <div class="avatar-opt selected" onclick="selectAvatar('🥷', this)">🥷</div>
@@ -58,32 +19,53 @@
     </div>
     <button onclick="joinGame()">ENTER LOBBY</button>
 </div>
-
 <div class="container" id="game-screen" style="display:none;">
     <h1 id="room-title">Sammu Arena</h1>
     <div id="score-display" class="score-board" style="display:none;">
-        <div>🔴 Team A: <span id="scoreA">0</span></div>
-        <div>🔵 Team B: <span id="scoreB">0</span></div>
+        <div id="scoreA-text">🔴 Team A: 0</div>
+        <div id="scoreB-text">🔵 Team B: 0</div>
+    </div>
+    
+    <!-- THE DUAL BRACKET SPLIT TEAMS INTERFACE -->
+    <div id="draft-arena-zone" style="display:none;">
+        <h3 id="draft-instructions" style="text-align:center; color:#ffc107; margin:5px 0; font-size:1rem;"></h3>
+        <div class="team-arena">
+            <div class="team-box red" id="box-teamA">
+                <h4 id="head-teamA">Team A</h4>
+                <div id="list-teamA"></div>
+            </div>
+            <div class="team-box blue" id="box-teamB">
+                <h4 id="head-teamB">Team B</h4>
+                <div id="list-teamB"></div>
+            </div>
+        </div>
     </div>
 
+    <!-- MINI GAME ARENA A: TIC TAC TOE -->
     <div id="battle-zone" style="display:none; text-align:center;">
-        <h3 id="battle-status" style="color:#ff0055; background: rgba(255,0,85,0.1); padding: 10px; border-radius: 10px;">⚔️ Match Live ⚔️</h3>
+        <h3 id="battle-status" style="color:#ff0055; padding: 8px; border-radius: 10px;">⚔️ Match Live ⚔️</h3>
         <div class="board" id="ttt-board"></div>
     </div>
 
-    <!-- HOST CONTROLS MENU WITH DROPDOWNS -->
+    <!-- MINI GAME ARENA B: RAPID TAP SUMO SLAM -->
+    <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
+        <h2 style="color:#ffcc00; font-size:1.1rem; margin:0 0 10px 0;">🤼 SUMO RING SMASH 🤼</h2>
+        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;">
+            <div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div>
+            <div id="sumo-wrestler" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ffcc00; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🤼</div>
+        </div>
+        <button id="btn-sumo-push" onclick="socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
+    </div>
+
+    <!-- HOST PANEL -->
     <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
-        <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800; text-transform:uppercase;">👑 HOST MANUAL CONTROL PANEL</h4>
-        
-        <label>Select Captain A</label>
-        <select id="select-capA"><option value="">-- Choose Captain A --</option></select>
-        
-        <label>Select Captain B</label>
-        <select id="select-capB"><option value="">-- Choose Captain B --</option></select>
-        
-        <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000;">Lock In Selected Captains</button>
-        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:none;">Launch 1v1 Arena Duel</button>
-        <button onclick="hostReset()" style="background:#444; margin-top:5px;">Full Lobby Reset</button>
+        <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL</h4>
+        <label>Choose Captain A</label><select id="select-capA"></select>
+        <label>Choose Captain B</label><select id="select-capB"></select>
+        <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000;">Appoint Selected Captains</button>
+        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:none; margin: 4px 0;">Launch 1v1 Tic-Tac-Toe</button>
+        <button id="btn-start-sumo" onclick="socket.emit('launchSumo')" style="background:#ffcc00; color:#000; display:none; margin: 4px 0;">Launch Sumo Speed Mash</button>
+        <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
 
     <div class="react-box">
@@ -92,128 +74,140 @@
         <button class="react-btn" onclick="sendReaction('🤡')">🤡</button>
         <button class="react-btn" onclick="sendReaction('💀')">💀</button>
     </div>
-
-    <h3>Players in Room</h3>
+    <h3 id="list-header-title">Players in Room</h3>
     <div id="player-list"></div>
-
     <h3>Lobby Chat Room</h3>
     <div id="chat-area"></div>
     <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleChatKey(event)">
 </div>
-
 <div id="floating-container"></div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
-    let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [];
-
-    function selectAvatar(a, el) { 
-        document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); 
-        el.classList.add('selected'); 
-        selectedAvatar = a; 
-    }
-    
+    let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [], currentGameState = 'lobby', activeTurnPickerId = null;
+    function selectAvatar(a, el) { document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); selectedAvatar = a; }
     function joinGame() {
-        const u = document.getElementById('username').value.trim(); if(!u) return alert("Type a username first!");
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'block';
+        const u = document.getElementById('username').value.trim(); if(!u) return alert("Enter name!");
+        document.getElementById('login-screen').style.display = 'none'; document.getElementById('game-screen').style.display = 'block';
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
-
     socket.on('initRole', (data) => {
         isIAmHost = data.isHost;
         document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none';
         document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena";
     });
-
     socket.on('updatePlayers', (p) => {
-        currentPlayers = p; 
-        const list = document.getElementById('player-list'); list.innerHTML = '';
-        
-        const selA = document.getElementById('select-capA');
-        const selB = document.getElementById('select-capB');
+        currentPlayers = p;
+        const selA = document.getElementById('select-capA'); const selB = document.getElementById('select-capB');
         const valA = selA.value; const valB = selB.value;
-        
-        selA.innerHTML = '<option value="">-- Choose Captain A --</option>';
-        selB.innerHTML = '<option value="">-- Choose Captain B --</option>';
-
+        selA.innerHTML = '<option value="">-- Choose Captain A --</option>'; selB.innerHTML = '<option value="">-- Choose Captain B --</option>';
         p.forEach(pl => {
-            const card = document.createElement('div'); card.className = 'player-card';
-            card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? ' <i style="color:#ffc107; margin-left:5px;">(Host) 👑</i>' : ''}`;
-            list.appendChild(card);
-
             const optA = document.createElement('option'); optA.value = pl.id; optA.innerText = pl.username;
             const optB = document.createElement('option'); optB.value = pl.id; optB.innerText = pl.username;
             selA.appendChild(optA); selB.appendChild(optB);
         });
-
-        selA.value = valA; selB.value = valB;
+        selA.value = valA; selB.value = valB; renderPlayerList();
     });
-
+    function renderPlayerList() {
+        const list = document.getElementById('player-list'); list.innerHTML = '';
+        currentPlayers.forEach(pl => {
+            const card = document.createElement('div');
+            const isDrafted = document.getElementById('list-teamA').innerText.includes(pl.username) || document.getElementById('list-teamB').innerText.includes(pl.username);
+            if (currentGameState === 'drafting' && !isDrafted) {
+                card.className = 'player-card selectable';
+                if (myId === activeTurnPickerId) card.onclick = () => socket.emit('draftPlayer', pl.id);
+            } else { card.className = 'player-card'; }
+            card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? ' <i style="color:#ffc107;margin-left:5px;">(Host)👑</i>' : ''}`;
+            list.appendChild(card);
+        });
+    }
     socket.on('syncGame', (gameData) => {
+        currentGameState = gameData.gameState; activeTurnPickerId = gameData.currentTurnPicker;
         const hasStarted = gameData.gameState !== 'lobby';
         document.getElementById('score-display').style.display = hasStarted ? 'flex' : 'none';
-        if (!hasStarted) document.getElementById('battle-zone').style.display = 'none';
+        document.getElementById('draft-arena-zone').style.display = hasStarted ? 'block' : 'none';
+        document.getElementById('sumo-zone').style.display = gameData.gameState === 'sumo' ? 'block' : 'none';
         
-        if (isIAmHost) {
-            document.getElementById('btn-captains').style.display = gameData.gameState === 'lobby' ? 'block' : 'none';
-            document.getElementById('btn-start-duel').style.display = gameData.gameState === 'drafting' ? 'block' : 'none';
+        if (!hasStarted) {
+            document.getElementById('battle-zone').style.display = 'none';
+            document.getElementById('list-teamA').innerHTML = ''; document.getElementById('list-teamB').innerHTML = '';
+            document.getElementById('head-teamA').innerText = "Team A"; document.getElementById('head-teamB').innerText = "Team B";
         }
-        
+        if (isIAmHost) {
+            const isLobby = gameData.gameState === 'lobby';
+            document.getElementById('btn-captains').style.display = isLobby ? 'block' : 'none';
+            document.getElementById('btn-start-duel').style.display = gameData.gameState === 'drafting' ? 'block' : 'none';
+            document.getElementById('btn-start-sumo').style.display = gameData.gameState === 'drafting' ? 'block' : 'none';
+        }
+        if (hasStarted && gameData.captainA && gameData.captainB) {
+            document.getElementById('head-teamA').innerText = `Team ${gameData.captainA.username} 🔴`;
+            document.getElementById('head-teamB').innerText = `Team ${gameData.captainB.username} 🔵`;
+            document.getElementById('scoreA-text').innerText = `🔴 Team ${gameData.captainA.username}: ${gameData.scores.teamA}`;
+            document.getElementById('scoreB-text').innerText = `🔵 Team ${gameData.captainB.username}: ${gameData.scores.teamB}`;
+            fillTeamGrid('list-teamA', gameData.teamA); fillTeamGrid('list-teamB', gameData.teamB);
+        }
+        if (gameData.gameState === 'drafting') {
+            document.getElementById('list-header-title').innerText = "Tap a Player below to Draft them:";
+            const activePickerName = currentPlayers.find(p => p.id === gameData.currentTurnPicker)?.username || "Captain";
+            document.getElementById('draft-instructions').innerText = myId === gameData.currentTurnPicker ? "YOUR TURN TO DRAFT A PLAYER! 👇" : `Waiting for ${activePickerName} to select...`;
+            document.getElementById('box-teamA').classList.toggle('active-pick', gameData.currentTurnPicker === gameData.captainA.id);
+            document.getElementById('box-teamB').classList.toggle('active-pick', gameData.currentTurnPicker === gameData.captainB.id);
+        } else {
+            document.getElementById('list-header-title').innerText = "Players in Room";
+            document.getElementById('box-teamA').classList.remove('active-pick'); document.getElementById('box-teamB').classList.remove('active-pick');
+        }
+        if (gameData.gameState === 'sumo') {
+            document.getElementById('sumo-wrestler').style.left = gameData.sumoPosition + '%';
+            const isFighter = myId === gameData.captainA.id || myId === gameData.captainB.id;
+            document.getElementById('btn-sumo-push').style.display = isFighter ? 'block' : 'none';
+        }
         if (gameData.gameState === 'duel') {
             document.getElementById('battle-zone').style.display = 'block';
             const boardDiv = document.getElementById('ttt-board'); boardDiv.innerHTML = '';
-            const fA = currentPlayers.find(p => p.id === gameData.fighterA)?.username || 'Captain X';
-            const fB = currentPlayers.find(p => p.id === gameData.fighterB)?.username || 'Captain O';
+            const fA = currentPlayers.find(p => p.id === gameData.fighterA)?.username || 'Captain A';
+            const fB = currentPlayers.find(p => p.id === gameData.fighterB)?.username || 'Captain B';
             const turnName = socket.id === gameData.tttTurn ? "YOUR TURN" : (currentPlayers.find(p => p.id === gameData.tttTurn)?.username + "'s Turn");
-            
             document.getElementById('battle-status').innerText = `⚔️ ${fA} (X) VS ${fB} (O) ⚔️\n(${turnName})`;
-            
             gameData.tttBoard.forEach((cell, index) => {
                 const cellDiv = document.createElement('div'); cellDiv.className = 'cell'; cellDiv.innerText = cell || '';
                 if (!cell && socket.id === gameData.tttTurn) cellDiv.onclick = () => socket.emit('makeMove', index);
                 boardDiv.appendChild(cellDiv);
             });
         }
+        renderPlayerList();
     });
-
+    function fillTeamGrid(elementId, teamArray) {
+        const gridBox = document.getElementById(elementId); gridBox.innerHTML = '';
+        teamArray.forEach(p => {
+            const row = document.createElement('div'); row.className = 'draft-member';
+            row.innerHTML = `<span>${p.avatar}</span> ${p.username}`; gridBox.appendChild(row);
+        });
+    }
     socket.on('announceWinner', (d) => { alert(`🏆 Match Over! Winner: ${d.winner}`); });
     function sendReaction(e) { socket.emit('sendReaction', e); }
-
     socket.on('incomingReaction', (emoji) => {
         const c = document.getElementById('floating-container'); const b = document.createElement('div');
         b.className = 'floating-emoji'; b.innerText = emoji; b.style.left = Math.random() * 80 + 10 + '%';
         c.appendChild(b); setTimeout(() => b.remove(), 2800);
     });
-
     function handleChatKey(e) { if(e.key === 'Enter') { const i = document.getElementById('chat-input'); if(!i.value.trim()) return; socket.emit('chatMessage', i.value); i.value = ''; } }
-    
     socket.on('message', (m) => {
         const c = document.getElementById('chat-area');
-        if(m.username === 'SYSTEM') {
-            c.innerHTML += `<div class="chat-row chat-system">📢 ${m.text}</div>`;
-        } else {
-            c.innerHTML += `<div class="chat-row"><b>${m.username}:</b> ${m.text}</div>`;
-        }
+        if(m.username === 'SYSTEM') c.innerHTML += `<div class="chat-row chat-system">📢 ${m.text}</div>`;
+        else c.innerHTML += `<div class="chat-row"><b>${m.username}:</b> ${m.text}</div>`;
         c.scrollTop = c.scrollHeight;
     });
-
     function hostSubmitCaptains() {
-        const cA = document.getElementById('select-capA').value;
-        const cB = document.getElementById('select-capB').value;
-        if(!cA || !cB) return alert("You must manually select both captains from the list first!");
-        if(cA === cB) return alert("Captain A and Captain B cannot be the same person!");
+        const cA = document.getElementById('select-capA').value; const cB = document.getElementById('select-capB').value;
+        if(!cA || !cB) return alert("Select both captains!");
+        if(cA === cB) return alert("Captains must be different!");
         socket.emit('makeCaptains', { capA: cA, capB: cB });
     }
-    
     function hostStartDuel() {
-        const cA = document.getElementById('select-capA').value;
-        const cB = document.getElementById('select-capB').value;
+        const cA = document.getElementById('select-capA').value; const cB = document.getElementById('select-capB').value;
         socket.emit('assignFighters', { fightA: cA, fightB: cB });
     }
-    
     function hostReset() { socket.emit('resetToLobby'); }
 </script>
 </body>
 </html>
-

@@ -5,6 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sammu Games</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Premium CSS Extensions that blend right over your style.css */
+        :root {
+            --glass-bg: rgba(28, 28, 36, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
+            --incoming-bg: rgba(255, 255, 255, 0.08);
+            --text-main: #f3f4f6;
+        }
+        
+        /* Modern Premium Chat Layout Updates */
+        #chat-area {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 12px;
+            height: 280px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+            margin-bottom: 10px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        }
+        
+        /* Bubble Wrappers inside Chat Box */
+        .msg-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 0.92rem;
+            line-height: 1.4;
+            color: var(--text-main);
+            word-break: break-word;
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            animation: bubblePop 0.2s ease-out forwards;
+        }
+        @keyframes bubblePop {
+            from { opacity: 0; transform: translateY(6px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        .bubble-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin: 2px 0;
+        }
+        
+        /* Message styling based on who sent it */
+        .msg-container-outgoing { align-items: flex-end; }
+        .msg-container-outgoing .msg-bubble {
+            background: var(--outgoing-gradient);
+            border-bottom-right-radius: 4px;
+        }
+        
+        .msg-container-incoming { align-items: flex-start; }
+        .msg-container-incoming .msg-bubble {
+            background: var(--incoming-bg);
+            border-bottom-left-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .msg-sender-title {
+            font-size: 0.72rem;
+            color: #a5b4fc;
+            margin-bottom: 3px;
+            padding: 0 4px;
+            font-weight: 600;
+        }
+        
+        /* System Message Upgrade */
+        .msg-container-system { align-items: center; text-align: center; }
+        .msg-container-system .msg-bubble {
+            background: rgba(252, 211, 77, 0.1);
+            border: 1px solid rgba(252, 211, 77, 0.2);
+            color: #fcd34d;
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* Responsive Input Bar Fix */
+        #chat-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            padding: 12px 16px;
+            border-radius: 24px;
+            color: var(--text-main);
+            outline: none;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        #chat-input:focus {
+            border-color: #6366f1;
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+    </style>
 </head>
 <body>
 <div class="container" id="login-screen">
@@ -45,9 +148,8 @@
     <div id="battle-zone" style="display:none; text-align:center;">
         <h3 id="battle-status" style="color:#ff0055; padding: 8px; border-radius: 10px;">⚔️ Match Live ⚔️</h3>
         <div class="board" id="ttt-board"></div>
-    </div>
-
-    <!-- MINI GAME ARENA B: RAPID TAP SUMO SLAM -->
+    </div> 
+        <!-- MINI GAME ARENA B: RAPID TAP SUMO SLAM -->
     <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
         <h2 style="color:#ffcc00; font-size:1.1rem; margin:0 0 10px 0;">🤼 SUMO RING SMASH 🤼</h2>
         <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;">
@@ -84,10 +186,11 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
-    let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [], currentGameState = 'lobby', activeTurnPickerId = null;
+    let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [], currentGameState = 'lobby', activeTurnPickerId = null, localUsername = "";
     function selectAvatar(a, el) { document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); selectedAvatar = a; }
     function joinGame() {
         const u = document.getElementById('username').value.trim(); if(!u) return alert("Enter name!");
+        localUsername = u;
         document.getElementById('login-screen').style.display = 'none'; document.getElementById('game-screen').style.display = 'block';
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
@@ -112,7 +215,9 @@
         const list = document.getElementById('player-list'); list.innerHTML = '';
         currentPlayers.forEach(pl => {
             const card = document.createElement('div');
-            const isDrafted = document.getElementById('list-teamA').innerText.includes(pl.username) || document.getElementById('list-teamB').innerText.includes(pl.username);
+            const listA = document.getElementById('list-teamA') ? document.getElementById('list-teamA').innerText : '';
+            const listB = document.getElementById('list-teamB') ? document.getElementById('list-teamB').innerText : '';
+            const isDrafted = listA.includes(pl.username) || listB.includes(pl.username);
             if (currentGameState === 'drafting' && !isDrafted) {
                 card.className = 'player-card selectable';
                 if (myId === activeTurnPickerId) card.onclick = () => socket.emit('draftPlayer', pl.id);
@@ -121,6 +226,39 @@
             list.appendChild(card);
         });
     }
+
+    function handleChatKey(event) {
+        if (event.key === 'Enter') {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            socket.emit('chatMessage', msg);
+            input.value = '';
+        }
+    }
+
+    socket.on('message', (data) => {
+        const chatArea = document.getElementById('chat-area');
+        const container = document.createElement('div');
+        
+        if (data.username === 'SYSTEM') {
+            container.className = 'bubble-container msg-container-system';
+            container.innerHTML = `<div class="msg-bubble">${data.text}</div>`;
+        } else {
+            const isMe = (data.username === localUsername);
+            container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming';
+            
+            const senderLabel = !isMe ? `<div class="msg-sender-title">${data.username}</div>` : '';
+            container.innerHTML = `
+                ${senderLabel}
+                <div class="msg-bubble">${data.text}</div>
+            `;
+        }
+        
+        chatArea.appendChild(container);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    });
+
     socket.on('syncGame', (gameData) => {
         currentGameState = gameData.gameState; activeTurnPickerId = gameData.currentTurnPicker;
         const hasStarted = gameData.gameState !== 'lobby';
@@ -129,85 +267,11 @@
         document.getElementById('sumo-zone').style.display = gameData.gameState === 'sumo' ? 'block' : 'none';
         
         if (!hasStarted) {
-            document.getElementById('battle-zone').style.display = 'none';
-            document.getElementById('list-teamA').innerHTML = ''; document.getElementById('list-teamB').innerHTML = '';
-            document.getElementById('head-teamA').innerText = "Team A"; document.getElementById('head-teamB').innerText = "Team B";
+            if(document.getElementById('battle-zone')) document.getElementById('battle-zone').style.display = 'none';
+            if(document.getElementById('list-teamA')) document.getElementById('list-teamA').innerHTML = ''; 
+            if(document.getElementById('list-teamB')) document.getElementById('list-teamB').innerHTML = '';
         }
-        if (isIAmHost) {
-            const isLobby = gameData.gameState === 'lobby';
-            document.getElementById('btn-captains').style.display = isLobby ? 'block' : 'none';
-            document.getElementById('btn-start-duel').style.display = gameData.gameState === 'drafting' ? 'block' : 'none';
-            document.getElementById('btn-start-sumo').style.display = gameData.gameState === 'drafting' ? 'block' : 'none';
-        }
-        if (hasStarted && gameData.captainA && gameData.captainB) {
-            document.getElementById('head-teamA').innerText = `Team ${gameData.captainA.username} 🔴`;
-            document.getElementById('head-teamB').innerText = `Team ${gameData.captainB.username} 🔵`;
-            document.getElementById('scoreA-text').innerText = `🔴 Team ${gameData.captainA.username}: ${gameData.scores.teamA}`;
-            document.getElementById('scoreB-text').innerText = `🔵 Team ${gameData.captainB.username}: ${gameData.scores.teamB}`;
-            fillTeamGrid('list-teamA', gameData.teamA); fillTeamGrid('list-teamB', gameData.teamB);
-        }
-        if (gameData.gameState === 'drafting') {
-            document.getElementById('list-header-title').innerText = "Tap a Player below to Draft them:";
-            const activePickerName = currentPlayers.find(p => p.id === gameData.currentTurnPicker)?.username || "Captain";
-            document.getElementById('draft-instructions').innerText = myId === gameData.currentTurnPicker ? "YOUR TURN TO DRAFT A PLAYER! 👇" : `Waiting for ${activePickerName} to select...`;
-            document.getElementById('box-teamA').classList.toggle('active-pick', gameData.currentTurnPicker === gameData.captainA.id);
-            document.getElementById('box-teamB').classList.toggle('active-pick', gameData.currentTurnPicker === gameData.captainB.id);
-        } else {
-            document.getElementById('list-header-title').innerText = "Players in Room";
-            document.getElementById('box-teamA').classList.remove('active-pick'); document.getElementById('box-teamB').classList.remove('active-pick');
-        }
-        if (gameData.gameState === 'sumo') {
-            document.getElementById('sumo-wrestler').style.left = gameData.sumoPosition + '%';
-            const isFighter = myId === gameData.captainA.id || myId === gameData.captainB.id;
-            document.getElementById('btn-sumo-push').style.display = isFighter ? 'block' : 'none';
-        }
-        if (gameData.gameState === 'duel') {
-            document.getElementById('battle-zone').style.display = 'block';
-            const boardDiv = document.getElementById('ttt-board'); boardDiv.innerHTML = '';
-            const fA = currentPlayers.find(p => p.id === gameData.fighterA)?.username || 'Captain A';
-            const fB = currentPlayers.find(p => p.id === gameData.fighterB)?.username || 'Captain B';
-            const turnName = socket.id === gameData.tttTurn ? "YOUR TURN" : (currentPlayers.find(p => p.id === gameData.tttTurn)?.username + "'s Turn");
-            document.getElementById('battle-status').innerText = `⚔️ ${fA} (X) VS ${fB} (O) ⚔️\n(${turnName})`;
-            gameData.tttBoard.forEach((cell, index) => {
-                const cellDiv = document.createElement('div'); cellDiv.className = 'cell'; cellDiv.innerText = cell || '';
-                if (!cell && socket.id === gameData.tttTurn) cellDiv.onclick = () => socket.emit('makeMove', index);
-                boardDiv.appendChild(cellDiv);
-            });
-        }
-        renderPlayerList();
     });
-    function fillTeamGrid(elementId, teamArray) {
-        const gridBox = document.getElementById(elementId); gridBox.innerHTML = '';
-        teamArray.forEach(p => {
-            const row = document.createElement('div'); row.className = 'draft-member';
-            row.innerHTML = `<span>${p.avatar}</span> ${p.username}`; gridBox.appendChild(row);
-        });
-    }
-    socket.on('announceWinner', (d) => { alert(`🏆 Match Over! Winner: ${d.winner}`); });
-    function sendReaction(e) { socket.emit('sendReaction', e); }
-    socket.on('incomingReaction', (emoji) => {
-        const c = document.getElementById('floating-container'); const b = document.createElement('div');
-        b.className = 'floating-emoji'; b.innerText = emoji; b.style.left = Math.random() * 80 + 10 + '%';
-        c.appendChild(b); setTimeout(() => b.remove(), 2800);
-    });
-    function handleChatKey(e) { if(e.key === 'Enter') { const i = document.getElementById('chat-input'); if(!i.value.trim()) return; socket.emit('chatMessage', i.value); i.value = ''; } }
-    socket.on('message', (m) => {
-        const c = document.getElementById('chat-area');
-        if(m.username === 'SYSTEM') c.innerHTML += `<div class="chat-row chat-system">📢 ${m.text}</div>`;
-        else c.innerHTML += `<div class="chat-row"><b>${m.username}:</b> ${m.text}</div>`;
-        c.scrollTop = c.scrollHeight;
-    });
-    function hostSubmitCaptains() {
-        const cA = document.getElementById('select-capA').value; const cB = document.getElementById('select-capB').value;
-        if(!cA || !cB) return alert("Select both captains!");
-        if(cA === cB) return alert("Captains must be different!");
-        socket.emit('makeCaptains', { capA: cA, capB: cB });
-    }
-    function hostStartDuel() {
-        const cA = document.getElementById('select-capA').value; const cB = document.getElementById('select-capB').value;
-        socket.emit('assignFighters', { fightA: cA, fightB: cB });
-    }
-    function hostReset() { socket.emit('resetToLobby'); }
 </script>
 </body>
 </html>

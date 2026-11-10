@@ -6,6 +6,7 @@
     <title>Sammu Games</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Premium Chat Elements & Disco FX */
         :root {
             --glass-bg: rgba(28, 28, 36, 0.75);
             --glass-border: rgba(255, 255, 255, 0.12);
@@ -13,6 +14,8 @@
             --incoming-bg: rgba(255, 255, 255, 0.1);
             --text-main: #f3f4f6;
         }
+
+        /* Disco Mode Active Animation Loop */
         @keyframes discoParty {
             0% { background-color: #1e1b4b; }
             25% { background-color: #311042; }
@@ -20,37 +23,153 @@
             75% { background-color: #4c0519; }
             100% { background-color: #1e1b4b; }
         }
-        .disco-active { animation: discoParty 1.5s linear infinite !important; }
-        #chat-area {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: 16px; padding: 12px; height: 280px; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth;
-            margin-bottom: 6px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        .disco-active {
+            animation: discoParty 1.5s linear infinite !important;
         }
+        
+        #chat-area {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 12px;
+            height: 280px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+            margin-bottom: 6px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        }
+        
         .msg-bubble {
-            max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem;
-            line-height: 1.4; color: var(--text-main); word-break: break-word;
-            display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 0.92rem;
+            line-height: 1.4;
+            color: var(--text-main);
+            word-break: break-word;
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             animation: bubblePop 0.2s ease-out forwards;
         }
         @keyframes bubblePop {
             from { opacity: 0; transform: translateY(6px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .bubble-container { display: flex; flex-direction: column; width: 100%; margin: 2px 0; }
+        
+        .bubble-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin: 2px 0;
+        }
+        
         .msg-container-outgoing { align-items: flex-end; }
-        .msg-container-outgoing .msg-bubble { background: var(--outgoing-gradient); border-bottom-right-radius: 4px; }
+        .msg-container-outgoing .msg-bubble {
+            background: var(--outgoing-gradient);
+            border-bottom-right-radius: 4px;
+        }
+        
         .msg-container-incoming { align-items: flex-start; }
-        .msg-container-incoming .msg-bubble { background: var(--incoming-bg); border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
-        .msg-sender-title { font-size: 0.78rem; color: #a5b4fc; margin-bottom: 3px; padding: 0 4px; font-weight: 700; }
+        .msg-container-incoming .msg-bubble {
+            background: var(--incoming-bg);
+            border-bottom-left-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .msg-sender-title {
+            font-size: 0.78rem;
+            color: #a5b4fc;
+            margin-bottom: 3px;
+            padding: 0 4px;
+            font-weight: 700;
+        }
+        
         .msg-container-system { align-items: center; text-align: center; }
-        .msg-container-system .msg-bubble { background: rgba(252, 211, 77, 0.1); border: 1px solid rgba(252, 211, 77, 0.2); color: #fcd34d; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; }
-        .chirp-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding: 2px 0; }
-        .chirp-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; padding: 6px 12px; border-radius: 14px; font-size: 0.78rem; white-space: nowrap; cursor: pointer; }
+        .msg-container-system .msg-bubble {
+            background: rgba(252, 211, 77, 0.1);
+            border: 1px solid rgba(252, 211, 77, 0.2);
+            color: #fcd34d;
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* Trash-Talk Shortcut Row */
+        .chirp-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+            overflow-x: auto;
+            padding: 2px 0;
+        }
+        .chirp-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 14px;
+            font-size: 0.78rem;
+            white-space: nowrap;
+            cursor: pointer;
+        }
         .chirp-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.15); }
-        #chat-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 24px; color: var(--text-main); outline: none; font-size: 0.95rem; transition: all 0.2s ease; }
-        #chat-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-        .btn-disco { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-weight: bold; border: none; border-radius: 12px; padding: 10px; margin-bottom: 12px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3); }
+
+        #chat-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            padding: 12px 16px;
+            border-radius: 24px;
+            color: var(--text-main);
+            outline: none;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        #chat-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-disco {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 12px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+        }
+
+        #floating-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .floating-emoji {
+            position: absolute;
+            bottom: -50px;
+            font-size: 2rem;
+            user-select: none;
+            animation: floatUpAndFade 2.5s cubic-bezier(0.08, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+        }
+        @keyframes floatUpAndFade {
+            0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+            10% { opacity: 1; transform: translateY(-10vh) translateX(var(--random-x)) scale(1.2); }
+            100% { transform: translateY(-105vh) translateX(calc(var(--random-x) * 2)) scale(0.8); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -68,6 +187,7 @@
 </div>
 <div class="container" id="game-screen" style="display:none;">
     <h1 id="room-title">Sammu Arena</h1>
+    
     <button class="btn-disco" onclick="toggleDisco()">🪩 TOGGLE LOBBY DISCO MODE 🪩</button>
 
     <div id="score-display" class="score-board" style="display:none;">
@@ -102,14 +222,13 @@
         <button id="btn-sumo-push" onclick="socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
     </div>
 
-    <!-- FIXED IMMUTABLE HOST ACTIONS -->
     <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
         <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL</h4>
         <label>Choose Captain A</label><select id="select-capA"></select>
         <label>Choose Captain B</label><select id="select-capB"></select>
         <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000;">Appoint Selected Captains</button>
         <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:block; margin: 4px 0;">Launch 1v1 Tic-Tac-Toe</button>
-        <button id="btn-start-sumo" onclick="socket.emit('launchSumo')" style="background:#ffcc00; color:#000; display:block; margin: 4px 0;">Launch Sumo Speed Mash</button>
+        <button id="btn-start-sumo" onclick="socket.emit('launchSumo')" style="background:#ffcc00; color:#000; display:block; margin: 4px 0;">Launch Sumo Speed Smash</button>
         <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
 
@@ -149,26 +268,20 @@
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
 
-    toggleDisco = () => document.body.classList.toggle('disco-active');
-    sendQuickChirp = (t) => socket.emit('chatMessage', t);
+    function toggleDisco() { document.body.classList.toggle('disco-active'); }
+    function sendQuickChirp(t) { socket.emit('chatMessage', t); }
 
     function hostSubmitCaptains() {
         const capA = document.getElementById('select-capA').value;
         const capB = document.getElementById('select-capB').value;
-        if(!capA || !capB) {
-            alert("Error: You must pick two players from the dropdown first before appointing captains! 🛑");
-            return;
-        }
+        if(!capA || !capB) return alert("Pick Captain A and Captain B first! 🛑");
         socket.emit('makeCaptains', { capA, capB });
     }
 
     function hostStartDuel() {
         const capA = document.getElementById('select-capA').value;
         const capB = document.getElementById('select-capB').value;
-        if(!capA || !capB) {
-            alert("Pick Captain A and Captain B to map them into the combat match! ⚔️");
-            return;
-        }
+        if(!capA || !capB) return alert("Pick Captain A and Captain B to start the Tic-Tac-Toe match! ⚔️");
         socket.emit('assignFighters', { fightA: capA, fightB: capB });
     }
 
@@ -245,13 +358,55 @@
     
     function sendReaction(emoji) { socket.emit('sendReaction', emoji); }
 
+    socket.on('announceWinner', (data) => {
+        alert(data.icon ? `GAME OVER! Winner: ${data.winner} ${data.icon}` : `GAME OVER: ${data.winner}!`);
+    });
+
     socket.on('syncGame', (gameData) => {
-        currentGameState = gameData.gameState; activeTurnPickerId = gameData.currentTurnPicker;
-        const hasStarted = gameData.gameState !== 'lobby';
-        document.getElementById('score-display').style.display = hasStarted ? 'flex' : 'none';
-        document.getElementById('draft-arena-zone').style.display = hasStarted ? 'block' : 'none';
-        document.getElementById('sumo-zone').style.display = gameData.gameState === 'sumo' ? 'block' : 'none';
+        currentGameState = gameData.gameState; 
+        activeTurnPickerId = gameData.currentTurnPicker;
+        const hasStarted = (gameData.gameState !== 'lobby');
         
+        if(document.getElementById('score-display')) document.getElementById('score-display').style.display = hasStarted ? 'flex' : 'none';
+        if(document.getElementById('draft-arena-zone')) document.getElementById('draft-arena-zone').style.display = hasStarted ? 'block' : 'none';
+        if(document.getElementById('sumo-zone')) document.getElementById('sumo-zone').style.display = (gameData.gameState === 'sumo') ? 'block' : 'none';
+        
+        const battleZone = document.getElementById('battle-zone');
+        if(battleZone) {
+            battleZone.style.display = (gameData.gameState === 'duel') ? 'block' : 'none';
+            
+            if (gameData.gameState === 'duel' && gameData.tttBoard) {
+                const tttBoard = document.getElementById('ttt-board');
+                const battleStatus = document.getElementById('battle-status');
+                
+                if (battleStatus && gameData.tttTurn) {
+                    const activeFighter = currentPlayers.find(p => p.id === gameData.tttTurn);
+                    battleStatus.innerText = activeFighter ? `⚔️ Turn: ${activeFighter.username} ⚔️` : `⚔️ Match Live ⚔️`;
+                }
+                
+                if (tttBoard) {
+                    tttBoard.innerHTML = '';
+                    gameData.tttBoard.forEach((cellVal, idx) => {
+                        const cellBtn = document.createElement('button');
+                        cellBtn.className = 'cell';
+                        cellBtn.style.width = '80px';
+                        cellBtn.style.height = '80px';
+                        cellBtn.style.margin = '4px';
+                        cellBtn.style.fontSize = '1.8rem';
+                        cellBtn.style.fontWeight = '900';
+                        cellBtn.innerText = cellVal || '';
+                        cellBtn.onclick = () => socket.emit('makeMove', idx);
+                        tttBoard.appendChild(cellBtn);
+                    });
+                }
+            }
+        }
+        
+        const wrestler = document.getElementById('sumo-wrestler');
+        if (wrestler && gameData.sumoPosition) {
+            wrestler.style.left = gameData.sumoPosition + '%';
+        }
+
         if (!hasStarted) {
             if(document.getElementById('battle-zone')) document.getElementById('battle-zone').style.display = 'none';
             if(document.getElementById('list-teamA')) document.getElementById('list-teamA').innerHTML = ''; 

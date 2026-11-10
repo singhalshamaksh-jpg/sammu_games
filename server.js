@@ -10,9 +10,10 @@ app.use(express.static(__dirname));
 let players = [];
 let hostId = null;
 let gameData = {
-    captainA: null, captainB: null,
-    teamA: [], teamB: [],
-    fighterA: null, fighterB: null,
+    captainA: null,
+    captainB: null,
+    fighterA: null,
+    fighterB: null,
     tttBoard: Array(9).fill(null),
     tttTurn: null,
     scores: { teamA: 0, teamB: 0 },
@@ -23,32 +24,42 @@ io.on('connection', (socket) => {
     if (players.length === 0) hostId = socket.id;
 
     socket.on('joinRoom', (data) => {
-        socket.username = data.username;
-        socket.avatar = data.avatar;
+        // Fix: Force fallback to avoid 'undefined' string values during reconnections
+        socket.username = data.username || "Guest_" + Math.floor(Math.random() * 1000);
+        socket.avatar = data.avatar || "🥷";
+        
+        // Clear any old disconnected entry with the same socket ID
+        players = players.filter(p => p.id !== socket.id);
+        
         const isHost = socket.id === hostId;
-        players.push({ id: socket.id, username: data.username, avatar: data.avatar, isHost });
+        players.push({ id: socket.id, username: socket.username, avatar: socket.avatar, isHost });
+        
         socket.emit('initRole', { isHost, gameData });
         io.emit('updatePlayers', players);
         io.emit('syncGame', gameData);
     });
 
     socket.on('chatMessage', (msg) => {
+        // Fallback guard to check if socket properties dropped
+        const senderName = socket.username || "Anonymous";
+        
         if (msg.trim() === '#adminme') {
             hostId = socket.id;
             players = players.map(p => ({ ...p, isHost: p.id === hostId }));
             socket.emit('initRole', { isHost: true, gameData });
             io.emit('updatePlayers', players);
             io.emit('syncGame', gameData);
-            io.emit('message', { username: 'SYSTEM', text: `${socket.username} has claimed server Admin status! 👑` });
+            io.emit('message', { username: 'SYSTEM', text: `${senderName} has claimed server Admin status! 👑` });
             return;
         }
-        io.emit('message', { username: socket.username, text: msg });
+        io.emit('message', { username: senderName, text: msg });
     });
 
+    // --- MANUAL CAPTAIN ASSIGNMENTS ---
     socket.on('makeCaptains', (data) => {
         if (socket.id !== hostId) return;
-        gameData.captainA = data.capA;
-        gameData.captainB = data.capB;
+        gameData.captainA = data.capA; // Stores ID
+        gameData.captainB = data.capB; // Stores ID
         gameData.gameState = 'drafting';
         io.emit('syncGame', gameData);
     });
@@ -66,7 +77,7 @@ io.on('connection', (socket) => {
     socket.on('resetToLobby', () => {
         if (socket.id !== hostId) return;
         gameData = {
-            captainA: null, captainB: null, teamA: [], teamB: [],
+            captainA: null, captainB: null,
             fighterA: null, fighterB: null, tttBoard: Array(9).fill(null), tttTurn: null,
             scores: { teamA: 0, teamB: 0 }, gameState: 'lobby'
         };
@@ -81,7 +92,7 @@ io.on('connection', (socket) => {
         if (checkWin(gameData.tttBoard)) {
             if (socket.id === gameData.fighterA) gameData.scores.teamA++;
             else gameData.scores.teamB++;
-            io.emit('announceWinner', { winner: socket.username, icon });
+            io.emit('announceWinner', { winner: socket.username || "Champion", icon });
             gameData.gameState = 'lobby'; 
         } else if (!gameData.tttBoard.includes(null)) {
             io.emit('announceWinner', { winner: 'Tie Game', icon: null });
@@ -104,10 +115,13 @@ io.on('connection', (socket) => {
     });
 });
 
-function checkWin(b) {
-    const w = [, [3, 4, 5], [6, 7, 8], // Rows, [1, 4, 7], [2, 5, 8], // Columns, [2, 4, 6]             // Diagonals
+function checkWin(board) {
+    const wins = [, [3, 4, 5], [6, 7, 8], // Rows, [1, 4, 7], [2, 5, 8], // Columns, [2, 4, 6]             // Diagonals
     ];
-    return w.some(p => b[p[0]] && b[p[0]] === b[p[1]] && b[p[0]] === b[p[2]]);
+    return wins.some(pattern => {
+        const [a, b, c] = pattern;
+        return board[a] && board[a] === board[b] && board[a] === board[c];
+    });
 }
 
 const PORT = process.env.PORT || 3000;

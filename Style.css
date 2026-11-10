@@ -1,0 +1,39 @@
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0b0b0d; color: #fff; margin: 0; padding: 12px; }
+.container { max-width: 480px; margin: 15px auto; background: #141419; padding: 20px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 1px solid #222; }
+h1 { text-align: center; color: #ff0055; margin-bottom: 10px; font-weight: 800; text-transform: uppercase; }
+
+.avatar-select { display: flex; justify-content: center; gap: 15px; margin: 25px 0; }
+.avatar-opt { width: 75px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; background: #1e1e24; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: 0.3s ease; }
+.avatar-opt.selected { border-color: #ff0055; background: #ff0055; transform: scale(1.15) rotate(5deg); box-shadow: 0 0 20px rgba(255, 0, 85, 0.5); }
+
+input, select, button { width: 100%; box-sizing: border-box; padding: 14px; margin: 10px 0; border-radius: 12px; border: none; font-size: 1rem; }
+input, select { background: #1e1e24; color: #fff; border: 1px solid #333; }
+button { background: #ff0055; color: #fff; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+
+.team-arena { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+.team-box { background: #1c1c24; padding: 12px; border-radius: 16px; border: 2px dashed #333; min-height: 120px; }
+.team-box.active-pick { border-color: #ff0055; background: rgba(255, 0, 85, 0.05); }
+.team-box h4 { margin: 0 0 10px 0; text-align: center; text-transform: uppercase; font-size: 0.9rem; }
+.team-box.red h4 { color: #ff3b30; } .team-box.blue h4 { color: #007aff; }
+
+.draft-member { display: flex; align-items: center; gap: 5px; background: #252530; padding: 6px 10px; margin: 4px 0; border-radius: 8px; font-size: 0.9rem; }
+.player-card { display: flex; align-items: center; background: #1e1e24; padding: 10px; margin: 6px 0; border-radius: 12px; border: 1px solid #2a2a35; cursor: pointer; }
+.player-card.selectable:hover { border-color: #ff0055; background: #252530; transform: scale(1.02); }
+.player-card span { font-size: 1.6rem; margin-right: 12px; width: 36px; height: 36px; background: #2a2a35; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+
+#chat-area { height: 200px; overflow-y: auto; background: #0b0b0d; padding: 12px; border-radius: 16px; border: 1px solid #25252d; margin-top: 15px; }
+.chat-row { margin: 4px 0; font-size: 0.95rem; }
+.chat-row b { color: #ff0055; }
+.chat-system { color: #ffc107; font-weight: bold; text-align: center; font-style: italic; }
+
+.score-board { display: flex; justify-content: space-between; background: linear-gradient(135deg, #ff0055, #bd003e); padding: 12px; border-radius: 12px; font-weight: bold; margin-bottom: 15px; }
+.board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 240px; margin: 15px auto; }
+.cell { background: #1e1e24; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; border-radius: 12px; cursor: pointer; border: 1px solid #333; }
+
+.react-box { display: flex; justify-content: center; gap: 12px; margin: 10px 0; }
+.react-btn { font-size: 1.8rem; background: #1e1e24; border: 1px solid #333; cursor: pointer; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; }
+
+#floating-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; overflow: hidden; }
+.floating-emoji { position: absolute; bottom: -50px; font-size: 3rem; animation: floatUp 2.8s linear forwards; }
+@keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 15% { opacity: 1; transform: scale(1); } 100% { transform: translateY(-105vh) scale(1.5); opacity: 0; } }
+label { font-size: 0.85rem; color: #aaa; font-weight: 600; text-transform: uppercase; margin-top: 5px; display: block; }

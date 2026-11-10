@@ -5,32 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sammu Games</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121214; color: #fff; margin: 0; padding: 10px; }
-        .container { max-width: 500px; margin: auto; background: #1a1a1e; padding: 15px; border-radius: 12px; }
-        h1 { text-align: center; color: #ff0055; margin-bottom: 5px; }
-        .avatar-select { display: flex; justify-content: space-around; font-size: 2rem; margin: 15px 0; }
-        .avatar-opt { cursor: pointer; padding: 5px; border-radius: 5px; }
-        .avatar-opt.selected { background: #ff0055; transform: scale(1.2); }
-        input, button { width: 100%; box-sizing: border-box; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-size: 1rem; }
-        input { background: #2a2a30; color: #fff; }
-        button { background: #ff0055; color: #fff; font-weight: bold; cursor: pointer; }
-        .player-card { display: flex; align-items: center; background: #2a2a30; padding: 8px; margin: 5px 0; border-radius: 6px; }
-        .player-card span { font-size: 1.5rem; margin-right: 10px; }
-        #chat-area { height: 150px; overflow-y: auto; background: #121214; padding: 10px; border-radius: 6px; border: 1px solid #333; margin-top: 10px; }
-        .score-board { display: flex; justify-content: space-between; background: #ff0055; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 10px; }
-        .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; max-width: 240px; margin: 15px auto; }
-        .cell { background: #3a3a42; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; border-radius: 8px; cursor: pointer; }
-        .react-box { display: flex; justify-content: center; gap: 10px; margin: 10px 0; }
-        .react-btn { font-size: 1.8rem; background: none; border: none; cursor: pointer; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0b0b0d; color: #fff; margin: 0; padding: 12px; }
+        .container { max-width: 480px; margin: 15px auto; background: #141419; padding: 20px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 1px solid #222; }
+        h1 { text-align: center; color: #ff0055; margin-bottom: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Premium Big Circular Avatar Layout */
+        .avatar-select { display: flex; justify-content: center; gap: 15px; margin: 25px 0; }
+        .avatar-opt { width: 75px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; background: #1e1e24; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .avatar-opt.selected { border-color: #ff0055; background: #ff0055; transform: scale(1.15) rotate(5deg); box-shadow: 0 0 20px rgba(255, 0, 85, 0.5); }
+        
+        input, select, button { width: 100%; box-sizing: border-box; padding: 14px; margin: 10px 0; border-radius: 12px; border: none; font-size: 1rem; transition: 0.2s; }
+        input, select { background: #1e1e24; color: #fff; border: 1px solid #333; }
+        input:focus, select:focus { border-color: #ff0055; outline: none; }
+        button { background: #ff0055; color: #fff; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
+        button:hover { background: #e0004c; transform: translateY(-1px); }
+        
+        /* Premium Expanded Chat Box View */
+        #chat-area { height: 260px; overflow-y: auto; background: #0b0b0d; padding: 12px; border-radius: 16px; border: 1px solid #25252d; margin-top: 15px; font-size: 0.95rem; }
+        .chat-row { margin: 6px 0; line-height: 1.4; word-break: break-word; }
+        .chat-row b { color: #ff0055; }
+        .chat-system { color: #ffc107; font-weight: bold; font-style: italic; text-align: center; }
+
+        .player-card { display: flex; align-items: center; background: #1e1e24; padding: 10px; margin: 6px 0; border-radius: 12px; border: 1px solid #2a2a35; }
+        .player-card span { font-size: 1.8rem; margin-right: 12px; width: 40px; height: 40px; background: #2a2a35; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        
+        .score-board { display: flex; justify-content: space-between; background: linear-gradient(135deg, #ff0055, #bd003e); padding: 14px; border-radius: 14px; font-weight: bold; margin-bottom: 15px; }
+        .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 260px; margin: 20px auto; }
+        .cell { background: #1e1e24; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 900; border-radius: 14px; cursor: pointer; border: 1px solid #333; }
+        
+        .react-box { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+        .react-btn { font-size: 2rem; background: #1e1e24; border: 1px solid #333; cursor: pointer; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .react-btn:hover { transform: scale(1.15); background: #252530; }
+
         #floating-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; overflow: hidden; }
-        .floating-emoji { position: absolute; bottom: -50px; font-size: 2.5rem; animation: floatUp 3s linear forwards; }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100vh) scale(1.5); opacity: 0; } }
+        .floating-emoji { position: absolute; bottom: -50px; font-size: 3rem; animation: floatUp 2.8s cubic-bezier(0.075, 0.82, 0.165, 1) forwards; }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 15% { opacity: 1; transform: scale(1.1); } 100% { transform: translateY(-105vh) scale(1.6); opacity: 0; } }
+        label { font-size: 0.85rem; color: #aaa; font-weight: 600; text-transform: uppercase; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
+
 <div class="container" id="login-screen">
     <h1>Sammu Games 🎮</h1>
-    <input type="text" id="username" placeholder="Type Username..." autocomplete="off">
+    <input type="text" id="username" placeholder="Enter Username..." autocomplete="off">
+    
+    <label>Select Avatar Layout</label>
     <div class="avatar-select">
         <div class="avatar-opt selected" onclick="selectAvatar('🥷', this)">🥷</div>
         <div class="avatar-opt" onclick="selectAvatar('🤖', this)">🤖</div>
@@ -39,74 +58,117 @@
     </div>
     <button onclick="joinGame()">ENTER LOBBY</button>
 </div>
+
 <div class="container" id="game-screen" style="display:none;">
     <h1 id="room-title">Sammu Arena</h1>
     <div id="score-display" class="score-board" style="display:none;">
         <div>🔴 Team A: <span id="scoreA">0</span></div>
         <div>🔵 Team B: <span id="scoreB">0</span></div>
     </div>
+
     <div id="battle-zone" style="display:none; text-align:center;">
-        <h3 id="battle-status" style="color:#ff0055;">⚔️ Match Live ⚔️</h3>
+        <h3 id="battle-status" style="color:#ff0055; background: rgba(255,0,85,0.1); padding: 10px; border-radius: 10px;">⚔️ Match Live ⚔️</h3>
         <div class="board" id="ttt-board"></div>
     </div>
-    <div id="host-panel" style="display:none; background:#222; padding:10px; border-radius:8px; margin-bottom:10px;">
-        <h4 style="margin:5px 0; color:#ffc107;">👑 HOST CONTROLS</h4>
-        <button id="btn-captains" onclick="hostSetupCaptains()">Appoint Captains</button>
-        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:none;">Launch 1v1 Tic-Tac-Toe</button>
-        <button onclick="hostReset()" style="background:#555;">Full Game Reset</button>
+
+    <!-- HOST CONTROLS MENU WITH DROPDOWNS -->
+    <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
+        <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800; text-transform:uppercase;">👑 HOST MANUAL CONTROL PANEL</h4>
+        
+        <label>Select Captain A</label>
+        <select id="select-capA"><option value="">-- Choose Captain A --</option></select>
+        
+        <label>Select Captain B</label>
+        <select id="select-capB"><option value="">-- Choose Captain B --</option></select>
+        
+        <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000;">Lock In Selected Captains</button>
+        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:none;">Launch 1v1 Arena Duel</button>
+        <button onclick="hostReset()" style="background:#444; margin-top:5px;">Full Lobby Reset</button>
     </div>
+
     <div class="react-box">
         <button class="react-btn" onclick="sendReaction('🔥')">🔥</button>
         <button class="react-btn" onclick="sendReaction('👑')">👑</button>
         <button class="react-btn" onclick="sendReaction('🤡')">🤡</button>
         <button class="react-btn" onclick="sendReaction('💀')">💀</button>
     </div>
-    <h3>Players Connected</h3>
+
+    <h3>Players in Room</h3>
     <div id="player-list"></div>
-    <h3>Live Chat</h3>
+
+    <h3>Lobby Chat Room</h3>
     <div id="chat-area"></div>
     <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleChatKey(event)">
 </div>
+
 <div id="floating-container"></div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
     let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [];
-    function selectAvatar(a, el) { document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); selectedAvatar = a; }
+
+    function selectAvatar(a, el) { 
+        document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); 
+        el.classList.add('selected'); 
+        selectedAvatar = a; 
+    }
+    
     function joinGame() {
-        const u = document.getElementById('username').value.trim(); if(!u) return alert("Pick a name!");
+        const u = document.getElementById('username').value.trim(); if(!u) return alert("Type a username first!");
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
+
     socket.on('initRole', (data) => {
         isIAmHost = data.isHost;
         document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none';
         document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena";
     });
+
     socket.on('updatePlayers', (p) => {
-        currentPlayers = p; const list = document.getElementById('player-list'); list.innerHTML = '';
+        currentPlayers = p; 
+        const list = document.getElementById('player-list'); list.innerHTML = '';
+        
+        const selA = document.getElementById('select-capA');
+        const selB = document.getElementById('select-capB');
+        const valA = selA.value; const valB = selB.value;
+        
+        selA.innerHTML = '<option value="">-- Choose Captain A --</option>';
+        selB.innerHTML = '<option value="">-- Choose Captain B --</option>';
+
         p.forEach(pl => {
             const card = document.createElement('div'); card.className = 'player-card';
-            card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? ' <i style="color:#ffc107">(Host)👑</i>' : ''}`;
+            card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? ' <i style="color:#ffc107; margin-left:5px;">(Host) 👑</i>' : ''}`;
             list.appendChild(card);
+
+            const optA = document.createElement('option'); optA.value = pl.id; optA.innerText = pl.username;
+            const optB = document.createElement('option'); optB.value = pl.id; optB.innerText = pl.username;
+            selA.appendChild(optA); selB.appendChild(optB);
         });
+
+        selA.value = valA; selB.value = valB;
     });
+
     socket.on('syncGame', (gameData) => {
         const hasStarted = gameData.gameState !== 'lobby';
         document.getElementById('score-display').style.display = hasStarted ? 'flex' : 'none';
-        if (!hasStarted) { document.getElementById('battle-zone').style.display = 'none'; }
+        if (!hasStarted) document.getElementById('battle-zone').style.display = 'none';
+        
         if (isIAmHost) {
-            document.getElementById('btn-captains').style.display = gameData.gameState === 'lobby' && currentPlayers.length >= 2 ? 'block' : 'none';
+            document.getElementById('btn-captains').style.display = gameData.gameState === 'lobby' ? 'block' : 'none';
             document.getElementById('btn-start-duel').style.display = gameData.gameState === 'drafting' ? 'block' : 'none';
         }
+        
         if (gameData.gameState === 'duel') {
             document.getElementById('battle-zone').style.display = 'block';
             const boardDiv = document.getElementById('ttt-board'); boardDiv.innerHTML = '';
-            const fA = currentPlayers.find(p => p.id === gameData.fighterA)?.username || 'Captain A';
-            const fB = currentPlayers.find(p => p.id === gameData.fighterB)?.username || 'Captain B';
+            const fA = currentPlayers.find(p => p.id === gameData.fighterA)?.username || 'Captain X';
+            const fB = currentPlayers.find(p => p.id === gameData.fighterB)?.username || 'Captain O';
             const turnName = socket.id === gameData.tttTurn ? "YOUR TURN" : (currentPlayers.find(p => p.id === gameData.tttTurn)?.username + "'s Turn");
+            
             document.getElementById('battle-status').innerText = `⚔️ ${fA} (X) VS ${fB} (O) ⚔️\n(${turnName})`;
+            
             gameData.tttBoard.forEach((cell, index) => {
                 const cellDiv = document.createElement('div'); cellDiv.className = 'cell'; cellDiv.innerText = cell || '';
                 if (!cell && socket.id === gameData.tttTurn) cellDiv.onclick = () => socket.emit('makeMove', index);
@@ -114,18 +176,44 @@
             });
         }
     });
+
     socket.on('announceWinner', (d) => { alert(`🏆 Match Over! Winner: ${d.winner}`); });
     function sendReaction(e) { socket.emit('sendReaction', e); }
+
     socket.on('incomingReaction', (emoji) => {
         const c = document.getElementById('floating-container'); const b = document.createElement('div');
         b.className = 'floating-emoji'; b.innerText = emoji; b.style.left = Math.random() * 80 + 10 + '%';
-        c.appendChild(b); setTimeout(() => b.remove(), 3000);
+        c.appendChild(b); setTimeout(() => b.remove(), 2800);
     });
+
     function handleChatKey(e) { if(e.key === 'Enter') { const i = document.getElementById('chat-input'); if(!i.value.trim()) return; socket.emit('chatMessage', i.value); i.value = ''; } }
-    socket.on('message', (m) => { const c = document.getElementById('chat-area'); c.innerHTML += `<div><b>${m.username}:</b> ${m.text}</div>`; c.scrollTop = c.scrollHeight; });
-    function hostSetupCaptains() { if (currentPlayers.length < 2) return alert("Need 2 players!"); socket.emit('makeCaptains', { capA: currentPlayers[0].id, capB: currentPlayers[1].id }); }
-    function hostStartDuel() { socket.emit('assignFighters', { fightA: currentPlayers[0].id, fightB: currentPlayers[1].id }); }
+    
+    socket.on('message', (m) => {
+        const c = document.getElementById('chat-area');
+        if(m.username === 'SYSTEM') {
+            c.innerHTML += `<div class="chat-row chat-system">📢 ${m.text}</div>`;
+        } else {
+            c.innerHTML += `<div class="chat-row"><b>${m.username}:</b> ${m.text}</div>`;
+        }
+        c.scrollTop = c.scrollHeight;
+    });
+
+    function hostSubmitCaptains() {
+        const cA = document.getElementById('select-capA').value;
+        const cB = document.getElementById('select-capB').value;
+        if(!cA || !cB) return alert("You must manually select both captains from the list first!");
+        if(cA === cB) return alert("Captain A and Captain B cannot be the same person!");
+        socket.emit('makeCaptains', { capA: cA, capB: cB });
+    }
+    
+    function hostStartDuel() {
+        const cA = document.getElementById('select-capA').value;
+        const cB = document.getElementById('select-capB').value;
+        socket.emit('assignFighters', { fightA: cA, fightB: cB });
+    }
+    
     function hostReset() { socket.emit('resetToLobby'); }
 </script>
 </body>
 </html>
+

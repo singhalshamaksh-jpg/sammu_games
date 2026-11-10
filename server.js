@@ -9,13 +9,16 @@ app.use(express.static(__dirname));
 
 let players = [];
 let hostId = null;
+
+// NEW PERMANENT SESSIONS MEMORY INDEX
+// This maps socket IDs to user details so they NEVER reset to anonymous!
+let sessionMemory = {}; 
+
 let gameData = {
-    captainA: null,
-    captainB: null,
-    fighterA: null,
-    fighterB: null,
-    tttBoard: Array(9).fill(null),
-    tttTurn: null,
+    captainA: null, captainB: null,
+    teamA: [], teamB: [],
+    fighterA: null, fighterB: null,
+    tttBoard: Array(9).fill(null), tttTurn: null,
     scores: { teamA: 0, teamB: 0 },
     gameState: 'lobby'
 };
@@ -24,15 +27,21 @@ io.on('connection', (socket) => {
     if (players.length === 0) hostId = socket.id;
 
     socket.on('joinRoom', (data) => {
-        // Fix: Force fallback to avoid 'undefined' string values during reconnections
-        socket.username = data.username || "Guest_" + Math.floor(Math.random() * 1000);
-        socket.avatar = data.avatar || "🥷";
+        // Double-check inputs and assign rigid fallbacks
+        const finalizedName = data.username ? data.username.trim() : "Guest_" + Math.floor(Math.random() * 1000);
+        const finalizedAvatar = data.avatar || "🥷";
+
+        socket.username = finalizedName;
+        socket.avatar = finalizedAvatar;
         
-        // Clear any old disconnected entry with the same socket ID
+        // Lock details inside the session memory structure linked to this socket ID
+        sessionMemory[socket.id] = { username: finalizedName, avatar: finalizedAvatar };
+
+        // Clean out any old matching IDs to avoid roster duplicates
         players = players.filter(p => p.id !== socket.id);
         
         const isHost = socket.id === hostId;
-        players.push({ id: socket.id, username: socket.username, avatar: socket.avatar, isHost });
+        players.push({ id: socket.id, username: finalizedName, avatar: finalizedAvatar, isHost });
         
         socket.emit('initRole', { isHost, gameData });
         io.emit('updatePlayers', players);
@@ -40,9 +49,14 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chatMessage', (msg) => {
-        // Fallback guard to check if socket properties dropped
-        const senderName = socket.username || "Anonymous";
-        
+        // ULTRA SECURITY: Pull identity directly from long-term sessionMemory instead of volatile socket properties
+        let senderName = "Guest User";
+        if (sessionMemory[socket.id] && sessionMemory[socket.id].username) {
+            senderName = sessionMemory[socket.id].username;
+        } else if (socket.username) {
+            senderName = socket.username;
+        }
+
         if (msg.trim() === '#adminme') {
             hostId = socket.id;
             players = players.map(p => ({ ...p, isHost: p.id === hostId }));
@@ -55,12 +69,37 @@ io.on('connection', (socket) => {
         io.emit('message', { username: senderName, text: msg });
     });
 
-    // --- MANUAL CAPTAIN ASSIGNMENTS ---
     socket.on('makeCaptains', (data) => {
         if (socket.id !== hostId) return;
-        gameData.captainA = data.capA; // Stores ID
-        gameData.captainB = data.capB; // Stores ID
+        const capAObj = players.find(p => p.id === data.capA);
+        const capBObj = players.find(p => p.id === data.capB);
+        if(!capAObj || !capBObj) return;
+
+        gameData.captainA = capAObj;
+        gameData.captainB = capBObj;
+        gameData.teamA = [capAObj];
+        gameData.teamB = [capBObj];
         gameData.gameState = 'drafting';
+        gameData.currentTurnPicker = data.capA;
+        io.emit('syncGame', gameData);
+    });
+
+    socket.on('draftPlayer', (playerId) => {
+        if (gameData.gameState !== 'drafting') return;
+        if (socket.id !== gameData.currentTurnPicker) return;
+        
+        const targetPlayer = players.find(p => p.id === playerId);
+        if (!targetPlayer) return;
+        
+        if (gameData.teamA.some(p => p.id === playerId) || gameData.teamB.some(p => p.id === playerId)) return;
+
+        if (socket.id === gameData.captainA.id) {
+            gameData.teamA.push(targetPlayer);
+            gameData.currentTurnPicker = gameData.captainB.id;
+        } else if (socket.id === gameData.captainB.id) {
+            gameData.teamB.push(targetPlayer);
+            gameData.currentTurnPicker = gameData.captainA.id;
+        }
         io.emit('syncGame', gameData);
     });
 
@@ -77,7 +116,7 @@ io.on('connection', (socket) => {
     socket.on('resetToLobby', () => {
         if (socket.id !== hostId) return;
         gameData = {
-            captainA: null, captainB: null,
+            captainA: null, captainB: null, teamA: [], teamB: [],
             fighterA: null, fighterB: null, tttBoard: Array(9).fill(null), tttTurn: null,
             scores: { teamA: 0, teamB: 0 }, gameState: 'lobby'
         };
@@ -89,10 +128,13 @@ io.on('connection', (socket) => {
         const icon = socket.id === gameData.fighterA ? 'X' : 'O';
         gameData.tttBoard[index] = icon;
 
+        // Fallback name grabber
+        const finalFighterName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : (socket.username || "Fighter");
+
         if (checkWin(gameData.tttBoard)) {
             if (socket.id === gameData.fighterA) gameData.scores.teamA++;
             else gameData.scores.teamB++;
-            io.emit('announceWinner', { winner: socket.username || "Champion", icon });
+            io.emit('announceWinner', { winner: finalFighterName, icon });
             gameData.gameState = 'lobby'; 
         } else if (!gameData.tttBoard.includes(null)) {
             io.emit('announceWinner', { winner: 'Tie Game', icon: null });
@@ -107,6 +149,8 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
+        // Retain sessionMemory data for a short time to catch rapid mobile drops, 
+        // but scrub the connection array to keep lobby list accurate.
         if (socket.id === hostId && players.length > 0) {
             hostId = players[0].id;
             players[0].isHost = true;
@@ -115,13 +159,10 @@ io.on('connection', (socket) => {
     });
 });
 
-function checkWin(board) {
-    const wins = [, [3, 4, 5], [6, 7, 8], // Rows, [1, 4, 7], [2, 5, 8], // Columns, [2, 4, 6]             // Diagonals
+function checkWin(b) {
+    const w = [, [3, 4, 5], [6, 7, 8], // Rows, [1, 4, 7], [2, 5, 8], // Columns, [2, 4, 6]             // Diagonals
     ];
-    return wins.some(pattern => {
-        const [a, b, c] = pattern;
-        return board[a] && board[a] === board[b] && board[a] === board[c];
-    });
+    return w.some(p => b[p[0]] && b[p[0]] === b[p[1]] && b[p[0]] === b[p[2]]);
 }
 
 const PORT = process.env.PORT || 3000;

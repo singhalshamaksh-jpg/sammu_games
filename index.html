@@ -6,107 +6,51 @@
     <title>Sammu Games</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Premium CSS Extensions that blend right over your style.css */
         :root {
-            --glass-bg: rgba(28, 28, 36, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(28, 28, 36, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.12);
             --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
-            --incoming-bg: rgba(255, 255, 255, 0.08);
+            --incoming-bg: rgba(255, 255, 255, 0.1);
             --text-main: #f3f4f6;
         }
-        
-        /* Modern Premium Chat Layout Updates */
-        #chat-area {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 12px;
-            height: 280px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            scroll-behavior: smooth;
-            margin-bottom: 10px;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        @keyframes discoParty {
+            0% { background-color: #1e1b4b; }
+            25% { background-color: #311042; }
+            50% { background-color: #062f22; }
+            75% { background-color: #4c0519; }
+            100% { background-color: #1e1b4b; }
         }
-        
-        /* Bubble Wrappers inside Chat Box */
+        .disco-active { animation: discoParty 1.5s linear infinite !important; }
+        #chat-area {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 12px; height: 280px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth;
+            margin-bottom: 6px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        }
         .msg-bubble {
-            max-width: 80%;
-            padding: 10px 14px;
-            border-radius: 16px;
-            font-size: 0.92rem;
-            line-height: 1.4;
-            color: var(--text-main);
-            word-break: break-word;
-            display: inline-block;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem;
+            line-height: 1.4; color: var(--text-main); word-break: break-word;
+            display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             animation: bubblePop 0.2s ease-out forwards;
         }
         @keyframes bubblePop {
             from { opacity: 0; transform: translateY(6px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        
-        .bubble-container {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            margin: 2px 0;
-        }
-        
-        /* Message styling based on who sent it */
+        .bubble-container { display: flex; flex-direction: column; width: 100%; margin: 2px 0; }
         .msg-container-outgoing { align-items: flex-end; }
-        .msg-container-outgoing .msg-bubble {
-            background: var(--outgoing-gradient);
-            border-bottom-right-radius: 4px;
-        }
-        
+        .msg-container-outgoing .msg-bubble { background: var(--outgoing-gradient); border-bottom-right-radius: 4px; }
         .msg-container-incoming { align-items: flex-start; }
-        .msg-container-incoming .msg-bubble {
-            background: var(--incoming-bg);
-            border-bottom-left-radius: 4px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        
-        .msg-sender-title {
-            font-size: 0.72rem;
-            color: #a5b4fc;
-            margin-bottom: 3px;
-            padding: 0 4px;
-            font-weight: 600;
-        }
-        
-        /* System Message Upgrade */
+        .msg-container-incoming .msg-bubble { background: var(--incoming-bg); border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+        .msg-sender-title { font-size: 0.78rem; color: #a5b4fc; margin-bottom: 3px; padding: 0 4px; font-weight: 700; }
         .msg-container-system { align-items: center; text-align: center; }
-        .msg-container-system .msg-bubble {
-            background: rgba(252, 211, 77, 0.1);
-            border: 1px solid rgba(252, 211, 77, 0.2);
-            color: #fcd34d;
-            font-size: 0.8rem;
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-
-        /* Responsive Input Bar Fix */
-        #chat-input {
-            width: 100%;
-            box-sizing: border-box;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--glass-border);
-            padding: 12px 16px;
-            border-radius: 24px;
-            color: var(--text-main);
-            outline: none;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-        }
-        #chat-input:focus {
-            border-color: #6366f1;
-            background: rgba(255,255,255,0.08);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
+        .msg-container-system .msg-bubble { background: rgba(252, 211, 77, 0.1); border: 1px solid rgba(252, 211, 77, 0.2); color: #fcd34d; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; }
+        .chirp-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding: 2px 0; }
+        .chirp-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; padding: 6px 12px; border-radius: 14px; font-size: 0.78rem; white-space: nowrap; cursor: pointer; }
+        .chirp-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.15); }
+        #chat-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 24px; color: var(--text-main); outline: none; font-size: 0.95rem; transition: all 0.2s ease; }
+        #chat-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+        .btn-disco { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-weight: bold; border: none; border-radius: 12px; padding: 10px; margin-bottom: 12px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3); }
     </style>
 </head>
 <body>
@@ -124,12 +68,13 @@
 </div>
 <div class="container" id="game-screen" style="display:none;">
     <h1 id="room-title">Sammu Arena</h1>
+    <button class="btn-disco" onclick="toggleDisco()">🪩 TOGGLE LOBBY DISCO MODE 🪩</button>
+
     <div id="score-display" class="score-board" style="display:none;">
         <div id="scoreA-text">🔴 Team A: 0</div>
         <div id="scoreB-text">🔵 Team B: 0</div>
     </div>
     
-    <!-- THE DUAL BRACKET SPLIT TEAMS INTERFACE -->
     <div id="draft-arena-zone" style="display:none;">
         <h3 id="draft-instructions" style="text-align:center; color:#ffc107; margin:5px 0; font-size:1rem;"></h3>
         <div class="team-arena">
@@ -144,12 +89,10 @@
         </div>
     </div>
 
-    <!-- MINI GAME ARENA A: TIC TAC TOE -->
     <div id="battle-zone" style="display:none; text-align:center;">
         <h3 id="battle-status" style="color:#ff0055; padding: 8px; border-radius: 10px;">⚔️ Match Live ⚔️</h3>
         <div class="board" id="ttt-board"></div>
-    </div> 
-        <!-- MINI GAME ARENA B: RAPID TAP SUMO SLAM -->
+    </div>
     <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
         <h2 style="color:#ffcc00; font-size:1.1rem; margin:0 0 10px 0;">🤼 SUMO RING SMASH 🤼</h2>
         <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;">
@@ -159,14 +102,14 @@
         <button id="btn-sumo-push" onclick="socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
     </div>
 
-    <!-- HOST PANEL -->
+    <!-- FIXED IMMUTABLE HOST ACTIONS -->
     <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
         <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL</h4>
         <label>Choose Captain A</label><select id="select-capA"></select>
         <label>Choose Captain B</label><select id="select-capB"></select>
         <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000;">Appoint Selected Captains</button>
-        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:none; margin: 4px 0;">Launch 1v1 Tic-Tac-Toe</button>
-        <button id="btn-start-sumo" onclick="socket.emit('launchSumo')" style="background:#ffcc00; color:#000; display:none; margin: 4px 0;">Launch Sumo Speed Mash</button>
+        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:block; margin: 4px 0;">Launch 1v1 Tic-Tac-Toe</button>
+        <button id="btn-start-sumo" onclick="socket.emit('launchSumo')" style="background:#ffcc00; color:#000; display:block; margin: 4px 0;">Launch Sumo Speed Mash</button>
         <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
 
@@ -178,27 +121,65 @@
     </div>
     <h3 id="list-header-title">Players in Room</h3>
     <div id="player-list"></div>
+    
     <h3>Lobby Chat Room</h3>
     <div id="chat-area"></div>
-    <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleChatKey(event)">
+    
+    <div class="chirp-row">
+        <button class="chirp-btn" onclick="sendQuickChirp('Loser! 🤫')">Loser! 🤫</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('EZ! 🥱')">EZ! 🥱</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('Go Team! 🔥')">Go Team! 🔥</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('Too Fast! ⚡')">Too Fast! ⚡</button>
+    </div>
+
+    <input type="text" id="chat-input" placeholder="Type tasks or messages..." onkeypress="handleChatKey(event)">
 </div>
 <div id="floating-container"></div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
     let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [], currentGameState = 'lobby', activeTurnPickerId = null, localUsername = "";
+    
     function selectAvatar(a, el) { document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); selectedAvatar = a; }
+    
     function joinGame() {
         const u = document.getElementById('username').value.trim(); if(!u) return alert("Enter name!");
         localUsername = u;
         document.getElementById('login-screen').style.display = 'none'; document.getElementById('game-screen').style.display = 'block';
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
+
+    toggleDisco = () => document.body.classList.toggle('disco-active');
+    sendQuickChirp = (t) => socket.emit('chatMessage', t);
+
+    function hostSubmitCaptains() {
+        const capA = document.getElementById('select-capA').value;
+        const capB = document.getElementById('select-capB').value;
+        if(!capA || !capB) {
+            alert("Error: You must pick two players from the dropdown first before appointing captains! 🛑");
+            return;
+        }
+        socket.emit('makeCaptains', { capA, capB });
+    }
+
+    function hostStartDuel() {
+        const capA = document.getElementById('select-capA').value;
+        const capB = document.getElementById('select-capB').value;
+        if(!capA || !capB) {
+            alert("Pick Captain A and Captain B to map them into the combat match! ⚔️");
+            return;
+        }
+        socket.emit('assignFighters', { fightA: capA, fightB: capB });
+    }
+
+    function hostReset() { socket.emit('resetToLobby'); }
+
     socket.on('initRole', (data) => {
         isIAmHost = data.isHost;
         document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none';
         document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena";
     });
+
     socket.on('updatePlayers', (p) => {
         currentPlayers = p;
         const selA = document.getElementById('select-capA'); const selB = document.getElementById('select-capB');
@@ -211,6 +192,7 @@
         });
         selA.value = valA; selB.value = valB; renderPlayerList();
     });
+
     function renderPlayerList() {
         const list = document.getElementById('player-list'); list.innerHTML = '';
         currentPlayers.forEach(pl => {
@@ -229,35 +211,39 @@
 
     function handleChatKey(event) {
         if (event.key === 'Enter') {
-            const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
-            if (!msg) return;
-            socket.emit('chatMessage', msg);
-            input.value = '';
+            const input = document.getElementById('chat-input'); const msg = input.value.trim();
+            if (!msg) return; socket.emit('chatMessage', msg); input.value = '';
         }
     }
 
     socket.on('message', (data) => {
-        const chatArea = document.getElementById('chat-area');
-        const container = document.createElement('div');
-        
+        const chatArea = document.getElementById('chat-area'); const container = document.createElement('div');
         if (data.username === 'SYSTEM') {
             container.className = 'bubble-container msg-container-system';
             container.innerHTML = `<div class="msg-bubble">${data.text}</div>`;
         } else {
             const isMe = (data.username === localUsername);
             container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming';
-            
-            const senderLabel = !isMe ? `<div class="msg-sender-title">${data.username}</div>` : '';
-            container.innerHTML = `
-                ${senderLabel}
-                <div class="msg-bubble">${data.text}</div>
-            `;
+            const matchPlayer = currentPlayers.find(p => p.username === data.username);
+            const userIcon = matchPlayer ? matchPlayer.avatar : '👤';
+            const senderLabel = !isMe ? `<div class="msg-sender-title">${userIcon} ${data.username}</div>` : '';
+            container.innerHTML = `${senderLabel}<div class="msg-bubble">${data.text}</div>`;
         }
-        
-        chatArea.appendChild(container);
-        chatArea.scrollTop = chatArea.scrollHeight;
+        chatArea.appendChild(container); chatArea.scrollTop = chatArea.scrollHeight;
     });
+
+    socket.on('incomingReaction', (emoji) => {
+        const container = document.getElementById('floating-container') || document.body;
+        for (let i = 0; i < 12; i++) {
+            const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = emoji;
+            const randomLeft = Math.random() * 80 + 10; const randomXShift = (Math.random() * 120 - 60) + 'px';
+            el.style.left = randomLeft + '%'; el.style.setProperty('--random-x', randomXShift);
+            el.style.animationDelay = (Math.random() * 0.4) + 's'; container.appendChild(el);
+            setTimeout(() => { el.remove(); }, 3000);
+        }
+    });
+    
+    function sendReaction(emoji) { socket.emit('sendReaction', emoji); }
 
     socket.on('syncGame', (gameData) => {
         currentGameState = gameData.gameState; activeTurnPickerId = gameData.currentTurnPicker;

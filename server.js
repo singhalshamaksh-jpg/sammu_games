@@ -9,16 +9,14 @@ app.use(express.static(__dirname));
 
 let players = [];
 let hostId = null;
-
-// NEW PERMANENT SESSIONS MEMORY INDEX
-// This maps socket IDs to user details so they NEVER reset to anonymous!
-let sessionMemory = {}; 
+let sessionMemory = {}; // Permanent session map to block the 'Anonymous' name glitch completely
 
 let gameData = {
     captainA: null, captainB: null,
     teamA: [], teamB: [],
     fighterA: null, fighterB: null,
     tttBoard: Array(9).fill(null), tttTurn: null,
+    sumoPosition: 50, // 50 means exact center deadlock ring state
     scores: { teamA: 0, teamB: 0 },
     gameState: 'lobby'
 };
@@ -27,19 +25,14 @@ io.on('connection', (socket) => {
     if (players.length === 0) hostId = socket.id;
 
     socket.on('joinRoom', (data) => {
-        // Double-check inputs and assign rigid fallbacks
         const finalizedName = data.username ? data.username.trim() : "Guest_" + Math.floor(Math.random() * 1000);
         const finalizedAvatar = data.avatar || "🥷";
 
         socket.username = finalizedName;
         socket.avatar = finalizedAvatar;
-        
-        // Lock details inside the session memory structure linked to this socket ID
         sessionMemory[socket.id] = { username: finalizedName, avatar: finalizedAvatar };
 
-        // Clean out any old matching IDs to avoid roster duplicates
         players = players.filter(p => p.id !== socket.id);
-        
         const isHost = socket.id === hostId;
         players.push({ id: socket.id, username: finalizedName, avatar: finalizedAvatar, isHost });
         
@@ -49,14 +42,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chatMessage', (msg) => {
-        // ULTRA SECURITY: Pull identity directly from long-term sessionMemory instead of volatile socket properties
-        let senderName = "Guest User";
-        if (sessionMemory[socket.id] && sessionMemory[socket.id].username) {
-            senderName = sessionMemory[socket.id].username;
-        } else if (socket.username) {
-            senderName = socket.username;
-        }
-
+        let senderName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : (socket.username || "Guest");
+        
         if (msg.trim() === '#adminme') {
             hostId = socket.id;
             players = players.map(p => ({ ...p, isHost: p.id === hostId }));
@@ -103,6 +90,7 @@ io.on('connection', (socket) => {
         io.emit('syncGame', gameData);
     });
 
+    // --- GAMES CONTROLLERS ---
     socket.on('assignFighters', (data) => {
         if (socket.id !== hostId) return;
         gameData.fighterA = data.fightA;
@@ -113,13 +101,31 @@ io.on('connection', (socket) => {
         io.emit('syncGame', gameData);
     });
 
-    socket.on('resetToLobby', () => {
+    socket.on('launchSumo', () => {
         if (socket.id !== hostId) return;
-        gameData = {
-            captainA: null, captainB: null, teamA: [], teamB: [],
-            fighterA: null, fighterB: null, tttBoard: Array(9).fill(null), tttTurn: null,
-            scores: { teamA: 0, teamB: 0 }, gameState: 'lobby'
-        };
+        gameData.gameState = 'sumo';
+        gameData.sumoPosition = 50; 
+        io.emit('syncGame', gameData);
+    });
+
+    socket.on('sumoPush', () => {
+        if (gameData.gameState !== 'sumo') return;
+        
+        if (gameData.captainA && socket.id === gameData.captainA.id) {
+            gameData.sumoPosition -= 3.5; // Mash value shift left
+        } else if (gameData.captainB && socket.id === gameData.captainB.id) {
+            gameData.sumoPosition += 3.5; // Mash value shift right
+        }
+
+        if (gameData.sumoPosition <= 10) {
+            gameData.scores.teamA++;
+            io.emit('announceWinner', { winner: gameData.captainA.username + " (🔴 Team A)", icon: '🏆' });
+            gameData.gameState = 'lobby';
+        } else if (gameData.sumoPosition >= 90) {
+            gameData.scores.teamB++;
+            io.emit('announceWinner', { winner: gameData.captainB.username + " (🔵 Team B)", icon: '🏆' });
+            gameData.gameState = 'lobby';
+        }
         io.emit('syncGame', gameData);
     });
 
@@ -127,14 +133,12 @@ io.on('connection', (socket) => {
         if (socket.id !== gameData.tttTurn || gameData.tttBoard[index] !== null) return;
         const icon = socket.id === gameData.fighterA ? 'X' : 'O';
         gameData.tttBoard[index] = icon;
-
-        // Fallback name grabber
-        const finalFighterName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : (socket.username || "Fighter");
+        const currentFighterName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : "Fighter";
 
         if (checkWin(gameData.tttBoard)) {
             if (socket.id === gameData.fighterA) gameData.scores.teamA++;
             else gameData.scores.teamB++;
-            io.emit('announceWinner', { winner: finalFighterName, icon });
+            io.emit('announceWinner', { winner: currentFighterName, icon });
             gameData.gameState = 'lobby'; 
         } else if (!gameData.tttBoard.includes(null)) {
             io.emit('announceWinner', { winner: 'Tie Game', icon: null });
@@ -147,21 +151,24 @@ io.on('connection', (socket) => {
 
     socket.on('sendReaction', (emoji) => { io.emit('incomingReaction', emoji); });
 
+    socket.on('resetToLobby', () => {
+        if (socket.id !== hostId) return;
+        gameData = {
+            captainA: null, captainB: null, teamA: [], teamB: [],
+            fighterA: null, fighterB: null, tttBoard: Array(9).fill(null), tttTurn: null,
+            sumoPosition: 50, scores: gameData.scores, gameState: 'lobby'
+        };
+        io.emit('syncGame', gameData);
+    });
+
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
-        // Retain sessionMemory data for a short time to catch rapid mobile drops, 
-        // but scrub the connection array to keep lobby list accurate.
-        if (socket.id === hostId && players.length > 0) {
-            hostId = players[0].id;
-            players[0].isHost = true;
-        }
         io.emit('updatePlayers', players);
     });
 });
 
 function checkWin(b) {
-    const w = [, [3, 4, 5], [6, 7, 8], // Rows, [1, 4, 7], [2, 5, 8], // Columns, [2, 4, 6]             // Diagonals
-    ];
+    const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
     return w.some(p => b[p[0]] && b[p[0]] === b[p[1]] && b[p[0]] === b[p[2]]);
 }
 

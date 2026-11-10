@@ -2,8 +2,11 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const path = require('path');
 
-app.use(express.static(__dirname + '/public'));
+// Look for index.html in the main folder AND the public folder automatically
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 
 let players = [];
 
@@ -25,6 +28,8 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(3000, () => {
-    console.log('Game Server is running on port 3000!');
+// Use Render's assigned network port or fallback to 3000 local
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+    console.log('Game Server is running on port ' + PORT);
 });

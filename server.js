@@ -10,6 +10,7 @@ app.use(express.static(__dirname));
 let players = [];
 let hostId = null;
 let sessionMemory = {};
+let drawTimer = null;
 
 let gameData = {
     captainA: null, captainB: null,
@@ -21,9 +22,27 @@ let gameData = {
         a: { x: 90, y: 150, vx: 0, vy: 0 },
         b: { x: 210, y: 150, vx: 0, vy: 0 }
     },
+    drawReady: false,
+    mathQ: { question: '', options: [], answer: 0 },
     scores: { teamA: 0, teamB: 0 },
     gameState: 'lobby'
 };
+
+function generateMath() {
+    const a = Math.floor(Math.random() * 15) + 5;
+    const b = Math.floor(Math.random() * 12) + 3;
+    const c = Math.floor(Math.random() * 20) + 1;
+    const ans = (a * b) + c;
+    let opts = new Set([ans]);
+    while (opts.size < 4) {
+        opts.add(ans + (Math.floor(Math.random() * 15) - 7));
+    }
+    return {
+        question: `${a} × ${b} + ${c} = ?`,
+        options: Array.from(opts).sort(() => Math.random() - 0.5),
+        answer: ans
+    };
+}
 
 io.on('connection', (socket) => {
     if (players.length === 0) hostId = socket.id;
@@ -78,10 +97,8 @@ io.on('connection', (socket) => {
     socket.on('draftPlayer', (playerId) => {
         if (gameData.gameState !== 'drafting') return;
         if (socket.id !== gameData.currentTurnPicker) return;
-        
         const targetPlayer = players.find(p => p.id === playerId);
         if (!targetPlayer) return;
-        
         if (gameData.teamA.some(p => p.id === playerId) || gameData.teamB.some(p => p.id === playerId)) return;
 
         if (socket.id === gameData.captainA.id) {
@@ -94,6 +111,7 @@ io.on('connection', (socket) => {
         io.emit('syncGame', gameData);
     });
 
+    // ARENA 1: TIC TAC TOE
     socket.on('assignFighters', (data) => {
         if (socket.id !== hostId) return;
         gameData.fighterA = data.fightA;
@@ -104,6 +122,25 @@ io.on('connection', (socket) => {
         io.emit('syncGame', gameData);
     });
 
+    socket.on('makeMove', (index) => {
+        if (socket.id !== gameData.tttTurn || gameData.tttBoard[index] !== null) return;
+        const icon = socket.id === gameData.fighterA ? 'X' : 'O';
+        gameData.tttBoard[index] = icon;
+        const currentFighterName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : "Fighter";
+
+        if (checkWin(gameData.tttBoard)) {
+            if (socket.id === gameData.fighterA) gameData.scores.teamA++;
+            else gameData.scores.teamB++;
+            io.emit('announceWinner', { winner: currentFighterName, icon });
+            gameData.gameState = 'lobby'; 
+        } else if (!gameData.tttBoard.includes(null)) {
+            io.emit('announceWinner', { winner: 'Tie Game', icon: null });
+            gameData.gameState = 'lobby';
+        } else {
+            gameData.tttTurn = gameData.tttTurn === gameData.fighterA ? gameData.fighterB : gameData.fighterA;
+        }
+        io.emit('syncGame', gameData);
+    });    // ARENA 2: SUMO SMASH
     socket.on('launchSumo', () => {
         if (socket.id !== hostId) return;
         gameData.gameState = 'sumo';
@@ -128,9 +165,9 @@ io.on('connection', (socket) => {
         io.emit('syncGame', gameData);
     });
 
+    // ARENA 3: SPINNER.IO
     socket.on('launchSpinner', () => {
-        if (socket.id !== hostId) return;
-        if (!gameData.captainA || !gameData.captainB) return;
+        if (socket.id !== hostId || !gameData.captainA || !gameData.captainB) return;
         gameData.gameState = 'spinner';
         gameData.spinner = {
             a: { x: 90, y: 150, vx: 0, vy: 0 },
@@ -153,35 +190,89 @@ io.on('connection', (socket) => {
         if (dir === 'right') p.vx += force;
     });
 
-    socket.on('makeMove', (index) => {
-        if (socket.id !== gameData.tttTurn || gameData.tttBoard[index] !== null) return;
-        const icon = socket.id === gameData.fighterA ? 'X' : 'O';
-        gameData.tttBoard[index] = icon;
-        const currentFighterName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : "Fighter";
-
-        if (checkWin(gameData.tttBoard)) {
-            if (socket.id === gameData.fighterA) gameData.scores.teamA++;
-            else gameData.scores.teamB++;
-            io.emit('announceWinner', { winner: currentFighterName, icon });
-            gameData.gameState = 'lobby'; 
-        } else if (!gameData.tttBoard.includes(null)) {
-            io.emit('announceWinner', { winner: 'Tie Game', icon: null });
-            gameData.gameState = 'lobby';
-        } else {
-            gameData.tttTurn = gameData.tttTurn === gameData.fighterA ? gameData.fighterB : gameData.fighterA;
-        }
+    // ARENA 4: QUICK-DRAW REFLEX DUEL
+    socket.on('launchQuickDraw', () => {
+        if (socket.id !== hostId || !gameData.captainA || !gameData.captainB) return;
+        if (drawTimer) clearTimeout(drawTimer);
+        gameData.gameState = 'quickdraw';
+        gameData.drawReady = false;
         io.emit('syncGame', gameData);
+
+        const randomDelay = Math.floor(Math.random() * 3500) + 2000;
+        drawTimer = setTimeout(() => {
+            if (gameData.gameState === 'quickdraw') {
+                gameData.drawReady = true;
+                io.emit('syncGame', gameData);
+            }
+        }, randomDelay);
+    });
+
+    socket.on('quickDrawFire', () => {
+        if (gameData.gameState !== 'quickdraw') return;
+        const isA = gameData.captainA && socket.id === gameData.captainA.id;
+        const isB = gameData.captainB && socket.id === gameData.captainB.id;
+        if (!isA && !isB) return;
+
+        if (drawTimer) clearTimeout(drawTimer);
+        if (!gameData.drawReady) {
+            if (isA) {
+                gameData.scores.teamB++;
+                io.emit('announceWinner', { winner: gameData.captainB.username + " (Opponent fouled!)", icon: '🤠' });
+            } else {
+                gameData.scores.teamA++;
+                io.emit('announceWinner', { winner: gameData.captainA.username + " (Opponent fouled!)", icon: '🤠' });
+            }
+        } else {
+            if (isA) {
+                gameData.scores.teamA++;
+                io.emit('announceWinner', { winner: gameData.captainA.username + " (Fastest Draw!)", icon: '🔫' });
+            } else {
+                gameData.scores.teamB++;
+                io.emit('announceWinner', { winner: gameData.captainB.username + " (Fastest Draw!)", icon: '🔫' });
+            }
+        }
+        gameData.gameState = 'lobby';
+        io.emit('syncGame', gameData);
+    });
+
+    // ARENA 5: MATH BLITZ SHOWDOWN
+    socket.on('launchMath', () => {
+        if (socket.id !== hostId || !gameData.captainA || !gameData.captainB) return;
+        gameData.gameState = 'math';
+        gameData.mathQ = generateMath();
+        io.emit('syncGame', gameData);
+    });
+
+    socket.on('submitMath', (val) => {
+        if (gameData.gameState !== 'math') return;
+        const isA = gameData.captainA && socket.id === gameData.captainA.id;
+        const isB = gameData.captainB && socket.id === gameData.captainB.id;
+        if (!isA && !isB) return;
+
+        if (Number(val) === gameData.mathQ.answer) {
+            if (isA) {
+                gameData.scores.teamA++;
+                io.emit('announceWinner', { winner: gameData.captainA.username + " (🔴 Team A)", icon: '🧠' });
+            } else {
+                gameData.scores.teamB++;
+                io.emit('announceWinner', { winner: gameData.captainB.username + " (🔵 Team B)", icon: '🧠' });
+            }
+            gameData.gameState = 'lobby';
+            io.emit('syncGame', gameData);
+        }
     });
 
     socket.on('sendReaction', (emoji) => { io.emit('incomingReaction', emoji); });
 
     socket.on('resetToLobby', () => {
         if (socket.id !== hostId) return;
+        if (drawTimer) clearTimeout(drawTimer);
         gameData = {
             captainA: null, captainB: null, teamA: [], teamB: [],
             fighterA: null, fighterB: null, tttBoard: Array(9).fill(null), tttTurn: null,
             sumoPosition: 50,
             spinner: { a: { x: 90, y: 150, vx: 0, vy: 0 }, b: { x: 210, y: 150, vx: 0, vy: 0 } },
+            drawReady: false, mathQ: { question: '', options: [], answer: 0 },
             scores: gameData.scores, gameState: 'lobby'
         };
         io.emit('syncGame', gameData);
@@ -237,3 +328,4 @@ setInterval(() => {
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => { console.log('Sammu Games Running on Port ' + PORT); });
+                

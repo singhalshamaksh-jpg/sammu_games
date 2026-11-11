@@ -6,49 +6,14 @@
     <title>Sammu Games</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        :root {
-            --glass-bg: rgba(28, 28, 36, 0.75);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
-            --incoming-bg: rgba(255, 255, 255, 0.1);
-            --text-main: #f3f4f6;
-        }
-        @keyframes discoParty {
-            0% { background-color: #1e1b4b; }
-            25% { background-color: #311042; }
-            50% { background-color: #062f22; }
-            75% { background-color: #4c0519; }
-            100% { background-color: #1e1b4b; }
-        }
+        :root { --glass-bg: rgba(28, 28, 36, 0.75); --glass-border: rgba(255, 255, 255, 0.12); --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5); --incoming-bg: rgba(255, 255, 255, 0.1); --text-main: #f3f4f6; }
+        @keyframes discoParty { 0% { background-color: #1e1b4b; } 25% { background-color: #311042; } 50% { background-color: #062f22; } 75% { background-color: #4c0519; } 100% { background-color: #1e1b4b; } }
         .disco-active { animation: discoParty 1.5s linear infinite !important; }
         @keyframes spinBlade { 100% { transform: translate(-22px,-22px) rotate(360deg); } }
         @keyframes bombPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-        @keyframes bubblePop {
-            from { opacity: 0; transform: translateY(6px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        #chat-area {
-            background: var(--glass-bg) !important;
-            border: 1px solid var(--glass-border) !important;
-            border-radius: 18px !important;
-            padding: 16px !important;
-            height: 420px !important;
-            min-height: 420px !important;
-            max-height: 420px !important;
-            overflow-y: auto !important;
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 12px !important;
-            scroll-behavior: smooth !important;
-            margin-bottom: 10px !important;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important;
-        }
-        .msg-bubble {
-            max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem;
-            line-height: 1.4; color: var(--text-main); word-break: break-word;
-            display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            animation: bubblePop 0.2s ease-out forwards;
-        }
+        @keyframes bubblePop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        #chat-area { background: var(--glass-bg) !important; border: 1px solid var(--glass-border) !important; border-radius: 18px !important; padding: 16px !important; height: 420px !important; min-height: 420px !important; max-height: 420px !important; overflow-y: auto !important; display: flex !important; flex-direction: column !important; gap: 12px !important; scroll-behavior: smooth !important; margin-bottom: 10px !important; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important; }
+        .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem; line-height: 1.4; color: var(--text-main); word-break: break-word; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.15); animation: bubblePop 0.2s ease-out forwards; }
         .bubble-container { display: flex; flex-direction: column; width: 100%; margin: 2px 0; }
         .msg-container-outgoing { align-items: flex-end; }
         .msg-container-outgoing .msg-bubble { background: var(--outgoing-gradient); border-bottom-right-radius: 4px; }
@@ -59,13 +24,11 @@
         .msg-container-system .msg-bubble { background: rgba(252, 211, 77, 0.1); border: 1px solid rgba(252, 211, 77, 0.2); color: #fcd34d; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; }
         .chirp-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding: 2px 0; }
         .chirp-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; padding: 6px 12px; border-radius: 14px; font-size: 0.78rem; white-space: nowrap; cursor: pointer; }
-        .chirp-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.15); }
-        #chat-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 24px; color: var(--text-main); outline: none; font-size: 0.95rem; transition: all 0.2s ease; }
-        #chat-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-        .btn-disco { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-weight: bold; border: none; border-radius: 12px; padding: 10px; margin-bottom: 8px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3); }
+        #chat-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 24px; color: var(--text-main); outline: none; font-size: 0.95rem; }
+        .btn-disco { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-weight: bold; border: none; border-radius: 12px; padding: 10px; margin-bottom: 8px; width: 100%; cursor: pointer; }
         #floating-container { position: fixed; bottom: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; overflow: hidden; }
-        .floating-emoji { position: absolute; bottom: -50px; font-size: 2rem; user-select: none; animation: floatUpAndFade 2.5s cubic-bezier(0.08, 0.8, 0.2, 1) forwards; opacity: 0; }
-        @keyframes floatUpAndFade { 0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; } 10% { opacity: 1; transform: translateY(-10vh) translateX(var(--random-x)) scale(1.2); } 100% { transform: translateY(-105vh) translateX(calc(var(--random-x) * 2)) scale(0.8); opacity: 0; } }
+        .floating-emoji { position: absolute; bottom: -50px; font-size: 2rem; user-select: none; animation: floatUpAndFade 2.5s ease-out forwards; opacity: 0; }
+        @keyframes floatUpAndFade { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-105vh) translateX(var(--random-x)) scale(1.1); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -88,27 +51,15 @@
         <button onclick="changeProfile()" style="flex:1; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:12px; padding:8px; cursor:pointer; font-size:0.85rem;">✏️ Change Name</button>
         <button id="btn-sound-toggle" onclick="toggleSound()" style="flex:1; background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(16,185,129,0.4); border-radius:12px; padding:8px; cursor:pointer; font-size:0.85rem;">🔊 Sound: ON</button>
     </div>
-    <div id="score-display" class="score-board" style="display:none;">
-        <div id="scoreA-text">🔴 Team A: 0</div>
-        <div id="scoreB-text">🔵 Team B: 0</div>
-    </div>
+    <div id="score-display" class="score-board" style="display:none;"><div id="scoreA-text">🔴 Team A: 0</div><div id="scoreB-text">🔵 Team B: 0</div></div>
     <div id="draft-arena-zone" style="display:none;">
         <h3 id="draft-instructions" style="text-align:center; color:#ffc107; margin:5px 0; font-size:1rem;"></h3>
-        <div class="team-arena">
-            <div class="team-box red" id="box-teamA"><h4 id="head-teamA">Team A</h4><div id="list-teamA"></div></div>
-            <div class="team-box blue" id="box-teamB"><h4 id="head-teamB">Team B</h4><div id="list-teamB"></div></div>
-        </div>
+        <div class="team-arena"><div class="team-box red" id="box-teamA"><h4 id="head-teamA">Team A</h4><div id="list-teamA"></div></div><div class="team-box blue" id="box-teamB"><h4 id="head-teamB">Team B</h4><div id="list-teamB"></div></div></div>
     </div>
-    <div id="battle-zone" style="display:none; text-align:center;">
-        <h3 id="battle-status" style="color:#ff0055; padding: 8px;">⚔️ Match Live ⚔️</h3>
-        <div class="board" id="ttt-board"></div>
-    </div>
+    <div id="battle-zone" style="display:none; text-align:center;"><h3 id="battle-status" style="color:#ff0055; padding: 8px;">⚔️ Match Live ⚔️</h3><div class="board" id="ttt-board"></div></div>
     <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
         <h2 style="color:#ffcc00; font-size:1.1rem; margin:0 0 10px 0;">🤼 SUMO RING SMASH 🤼</h2>
-        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;">
-            <div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div>
-            <div id="sumo-wrestler" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ffcc00; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🤼</div>
-        </div>
+        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;"><div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div><div id="sumo-wrestler" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ffcc00; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🤼</div></div>
         <button id="btn-sumo-push" onclick="playSound('tap'); socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
     </div>
     <div id="spinner-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #a855f7;">
@@ -155,10 +106,7 @@
     <div id="tug-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #eab308;">
         <h2 style="color:#fde047; font-size:1.1rem; margin:0 0 6px 0;">🪢 ALL-PLAYERS TUG-OF-WAR 🪢</h2>
         <p style="font-size:0.8rem; color:#9ca3af; margin:0 0 10px 0;">Everyone on Team A & Team B tap together!</p>
-        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:12px 0; border:2px solid #333;">
-            <div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div>
-            <div id="tug-knot" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🪢</div>
-        </div>
+        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:12px 0; border:2px solid #333;"><div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div><div id="tug-knot" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🪢</div></div>
         <button onclick="playSound('tap'); socket.emit('tugPull')" style="width:100%; padding:16px; border-radius:14px; background:linear-gradient(135deg, #ef4444, #3b82f6); color:#fff; font-size:1.3rem; font-weight:900;">PULL FOR YOUR TEAM! 💪</button>
     </div>
     <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
@@ -179,20 +127,10 @@
         <button onclick="hostLaunchGame('launchTug')" style="background:linear-gradient(90deg, #ef4444, #3b82f6); color:#fff; margin-top:6px;">9. All-Players Tug-of-War 🪢</button>
         <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
-    <div class="react-box">
-        <button class="react-btn" onclick="sendReaction('🔥')">🔥</button>
-        <button class="react-btn" onclick="sendReaction('👑')">👑</button>
-        <button class="react-btn" onclick="sendReaction('🤡')">🤡</button>
-        <button class="react-btn" onclick="sendReaction('💀')">💀</button>
-    </div>
+    <div class="react-box"><button class="react-btn" onclick="sendReaction('🔥')">🔥</button><button class="react-btn" onclick="sendReaction('👑')">👑</button><button class="react-btn" onclick="sendReaction('🤡')">🤡</button><button class="react-btn" onclick="sendReaction('💀')">💀</button></div>
     <h3 id="list-header-title">Players in Room</h3><div id="player-list"></div>
     <h3>Lobby Chat Room</h3><div id="chat-area"></div>
-    <div class="chirp-row">
-        <button class="chirp-btn" onclick="sendQuickChirp('!task')">⚡ Drop Task</button>
-        <button class="chirp-btn" onclick="sendQuickChirp('Loser! 🤫')">Loser! 🤫</button>
-        <button class="chirp-btn" onclick="sendQuickChirp('EZ! 🥱')">EZ! 🥱</button>
-        <button class="chirp-btn" onclick="sendQuickChirp('Go Team! 🔥')">Go Team! 🔥</button>
-    </div>
+    <div class="chirp-row"><button class="chirp-btn" onclick="sendQuickChirp('!task')">⚡ Drop Task</button><button class="chirp-btn" onclick="sendQuickChirp('Loser! 🤫')">Loser! 🤫</button><button class="chirp-btn" onclick="sendQuickChirp('EZ! 🥱')">EZ! 🥱</button><button class="chirp-btn" onclick="sendQuickChirp('Go Team! 🔥')">Go Team! 🔥</button></div>
     <input type="text" id="chat-input" placeholder="Type tasks or chat with Sammu's Bot..." onkeypress="handleChatKey(event)">
 </div>
 <div id="floating-container"></div>
@@ -208,26 +146,10 @@
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const now = audioCtx.currentTime, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
-        if (type === 'chat') {
-            osc.type = 'sine'; osc.frequency.setValueAtTime(520, now); osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
-            gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-            osc.start(now); osc.stop(now + 0.09);
-        } else if (type === 'tap') {
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(320, now); osc.frequency.exponentialRampToValueAtTime(140, now + 0.07);
-            gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-            osc.start(now); osc.stop(now + 0.08);
-        } else if (type === 'emoji') {
-            osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(900, now + 0.06); osc.frequency.setValueAtTime(1200, now + 0.12);
-            gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-            osc.start(now); osc.stop(now + 0.22);
-        } else if (type === 'win') {
-            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-                const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'triangle';
-                o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(freq, now + i * 0.1);
-                g.gain.setValueAtTime(0.2, now + i * 0.1); g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25);
-                o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.25);
-            });
-        }
+        if (type === 'chat') { osc.type = 'sine'; osc.frequency.setValueAtTime(520, now); osc.frequency.exponentialRampToValueAtTime(780, now + 0.08); gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09); osc.start(now); osc.stop(now + 0.09); }
+        else if (type === 'tap') { osc.type = 'triangle'; osc.frequency.setValueAtTime(320, now); osc.frequency.exponentialRampToValueAtTime(140, now + 0.07); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08); osc.start(now); osc.stop(now + 0.08); }
+        else if (type === 'emoji') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(900, now + 0.06); osc.frequency.setValueAtTime(1200, now + 0.12); gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22); osc.start(now); osc.stop(now + 0.22); }
+        else if (type === 'win') { [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'triangle'; o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(freq, now + i * 0.1); g.gain.setValueAtTime(0.2, now + i * 0.1); g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25); o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.25); }); }
     }
 
     function playDiscoBeat() {
@@ -235,32 +157,13 @@
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const now = audioCtx.currentTime, kick = audioCtx.createOscillator(), kGain = audioCtx.createGain();
         kick.type = 'sine'; kick.frequency.setValueAtTime(140, now); kick.frequency.exponentialRampToValueAtTime(40, now + 0.12);
-        kGain.gain.setValueAtTime(0.28, now); kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-        kick.connect(kGain); kGain.connect(audioCtx.destination); kick.start(now); kick.stop(now + 0.14);
-
-        const notes = [110, 110, 130.81, 146.83, 164.81, 146.83, 130.81, 98];
-        const bass = audioCtx.createOscillator(), bGain = audioCtx.createGain();
-        bass.type = 'sawtooth'; bass.frequency.setValueAtTime(notes[discoStep % notes.length], now + 0.12);
-        bGain.gain.setValueAtTime(0.08, now + 0.12); bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-        bass.connect(bGain); bGain.connect(audioCtx.destination); bass.start(now + 0.12); bass.stop(now + 0.28);
-        discoStep++;
+        kGain.gain.setValueAtTime(0.28, now); kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14); kick.connect(kGain); kGain.connect(audioCtx.destination); kick.start(now); kick.stop(now + 0.14);
+        const notes = [110, 110, 130.81, 146.83, 164.81, 146.83, 130.81, 98], bass = audioCtx.createOscillator(), bGain = audioCtx.createGain();
+        bass.type = 'sawtooth'; bass.frequency.setValueAtTime(notes[discoStep % notes.length], now + 0.12); bGain.gain.setValueAtTime(0.08, now + 0.12); bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28); bass.connect(bGain); bGain.connect(audioCtx.destination); bass.start(now + 0.12); bass.stop(now + 0.28); discoStep++;
     }
 
-    function toggleSound() {
-        soundEnabled = !soundEnabled;
-        const btn = document.getElementById('btn-sound-toggle');
-        btn.innerText = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF';
-        btn.style.background = soundEnabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
-        btn.style.color = soundEnabled ? '#6ee7b7' : '#fca5a5';
-        if (soundEnabled) playSound('chat');
-    }
-
-    function toggleDisco() {
-        playSound('tap');
-        if (document.body.classList.toggle('disco-active')) {
-            discoStep = 0; playDiscoBeat(); discoInterval = setInterval(playDiscoBeat, 320);
-        } else { clearInterval(discoInterval); discoInterval = null; }
-    }
+    function toggleSound() { soundEnabled = !soundEnabled; const btn = document.getElementById('btn-sound-toggle'); btn.innerText = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF'; btn.style.background = soundEnabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'; btn.style.color = soundEnabled ? '#6ee7b7' : '#fca5a5'; if (soundEnabled) playSound('chat'); }
+    function toggleDisco() { playSound('tap'); if (document.body.classList.toggle('disco-active')) { discoStep = 0; playDiscoBeat(); discoInterval = setInterval(playDiscoBeat, 320); } else { clearInterval(discoInterval); discoInterval = null; } }
 
     localStorage.removeItem('sammu_username'); localStorage.removeItem('sammu_avatar');
     function changeProfile() { playSound('tap'); sessionStorage.clear(); document.getElementById('game-screen').style.display = 'none'; document.getElementById('login-screen').style.display = 'block'; }
@@ -271,128 +174,46 @@
         document.getElementById('login-screen').style.display = 'none'; document.getElementById('game-screen').style.display = 'block';
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
-    socket.on('connect', () => {
-        myId = socket.id;
-        const sn = sessionStorage.getItem('sammu_username'), sa = sessionStorage.getItem('sammu_avatar');
-        if (sn && sa && document.getElementById('game-screen').style.display === 'block') {
-            localUsername = sn; selectedAvatar = sa; socket.emit('joinRoom', { username: sn, avatar: sa });
-        }
-    });
+    socket.on('connect', () => { myId = socket.id; const sn = sessionStorage.getItem('sammu_username'), sa = sessionStorage.getItem('sammu_avatar'); if (sn && sa && document.getElementById('game-screen').style.display === 'block') { localUsername = sn; selectedAvatar = sa; socket.emit('joinRoom', { username: sn, avatar: sa }); } });
 
     function sendQuickChirp(t) { playSound('tap'); socket.emit('chatMessage', t); }
-    function hostSubmitCaptains() {
-        const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
-        if(!capA || !capB) return alert("Pick Captain A and Captain B first! 🛑");
-        playSound('tap'); socket.emit('makeCaptains', { capA, capB });
-    }
-    function hostStartDuel() {
-        const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
-        if(!capA || !capB) return alert("Pick Captain A and Captain B first! ⚔️");
-        playSound('tap'); socket.emit('assignFighters', { fightA: capA, fightB: capB });
-    }
-    function hostLaunchGame(eventName) {
-        const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
-        if(!capA || !capB) return alert("Pick Captain A and Captain B from the dropdowns first! 🛑");
-        playSound('tap'); socket.emit('makeCaptains', { capA, capB });
-        setTimeout(() => socket.emit(eventName), 150);
-    }
+    function hostSubmitCaptains() { const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value; if(!capA || !capB) return alert("Pick Captain A and Captain B first! 🛑"); playSound('tap'); socket.emit('makeCaptains', { capA, capB }); }
+    function hostStartDuel() { const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value; if(!capA || !capB) return alert("Pick Captain A and Captain B first! ⚔️"); playSound('tap'); socket.emit('assignFighters', { fightA: capA, fightB: capB }); }
+    function hostLaunchGame(eventName) { const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value; if(!capA || !capB) return alert("Pick Captain A and Captain B from the dropdowns first! 🛑"); playSound('tap'); socket.emit('makeCaptains', { capA, capB }); setTimeout(() => socket.emit(eventName), 150); }
     function hostReset() { playSound('tap'); socket.emit('resetToLobby'); }
-    socket.on('initRole', (data) => {
-        isIAmHost = data.isHost;
-        document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none';
-        document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena";
-    });
-    socket.on('updatePlayers', (p) => {
-        currentPlayers = p; const selA = document.getElementById('select-capA'), selB = document.getElementById('select-capB'), valA = selA.value, valB = selB.value;
-        selA.innerHTML = '<option value="">-- Choose Captain A --</option>'; selB.innerHTML = '<option value="">-- Choose Captain B --</option>';
-        p.forEach(pl => {
-            selA.innerHTML += `<option value="${pl.id}">${pl.username}</option>`;
-            selB.innerHTML += `<option value="${pl.id}">${pl.username}</option>`;
-        });
-        selA.value = valA; selB.value = valB; renderPlayerList();
-    });
-    function renderPlayerList() {
-        const list = document.getElementById('player-list'); list.innerHTML = '';
-        currentPlayers.forEach(pl => {
-            const card = document.createElement('div');
-            const isDrafted = document.getElementById('list-teamA').innerText.includes(pl.username) || document.getElementById('list-teamB').innerText.includes(pl.username);
-            card.className = (currentGameState === 'drafting' && !isDrafted) ? 'player-card selectable' : 'player-card';
-            if (currentGameState === 'drafting' && !isDrafted && myId === activeTurnPickerId) card.onclick = () => { playSound('tap'); socket.emit('draftPlayer', pl.id); };
-            card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? '<i style="color:#ffc107;margin-left:5px;">(Host)👑</i>' : ''}`;
-            list.appendChild(card);
-        });
-    }
+    socket.on('initRole', (data) => { isIAmHost = data.isHost; document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none'; document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena"; });
+    socket.on('updatePlayers', (p) => { currentPlayers = p; const selA = document.getElementById('select-capA'), selB = document.getElementById('select-capB'), valA = selA.value, valB = selB.value; selA.innerHTML = '<option value="">-- Choose Captain A --</option>'; selB.innerHTML = '<option value="">-- Choose Captain B --</option>'; p.forEach(pl => { selA.innerHTML += `<option value="${pl.id}">${pl.username}</option>`; selB.innerHTML += `<option value="${pl.id}">${pl.username}</option>`; }); selA.value = valA; selB.value = valB; renderPlayerList(); });
+    function renderPlayerList() { const list = document.getElementById('player-list'); list.innerHTML = ''; currentPlayers.forEach(pl => { const card = document.createElement('div'); const isDrafted = document.getElementById('list-teamA').innerText.includes(pl.username) || document.getElementById('list-teamB').innerText.includes(pl.username); card.className = (currentGameState === 'drafting' && !isDrafted) ? 'player-card selectable' : 'player-card'; if (currentGameState === 'drafting' && !isDrafted && myId === activeTurnPickerId) card.onclick = () => { playSound('tap'); socket.emit('draftPlayer', pl.id); }; card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? '<i style="color:#ffc107;margin-left:5px;">(Host)👑</i>' : ''}`; list.appendChild(card); }); }
     function handleChatKey(e) { if (e.key === 'Enter') { const i = document.getElementById('chat-input'); if (i.value.trim()) { socket.emit('chatMessage', i.value.trim()); i.value = ''; } } }
 
     socket.on('message', (data) => {
         playSound('chat'); const chatArea = document.getElementById('chat-area'), container = document.createElement('div');
-        if (data.username === 'SYSTEM') {
-            container.className = 'bubble-container msg-container-system'; container.innerHTML = `<div class="msg-bubble">${data.text}</div>`;
-        } else if (data.username === "Sammu's Bot") {
-            container.className = 'bubble-container msg-container-incoming';
-            container.innerHTML = `<div class="msg-sender-title" style="color:#34d399;">🤖 Sammu's Bot <span style="background:rgba(16,185,129,0.2); border:1px solid #10b981; font-size:0.65rem; padding:1px 5px; border-radius:4px;">AI</span></div><div class="msg-bubble" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#ecfdf5;">${data.text}</div>`;
-        } else {
-            const isMe = (data.username === localUsername);
-            container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming';
-            const mp = currentPlayers.find(p => p.username === data.username), icon = mp ? mp.avatar : '👤';
-            container.innerHTML = `${!isMe ? `<div class="msg-sender-title">${icon} ${data.username}</div>` : ''}<div class="msg-bubble">${data.text}</div>`;
-        }
+        if (data.username === 'SYSTEM') { container.className = 'bubble-container msg-container-system'; container.innerHTML = `<div class="msg-bubble">${data.text}</div>`; }
+        else if (data.username === "Sammu's Bot") { container.className = 'bubble-container msg-container-incoming'; container.innerHTML = `<div class="msg-sender-title" style="color:#34d399;">🤖 Sammu's Bot <span style="background:rgba(16,185,129,0.2); border:1px solid #10b981; font-size:0.65rem; padding:1px 5px; border-radius:4px;">AI</span></div><div class="msg-bubble" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#ecfdf5;">${data.text}</div>`; }
+        else { const isMe = (data.username === localUsername); container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming'; const mp = currentPlayers.find(p => p.username === data.username), icon = mp ? mp.avatar : '👤'; container.innerHTML = `${!isMe ? `<div class="msg-sender-title">${icon} ${data.username}</div>` : ''}<div class="msg-bubble">${data.text}</div>`; }
         chatArea.appendChild(container); chatArea.scrollTop = chatArea.scrollHeight;
     });
 
-    socket.on('incomingReaction', (emoji) => {
-        playSound('emoji'); const container = document.getElementById('floating-container') || document.body;
-        for (let i = 0; i < 12; i++) {
-            const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = emoji;
-            el.style.left = (Math.random() * 80 + 10) + '%'; el.style.setProperty('--random-x', (Math.random() * 120 - 60) + 'px');
-            el.style.animationDelay = (Math.random() * 0.4) + 's'; container.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-    });
+    socket.on('incomingReaction', (emoji) => { playSound('emoji'); const container = document.getElementById('floating-container') || document.body; for (let i = 0; i < 12; i++) { const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = emoji; el.style.left = (Math.random() * 80 + 10) + '%'; el.style.setProperty('--random-x', (Math.random() * 120 - 60) + 'px'); el.style.animationDelay = (Math.random() * 0.4) + 's'; container.appendChild(el); setTimeout(() => el.remove(), 3000); } });
     function sendReaction(emoji) { socket.emit('sendReaction', emoji); }
     socket.on('announceWinner', (data) => { playSound('win'); alert(data.icon ? `GAME OVER! Winner: ${data.winner} ${data.icon}` : `GAME OVER: ${data.winner}!`); });
-    socket.on('spinnerTick', (spin) => {
-        const sA = document.getElementById('spin-a'), sB = document.getElementById('spin-b');
-        if (sA) { sA.style.left = spin.a.x + 'px'; sA.style.top = spin.a.y + 'px'; }
-        if (sB) { sB.style.left = spin.b.x + 'px'; sB.style.top = spin.b.y + 'px'; }
-    });
+    socket.on('spinnerTick', (spin) => { const sA = document.getElementById('spin-a'), sB = document.getElementById('spin-b'); if (sA) { sA.style.left = spin.a.x + 'px'; sA.style.top = spin.a.y + 'px'; } if (sB) { sB.style.left = spin.b.x + 'px'; sB.style.top = spin.b.y + 'px'; } });
 
     socket.on('syncGame', (g) => {
         currentGameState = g.gameState; activeTurnPickerId = g.currentTurnPicker;
         const started = (g.gameState !== 'lobby'), show = (id, c) => { const el = document.getElementById(id); if (el) el.style.display = c ? 'block' : 'none'; };
-        if (document.getElementById('score-display')) {
-            document.getElementById('score-display').style.display = started ? 'flex' : 'none';
-            document.getElementById('scoreA-text').innerText = `🔴 Team A: ${g.scores.teamA}`;
-            document.getElementById('scoreB-text').innerText = `🔵 Team B: ${g.scores.teamB}`;
-        }
+        if (document.getElementById('score-display')) { document.getElementById('score-display').style.display = started ? 'flex' : 'none'; document.getElementById('scoreA-text').innerText = `🔴 Team A: ${g.scores.teamA}`; document.getElementById('scoreB-text').innerText = `🔵 Team B: ${g.scores.teamB}`; }
         show('draft-arena-zone', started); show('sumo-zone', g.gameState === 'sumo'); show('spinner-zone', g.gameState === 'spinner');
         show('quickdraw-zone', g.gameState === 'quickdraw'); show('math-zone', g.gameState === 'math'); show('battle-zone', g.gameState === 'duel');
         show('bomb-zone', g.gameState === 'bomb'); show('rps-zone', g.gameState === 'rps'); show('memory-zone', g.gameState === 'memory'); show('tug-zone', g.gameState === 'tug');
 
-        if (started) {
-            document.getElementById('list-teamA').innerHTML = g.teamA.map(p => `<div>${p.avatar} ${p.username}</div>`).join('');
-            document.getElementById('list-teamB').innerHTML = g.teamB.map(p => `<div>${p.avatar} ${p.username}</div>`).join('');
-            const picker = currentPlayers.find(p => p.id === g.currentTurnPicker);
-            document.getElementById('draft-instructions').innerText = (g.gameState === 'drafting' && picker) ? `🎯 ${picker.username}'s turn to pick a player!` : '';
-        } else {
-            document.getElementById('list-teamA').innerHTML = ''; document.getElementById('list-teamB').innerHTML = '';
-        }
+        if (started) { document.getElementById('list-teamA').innerHTML = g.teamA.map(p => `<div>${p.avatar} ${p.username}</div>`).join(''); document.getElementById('list-teamB').innerHTML = g.teamB.map(p => `<div>${p.avatar} ${p.username}</div>`).join(''); const picker = currentPlayers.find(p => p.id === g.currentTurnPicker); document.getElementById('draft-instructions').innerText = (g.gameState === 'drafting' && picker) ? `🎯 ${picker.username}'s turn to pick a player!` : ''; }
+        else { document.getElementById('list-teamA').innerHTML = ''; document.getElementById('list-teamB').innerHTML = ''; }
         renderPlayerList();
 
-        if (g.gameState === 'quickdraw') {
-            const btn = document.getElementById('btn-draw-fire');
-            if (btn) { if (g.drawReady) playSound('emoji'); btn.style.background = g.drawReady ? '#10b981' : '#dc2626'; btn.innerText = g.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑'; }
-        }
-        if (g.gameState === 'math' && g.mathQ) {
-            document.getElementById('math-question').innerText = g.mathQ.question;
-            const box = document.getElementById('math-options'); box.innerHTML = '';
-            g.mathQ.options.forEach(opt => { const b = document.createElement('button'); b.innerText = opt; b.style.cssText = 'padding:14px; font-size:1.2rem; font-weight:bold; border-radius:12px;'; b.onclick = () => { playSound('tap'); socket.emit('submitMath', opt); }; box.appendChild(b); });
-        }
-        if (g.gameState === 'duel' && g.tttBoard) {
-            const board = document.getElementById('ttt-board'), st = document.getElementById('battle-status');
-            if (st && g.tttTurn) { const f = currentPlayers.find(p => p.id === g.tttTurn); st.innerText = f ? `⚔️ Turn: ${f.username} ⚔️` : `⚔️ Match Live ⚔️`; }
-            if (board) { board.innerHTML = ''; g.tttBoard.forEach((v, idx) => { const b = document.createElement('button'); b.className = 'cell'; b.style.cssText = 'width:80px; height:80px; margin:4px; font-size:1.8rem; font-weight:900;'; b.innerText = v || ''; b.onclick = () => { playSound('tap'); socket.emit('makeMove', idx); }; board.appendChild(b); }); }
-        }
+        if (g.gameState === 'quickdraw') { const btn = document.getElementById('btn-draw-fire'); if (btn) { if (g.drawReady) playSound('emoji'); btn.style.background = g.drawReady ? '#10b981' : '#dc2626'; btn.innerText = g.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑'; } }
+        if (g.gameState === 'math' && g.mathQ) { document.getElementById('math-question').innerText = g.mathQ.question; const box = document.getElementById('math-options'); box.innerHTML = ''; g.mathQ.options.forEach(opt => { const b = document.createElement('button'); b.innerText = opt; b.style.cssText = 'padding:14px; font-size:1.2rem; font-weight:bold; border-radius:12px;'; b.onclick = () => { playSound('tap'); socket.emit('submitMath', opt); }; box.appendChild(b); }); }
+        if (g.gameState === 'duel' && g.tttBoard) { const board = document.getElementById('ttt-board'), st = document.getElementById('battle-status'); if (st && g.tttTurn) { const f = currentPlayers.find(p => p.id === g.tttTurn); st.innerText = f ? `⚔️ Turn: ${f.username} ⚔️` : `⚔️ Match Live ⚔️`; } if (board) { board.innerHTML = ''; g.tttBoard.forEach((v, idx) => { const b = document.createElement('button'); b.className = 'cell'; b.style.cssText = 'width:80px; height:80px; margin:4px; font-size:1.8rem; font-weight:900;'; b.innerText = v || ''; b.onclick = () => { playSound('tap'); socket.emit('makeMove', idx); }; board.appendChild(b); }); } }
         if (g.gameState === 'bomb') { const holder = currentPlayers.find(p => p.id === g.bombHolder); document.getElementById('bomb-status').innerText = holder ? `💣 Bomb is with: ${holder.username}!` : '💣 Ticking...'; }
         if (g.gameState === 'rps') { const aOk = g.rpsChoices.a ? '✅' : '⏳', bOk = g.rpsChoices.b ? '✅' : '⏳'; document.getElementById('rps-status').innerText = `🔴 Red: ${aOk}  |  🔵 Blue: ${bOk}`; }
         if (g.gameState === 'memory') { document.getElementById('memory-prompt').innerText = g.memoryHidden ? `❓ Where was the ${g.memoryTarget} ?` : '👀 Memorize the emojis!'; const grid = document.getElementById('memory-grid'); grid.innerHTML = ''; g.memoryGrid.forEach((em, idx) => { const b = document.createElement('button'); b.style.cssText = 'height:75px; font-size:2rem; border-radius:12px;'; b.innerText = g.memoryHidden ? '❓' : em; b.onclick = () => { playSound('tap'); socket.emit('pickMemory', idx); }; grid.appendChild(b); }); }

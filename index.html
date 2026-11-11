@@ -10,6 +10,7 @@
         @keyframes discoParty { 0% { background-color: #1e1b4b; } 25% { background-color: #311042; } 50% { background-color: #062f22; } 75% { background-color: #4c0519; } 100% { background-color: #1e1b4b; } }
         .disco-active { animation: discoParty 1.5s linear infinite !important; }
         @keyframes spinBlade { 100% { transform: translate(-22px,-22px) rotate(360deg); } }
+        @keyframes bombPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
         #chat-area { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px; height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; margin-bottom: 6px; }
         .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem; line-height: 1.4; color: var(--text-main); word-break: break-word; display: inline-block; }
         .bubble-container { display: flex; flex-direction: column; width: 100%; margin: 2px 0; }
@@ -82,18 +83,121 @@
         <div id="math-question" style="font-size:1.8rem; font-weight:900; color:#fff; margin:14px 0;"></div>
         <div id="math-options" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
     </div>
+    <div id="bomb-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #f97316;">
+        <h2 style="color:#fdba74; font-size:1.1rem; margin:0 0 10px 0;">💣 HOT POTATO BOMB PASS 💣</h2>
+        <div id="bomb-status" style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:12px;"></div>
+        <button id="btn-bomb-pass" onclick="playSound('tap'); socket.emit('passBomb')" style="width:100%; padding:18px; border-radius:16px; background:#ea580c; color:#fff; font-size:1.4rem; font-weight:900; border:none; animation: bombPulse 0.6s infinite;">PASS BOMB! 🔥</button>
+    </div>
+    <div id="rps-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #38bdf8;">
+        <h2 style="color:#7dd3fc; font-size:1.1rem; margin:0 0 8px 0;">🪨 ROCK PAPER SCISSORS ✂️</h2>
+        <div id="rps-status" style="font-size:0.95rem; color:#cbd5e1; margin-bottom:12px;">Pick your weapon secretly!</div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button onclick="playSound('tap'); socket.emit('pickRPS','🪨')" style="flex:1; padding:16px; font-size:2rem; border-radius:14px;">🪨</button>
+            <button onclick="playSound('tap'); socket.emit('pickRPS','📄')" style="flex:1; padding:16px; font-size:2rem; border-radius:14px;">📄</button>
+            <button onclick="playSound('tap'); socket.emit('pickRPS','✂️')" style="flex:1; padding:16px; font-size:2rem; border-radius:14px;">✂️</button>
+        </div>
+    </div>
+    <div id="memory-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #ec4899;">
+        <h2 style="color:#f472b6; font-size:1.1rem; margin:0 0 8px 0;">✨ EMOJI MEMORY GRID ✨</h2>
+        <div id="memory-prompt" style="font-size:1.15rem; font-weight:800; color:#fff; margin-bottom:10px;">Memorize the grid!</div>
+        <div id="memory-grid" style="display:grid; grid-template-columns:repeat(3, 75px); gap:8px; justify-content:center;"></div>
+    </div>
+    <div id="tug-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #eab308;">
+        <h2 style="color:#fde047; font-size:1.1rem; margin:0 0 6px 0;">🪢 ALL-PLAYERS TUG-OF-WAR 🪢</h2>
+        <p style="font-size:0.8rem; color:#9ca3af; margin:0 0 10px 0;">Everyone on Team A & Team B tap together!</p>
+        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:12px 0; border:2px solid #333;"><div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div><div id="tug-knot" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🪢</div></div>
+        <button onclick="playSound('tap'); socket.emit('tugPull')" style="width:100%; padding:16px; border-radius:14px; background:linear-gradient(135deg, #ef4444, #3b82f6); color:#fff; font-size:1.3rem; font-weight:900;">PULL FOR YOUR TEAM! 💪</button>
+    </div>
     <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
-        <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL</h4>
+        <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL (9 ARENAS)</h4>
         <label>Choose Captain A</label><select id="select-capA"></select>
         <label>Choose Captain B</label><select id="select-capB"></select>
-        <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000;">Appoint Selected Captains</button>
-        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:block; margin: 4px 0;">1. Launch Tic-Tac-Toe ⚔️</button>
-        <button id="btn-start-sumo" onclick="hostLaunchGame('launchSumo')" style="background:#ffcc00; color:#000; display:block; margin: 4px 0;">2. Launch Sumo Smash 🤼</button>
-        <button id="btn-start-spinner" onclick="hostLaunchGame('launchSpinner')" style="background:#a855f7; color:#fff; display:block; margin: 4px 0;">3. Launch Spinner.io 🌀</button>
-        <button id="btn-start-draw" onclick="hostLaunchGame('launchQuickDraw')" style="background:#ef4444; color:#fff; display:block; margin: 4px 0;">4. Launch Quick-Draw 🤠</button>
-        <button id="btn-start-math" onclick="hostLaunchGame('launchMath')" style="background:#10b981; color:#000; display:block; margin: 4px 0;">5. Launch Math Blitz 🧠</button>
+        <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000; margin-bottom:8px;">Appoint Captains (For Team Draft)</button>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <button onclick="hostStartDuel()" style="background:#00bcd4; color:#000; font-size:0.85rem;">1. Tic-Tac-Toe ⚔️</button>
+            <button onclick="hostLaunchGame('launchSumo')" style="background:#ffcc00; color:#000; font-size:0.85rem;">2. Sumo Smash 🤼</button>
+            <button onclick="hostLaunchGame('launchSpinner')" style="background:#a855f7; color:#fff; font-size:0.85rem;">3. Spinner.io 🌀</button>
+    <!-- ARENA 3: SPINNER.IO -->
+    <div id="spinner-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #a855f7;">
+        <h2 style="color:#d8b4fe; font-size:1.1rem; margin:0 0 10px 0;">🌀 SPINNER.IO ARENA CLASH 🌀</h2>
+        <div style="width:300px; height:300px; margin:0 auto; border-radius:50%; background:radial-gradient(circle, #1e1b4b 40%, #09090b 95%); border:4px solid #a855f7; position:relative; overflow:hidden;">
+            <div id="spin-a" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#ef4444, #991b1b, #fca5a5, #ef4444); border:2px solid #fff; left:90px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite;"></div>
+            <div id="spin-b" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#3b82f6, #1e40af, #93c5fd, #3b82f6); border:2px solid #fff; left:210px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite;"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 64px); gap:8px; justify-content:center; margin-top:14px;">
+            <div></div><button onclick="playSound('tap'); socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button><div></div>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','left')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬅️</button>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','down')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬇️</button>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','right')" style="padding:14px; font-size:1.2rem; border-radius:12px;">➡️</button>
+        </div>
+    </div>
+
+    <!-- ARENA 4: QUICK-DRAW -->
+    <div id="quickdraw-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #ef4444;">
+        <h2 style="color:#fca5a5; font-size:1.1rem; margin:0 0 12px 0;">🤠 QUICK-DRAW REFLEX DUEL 🤠</h2>
+        <button id="btn-draw-fire" onclick="playSound('tap'); socket.emit('quickDrawFire')" style="width:100%; height:130px; border-radius:16px; background:#dc2626; color:#fff; font-size:1.6rem; font-weight:900; border:none;">WAIT FOR GREEN... 🛑</button>
+    </div>
+
+    <!-- ARENA 5: MATH BLITZ -->
+    <div id="math-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #10b981;">
+        <h2 style="color:#6ee7b7; font-size:1.1rem; margin:0 0 8px 0;">🧠 MATH BLITZ SHOWDOWN 🧠</h2>
+        <div id="math-question" style="font-size:1.8rem; font-weight:900; color:#fff; margin:14px 0;"></div>
+        <div id="math-options" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+    </div>
+
+    <!-- ARENA 6: BOMB PASS -->
+    <div id="bomb-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #f97316;">
+        <h2 style="color:#fdba74; font-size:1.1rem; margin:0 0 10px 0;">💣 HOT POTATO BOMB PASS 💣</h2>
+        <div id="bomb-status" style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:12px;"></div>
+        <button id="btn-bomb-pass" onclick="playSound('tap'); socket.emit('passBomb')" style="width:100%; padding:18px; border-radius:16px; background:#ea580c; color:#fff; font-size:1.4rem; font-weight:900; border:none; animation: bombPulse 0.6s infinite;">PASS BOMB! 🔥</button>
+    </div>
+
+    <!-- ARENA 7: ROCK PAPER SCISSORS -->
+    <div id="rps-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #38bdf8;">
+        <h2 style="color:#7dd3fc; font-size:1.1rem; margin:0 0 8px 0;">🪨 ROCK PAPER SCISSORS ✂️</h2>
+        <div id="rps-status" style="font-size:0.95rem; color:#cbd5e1; margin-bottom:12px;">Pick your weapon secretly!</div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button onclick="playSound('tap'); socket.emit('pickRPS','🪨')" style="flex:1; padding:16px; font-size:2rem; border-radius:14px;">🪨</button>
+            <button onclick="playSound('tap'); socket.emit('pickRPS','📄')" style="flex:1; padding:16px; font-size:2rem; border-radius:14px;">📄</button>
+            <button onclick="playSound('tap'); socket.emit('pickRPS','✂️')" style="flex:1; padding:16px; font-size:2rem; border-radius:14px;">✂️</button>
+        </div>
+    </div>
+
+    <!-- ARENA 8: EMOJI MEMORY GRID -->
+    <div id="memory-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #ec4899;">
+        <h2 style="color:#f472b6; font-size:1.1rem; margin:0 0 8px 0;">✨ EMOJI MEMORY GRID ✨</h2>
+        <div id="memory-prompt" style="font-size:1.15rem; font-weight:800; color:#fff; margin-bottom:10px;">Memorize the grid!</div>
+        <div id="memory-grid" style="display:grid; grid-template-columns:repeat(3, 75px); gap:8px; justify-content:center;"></div>
+    </div>
+
+    <!-- ARENA 9: TEAM TUG-OF-WAR -->
+    <div id="tug-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #eab308;">
+        <h2 style="color:#fde047; font-size:1.1rem; margin:0 0 6px 0;">🪢 ALL-PLAYERS TUG-OF-WAR 🪢</h2>
+        <p style="font-size:0.8rem; color:#9ca3af; margin:0 0 10px 0;">Everyone on Team A & Team B tap together!</p>
+        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:12px 0; border:2px solid #333;"><div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div><div id="tug-knot" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🪢</div></div>
+        <button onclick="playSound('tap'); socket.emit('tugPull')" style="width:100%; padding:16px; border-radius:14px; background:linear-gradient(135deg, #ef4444, #3b82f6); color:#fff; font-size:1.3rem; font-weight:900;">PULL FOR YOUR TEAM! 💪</button>
+    </div>
+
+    <!-- HOST PANEL -->
+    <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
+        <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL (9 ARENAS)</h4>
+        <label>Choose Captain A</label><select id="select-capA"></select>
+        <label>Choose Captain B</label><select id="select-capB"></select>
+        <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000; margin-bottom:8px;">Appoint Captains (For Team Draft)</button>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <button onclick="hostStartDuel()" style="background:#00bcd4; color:#000; font-size:0.85rem;">1. Tic-Tac-Toe ⚔️</button>
+            <button onclick="hostLaunchGame('launchSumo')" style="background:#ffcc00; color:#000; font-size:0.85rem;">2. Sumo Smash 🤼</button>
+            <button onclick="hostLaunchGame('launchSpinner')" style="background:#a855f7; color:#fff; font-size:0.85rem;">3. Spinner.io 🌀</button>
+            <button onclick="hostLaunchGame('launchQuickDraw')" style="background:#ef4444; color:#fff; font-size:0.85rem;">4. Quick-Draw 🤠</button>
+            <button onclick="hostLaunchGame('launchMath')" style="background:#10b981; color:#000; font-size:0.85rem;">5. Math Blitz 🧠</button>
+            <button onclick="hostLaunchGame('launchBomb')" style="background:#f97316; color:#fff; font-size:0.85rem;">6. Bomb Pass 💣</button>
+            <button onclick="hostLaunchGame('launchRPS')" style="background:#38bdf8; color:#000; font-size:0.85rem;">7. RPS Clash ✂️</button>
+            <button onclick="hostLaunchGame('launchMemory')" style="background:#ec4899; color:#fff; font-size:0.85rem;">8. Memory Grid ✨</button>
+        </div>
+        <button onclick="hostLaunchGame('launchTug')" style="background:linear-gradient(90deg, #ef4444, #3b82f6); color:#fff; margin-top:6px;">9. All-Players Tug-of-War 🪢</button>
         <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
+
     <div class="react-box"><button class="react-btn" onclick="sendReaction('🔥')">🔥</button><button class="react-btn" onclick="sendReaction('👑')">👑</button><button class="react-btn" onclick="sendReaction('🤡')">🤡</button><button class="react-btn" onclick="sendReaction('💀')">💀</button></div>
     <h3 id="list-header-title">Players in Room</h3><div id="player-list"></div>
     <h3>Lobby Chat Room</h3><div id="chat-area"></div>
@@ -177,11 +281,13 @@
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
     socket.on('connect', () => {
+        myId = socket.id;
         const sn = sessionStorage.getItem('sammu_username'), sa = sessionStorage.getItem('sammu_avatar');
         if (sn && sa && document.getElementById('game-screen').style.display === 'block') {
-            localUsername = sn; selectedAvatar = sa; myId = socket.id; socket.emit('joinRoom', { username: sn, avatar: sa });
+            localUsername = sn; selectedAvatar = sa; socket.emit('joinRoom', { username: sn, avatar: sa });
         }
     });
+
     function sendQuickChirp(t) { playSound('tap'); socket.emit('chatMessage', t); }
     function hostSubmitCaptains() {
         const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
@@ -200,20 +306,11 @@
         setTimeout(() => socket.emit(eventName), 150);
     }
     function hostReset() { playSound('tap'); socket.emit('resetToLobby'); }
-
-    socket.on('initRole', (data) => {
-        isIAmHost = data.isHost;
-        document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none';
-        document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena";
-    });
+    socket.on('initRole', (data) => { isIAmHost = data.isHost; document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none'; document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena"; });
     socket.on('updatePlayers', (p) => {
-        currentPlayers = p;
-        const selA = document.getElementById('select-capA'), selB = document.getElementById('select-capB'), valA = selA.value, valB = selB.value;
+        currentPlayers = p; const selA = document.getElementById('select-capA'), selB = document.getElementById('select-capB'), valA = selA.value, valB = selB.value;
         selA.innerHTML = '<option value="">-- Choose Captain A --</option>'; selB.innerHTML = '<option value="">-- Choose Captain B --</option>';
-        p.forEach(pl => {
-            selA.innerHTML += `<option value="${pl.id}">${pl.username}</option>`;
-            selB.innerHTML += `<option value="${pl.id}">${pl.username}</option>`;
-        });
+        p.forEach(pl => { selA.innerHTML += `<option value="${pl.id}">${pl.username}</option>`; selB.innerHTML += `<option value="${pl.id}">${pl.username}</option>`; });
         selA.value = valA; selB.value = valB; renderPlayerList();
     });
     function renderPlayerList() {
@@ -230,67 +327,47 @@
     function handleChatKey(e) { if (e.key === 'Enter') { const i = document.getElementById('chat-input'); if (i.value.trim()) { socket.emit('chatMessage', i.value.trim()); i.value = ''; } } }
 
     socket.on('message', (data) => {
-        playSound('chat');
-        const chatArea = document.getElementById('chat-area'), container = document.createElement('div');
-        if (data.username === 'SYSTEM') {
-            container.className = 'bubble-container msg-container-system'; container.innerHTML = `<div class="msg-bubble">${data.text}</div>`;
-        } else if (data.username === "Sammu's Bot") {
-            container.className = 'bubble-container msg-container-incoming';
-            container.innerHTML = `<div class="msg-sender-title" style="color:#34d399;">🤖 Sammu's Bot <span style="background:rgba(16,185,129,0.2); border:1px solid #10b981; font-size:0.65rem; padding:1px 5px; border-radius:4px;">AI</span></div><div class="msg-bubble" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#ecfdf5;">${data.text}</div>`;
-        } else {
-            const isMe = (data.username === localUsername);
-            container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming';
-            const mp = currentPlayers.find(p => p.username === data.username), icon = mp ? mp.avatar : '👤';
-            container.innerHTML = `${!isMe ? `<div class="msg-sender-title">${icon} ${data.username}</div>` : ''}<div class="msg-bubble">${data.text}</div>`;
-        }
+        playSound('chat'); const chatArea = document.getElementById('chat-area'), container = document.createElement('div');
+        if (data.username === 'SYSTEM') { container.className = 'bubble-container msg-container-system'; container.innerHTML = `<div class="msg-bubble">${data.text}</div>`; }
+        else if (data.username === "Sammu's Bot") { container.className = 'bubble-container msg-container-incoming'; container.innerHTML = `<div class="msg-sender-title" style="color:#34d399;">🤖 Sammu's Bot <span style="background:rgba(16,185,129,0.2); border:1px solid #10b981; font-size:0.65rem; padding:1px 5px; border-radius:4px;">AI</span></div><div class="msg-bubble" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#ecfdf5;">${data.text}</div>`; }
+        else { const isMe = (data.username === localUsername); container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming'; const mp = currentPlayers.find(p => p.username === data.username), icon = mp ? mp.avatar : '👤'; container.innerHTML = `${!isMe ? `<div class="msg-sender-title">${icon} ${data.username}</div>` : ''}<div class="msg-bubble">${data.text}</div>`; }
         chatArea.appendChild(container); chatArea.scrollTop = chatArea.scrollHeight;
     });
 
     socket.on('incomingReaction', (emoji) => {
-        playSound('emoji');
-        const container = document.getElementById('floating-container') || document.body;
-        for (let i = 0; i < 12; i++) {
-            const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = emoji;
-            el.style.left = (Math.random() * 80 + 10) + '%'; el.style.setProperty('--random-x', (Math.random() * 120 - 60) + 'px');
-            el.style.animationDelay = (Math.random() * 0.4) + 's'; container.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
+        playSound('emoji'); const container = document.getElementById('floating-container') || document.body;
+        for (let i = 0; i < 12; i++) { const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = emoji; el.style.left = (Math.random() * 80 + 10) + '%'; el.style.setProperty('--random-x', (Math.random() * 120 - 60) + 'px'); el.style.animationDelay = (Math.random() * 0.4) + 's'; container.appendChild(el); setTimeout(() => el.remove(), 3000); }
     });
     function sendReaction(emoji) { socket.emit('sendReaction', emoji); }
     socket.on('announceWinner', (data) => { playSound('win'); alert(data.icon ? `GAME OVER! Winner: ${data.winner} ${data.icon}` : `GAME OVER: ${data.winner}!`); });
-    socket.on('spinnerTick', (spin) => {
-        const sA = document.getElementById('spin-a'), sB = document.getElementById('spin-b');
-        if (sA) { sA.style.left = spin.a.x + 'px'; sA.style.top = spin.a.y + 'px'; }
-        if (sB) { sB.style.left = spin.b.x + 'px'; sB.style.top = spin.b.y + 'px'; }
-    });
+    socket.on('spinnerTick', (spin) => { const sA = document.getElementById('spin-a'), sB = document.getElementById('spin-b'); if (sA) { sA.style.left = spin.a.x + 'px'; sA.style.top = spin.a.y + 'px'; } if (sB) { sB.style.left = spin.b.x + 'px'; sB.style.top = spin.b.y + 'px'; } });
 
     socket.on('syncGame', (g) => {
         currentGameState = g.gameState; activeTurnPickerId = g.currentTurnPicker;
-        const started = (g.gameState !== 'lobby');
-        const show = (id, c) => { const el = document.getElementById(id); if (el) el.style.display = c ? 'block' : 'none'; };
-        if (document.getElementById('score-display')) {
-            document.getElementById('score-display').style.display = started ? 'flex' : 'none';
-            document.getElementById('scoreA-text').innerText = `🔴 Team A: ${g.scores.teamA}`;
-            document.getElementById('scoreB-text').innerText = `🔵 Team B: ${g.scores.teamB}`;
-        }
+        const started = (g.gameState !== 'lobby'), show = (id, c) => { const el = document.getElementById(id); if (el) el.style.display = c ? 'block' : 'none'; };
+        if (document.getElementById('score-display')) { document.getElementById('score-display').style.display = started ? 'flex' : 'none'; document.getElementById('scoreA-text').innerText = `🔴 Team A: ${g.scores.teamA}`; document.getElementById('scoreB-text').innerText = `🔵 Team B: ${g.scores.teamB}`; }
         show('draft-arena-zone', started); show('sumo-zone', g.gameState === 'sumo'); show('spinner-zone', g.gameState === 'spinner');
         show('quickdraw-zone', g.gameState === 'quickdraw'); show('math-zone', g.gameState === 'math'); show('battle-zone', g.gameState === 'duel');
+        show('bomb-zone', g.gameState === 'bomb'); show('rps-zone', g.gameState === 'rps'); show('memory-zone', g.gameState === 'memory'); show('tug-zone', g.gameState === 'tug');
 
-        if (g.gameState === 'quickdraw') {
-            const btn = document.getElementById('btn-draw-fire');
-            if (btn) { if (g.drawReady) playSound('emoji'); btn.style.background = g.drawReady ? '#10b981' : '#dc2626'; btn.innerText = g.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑'; }
+        if (started) {
+            document.getElementById('list-teamA').innerHTML = g.teamA.map(p => `<div>${p.avatar} ${p.username}</div>`).join('');
+            document.getElementById('list-teamB').innerHTML = g.teamB.map(p => `<div>${p.avatar} ${p.username}</div>`).join('');
+            const picker = currentPlayers.find(p => p.id === g.currentTurnPicker);
+            document.getElementById('draft-instructions').innerText = (g.gameState === 'drafting' && picker) ? `🎯 ${picker.username}'s turn to pick a player!` : '';
+        } else {
+            document.getElementById('list-teamA').innerHTML = ''; document.getElementById('list-teamB').innerHTML = '';
         }
-        if (g.gameState === 'math' && g.mathQ) {
-            document.getElementById('math-question').innerText = g.mathQ.question;
-            const box = document.getElementById('math-options'); box.innerHTML = '';
-            g.mathQ.options.forEach(opt => { const b = document.createElement('button'); b.innerText = opt; b.style.cssText = 'padding:14px; font-size:1.2rem; font-weight:bold; border-radius:12px;'; b.onclick = () => { playSound('tap'); socket.emit('submitMath', opt); }; box.appendChild(b); });
-        }
-        if (g.gameState === 'duel' && g.tttBoard) {
-            const board = document.getElementById('ttt-board'), st = document.getElementById('battle-status');
-            if (st && g.tttTurn) { const f = currentPlayers.find(p => p.id === g.tttTurn); st.innerText = f ? `⚔️ Turn: ${f.username} ⚔️` : `⚔️ Match Live ⚔️`; }
-            if (board) { board.innerHTML = ''; g.tttBoard.forEach((v, idx) => { const b = document.createElement('button'); b.className = 'cell'; b.style.cssText = 'width:80px; height:80px; margin:4px; font-size:1.8rem; font-weight:900;'; b.innerText = v || ''; b.onclick = () => { playSound('tap'); socket.emit('makeMove', idx); }; board.appendChild(b); }); }
-        }
+        renderPlayerList();
+
+        if (g.gameState === 'quickdraw') { const btn = document.getElementById('btn-draw-fire'); if (btn) { if (g.drawReady) playSound('emoji'); btn.style.background = g.drawReady ? '#10b981' : '#dc2626'; btn.innerText = g.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑'; } }
+        if (g.gameState === 'math' && g.mathQ) { document.getElementById('math-question').innerText = g.mathQ.question; const box = document.getElementById('math-options'); box.innerHTML = ''; g.mathQ.options.forEach(opt => { const b = document.createElement('button'); b.innerText = opt; b.style.cssText = 'padding:14px; font-size:1.2rem; font-weight:bold; border-radius:12px;'; b.onclick = () => { playSound('tap'); socket.emit('submitMath', opt); }; box.appendChild(b); }); }
+        if (g.gameState === 'duel' && g.tttBoard) { const board = document.getElementById('ttt-board'), st = document.getElementById('battle-status'); if (st && g.tttTurn) { const f = currentPlayers.find(p => p.id === g.tttTurn); st.innerText = f ? `⚔️ Turn: ${f.username} ⚔️` : `⚔️ Match Live ⚔️`; } if (board) { board.innerHTML = ''; g.tttBoard.forEach((v, idx) => { const b = document.createElement('button'); b.className = 'cell'; b.style.cssText = 'width:80px; height:80px; margin:4px; font-size:1.8rem; font-weight:900;'; b.innerText = v || ''; b.onclick = () => { playSound('tap'); socket.emit('makeMove', idx); }; board.appendChild(b); }); } }
+        if (g.gameState === 'bomb') { const holder = currentPlayers.find(p => p.id === g.bombHolder); document.getElementById('bomb-status').innerText = holder ? `💣 Bomb is with: ${holder.username}!` : '💣 Ticking...'; }
+        if (g.gameState === 'rps') { const aOk = g.rpsChoices.a ? '✅' : '⏳', bOk = g.rpsChoices.b ? '✅' : '⏳'; document.getElementById('rps-status').innerText = `🔴 Red: ${aOk}  |  🔵 Blue: ${bOk}`; }
+        if (g.gameState === 'memory') { document.getElementById('memory-prompt').innerText = g.memoryHidden ? `❓ Where was the ${g.memoryTarget} ?` : '👀 Memorize the emojis!'; const grid = document.getElementById('memory-grid'); grid.innerHTML = ''; g.memoryGrid.forEach((em, idx) => { const b = document.createElement('button'); b.style.cssText = 'height:75px; font-size:2rem; border-radius:12px;'; b.innerText = g.memoryHidden ? '❓' : em; b.onclick = () => { playSound('tap'); socket.emit('pickMemory', idx); }; grid.appendChild(b); }); }
         const w = document.getElementById('sumo-wrestler'); if (w && g.sumoPosition) w.style.left = g.sumoPosition + '%';
+        const k = document.getElementById('tug-knot'); if (k && g.tugPosition) k.style.left = g.tugPosition + '%';
     });
 </script>
 </body>

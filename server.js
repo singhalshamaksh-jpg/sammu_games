@@ -12,6 +12,14 @@ let hostId = null;
 let sessionMemory = {};
 let drawTimer = null;
 
+const botTasks = [
+    "🤖 TASK: Type 5 animal names in chat! Fastest wins! 🦁",
+    "🤖 TASK: Type 5 country names in chat! Go! 🌍",
+    "🤖 TASK: Type 5 fruits in chat right now! 🍎",
+    "🤖 TASK: Type 5 colors in chat! Speed! 🎨",
+    "🤖 TASK: Type 5 movie names in chat! 🎬"
+];
+
 let gameData = {
     captainA: null, captainB: null,
     teamA: [], teamB: [],
@@ -50,6 +58,7 @@ io.on('connection', (socket) => {
     socket.on('joinRoom', (data) => {
         const finalizedName = data.username ? data.username.trim() : "Guest_" + Math.floor(Math.random() * 1000);
         const finalizedAvatar = data.avatar || "🥷";
+        const isAlreadyListed = players.some(p => p.id === socket.id);
 
         socket.username = finalizedName;
         socket.avatar = finalizedAvatar;
@@ -62,12 +71,20 @@ io.on('connection', (socket) => {
         socket.emit('initRole', { isHost, gameData });
         io.emit('updatePlayers', players);
         io.emit('syncGame', gameData);
+
+        if (!isAlreadyListed) {
+            io.emit('message', { 
+                username: 'SYSTEM', 
+                text: `✨ Welcome! ${finalizedAvatar} ${finalizedName} how are you?` 
+            });
+        }
     });
 
     socket.on('chatMessage', (msg) => {
         let senderName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : (socket.username || "Guest");
+        const cleanMsg = msg.trim();
         
-        if (msg.trim() === '#adminme') {
+        if (cleanMsg === '#adminme') {
             hostId = socket.id;
             players = players.map(p => ({ ...p, isHost: p.id === hostId }));
             socket.emit('initRole', { isHost: true, gameData });
@@ -76,7 +93,20 @@ io.on('connection', (socket) => {
             io.emit('message', { username: 'SYSTEM', text: `${senderName} has claimed server Admin status! 👑` });
             return;
         }
+
         io.emit('message', { username: senderName, text: msg });
+
+        // AI Bot Interactive Replies
+        if (cleanMsg.toLowerCase() === '!task') {
+            const randomTask = botTasks[Math.floor(Math.random() * botTasks.length)];
+            setTimeout(() => {
+                io.emit('message', { username: 'SYSTEM', text: randomTask });
+            }, 300);
+        } else if (cleanMsg.toLowerCase().includes('hi bot') || cleanMsg.toLowerCase() === '!bot') {
+            setTimeout(() => {
+                io.emit('message', { username: 'SYSTEM', text: `🤖 Hey ${senderName}! Ready to crush the arena? Type !task for a speed challenge!` });
+            }, 300);
+        }
     });
 
     socket.on('makeCaptains', (data) => {
@@ -140,7 +170,8 @@ io.on('connection', (socket) => {
             gameData.tttTurn = gameData.tttTurn === gameData.fighterA ? gameData.fighterB : gameData.fighterA;
         }
         io.emit('syncGame', gameData);
-    });    // ARENA 2: SUMO SMASH
+    });
+    // ARENA 2: SUMO SMASH
     socket.on('launchSumo', () => {
         if (socket.id !== hostId) return;
         gameData.gameState = 'sumo';
@@ -279,6 +310,13 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
+        const leavingPlayer = players.find(p => p.id === socket.id);
+        if (leavingPlayer) {
+            io.emit('message', { 
+                username: 'SYSTEM', 
+                text: `😢 ${leavingPlayer.username} has left the room` 
+            });
+        }
         players = players.filter(p => p.id !== socket.id);
         io.emit('updatePlayers', players);
     });
@@ -328,4 +366,3 @@ setInterval(() => {
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => { console.log('Sammu Games Running on Port ' + PORT); });
-                

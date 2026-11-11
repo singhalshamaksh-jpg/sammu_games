@@ -38,17 +38,30 @@ const botTasks = [
     "TASK: Type 5 movie names in chat! 🎬"
 ];
 
+function solveAnyMath(text) {
+    const pctMatch = text.toLowerCase().match(/(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)/);
+    if (pctMatch) {
+        return Number(((parseFloat(pctMatch[1]) / 100) * parseFloat(pctMatch[2])).toFixed(4));
+    }
+    const cleaned = text.replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').trim();
+    if (/^[0-9\+\-\*\/\(\)\.\s]+$/.test(cleaned) && /[\+\-\*\/]/.test(cleaned) && /\d/.test(cleaned)) {
+        try {
+            const result = Function('"use strict";return (' + cleaned + ')')();
+            if (typeof result === 'number' && isFinite(result)) {
+                return Number(result.toFixed(4));
+            }
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
+}
+
 function thinkAndReply(senderName, msgText, scores, playerList) {
     const m = msgText.toLowerCase().trim();
     const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
     const pts = botMemory.playerPoints[senderName] || 0;
 
-    const mathMatch = m.match(/(\d+)\s*([\+\-\*\/])\s*(\d+)/);
-    if (mathMatch) {
-        const n1 = Number(mathMatch), op = mathMatch, n2 = Number(mathMatch);
-        let res = op === '+' ? n1 + n2 : op === '-' ? n1 - n2 : op === '*' ? n1 * n2 : (n2 !== 0 ? (n1 / n2).toFixed(2) : 'Infinity');
-        return `🧮 Too easy for my circuits, ${senderName}! The answer is **${res}**! 😎`;
-    }
     if (m.includes('flip') || m.includes('toss') || m.includes('coin')) {
         return `🪙 Flipping virtual coin... It landed on **${Math.random() < 0.5 ? 'HEADS 👑' : 'TAILS 🔥'}**!`;
     }
@@ -68,8 +81,8 @@ function thinkAndReply(senderName, msgText, scores, playerList) {
     }
     if (m.includes('hi') || m.includes('hello') || m.includes('hey') || m.includes('namaste') || m.includes('yo')) {
         return pick([
-            `Yo ${senderName}! 👋 Welcome to the arena! You currently have ${pts} AI Points. Type !quiz to test your brain! 🧠`,
-            `Hey ${senderName}! ✨ Sammu's Bot online and thinking! Ask me a riddle (!quiz), flip a coin, or check the score! 🤖`
+            `Yo ${senderName}! 👋 Welcome to the arena! You have ${pts} AI Points. Type !quiz to test your brain! 🧠`,
+            `Hey ${senderName}! ✨ Sammu's Bot online! Type any math like 2+2, type !quiz, or flip a coin! 🤖`
         ]);
     }
     if (m.includes('bore') || m.includes('boring') || m.includes('akela') || m.includes('alone')) {
@@ -87,7 +100,7 @@ function thinkAndReply(senderName, msgText, scores, playerList) {
         ]);
     }
     return pick([
-        `Interesting thought, ${senderName}! 🤔 There are ${playerList.length} players online. Want a brain teaser? Type **!quiz**!`,
+        `Interesting thought, ${senderName}! 🤔 There are ${playerList.length} players online. Type **!quiz** for a riddle or type any math like **25*14**!`,
         `I hear you, ${senderName}! 🤖 Ask me to **flip a coin**, **roll a dice**, solve math, or type **!quiz**!`
     ]);
 }
@@ -133,7 +146,7 @@ io.on('connection', (socket) => {
         
         socket.emit('initRole', { isHost, gameData });
         io.emit('updatePlayers', players); io.emit('syncGame', gameData);
-        if (!isAlreadyListed) io.emit('message', { username: "Sammu's Bot", text: `✨ Welcome! ${finalizedAvatar} ${finalizedName} how are you? Type !quiz or chat with me!` });
+        if (!isAlreadyListed) io.emit('message', { username: "Sammu's Bot", text: `✨ Welcome! ${finalizedAvatar} ${finalizedName} how are you? Type !quiz, any math (like 2+2), or chat with me!` });
     });
 
     socket.on('chatMessage', (msg) => {
@@ -149,6 +162,17 @@ io.on('connection', (socket) => {
         }
         io.emit('message', { username: senderName, text: msg });
         botMemory.chatCount++;
+
+        const mathAns = solveAnyMath(cleanMsg);
+        if (mathAns !== null) {
+            setTimeout(() => {
+                io.emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🧮 Easy math, ${senderName}! **${cleanMsg} = ${mathAns}** ⚡`
+                });
+            }, 300);
+            return;
+        }
 
         if (botMemory.activeQuiz && lowerMsg.includes(botMemory.activeQuiz.a)) {
             const solvedAns = botMemory.activeQuiz.a.toUpperCase();
@@ -357,11 +381,6 @@ setInterval(() => {
     if (Math.hypot(a.x - 150, a.y - 150) > 135) { gameData.scores.teamB++; recordWin(gameData.captainB.username + " (🔵 Team B)", '🌀'); gameData.gameState = 'lobby'; io.emit('syncGame', gameData); }
     else if (Math.hypot(b.x - 150, b.y - 150) > 135) { gameData.scores.teamA++; recordWin(gameData.captainA.username + " (🔴 Team A)", '🌀'); gameData.gameState = 'lobby'; io.emit('syncGame', gameData); }
     else { io.emit('spinnerTick', gameData.spinner); }
-}, 33);
-
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));
-
 }, 33);
 
 const PORT = process.env.PORT || 3000;

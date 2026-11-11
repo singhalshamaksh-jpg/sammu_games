@@ -94,11 +94,13 @@
         </div>
     </div>
 
+    <!-- ARENA 1: TIC TAC TOE -->
     <div id="battle-zone" style="display:none; text-align:center;">
         <h3 id="battle-status" style="color:#ff0055; padding: 8px; border-radius: 10px;">⚔️ Match Live ⚔️</h3>
         <div class="board" id="ttt-board"></div>
     </div>
 
+    <!-- ARENA 2: SUMO SMASH -->
     <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
         <h2 style="color:#ffcc00; font-size:1.1rem; margin:0 0 10px 0;">🤼 SUMO RING SMASH 🤼</h2>
         <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;">
@@ -108,6 +110,7 @@
         <button id="btn-sumo-push" onclick="socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
     </div>
 
+    <!-- ARENA 3: SPINNER.IO -->
     <div id="spinner-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #a855f7;">
         <h2 style="color:#d8b4fe; font-size:1.1rem; margin:0 0 10px 0;">🌀 SPINNER.IO ARENA CLASH 🌀</h2>
         <div style="width:300px; height:300px; margin:0 auto; border-radius:50%; background:radial-gradient(circle, #1e1b4b 40%, #09090b 95%); border:4px solid #a855f7; position:relative; overflow:hidden; box-shadow: 0 0 25px rgba(168,85,247,0.4);">
@@ -115,23 +118,37 @@
             <div id="spin-b" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#3b82f6, #1e40af, #93c5fd, #3b82f6); border:2px solid #fff; left:210px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite; box-shadow: 0 0 12px #3b82f6;"></div>
         </div>
         <div style="display:grid; grid-template-columns:repeat(3, 64px); gap:8px; justify-content:center; margin-top:14px;">
-            <div></div>
-            <button onclick="socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button>
-            <div></div>
+            <div></div><button onclick="socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button><div></div>
             <button onclick="socket.emit('spinnerMove','left')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬅️</button>
             <button onclick="socket.emit('spinnerMove','down')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬇️</button>
             <button onclick="socket.emit('spinnerMove','right')" style="padding:14px; font-size:1.2rem; border-radius:12px;">➡️</button>
         </div>
     </div>
 
+    <!-- ARENA 4: QUICK-DRAW REFLEX DUEL -->
+    <div id="quickdraw-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #ef4444;">
+        <h2 style="color:#fca5a5; font-size:1.1rem; margin:0 0 12px 0;">🤠 QUICK-DRAW REFLEX DUEL 🤠</h2>
+        <button id="btn-draw-fire" onclick="socket.emit('quickDrawFire')" style="width:100%; height:130px; border-radius:16px; background:#dc2626; color:#fff; font-size:1.6rem; font-weight:900; border:none; box-shadow:0 6px 20px rgba(220,38,38,0.4);">WAIT FOR GREEN... 🛑</button>
+    </div>
+
+    <!-- ARENA 5: MATH BLITZ SHOWDOWN -->
+    <div id="math-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #10b981;">
+        <h2 style="color:#6ee7b7; font-size:1.1rem; margin:0 0 8px 0;">🧠 MATH BLITZ SHOWDOWN 🧠</h2>
+        <div id="math-question" style="font-size:1.8rem; font-weight:900; color:#fff; margin:14px 0; letter-spacing:1px;"></div>
+        <div id="math-options" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+    </div>
+
+    <!-- HOST CONTROL PANEL -->
     <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
         <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL</h4>
         <label>Choose Captain A</label><select id="select-capA"></select>
         <label>Choose Captain B</label><select id="select-capB"></select>
         <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000;">Appoint Selected Captains</button>
-        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:block; margin: 4px 0;">Launch 1v1 Tic-Tac-Toe</button>
-        <button id="btn-start-sumo" onclick="socket.emit('launchSumo')" style="background:#ffcc00; color:#000; display:block; margin: 4px 0;">Launch Sumo Speed Smash</button>
-        <button id="btn-start-spinner" onclick="socket.emit('launchSpinner')" style="background:#a855f7; color:#fff; display:block; margin: 4px 0;">Launch Spinner.io Clash 🌀</button>
+        <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:block; margin: 4px 0;">1. Launch Tic-Tac-Toe ⚔️</button>
+        <button id="btn-start-sumo" onclick="socket.emit('launchSumo')" style="background:#ffcc00; color:#000; display:block; margin: 4px 0;">2. Launch Sumo Smash 🤼</button>
+        <button id="btn-start-spinner" onclick="socket.emit('launchSpinner')" style="background:#a855f7; color:#fff; display:block; margin: 4px 0;">3. Launch Spinner.io 🌀</button>
+        <button id="btn-start-draw" onclick="socket.emit('launchQuickDraw')" style="background:#ef4444; color:#fff; display:block; margin: 4px 0;">4. Launch Quick-Draw 🤠</button>
+        <button id="btn-start-math" onclick="socket.emit('launchMath')" style="background:#10b981; color:#000; display:block; margin: 4px 0;">5. Launch Math Blitz 🧠</button>
         <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
 
@@ -143,22 +160,19 @@
     </div>
     <h3 id="list-header-title">Players in Room</h3>
     <div id="player-list"></div>
-    
     <h3>Lobby Chat Room</h3>
     <div id="chat-area"></div>
-    
     <div class="chirp-row">
         <button class="chirp-btn" onclick="sendQuickChirp('Loser! 🤫')">Loser! 🤫</button>
         <button class="chirp-btn" onclick="sendQuickChirp('EZ! 🥱')">EZ! 🥱</button>
         <button class="chirp-btn" onclick="sendQuickChirp('Go Team! 🔥')">Go Team! 🔥</button>
         <button class="chirp-btn" onclick="sendQuickChirp('Too Fast! ⚡')">Too Fast! ⚡</button>
     </div>
-
     <input type="text" id="chat-input" placeholder="Type tasks or messages..." onkeypress="handleChatKey(event)">
 </div>
 <div id="floating-container"></div>
 <script src="/socket.io/socket.io.js"></script>
-                           <script>
+<script>
     const socket = io();
     let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [], currentGameState = 'lobby', activeTurnPickerId = null, localUsername = "";
     
@@ -260,8 +274,7 @@
         }
         chatArea.appendChild(container); chatArea.scrollTop = chatArea.scrollHeight;
     });
-
-    socket.on('incomingReaction', (emoji) => {
+        socket.on('incomingReaction', (emoji) => {
         const container = document.getElementById('floating-container') || document.body;
         for (let i = 0; i < 12; i++) {
             const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = emoji;
@@ -297,6 +310,33 @@
         if(document.getElementById('draft-arena-zone')) document.getElementById('draft-arena-zone').style.display = hasStarted ? 'block' : 'none';
         if(document.getElementById('sumo-zone')) document.getElementById('sumo-zone').style.display = (gameData.gameState === 'sumo') ? 'block' : 'none';
         if(document.getElementById('spinner-zone')) document.getElementById('spinner-zone').style.display = (gameData.gameState === 'spinner') ? 'block' : 'none';
+        
+        const qdZone = document.getElementById('quickdraw-zone');
+        if (qdZone) {
+            qdZone.style.display = (gameData.gameState === 'quickdraw') ? 'block' : 'none';
+            const fireBtn = document.getElementById('btn-draw-fire');
+            if (fireBtn && gameData.gameState === 'quickdraw') {
+                fireBtn.style.background = gameData.drawReady ? '#10b981' : '#dc2626';
+                fireBtn.innerText = gameData.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑';
+            }
+        }
+
+        const mathZone = document.getElementById('math-zone');
+        if (mathZone) {
+            mathZone.style.display = (gameData.gameState === 'math') ? 'block' : 'none';
+            if (gameData.gameState === 'math' && gameData.mathQ) {
+                document.getElementById('math-question').innerText = gameData.mathQ.question;
+                const optBox = document.getElementById('math-options');
+                optBox.innerHTML = '';
+                gameData.mathQ.options.forEach(opt => {
+                    const b = document.createElement('button');
+                    b.innerText = opt;
+                    b.style.padding = '14px'; b.style.fontSize = '1.2rem'; b.style.fontWeight = 'bold'; b.style.borderRadius = '12px';
+                    b.onclick = () => socket.emit('submitMath', opt);
+                    optBox.appendChild(b);
+                });
+            }
+        }
         
         const battleZone = document.getElementById('battle-zone');
         if(battleZone) {

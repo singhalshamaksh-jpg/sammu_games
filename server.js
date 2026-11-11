@@ -9,14 +9,18 @@ app.use(express.static(__dirname));
 
 let players = [];
 let hostId = null;
-let sessionMemory = {}; // Permanent session map to block the 'Anonymous' name glitch completely
+let sessionMemory = {};
 
 let gameData = {
     captainA: null, captainB: null,
     teamA: [], teamB: [],
     fighterA: null, fighterB: null,
     tttBoard: Array(9).fill(null), tttTurn: null,
-    sumoPosition: 50, // 50 means exact center deadlock ring state
+    sumoPosition: 50,
+    spinner: {
+        a: { x: 90, y: 150, vx: 0, vy: 0 },
+        b: { x: 210, y: 150, vx: 0, vy: 0 }
+    },
     scores: { teamA: 0, teamB: 0 },
     gameState: 'lobby'
 };
@@ -90,7 +94,6 @@ io.on('connection', (socket) => {
         io.emit('syncGame', gameData);
     });
 
-    // --- GAMES CONTROLLERS ---
     socket.on('assignFighters', (data) => {
         if (socket.id !== hostId) return;
         gameData.fighterA = data.fightA;
@@ -110,12 +113,8 @@ io.on('connection', (socket) => {
 
     socket.on('sumoPush', () => {
         if (gameData.gameState !== 'sumo') return;
-        
-        if (gameData.captainA && socket.id === gameData.captainA.id) {
-            gameData.sumoPosition -= 3.5; // Mash value shift left
-        } else if (gameData.captainB && socket.id === gameData.captainB.id) {
-            gameData.sumoPosition += 3.5; // Mash value shift right
-        }
+        if (gameData.captainA && socket.id === gameData.captainA.id) gameData.sumoPosition -= 3.5;
+        else if (gameData.captainB && socket.id === gameData.captainB.id) gameData.sumoPosition += 3.5;
 
         if (gameData.sumoPosition <= 10) {
             gameData.scores.teamA++;
@@ -127,6 +126,31 @@ io.on('connection', (socket) => {
             gameData.gameState = 'lobby';
         }
         io.emit('syncGame', gameData);
+    });
+
+    socket.on('launchSpinner', () => {
+        if (socket.id !== hostId) return;
+        if (!gameData.captainA || !gameData.captainB) return;
+        gameData.gameState = 'spinner';
+        gameData.spinner = {
+            a: { x: 90, y: 150, vx: 0, vy: 0 },
+            b: { x: 210, y: 150, vx: 0, vy: 0 }
+        };
+        io.emit('syncGame', gameData);
+    });
+
+    socket.on('spinnerMove', (dir) => {
+        if (gameData.gameState !== 'spinner') return;
+        const force = 2.4;
+        let p = null;
+        if (gameData.captainA && socket.id === gameData.captainA.id) p = gameData.spinner.a;
+        else if (gameData.captainB && socket.id === gameData.captainB.id) p = gameData.spinner.b;
+        if (!p) return;
+
+        if (dir === 'up') p.vy -= force;
+        if (dir === 'down') p.vy += force;
+        if (dir === 'left') p.vx -= force;
+        if (dir === 'right') p.vx += force;
     });
 
     socket.on('makeMove', (index) => {
@@ -156,7 +180,9 @@ io.on('connection', (socket) => {
         gameData = {
             captainA: null, captainB: null, teamA: [], teamB: [],
             fighterA: null, fighterB: null, tttBoard: Array(9).fill(null), tttTurn: null,
-            sumoPosition: 50, scores: gameData.scores, gameState: 'lobby'
+            sumoPosition: 50,
+            spinner: { a: { x: 90, y: 150, vx: 0, vy: 0 }, b: { x: 210, y: 150, vx: 0, vy: 0 } },
+            scores: gameData.scores, gameState: 'lobby'
         };
         io.emit('syncGame', gameData);
     });
@@ -171,6 +197,43 @@ function checkWin(b) {
     const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
     return w.some(p => b[p[0]] && b[p[0]] === b[p[1]] && b[p[0]] === b[p[2]]);
 }
+
+setInterval(() => {
+    if (gameData.gameState !== 'spinner') return;
+    const a = gameData.spinner.a;
+    const b = gameData.spinner.b;
+
+    a.x += a.vx; a.y += a.vy; a.vx *= 0.94; a.vy *= 0.94;
+    b.x += b.vx; b.y += b.vy; b.vx *= 0.94; b.vy *= 0.94;
+
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 44 && dist > 0) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const bounce = 9.5;
+        a.vx -= nx * bounce; a.vy -= ny * bounce;
+        b.vx += nx * bounce; b.vy += ny * bounce;
+    }
+
+    const distA = Math.hypot(a.x - 150, a.y - 150);
+    const distB = Math.hypot(b.x - 150, b.y - 150);
+
+    if (distA > 135) {
+        gameData.scores.teamB++;
+        io.emit('announceWinner', { winner: gameData.captainB.username + " (🔵 Team B)", icon: '🌀' });
+        gameData.gameState = 'lobby';
+        io.emit('syncGame', gameData);
+    } else if (distB > 135) {
+        gameData.scores.teamA++;
+        io.emit('announceWinner', { winner: gameData.captainA.username + " (🔴 Team A)", icon: '🌀' });
+        gameData.gameState = 'lobby';
+        io.emit('syncGame', gameData);
+    } else {
+        io.emit('spinnerTick', gameData.spinner);
+    }
+}, 33);
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => { console.log('Sammu Games Running on Port ' + PORT); });

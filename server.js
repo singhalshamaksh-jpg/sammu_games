@@ -13,12 +13,65 @@ let sessionMemory = {};
 let drawTimer = null;
 
 const botTasks = [
-    "🤖 TASK: Type 5 animal names in chat! Fastest wins! 🦁",
-    "🤖 TASK: Type 5 country names in chat! Go! 🌍",
-    "🤖 TASK: Type 5 fruits in chat right now! 🍎",
-    "🤖 TASK: Type 5 colors in chat! Speed! 🎨",
-    "🤖 TASK: Type 5 movie names in chat! 🎬"
+    "TASK: Type 5 animal names in chat! Fastest wins! 🦁",
+    "TASK: Type 5 country names in chat! Go! 🌍",
+    "TASK: Type 5 fruits in chat right now! 🍎",
+    "TASK: Type 5 colors in chat! Speed! 🎨",
+    "TASK: Type 5 movie names in chat! 🎬"
 ];
+
+// Smart Conversational Brain for Sammu's Bot
+function generateBotReply(senderName, msgText, scores, playerList) {
+    const m = msgText.toLowerCase();
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    if (m.includes('how are you') || m.includes('how r u') || m.includes('wassup') || m.includes('kaisa hai')) {
+        return pick([
+            `I'm running at 100% CPU power, ${senderName}! Ready to watch someone get destroyed in the arena! ⚡`,
+            `Living my best AI life in Sammu's server, ${senderName}! How are your reflexes today? 😎`,
+            `Feeling electric, ${senderName}! Who's brave enough to challenge you next? 🔥`
+        ]);
+    }
+    if (m.includes('who is winning') || m.includes('score') || m.includes('winning')) {
+        if (scores.teamA > scores.teamB) return `🔴 Team A is currently dominating (${scores.teamA} - ${scores.teamB})! Step it up, Blue Team! 👀`;
+        if (scores.teamB > scores.teamA) return `🔵 Team B is leading the board (${scores.teamB} - ${scores.teamA})! Red Team needs a comeback! 🔥`;
+        return `It's dead even right now (${scores.teamA} - ${scores.teamB})! Next round decides the pride! ⚔️`;
+    }
+    if (m.includes('who created') || m.includes('owner') || m.includes('admin') || m.includes('boss')) {
+        return `I was forged by the legend Sammu himself! 👑 All hail the arena creator!`;
+    }
+    if (m.includes('joke') || m.includes('funny') || m.includes('bore')) {
+        return pick([
+            `Why did the gamer bring a ladder to the lobby? Because they wanted to reach the next level! 😂`,
+            `I tried playing Sumo Smash once, ${senderName}, but my tapping speed broke the server! 🤖💥`,
+            `My favorite game here? Watching ${senderName} panic during Quick-Draw! 🤠💀`
+        ]);
+    }
+    if (m.includes('game') || m.includes('play') || m.includes('help') || m.includes('rules')) {
+        return `We have 5 insane arenas: Tic-Tac-Toe, Sumo Smash, Spinner.io, Quick-Draw, and Math Blitz! Tell the Host to pick Captains or type !task for a chat race! 🎮`;
+    }
+    if (m.includes('loser') || m.includes('noob') || m.includes('ez') || m.includes('bot')) {
+        return pick([
+            `Oof, the trash talk is heating up in here! Prove it in the arena, ${senderName}! 🔥`,
+            `Careful ${senderName}, I'm taking notes on who talks big and loses in 3 seconds! 🤡`,
+            `Shots fired!! Someone challenge ${senderName} right now! ⚔️`
+        ]);
+    }
+    if (m.includes('love') || m.includes('nice') || m.includes('good') || m.includes('thanks')) {
+        return pick([
+            `Aww, you're making my circuits blush, ${senderName}! 💖✨`,
+            `Respect, ${senderName}! You're officially my favorite player in this lobby! 🤝🔥`,
+            `Anytime, ${senderName}! Now go win a match for me! 🏆`
+        ]);
+    }
+
+    // Default friendly AI greeting when someone says "hi sammu bot"
+    return pick([
+        `Hey ${senderName}! 👋 Sammu's Bot online and watching the arena! Want a challenge? Type !task! ⚡`,
+        `Yo ${senderName}! Ready to dominate today? There are ${playerList.length} players in the room! 🎮`,
+        `Hello ${senderName}! ✨ Ask me who is winning, ask for a joke, or type !task to race your friends! 🤖`
+    ]);
+}
 
 let gameData = {
     captainA: null, captainB: null,
@@ -74,7 +127,7 @@ io.on('connection', (socket) => {
 
         if (!isAlreadyListed) {
             io.emit('message', { 
-                username: 'SYSTEM', 
+                username: "Sammu's Bot", 
                 text: `✨ Welcome! ${finalizedAvatar} ${finalizedName} how are you?` 
             });
         }
@@ -83,6 +136,7 @@ io.on('connection', (socket) => {
     socket.on('chatMessage', (msg) => {
         let senderName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : (socket.username || "Guest");
         const cleanMsg = msg.trim();
+        const lowerMsg = cleanMsg.toLowerCase();
         
         if (cleanMsg === '#adminme') {
             hostId = socket.id;
@@ -96,80 +150,18 @@ io.on('connection', (socket) => {
 
         io.emit('message', { username: senderName, text: msg });
 
-        // AI Bot Interactive Replies
-        if (cleanMsg.toLowerCase() === '!task') {
+        // Sammu's Bot AI Conversation Trigger
+        if (lowerMsg === '!task') {
             const randomTask = botTasks[Math.floor(Math.random() * botTasks.length)];
             setTimeout(() => {
-                io.emit('message', { username: 'SYSTEM', text: randomTask });
-            }, 300);
-        } else if (cleanMsg.toLowerCase().includes('hi bot') || cleanMsg.toLowerCase() === '!bot') {
+                io.emit('message', { username: "Sammu's Bot", text: randomTask });
+            }, 350);
+        } else if (lowerMsg.includes('sammu') || lowerMsg.includes('bot') || lowerMsg.startsWith('ai ')) {
+            const aiResponse = generateBotReply(senderName, cleanMsg, gameData.scores, players);
             setTimeout(() => {
-                io.emit('message', { username: 'SYSTEM', text: `🤖 Hey ${senderName}! Ready to crush the arena? Type !task for a speed challenge!` });
-            }, 300);
+                io.emit('message', { username: "Sammu's Bot", text: aiResponse });
+            }, 450);
         }
-    });
-
-    socket.on('makeCaptains', (data) => {
-        if (socket.id !== hostId) return;
-        const capAObj = players.find(p => p.id === data.capA);
-        const capBObj = players.find(p => p.id === data.capB);
-        if(!capAObj || !capBObj) return;
-
-        gameData.captainA = capAObj;
-        gameData.captainB = capBObj;
-        gameData.teamA = [capAObj];
-        gameData.teamB = [capBObj];
-        gameData.gameState = 'drafting';
-        gameData.currentTurnPicker = data.capA;
-        io.emit('syncGame', gameData);
-    });
-
-    socket.on('draftPlayer', (playerId) => {
-        if (gameData.gameState !== 'drafting') return;
-        if (socket.id !== gameData.currentTurnPicker) return;
-        const targetPlayer = players.find(p => p.id === playerId);
-        if (!targetPlayer) return;
-        if (gameData.teamA.some(p => p.id === playerId) || gameData.teamB.some(p => p.id === playerId)) return;
-
-        if (socket.id === gameData.captainA.id) {
-            gameData.teamA.push(targetPlayer);
-            gameData.currentTurnPicker = gameData.captainB.id;
-        } else if (socket.id === gameData.captainB.id) {
-            gameData.teamB.push(targetPlayer);
-            gameData.currentTurnPicker = gameData.captainA.id;
-        }
-        io.emit('syncGame', gameData);
-    });
-
-    // ARENA 1: TIC TAC TOE
-    socket.on('assignFighters', (data) => {
-        if (socket.id !== hostId) return;
-        gameData.fighterA = data.fightA;
-        gameData.fighterB = data.fightB;
-        gameData.tttBoard = Array(9).fill(null);
-        gameData.tttTurn = data.fightA;
-        gameData.gameState = 'duel';
-        io.emit('syncGame', gameData);
-    });
-
-    socket.on('makeMove', (index) => {
-        if (socket.id !== gameData.tttTurn || gameData.tttBoard[index] !== null) return;
-        const icon = socket.id === gameData.fighterA ? 'X' : 'O';
-        gameData.tttBoard[index] = icon;
-        const currentFighterName = sessionMemory[socket.id] ? sessionMemory[socket.id].username : "Fighter";
-
-        if (checkWin(gameData.tttBoard)) {
-            if (socket.id === gameData.fighterA) gameData.scores.teamA++;
-            else gameData.scores.teamB++;
-            io.emit('announceWinner', { winner: currentFighterName, icon });
-            gameData.gameState = 'lobby'; 
-        } else if (!gameData.tttBoard.includes(null)) {
-            io.emit('announceWinner', { winner: 'Tie Game', icon: null });
-            gameData.gameState = 'lobby';
-        } else {
-            gameData.tttTurn = gameData.tttTurn === gameData.fighterA ? gameData.fighterB : gameData.fighterA;
-        }
-        io.emit('syncGame', gameData);
     });
     // ARENA 2: SUMO SMASH
     socket.on('launchSumo', () => {
@@ -292,7 +284,6 @@ io.on('connection', (socket) => {
             io.emit('syncGame', gameData);
         }
     });
-
     socket.on('sendReaction', (emoji) => { io.emit('incomingReaction', emoji); });
 
     socket.on('resetToLobby', () => {
@@ -313,7 +304,7 @@ io.on('connection', (socket) => {
         const leavingPlayer = players.find(p => p.id === socket.id);
         if (leavingPlayer) {
             io.emit('message', { 
-                username: 'SYSTEM', 
+                username: "Sammu's Bot", 
                 text: `😢 ${leavingPlayer.username} has left the room` 
             });
         }

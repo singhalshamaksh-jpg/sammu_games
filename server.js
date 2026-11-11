@@ -41,7 +41,7 @@ const botTasks = [
 function solveAnyMath(text) {
     const pctMatch = text.toLowerCase().match(/(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)/);
     if (pctMatch) {
-        return Number(((parseFloat(pctMatch[1]) / 100) * parseFloat(pctMatch[2])).toFixed(4));
+        return Number(((parseFloat(pctMatch) / 100) * parseFloat(pctMatch)).toFixed(4));
     }
     const cleaned = text.replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').trim();
     if (/^[0-9\+\-\*\/\(\)\.\s]+$/.test(cleaned) && /[\+\-\*\/]/.test(cleaned) && /\d/.test(cleaned)) {
@@ -261,11 +261,27 @@ io.on('connection', (socket) => {
         gameData.spinner = { a: { x: 90, y: 150, vx: 0, vy: 0 }, b: { x: 210, y: 150, vx: 0, vy: 0 } };
         io.emit('syncGame', gameData);
     });
-    socket.on('spinnerMove', (dir) => {
+
+    socket.on('spinnerMove', (data) => {
         if (gameData.gameState !== 'spinner') return;
-        const force = 2.4; let p = (gameData.captainA && socket.id === gameData.captainA.id) ? gameData.spinner.a : (gameData.captainB && socket.id === gameData.captainB.id) ? gameData.spinner.b : null;
+        const force = 3.2;
+        let p = null;
+        if ((gameData.captainA && socket.id === gameData.captainA.id) || gameData.teamA.some(m => m.id === socket.id)) {
+            p = gameData.spinner.a;
+        } else if ((gameData.captainB && socket.id === gameData.captainB.id) || gameData.teamB.some(m => m.id === socket.id)) {
+            p = gameData.spinner.b;
+        }
         if (!p) return;
-        if (dir === 'up') p.vy -= force; if (dir === 'down') p.vy += force; if (dir === 'left') p.vx -= force; if (dir === 'right') p.vx += force;
+
+        if (typeof data === 'object' && data !== null) {
+            p.vx += (Number(data.dx) || 0) * force;
+            p.vy += (Number(data.dy) || 0) * force;
+        } else {
+            if (data === 'up') p.vy -= force;
+            if (data === 'down') p.vy += force;
+            if (data === 'left') p.vx -= force;
+            if (data === 'right') p.vx += force;
+        }
     });
 
     socket.on('launchQuickDraw', () => {
@@ -375,12 +391,34 @@ function checkWin(b) {
 setInterval(() => {
     if (gameData.gameState !== 'spinner') return;
     const a = gameData.spinner.a, b = gameData.spinner.b;
-    a.x += a.vx; a.y += a.vy; a.vx *= 0.94; a.vy *= 0.94; b.x += b.vx; b.y += b.vy; b.vx *= 0.94; b.vy *= 0.94;
+    a.x += a.vx; a.y += a.vy; a.vx *= 0.92; a.vy *= 0.92;
+    b.x += b.vx; b.y += b.vy; b.vx *= 0.92; b.vy *= 0.92;
+
     const dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy);
-    if (dist < 44 && dist > 0) { const nx = dx / dist, ny = dy / dist; a.vx -= nx * 9.5; a.vy -= ny * 9.5; b.vx += nx * 9.5; b.vy += ny * 9.5; }
-    if (Math.hypot(a.x - 150, a.y - 150) > 135) { gameData.scores.teamB++; recordWin(gameData.captainB.username + " (🔵 Team B)", '🌀'); gameData.gameState = 'lobby'; io.emit('syncGame', gameData); }
-    else if (Math.hypot(b.x - 150, b.y - 150) > 135) { gameData.scores.teamA++; recordWin(gameData.captainA.username + " (🔴 Team A)", '🌀'); gameData.gameState = 'lobby'; io.emit('syncGame', gameData); }
-    else { io.emit('spinnerTick', gameData.spinner); }
+    if (dist < 44 && dist > 0) {
+        const nx = dx / dist, ny = dy / dist;
+        a.vx -= nx * 10.5; a.vy -= ny * 10.5;
+        b.vx += nx * 10.5; b.vy += ny * 10.5;
+    }
+
+    const distA = Math.hypot(a.x - 150, a.y - 150);
+    const distB = Math.hypot(b.x - 150, b.y - 150);
+
+    if (distA >= 126) {
+        gameData.gameState = 'lobby';
+        gameData.scores.teamB++;
+        const winName = gameData.captainB ? gameData.captainB.username : "Blue Spinner";
+        recordWin(winName + " (🔵 Team B)", '🌀');
+        io.emit('syncGame', gameData);
+    } else if (distB >= 126) {
+        gameData.gameState = 'lobby';
+        gameData.scores.teamA++;
+        const winName = gameData.captainA ? gameData.captainA.username : "Red Spinner";
+        recordWin(winName + " (🔴 Team A)", '🌀');
+        io.emit('syncGame', gameData);
+    } else {
+        io.emit('spinnerTick', gameData.spinner);
+    }
 }, 33);
 
 const PORT = process.env.PORT || 3000;

@@ -6,62 +6,27 @@
     <title>Sammu Games</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        :root {
-            --glass-bg: rgba(28, 28, 36, 0.75);
-            --glass-border: rgba(255, 255, 255, 0.12)
-            --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
-            --incoming-bg: rgba(255, 255, 255, 0.1);
-            --text-main: #f3f4f6;
-        }
-        @keyframes discoParty {
-            0% { background-color: #1e1b4b; }
-            25% { background-color: #311042; }
-            50% { background-color: #062f22; }
-            75% { background-color: #4c0519; }
-            100% { background-color: #1e1b4b; }
-        }
+        :root { --glass-bg: rgba(28, 28, 36, 0.75); --glass-border: rgba(255, 255, 255, 0.12); --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5); --incoming-bg: rgba(255, 255, 255, 0.1); --text-main: #f3f4f6; }
+        @keyframes discoParty { 0% { background-color: #1e1b4b; } 25% { background-color: #311042; } 50% { background-color: #062f22; } 75% { background-color: #4c0519; } 100% { background-color: #1e1b4b; } }
         .disco-active { animation: discoParty 1.5s linear infinite !important; }
         @keyframes spinBlade { 100% { transform: translate(-22px,-22px) rotate(360deg); } }
-        
-        #chat-area {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: 16px; padding: 12px; height: 280px; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth;
-            margin-bottom: 6px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
-        }
-        .msg-bubble {
-            max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem;
-            line-height: 1.4; color: var(--text-main); word-break: break-word;
-            display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            animation: bubblePop 0.2s ease-out forwards;
-        }
-        @keyframes bubblePop {
-            from { opacity: 0; transform: translateY(6px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
+        #chat-area { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px; height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; margin-bottom: 6px; }
+        .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem; line-height: 1.4; color: var(--text-main); word-break: break-word; display: inline-block; }
         .bubble-container { display: flex; flex-direction: column; width: 100%; margin: 2px 0; }
         .msg-container-outgoing { align-items: flex-end; }
         .msg-container-outgoing .msg-bubble { background: var(--outgoing-gradient); border-bottom-right-radius: 4px; }
         .msg-container-incoming { align-items: flex-start; }
-        .msg-container-incoming .msg-bubble { background: var(--incoming-bg); border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+        .msg-container-incoming .msg-bubble { background: var(--incoming-bg); border-bottom-left-radius: 4px; }
         .msg-sender-title { font-size: 0.78rem; color: #a5b4fc; margin-bottom: 3px; padding: 0 4px; font-weight: 700; }
         .msg-container-system { align-items: center; text-align: center; }
         .msg-container-system .msg-bubble { background: rgba(252, 211, 77, 0.1); border: 1px solid rgba(252, 211, 77, 0.2); color: #fcd34d; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; }
-        
         .chirp-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding: 2px 0; }
         .chirp-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; padding: 6px 12px; border-radius: 14px; font-size: 0.78rem; white-space: nowrap; cursor: pointer; }
-        .chirp-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.15); }
-        #chat-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 24px; color: var(--text-main); outline: none; font-size: 0.95rem; transition: all 0.2s ease; }
-        #chat-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-        .btn-disco { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-weight: bold; border: none; border-radius: 12px; padding: 10px; margin-bottom: 12px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3); }
-
+        #chat-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 24px; color: var(--text-main); outline: none; font-size: 0.95rem; }
+        .btn-disco { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-weight: bold; border: none; border-radius: 12px; padding: 10px; margin-bottom: 8px; width: 100%; cursor: pointer; }
         #floating-container { position: fixed; bottom: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; overflow: hidden; }
-        .floating-emoji { position: absolute; bottom: -50px; font-size: 2rem; user-select: none; animation: floatUpAndFade 2.5s cubic-bezier(0.08, 0.8, 0.2, 1) forwards; opacity: 0; }
-        @keyframes floatUpAndFade {
-            0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
-            10% { opacity: 1; transform: translateY(-10vh) translateX(var(--random-x)) scale(1.2); }
-            100% { transform: translateY(-105vh) translateX(calc(var(--random-x) * 2)) scale(0.8); opacity: 0; }
-        }
+        .floating-emoji { position: absolute; bottom: -50px; font-size: 2rem; user-select: none; animation: floatUpAndFade 2.5s ease-out forwards; opacity: 0; }
+        @keyframes floatUpAndFade { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-105vh) translateX(var(--random-x)) scale(1.1); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -80,65 +45,43 @@
 <div class="container" id="game-screen" style="display:none;">
     <h1 id="room-title">Sammu Arena</h1>
     <button class="btn-disco" onclick="toggleDisco()">🪩 TOGGLE LOBBY DISCO MODE 🪩</button>
-
-    <div id="score-display" class="score-board" style="display:none;">
-        <div id="scoreA-text">🔴 Team A: 0</div>
-        <div id="scoreB-text">🔵 Team B: 0</div>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button onclick="changeProfile()" style="flex:1; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:12px; padding:8px; cursor:pointer; font-size:0.85rem;">✏️ Change Name</button>
+        <button id="btn-sound-toggle" onclick="toggleSound()" style="flex:1; background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(16,185,129,0.4); border-radius:12px; padding:8px; cursor:pointer; font-size:0.85rem;">🔊 Sound: ON</button>
     </div>
-    
+    <div id="score-display" class="score-board" style="display:none;"><div id="scoreA-text">🔴 Team A: 0</div><div id="scoreB-text">🔵 Team B: 0</div></div>
     <div id="draft-arena-zone" style="display:none;">
         <h3 id="draft-instructions" style="text-align:center; color:#ffc107; margin:5px 0; font-size:1rem;"></h3>
-        <div class="team-arena">
-            <div class="team-box red" id="box-teamA"><h4 id="head-teamA">Team A</h4><div id="list-teamA"></div></div>
-            <div class="team-box blue" id="box-teamB"><h4 id="head-teamB">Team B</h4><div id="list-teamB"></div></div>
-        </div>
+        <div class="team-arena"><div class="team-box red" id="box-teamA"><h4 id="head-teamA">Team A</h4><div id="list-teamA"></div></div><div class="team-box blue" id="box-teamB"><h4 id="head-teamB">Team B</h4><div id="list-teamB"></div></div></div>
     </div>
-
-    <!-- ARENA 1: TIC TAC TOE -->
-    <div id="battle-zone" style="display:none; text-align:center;">
-        <h3 id="battle-status" style="color:#ff0055; padding: 8px; border-radius: 10px;">⚔️ Match Live ⚔️</h3>
-        <div class="board" id="ttt-board"></div>
-    </div>
-
-    <!-- ARENA 2: SUMO SMASH -->
+    <div id="battle-zone" style="display:none; text-align:center;"><h3 id="battle-status" style="color:#ff0055; padding: 8px;">⚔️ Match Live ⚔️</h3><div class="board" id="ttt-board"></div></div>
     <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
         <h2 style="color:#ffcc00; font-size:1.1rem; margin:0 0 10px 0;">🤼 SUMO RING SMASH 🤼</h2>
-        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;">
-            <div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div>
-            <div id="sumo-wrestler" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ffcc00; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🤼</div>
-        </div>
-        <button id="btn-sumo-push" onclick="socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
+        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;"><div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div><div id="sumo-wrestler" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ffcc00; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🤼</div></div>
+        <button id="btn-sumo-push" onclick="playSound('tap'); socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
     </div>
-
-    <!-- ARENA 3: SPINNER.IO -->
     <div id="spinner-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #a855f7;">
         <h2 style="color:#d8b4fe; font-size:1.1rem; margin:0 0 10px 0;">🌀 SPINNER.IO ARENA CLASH 🌀</h2>
-        <div style="width:300px; height:300px; margin:0 auto; border-radius:50%; background:radial-gradient(circle, #1e1b4b 40%, #09090b 95%); border:4px solid #a855f7; position:relative; overflow:hidden; box-shadow: 0 0 25px rgba(168,85,247,0.4);">
-            <div id="spin-a" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#ef4444, #991b1b, #fca5a5, #ef4444); border:2px solid #fff; left:90px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite; box-shadow: 0 0 12px #ef4444;"></div>
-            <div id="spin-b" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#3b82f6, #1e40af, #93c5fd, #3b82f6); border:2px solid #fff; left:210px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite; box-shadow: 0 0 12px #3b82f6;"></div>
+        <div style="width:300px; height:300px; margin:0 auto; border-radius:50%; background:radial-gradient(circle, #1e1b4b 40%, #09090b 95%); border:4px solid #a855f7; position:relative; overflow:hidden;">
+            <div id="spin-a" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#ef4444, #991b1b, #fca5a5, #ef4444); border:2px solid #fff; left:90px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite;"></div>
+            <div id="spin-b" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#3b82f6, #1e40af, #93c5fd, #3b82f6); border:2px solid #fff; left:210px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite;"></div>
         </div>
         <div style="display:grid; grid-template-columns:repeat(3, 64px); gap:8px; justify-content:center; margin-top:14px;">
-            <div></div><button onclick="socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button><div></div>
-            <button onclick="socket.emit('spinnerMove','left')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬅️</button>
-            <button onclick="socket.emit('spinnerMove','down')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬇️</button>
-            <button onclick="socket.emit('spinnerMove','right')" style="padding:14px; font-size:1.2rem; border-radius:12px;">➡️</button>
+            <div></div><button onclick="playSound('tap'); socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button><div></div>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','left')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬅️</button>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','down')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬇️</button>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','right')" style="padding:14px; font-size:1.2rem; border-radius:12px;">➡️</button>
         </div>
     </div>
-
-    <!-- ARENA 4: QUICK-DRAW REFLEX DUEL -->
     <div id="quickdraw-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #ef4444;">
         <h2 style="color:#fca5a5; font-size:1.1rem; margin:0 0 12px 0;">🤠 QUICK-DRAW REFLEX DUEL 🤠</h2>
-        <button id="btn-draw-fire" onclick="socket.emit('quickDrawFire')" style="width:100%; height:130px; border-radius:16px; background:#dc2626; color:#fff; font-size:1.6rem; font-weight:900; border:none; box-shadow:0 6px 20px rgba(220,38,38,0.4);">WAIT FOR GREEN... 🛑</button>
+        <button id="btn-draw-fire" onclick="playSound('tap'); socket.emit('quickDrawFire')" style="width:100%; height:130px; border-radius:16px; background:#dc2626; color:#fff; font-size:1.6rem; font-weight:900; border:none;">WAIT FOR GREEN... 🛑</button>
     </div>
-
-    <!-- ARENA 5: MATH BLITZ SHOWDOWN -->
     <div id="math-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #10b981;">
         <h2 style="color:#6ee7b7; font-size:1.1rem; margin:0 0 8px 0;">🧠 MATH BLITZ SHOWDOWN 🧠</h2>
-        <div id="math-question" style="font-size:1.8rem; font-weight:900; color:#fff; margin:14px 0; letter-spacing:1px;"></div>
+        <div id="math-question" style="font-size:1.8rem; font-weight:900; color:#fff; margin:14px 0;"></div>
         <div id="math-options" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
     </div>
-
-    <!-- HOST CONTROL PANEL -->
     <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
         <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL</h4>
         <label>Choose Captain A</label><select id="select-capA"></select>
@@ -151,224 +94,199 @@
         <button id="btn-start-math" onclick="socket.emit('launchMath')" style="background:#10b981; color:#000; display:block; margin: 4px 0;">5. Launch Math Blitz 🧠</button>
         <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
-
-    <div class="react-box">
-        <button class="react-btn" onclick="sendReaction('🔥')">🔥</button>
-        <button class="react-btn" onclick="sendReaction('👑')">👑</button>
-        <button class="react-btn" onclick="sendReaction('🤡')">🤡</button>
-        <button class="react-btn" onclick="sendReaction('💀')">💀</button>
-    </div>
-    <h3 id="list-header-title">Players in Room</h3>
-    <div id="player-list"></div>
-    <h3>Lobby Chat Room</h3>
-    <div id="chat-area"></div>
-    <div class="chirp-row">
-        <button class="chirp-btn" onclick="sendQuickChirp('Loser! 🤫')">Loser! 🤫</button>
-        <button class="chirp-btn" onclick="sendQuickChirp('EZ! 🥱')">EZ! 🥱</button>
-        <button class="chirp-btn" onclick="sendQuickChirp('Go Team! 🔥')">Go Team! 🔥</button>
-        <button class="chirp-btn" onclick="sendQuickChirp('Too Fast! ⚡')">Too Fast! ⚡</button>
-    </div>
-    <input type="text" id="chat-input" placeholder="Type tasks or messages..." onkeypress="handleChatKey(event)">
+    <div class="react-box"><button class="react-btn" onclick="sendReaction('🔥')">🔥</button><button class="react-btn" onclick="sendReaction('👑')">👑</button><button class="react-btn" onclick="sendReaction('🤡')">🤡</button><button class="react-btn" onclick="sendReaction('💀')">💀</button></div>
+    <h3 id="list-header-title">Players in Room</h3><div id="player-list"></div>
+    <h3>Lobby Chat Room</h3><div id="chat-area"></div>
+    <div class="chirp-row"><button class="chirp-btn" onclick="sendQuickChirp('!task')">⚡ Drop Task</button><button class="chirp-btn" onclick="sendQuickChirp('Loser! 🤫')">Loser! 🤫</button><button class="chirp-btn" onclick="sendQuickChirp('EZ! 🥱')">EZ! 🥱</button><button class="chirp-btn" onclick="sendQuickChirp('Go Team! 🔥')">Go Team! 🔥</button></div>
+    <input type="text" id="chat-input" placeholder="Type tasks or chat with Sammu's Bot..." onkeypress="handleChatKey(event)">
 </div>
 <div id="floating-container"></div>
 <script src="/socket.io/socket.io.js"></script>
-<script>
+   <script>
     const socket = io();
     let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [], currentGameState = 'lobby', activeTurnPickerId = null, localUsername = "";
-    
-    function selectAvatar(a, el) { document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); selectedAvatar = a; }
-    
+    let soundEnabled = true, discoInterval = null, discoStep = 0;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if (!soundEnabled) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        if (type === 'chat') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(520, now); osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+            gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+            osc.start(now); osc.stop(now + 0.09);
+        } else if (type === 'tap') {
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(320, now); osc.frequency.exponentialRampToValueAtTime(140, now + 0.07);
+            gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now); osc.stop(now + 0.08);
+        } else if (type === 'emoji') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(900, now + 0.06); osc.frequency.setValueAtTime(1200, now + 0.12);
+            gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+            osc.start(now); osc.stop(now + 0.22);
+        } else if (type === 'win') {
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'triangle';
+                o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(freq, now + i * 0.1);
+                g.gain.setValueAtTime(0.2, now + i * 0.1); g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25);
+                o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.25);
+            });
+        }
+    }
+
+    function playDiscoBeat() {
+        if (!soundEnabled || !document.body.classList.contains('disco-active')) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime, kick = audioCtx.createOscillator(), kGain = audioCtx.createGain();
+        kick.type = 'sine'; kick.frequency.setValueAtTime(140, now); kick.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+        kGain.gain.setValueAtTime(0.28, now); kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        kick.connect(kGain); kGain.connect(audioCtx.destination); kick.start(now); kick.stop(now + 0.14);
+
+        const notes = [110, 110, 130.81, 146.83, 164.81, 146.83, 130.81, 98];
+        const bass = audioCtx.createOscillator(), bGain = audioCtx.createGain();
+        bass.type = 'sawtooth'; bass.frequency.setValueAtTime(notes[discoStep % notes.length], now + 0.12);
+        bGain.gain.setValueAtTime(0.08, now + 0.12); bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        bass.connect(bGain); bGain.connect(audioCtx.destination); bass.start(now + 0.12); bass.stop(now + 0.28);
+        discoStep++;
+    }
+
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        const btn = document.getElementById('btn-sound-toggle');
+        btn.innerText = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+        btn.style.background = soundEnabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
+        btn.style.color = soundEnabled ? '#6ee7b7' : '#fca5a5';
+        if (soundEnabled) playSound('chat');
+    }
+
+    function toggleDisco() {
+        playSound('tap');
+        if (document.body.classList.toggle('disco-active')) {
+            discoStep = 0; playDiscoBeat(); discoInterval = setInterval(playDiscoBeat, 320);
+        } else { clearInterval(discoInterval); discoInterval = null; }
+    }
+
+    localStorage.removeItem('sammu_username'); localStorage.removeItem('sammu_avatar');
+    function changeProfile() { playSound('tap'); sessionStorage.clear(); document.getElementById('game-screen').style.display = 'none'; document.getElementById('login-screen').style.display = 'block'; }
+    function selectAvatar(a, el) { playSound('tap'); document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); selectedAvatar = a; }
     function joinGame() {
         const u = document.getElementById('username').value.trim(); if(!u) return alert("Enter name!");
-        localUsername = u;
-        localStorage.setItem('sammu_username', u);
-        localStorage.setItem('sammu_avatar', selectedAvatar);
+        playSound('win'); localUsername = u; sessionStorage.setItem('sammu_username', u); sessionStorage.setItem('sammu_avatar', selectedAvatar);
         document.getElementById('login-screen').style.display = 'none'; document.getElementById('game-screen').style.display = 'block';
         myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
-
     socket.on('connect', () => {
-        const savedName = localStorage.getItem('sammu_username');
-        const savedAvatar = localStorage.getItem('sammu_avatar');
-        if (savedName && savedAvatar) {
-            localUsername = savedName; selectedAvatar = savedAvatar;
-            if(document.getElementById('login-screen')) document.getElementById('login-screen').style.display = 'none';
-            if(document.getElementById('game-screen')) document.getElementById('game-screen').style.display = 'block';
-            myId = socket.id; socket.emit('joinRoom', { username: savedName, avatar: savedAvatar });
+        const sn = sessionStorage.getItem('sammu_username'), sa = sessionStorage.getItem('sammu_avatar');
+        if (sn && sa && document.getElementById('game-screen').style.display === 'block') {
+            localUsername = sn; selectedAvatar = sa; myId = socket.id; socket.emit('joinRoom', { username: sn, avatar: sa });
         }
     });
-
-    function toggleDisco() { document.body.classList.toggle('disco-active'); }
-    function sendQuickChirp(t) { socket.emit('chatMessage', t); }
-
+        function sendQuickChirp(t) { playSound('tap'); socket.emit('chatMessage', t); }
     function hostSubmitCaptains() {
-        const capA = document.getElementById('select-capA').value;
-        const capB = document.getElementById('select-capB').value;
+        const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
         if(!capA || !capB) return alert("Pick Captain A and Captain B first! 🛑");
-        socket.emit('makeCaptains', { capA, capB });
+        playSound('tap'); socket.emit('makeCaptains', { capA, capB });
     }
-
     function hostStartDuel() {
-        const capA = document.getElementById('select-capA').value;
-        const capB = document.getElementById('select-capB').value;
-        if(!capA || !capB) return alert("Pick Captain A and Captain B to start Tic-Tac-Toe! ⚔️");
-        socket.emit('assignFighters', { fightA: capA, fightB: capB });
+        const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
+        if(!capA || !capB) return alert("Pick Captain A and Captain B first! ⚔️");
+        playSound('tap'); socket.emit('assignFighters', { fightA: capA, fightB: capB });
     }
-
-    function hostReset() { socket.emit('resetToLobby'); }
+    function hostReset() { playSound('tap'); socket.emit('resetToLobby'); }
 
     socket.on('initRole', (data) => {
         isIAmHost = data.isHost;
         document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none';
         document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena";
     });
-
     socket.on('updatePlayers', (p) => {
         currentPlayers = p;
-        const selA = document.getElementById('select-capA'); const selB = document.getElementById('select-capB');
-        const valA = selA.value; const valB = selB.value;
+        const selA = document.getElementById('select-capA'), selB = document.getElementById('select-capB'), valA = selA.value, valB = selB.value;
         selA.innerHTML = '<option value="">-- Choose Captain A --</option>'; selB.innerHTML = '<option value="">-- Choose Captain B --</option>';
         p.forEach(pl => {
-            const optA = document.createElement('option'); optA.value = pl.id; optA.innerText = pl.username;
-            const optB = document.createElement('option'); optB.value = pl.id; optB.innerText = pl.username;
-            selA.appendChild(optA); selB.appendChild(optB);
+            selA.innerHTML += `<option value="${pl.id}">${pl.username}</option>`;
+            selB.innerHTML += `<option value="${pl.id}">${pl.username}</option>`;
         });
         selA.value = valA; selB.value = valB; renderPlayerList();
     });
-
     function renderPlayerList() {
         const list = document.getElementById('player-list'); list.innerHTML = '';
         currentPlayers.forEach(pl => {
             const card = document.createElement('div');
-            const listA = document.getElementById('list-teamA') ? document.getElementById('list-teamA').innerText : '';
-            const listB = document.getElementById('list-teamB') ? document.getElementById('list-teamB').innerText : '';
-            const isDrafted = listA.includes(pl.username) || listB.includes(pl.username);
-            if (currentGameState === 'drafting' && !isDrafted) {
-                card.className = 'player-card selectable';
-                if (myId === activeTurnPickerId) card.onclick = () => socket.emit('draftPlayer', pl.id);
-            } else { card.className = 'player-card'; }
-            card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? ' <i style="color:#ffc107;margin-left:5px;">(Host)👑</i>' : ''}`;
+            const isDrafted = document.getElementById('list-teamA').innerText.includes(pl.username) || document.getElementById('list-teamB').innerText.includes(pl.username);
+            card.className = (currentGameState === 'drafting' && !isDrafted) ? 'player-card selectable' : 'player-card';
+            if (currentGameState === 'drafting' && !isDrafted && myId === activeTurnPickerId) card.onclick = () => { playSound('tap'); socket.emit('draftPlayer', pl.id); };
+            card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? '<i style="color:#ffc107;margin-left:5px;">(Host)👑</i>' : ''}`;
             list.appendChild(card);
         });
     }
-
-    function handleChatKey(event) {
-        if (event.key === 'Enter') {
-            const input = document.getElementById('chat-input'); const msg = input.value.trim();
-            if (!msg) return; socket.emit('chatMessage', msg); input.value = '';
-        }
-    }
+    function handleChatKey(e) { if (e.key === 'Enter') { const i = document.getElementById('chat-input'); if (i.value.trim()) { socket.emit('chatMessage', i.value.trim()); i.value = ''; } } }
 
     socket.on('message', (data) => {
-        const chatArea = document.getElementById('chat-area'); const container = document.createElement('div');
+        playSound('chat');
+        const chatArea = document.getElementById('chat-area'), container = document.createElement('div');
         if (data.username === 'SYSTEM') {
-            container.className = 'bubble-container msg-container-system';
-            container.innerHTML = `<div class="msg-bubble">${data.text}</div>`;
+            container.className = 'bubble-container msg-container-system'; container.innerHTML = `<div class="msg-bubble">${data.text}</div>`;
+        } else if (data.username === "Sammu's Bot") {
+            container.className = 'bubble-container msg-container-incoming';
+            container.innerHTML = `<div class="msg-sender-title" style="color:#34d399;">🤖 Sammu's Bot <span style="background:rgba(16,185,129,0.2); border:1px solid #10b981; font-size:0.65rem; padding:1px 5px; border-radius:4px;">AI</span></div><div class="msg-bubble" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#ecfdf5;">${data.text}</div>`;
         } else {
             const isMe = (data.username === localUsername);
             container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming';
-            const matchPlayer = currentPlayers.find(p => p.username === data.username);
-            const userIcon = matchPlayer ? matchPlayer.avatar : '👤';
-            const senderLabel = !isMe ? `<div class="msg-sender-title">${userIcon} ${data.username}</div>` : '';
-            container.innerHTML = `${senderLabel}<div class="msg-bubble">${data.text}</div>`;
+            const mp = currentPlayers.find(p => p.username === data.username), icon = mp ? mp.avatar : '👤';
+            container.innerHTML = `${!isMe ? `<div class="msg-sender-title">${icon} ${data.username}</div>` : ''}<div class="msg-bubble">${data.text}</div>`;
         }
         chatArea.appendChild(container); chatArea.scrollTop = chatArea.scrollHeight;
     });
-        socket.on('incomingReaction', (emoji) => {
+
+    socket.on('incomingReaction', (emoji) => {
+        playSound('emoji');
         const container = document.getElementById('floating-container') || document.body;
         for (let i = 0; i < 12; i++) {
             const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = emoji;
-            const randomLeft = Math.random() * 80 + 10; const randomXShift = (Math.random() * 120 - 60) + 'px';
-            el.style.left = randomLeft + '%'; el.style.setProperty('--random-x', randomXShift);
+            el.style.left = (Math.random() * 80 + 10) + '%'; el.style.setProperty('--random-x', (Math.random() * 120 - 60) + 'px');
             el.style.animationDelay = (Math.random() * 0.4) + 's'; container.appendChild(el);
-            setTimeout(() => { el.remove(); }, 3000);
+            setTimeout(() => el.remove(), 3000);
         }
     });
-    
     function sendReaction(emoji) { socket.emit('sendReaction', emoji); }
-
-    socket.on('announceWinner', (data) => {
-        alert(data.icon ? `GAME OVER! Winner: ${data.winner} ${data.icon}` : `GAME OVER: ${data.winner}!`);
-    });
-
+    socket.on('announceWinner', (data) => { playSound('win'); alert(data.icon ? `GAME OVER! Winner: ${data.winner} ${data.icon}` : `GAME OVER: ${data.winner}!`); });
     socket.on('spinnerTick', (spin) => {
-        const sA = document.getElementById('spin-a');
-        const sB = document.getElementById('spin-b');
+        const sA = document.getElementById('spin-a'), sB = document.getElementById('spin-b');
         if (sA) { sA.style.left = spin.a.x + 'px'; sA.style.top = spin.a.y + 'px'; }
         if (sB) { sB.style.left = spin.b.x + 'px'; sB.style.top = spin.b.y + 'px'; }
     });
 
-    socket.on('syncGame', (gameData) => {
-        currentGameState = gameData.gameState; activeTurnPickerId = gameData.currentTurnPicker;
-        const hasStarted = (gameData.gameState !== 'lobby');
-        
-        if(document.getElementById('score-display')) {
-            document.getElementById('score-display').style.display = hasStarted ? 'flex' : 'none';
-            document.getElementById('scoreA-text').innerText = `🔴 Team A: ${gameData.scores.teamA}`;
-            document.getElementById('scoreB-text').innerText = `🔵 Team B: ${gameData.scores.teamB}`;
+    socket.on('syncGame', (g) => {
+        currentGameState = g.gameState; activeTurnPickerId = g.currentTurnPicker;
+        const started = (g.gameState !== 'lobby');
+        const show = (id, c) => { const el = document.getElementById(id); if (el) el.style.display = c ? 'block' : 'none'; };
+        if (document.getElementById('score-display')) {
+            document.getElementById('score-display').style.display = started ? 'flex' : 'none';
+            document.getElementById('scoreA-text').innerText = `🔴 Team A: ${g.scores.teamA}`;
+            document.getElementById('scoreB-text').innerText = `🔵 Team B: ${g.scores.teamB}`;
         }
-        if(document.getElementById('draft-arena-zone')) document.getElementById('draft-arena-zone').style.display = hasStarted ? 'block' : 'none';
-        if(document.getElementById('sumo-zone')) document.getElementById('sumo-zone').style.display = (gameData.gameState === 'sumo') ? 'block' : 'none';
-        if(document.getElementById('spinner-zone')) document.getElementById('spinner-zone').style.display = (gameData.gameState === 'spinner') ? 'block' : 'none';
-        
-        const qdZone = document.getElementById('quickdraw-zone');
-        if (qdZone) {
-            qdZone.style.display = (gameData.gameState === 'quickdraw') ? 'block' : 'none';
-            const fireBtn = document.getElementById('btn-draw-fire');
-            if (fireBtn && gameData.gameState === 'quickdraw') {
-                fireBtn.style.background = gameData.drawReady ? '#10b981' : '#dc2626';
-                fireBtn.innerText = gameData.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑';
-            }
-        }
+        show('draft-arena-zone', started); show('sumo-zone', g.gameState === 'sumo'); show('spinner-zone', g.gameState === 'spinner');
+        show('quickdraw-zone', g.gameState === 'quickdraw'); show('math-zone', g.gameState === 'math'); show('battle-zone', g.gameState === 'duel');
 
-        const mathZone = document.getElementById('math-zone');
-        if (mathZone) {
-            mathZone.style.display = (gameData.gameState === 'math') ? 'block' : 'none';
-            if (gameData.gameState === 'math' && gameData.mathQ) {
-                document.getElementById('math-question').innerText = gameData.mathQ.question;
-                const optBox = document.getElementById('math-options');
-                optBox.innerHTML = '';
-                gameData.mathQ.options.forEach(opt => {
-                    const b = document.createElement('button');
-                    b.innerText = opt;
-                    b.style.padding = '14px'; b.style.fontSize = '1.2rem'; b.style.fontWeight = 'bold'; b.style.borderRadius = '12px';
-                    b.onclick = () => socket.emit('submitMath', opt);
-                    optBox.appendChild(b);
-                });
-            }
+        if (g.gameState === 'quickdraw') {
+            const btn = document.getElementById('btn-draw-fire');
+            if (btn) { if (g.drawReady) playSound('emoji'); btn.style.background = g.drawReady ? '#10b981' : '#dc2626'; btn.innerText = g.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑'; }
         }
-        
-        const battleZone = document.getElementById('battle-zone');
-        if(battleZone) {
-            battleZone.style.display = (gameData.gameState === 'duel') ? 'block' : 'none';
-            if (gameData.gameState === 'duel' && gameData.tttBoard) {
-                const tttBoard = document.getElementById('ttt-board'); const battleStatus = document.getElementById('battle-status');
-                if (battleStatus && gameData.tttTurn) {
-                    const activeFighter = currentPlayers.find(p => p.id === gameData.tttTurn);
-                    battleStatus.innerText = activeFighter ? `⚔️ Turn: ${activeFighter.username} ⚔️` : `⚔️ Match Live ⚔️`;
-                }
-                if (tttBoard) {
-                    tttBoard.innerHTML = '';
-                    gameData.tttBoard.forEach((cellVal, idx) => {
-                        const cellBtn = document.createElement('button'); cellBtn.className = 'cell';
-                        cellBtn.style.width = '80px'; cellBtn.style.height = '80px'; cellBtn.style.margin = '4px';
-                        cellBtn.style.fontSize = '1.8rem'; cellBtn.style.fontWeight = '900';
-                        cellBtn.innerText = cellVal || ''; cellBtn.onclick = () => socket.emit('makeMove', idx);
-                        tttBoard.appendChild(cellBtn);
-                    });
-                }
-            }
+        if (g.gameState === 'math' && g.mathQ) {
+            document.getElementById('math-question').innerText = g.mathQ.question;
+            const box = document.getElementById('math-options'); box.innerHTML = '';
+            g.mathQ.options.forEach(opt => { const b = document.createElement('button'); b.innerText = opt; b.style.cssText = 'padding:14px; font-size:1.2rem; font-weight:bold; border-radius:12px;'; b.onclick = () => { playSound('tap'); socket.emit('submitMath', opt); }; box.appendChild(b); });
         }
-        
-        const wrestler = document.getElementById('sumo-wrestler');
-        if (wrestler && gameData.sumoPosition) { wrestler.style.left = gameData.sumoPosition + '%'; }
-
-        if (!hasStarted) {
-            if(document.getElementById('battle-zone')) document.getElementById('battle-zone').style.display = 'none';
-            if(document.getElementById('list-teamA')) document.getElementById('list-teamA').innerHTML = ''; 
-            if(document.getElementById('list-teamB')) document.getElementById('list-teamB').innerHTML = '';
+        if (g.gameState === 'duel' && g.tttBoard) {
+            const board = document.getElementById('ttt-board'), st = document.getElementById('battle-status');
+            if (st && g.tttTurn) { const f = currentPlayers.find(p => p.id === g.tttTurn); st.innerText = f ? `⚔️ Turn: ${f.username} ⚔️` : `⚔️ Match Live ⚔️`; }
+            if (board) { board.innerHTML = ''; g.tttBoard.forEach((v, idx) => { const b = document.createElement('button'); b.className = 'cell'; b.style.cssText = 'width:80px; height:80px; margin:4px; font-size:1.8rem; font-weight:900;'; b.innerText = v || ''; b.onclick = () => { playSound('tap'); socket.emit('makeMove', idx); }; board.appendChild(b); }); }
         }
+        const w = document.getElementById('sumo-wrestler'); if (w && g.sumoPosition) w.style.left = g.sumoPosition + '%';
     });
 </script>
 </body>
 </html>
+   

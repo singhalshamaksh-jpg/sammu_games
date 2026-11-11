@@ -88,10 +88,10 @@
         <label>Choose Captain B</label><select id="select-capB"></select>
         <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000;">Appoint Selected Captains</button>
         <button id="btn-start-duel" onclick="hostStartDuel()" style="background:#00bcd4; display:block; margin: 4px 0;">1. Launch Tic-Tac-Toe ⚔️</button>
-        <button id="btn-start-sumo" onclick="socket.emit('launchSumo')" style="background:#ffcc00; color:#000; display:block; margin: 4px 0;">2. Launch Sumo Smash 🤼</button>
-        <button id="btn-start-spinner" onclick="socket.emit('launchSpinner')" style="background:#a855f7; color:#fff; display:block; margin: 4px 0;">3. Launch Spinner.io 🌀</button>
-        <button id="btn-start-draw" onclick="socket.emit('launchQuickDraw')" style="background:#ef4444; color:#fff; display:block; margin: 4px 0;">4. Launch Quick-Draw 🤠</button>
-        <button id="btn-start-math" onclick="socket.emit('launchMath')" style="background:#10b981; color:#000; display:block; margin: 4px 0;">5. Launch Math Blitz 🧠</button>
+        <button id="btn-start-sumo" onclick="hostLaunchGame('launchSumo')" style="background:#ffcc00; color:#000; display:block; margin: 4px 0;">2. Launch Sumo Smash 🤼</button>
+        <button id="btn-start-spinner" onclick="hostLaunchGame('launchSpinner')" style="background:#a855f7; color:#fff; display:block; margin: 4px 0;">3. Launch Spinner.io 🌀</button>
+        <button id="btn-start-draw" onclick="hostLaunchGame('launchQuickDraw')" style="background:#ef4444; color:#fff; display:block; margin: 4px 0;">4. Launch Quick-Draw 🤠</button>
+        <button id="btn-start-math" onclick="hostLaunchGame('launchMath')" style="background:#10b981; color:#000; display:block; margin: 4px 0;">5. Launch Math Blitz 🧠</button>
         <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
     <div class="react-box"><button class="react-btn" onclick="sendReaction('🔥')">🔥</button><button class="react-btn" onclick="sendReaction('👑')">👑</button><button class="react-btn" onclick="sendReaction('🤡')">🤡</button><button class="react-btn" onclick="sendReaction('💀')">💀</button></div>
@@ -102,7 +102,7 @@
 </div>
 <div id="floating-container"></div>
 <script src="/socket.io/socket.io.js"></script>
-   <script>
+<script>
     const socket = io();
     let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [], currentGameState = 'lobby', activeTurnPickerId = null, localUsername = "";
     let soundEnabled = true, discoInterval = null, discoStep = 0;
@@ -182,7 +182,7 @@
             localUsername = sn; selectedAvatar = sa; myId = socket.id; socket.emit('joinRoom', { username: sn, avatar: sa });
         }
     });
-        function sendQuickChirp(t) { playSound('tap'); socket.emit('chatMessage', t); }
+    function sendQuickChirp(t) { playSound('tap'); socket.emit('chatMessage', t); }
     function hostSubmitCaptains() {
         const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
         if(!capA || !capB) return alert("Pick Captain A and Captain B first! 🛑");
@@ -192,6 +192,12 @@
         const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
         if(!capA || !capB) return alert("Pick Captain A and Captain B first! ⚔️");
         playSound('tap'); socket.emit('assignFighters', { fightA: capA, fightB: capB });
+    }
+    function hostLaunchGame(eventName) {
+        const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value;
+        if(!capA || !capB) return alert("Pick Captain A and Captain B from the dropdowns first! 🛑");
+        playSound('tap'); socket.emit('makeCaptains', { capA, capB });
+        setTimeout(() => socket.emit(eventName), 150);
     }
     function hostReset() { playSound('tap'); socket.emit('resetToLobby'); }
 
@@ -289,4 +295,3 @@
 </script>
 </body>
 </html>
-   

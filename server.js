@@ -17,7 +17,7 @@ let sessionMemory = {};
 let drawTimer = null, bombTimer = null, memoryTimer = null;
 let spinnerEnded = false;
 
-const ADMIN_SECRET_KEY = "#sammu alpha bravo charlie delta echo foxtrot golf hotel india";
+const ADMIN_SECRET_KEY = "#bhaicharaontop";
 
 let botMemory = {
     lastWinner: null,

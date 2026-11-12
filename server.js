@@ -85,19 +85,19 @@ const riddleBank = [
 
 const botTasks = [
     { text: "⚡ TASK: Type 5 COUNTRIES starting with letter A! (Separate with commas or spaces)", letter: "a", count: 5 },
-    { text: "⚡ TASK: Type 5 COUNTRIES starting with letter I!", letter: "i", count: 5 },
-    { text: "⚡ TASK: Type 5 COUNTRIES starting with letter S!", letter: "s", count: 5 },
-    { text: "⚡ TASK: Type 5 ANIMALS starting with letter B!", letter: "b", count: 5 },
+    { text: "⚡ TASK: Type 4 COUNTRIES starting with letter I!", letter: "i", count: 5 },
+    { text: "⚡ TASK: Type 3 COUNTRIES starting with letter S!", letter: "s", count: 5 },
+    { text: "⚡ TASK: Type  ANIMALS starting with letter B!", letter: "b", count: 5 },
     { text: "⚡ TASK: Type 5 ANIMALS starting with letter C!", letter: "c", count: 5 },
     { text: "⚡ TASK: Type 5 FRUITS starting with letter M!", letter: "m", count: 5 },
     { text: "⚡ TASK: Type 5 FRUITS starting with letter P!", letter: "p", count: 5 },
     { text: "⚡ TASK: Type 5 COLORS starting with letter B!", letter: "b", count: 5 },
-    { text: "⚡ TASK: Type 5 CITIES starting with letter D!", letter: "d", count: 5 },
-    { text: "⚡ TASK: Type 5 CITIES starting with letter M!", letter: "m", count: 5 },
-    { text: "⚡ TASK: Type 5 SPORTS starting with letter C!", letter: "c", count: 5 },
+    { text: "⚡ TASK: Type  CITIES starting with letter D!", letter: "d", count: 5 },
+    { text: "⚡ TASK: Type  CITIES starting with letter M!", letter: "m", count: 5 },
+    { text: "⚡ TASK: Type SPORTS starting with letter C!", letter: "c", count: 5 },
     { text: "⚡ TASK: Type 5 BOYS NAMES starting with letter R!", letter: "r", count: 5 },
     { text: "⚡ TASK: Type 5 GIRLS NAMES starting with letter S!", letter: "s", count: 5 },
-    { text: "⚡ TASK: Type 5 FOODS starting with letter P!", letter: "p", count: 5 },
+    { text: "⚡ TASK: Type 3 FOODS starting with letter P!", letter: "p", count: 5 },
     { text: "⚡ TASK: Type 5 WORDS starting with letter T!", letter: "t", count: 5 }
 ];
 
@@ -638,41 +638,52 @@ function checkWin(b) {
     return ["012","345","678","036","147","258","048","246"].some(s => { const [x,y,z] = s.split('').map(Number); return b[x] && b[x] === b[y] && b[x] === b[z]; });
 }
 
+let spinnerEnded = false;
+
 setInterval(() => {
-    if (gameData.gameState !== 'spinner') return;
+    if (gameData.gameState !== 'spinner') {
+        spinnerEnded = false;
+        return;
+    }
+    if (spinnerEnded) return;
+
     const a = gameData.spinner.a, b = gameData.spinner.b;
-    a.x += a.vx; a.y += a.vy; a.vx *= 0.90; a.vy *= 0.90;
-    b.x += b.vx; b.y += b.vy; b.vx *= 0.90; b.vy *= 0.90;
+    a.x += a.vx; a.y += a.vy; a.vx *= 0.88; a.vy *= 0.88;
+    b.x += b.vx; b.y += b.vy; b.vx *= 0.88; b.vy *= 0.88;
 
     const dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy);
     if (dist < 44) {
-        const nx = dist > 0 ? dx / dist : 1, ny = dist > 0 ? dy / dist : 0;
+        const nx = dist > 0 ? dx / dist : 1;
+        const ny = dist > 0 ? dy / dist : 0;
         const overlap = 44 - dist;
         a.x -= nx * (overlap / 2); a.y -= ny * (overlap / 2);
         b.x += nx * (overlap / 2); b.y += ny * (overlap / 2);
-        a.vx -= nx * 11; a.vy -= ny * 11;
-        b.vx += nx * 11; b.vy += ny * 11;
+        a.vx -= nx * 12; a.vy -= ny * 12;
+        b.vx += nx * 12; b.vy += ny * 12;
     }
 
     const distA = Math.hypot(a.x - 150, a.y - 150);
     const distB = Math.hypot(b.x - 150, b.y - 150);
 
-    if (distA >= 128) {
+    if (distA >= 122 || distB >= 122) {
+        spinnerEnded = true;
         gameData.gameState = 'lobby';
-        gameData.scores.teamB++;
-        const winName = gameData.captainB ? gameData.captainB.username : "Blue Spinner";
-        recordWin(winName + " (🔵 Team B)", '🌀', gameData.captainB ? gameData.captainB.username : null);
-        io.emit('syncGame', gameData);
-    } else if (distB >= 128) {
-        gameData.gameState = 'lobby';
-        gameData.scores.teamA++;
-        const winName = gameData.captainA ? gameData.captainA.username : "Red Spinner";
-        recordWin(winName + " (🔴 Team A)", '🌀', gameData.captainA ? gameData.captainA.username : null);
+
+        if (distA >= distB) {
+            gameData.scores.teamB++;
+            const winName = gameData.captainB ? gameData.captainB.username : "Blue Spinner";
+            recordWin(winName + " (🔵 Team B - Ring Out!)", '🌀', gameData.captainB ? gameData.captainB.username : null);
+        } else {
+            gameData.scores.teamA++;
+            const winName = gameData.captainA ? gameData.captainA.username : "Red Spinner";
+            recordWin(winName + " (🔴 Team A - Ring Out!)", '🌀', gameData.captainA ? gameData.captainA.username : null);
+        }
         io.emit('syncGame', gameData);
     } else {
         io.emit('spinnerTick', gameData.spinner);
     }
 }, 33);
+
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));

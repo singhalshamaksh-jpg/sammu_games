@@ -602,7 +602,13 @@
         playSound('chat');
         const chatArea = document.getElementById('chat-area');
         const container = document.createElement('div');
-        const gifHtml = data.gifUrl ? `<img src="${data.gifUrl}" class="chat-gif" alt="GIF" onerror="this.outerHTML='<div style=\\'font-size:2.2rem;padding:8px;text-align:center;\\'>🎬 ${data.text} 🎬</div>'">` : '';
+        let gifHtml = '';
+if (data.gifUrl) {
+    const parts = data.gifUrl.split('|');
+    const emojiIcon = parts[0] || '🔥';
+    const labelText = parts[1] || data.text;
+    gifHtml = `<div style="margin-top:6px;padding:12px 16px;border-radius:14px;background:linear-gradient(135deg,rgba(236,72,153,0.28),rgba(99,102,241,0.28));border:1px solid rgba(255,255,255,0.2);text-align:center;"><div style="font-size:2.6rem;animation:bombPulse 0.6s infinite;">${emojiIcon}</div><div style="font-size:0.75rem;font-weight:900;letter-spacing:1px;margin-top:4px;color:#fde047;">${labelText}</div></div>`;
+}
         if (data.username === 'SYSTEM') {
             container.className = 'bubble-container msg-container-system';
             container.innerHTML = `<div class="msg-bubble">${data.text}${gifHtml}</div>`;

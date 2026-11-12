@@ -204,14 +204,23 @@
             <div id="sumo-wrestler" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ffcc00; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🤼</div>
         </div>
         <button id="btn-sumo-push" onclick="playSound('tap'); socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
-    </div>
-    <div id="spinner-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #a855f7;">
+    </div>    
+         <div id="spinner-zone" style="display:none; text-align:center; padding:12px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #a855f7; overflow:hidden;">
         <h2 style="color:#d8b4fe; font-size:1.1rem; margin:0 0 10px 0;">🌀 SPINNER.IO ARENA CLASH 🌀</h2>
-        <div style="width:300px; height:300px; margin:0 auto; border-radius:50%; background:radial-gradient(circle, #1e1b4b 40%, #09090b 95%); border:4px solid #a855f7; position:relative; overflow:hidden;">
-            <div id="spin-a" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#ef4444, #991b1b, #fca5a5, #ef4444); border:2px solid #fff; left:90px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite;"></div>
-            <div id="spin-b" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#3b82f6, #1e40af, #93c5fd, #3b82f6); border:2px solid #fff; left:210px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite;"></div>
+        <div style="width:260px; height:260px; margin:0 auto; border-radius:50%; background:radial-gradient(circle, #1e1b4b 40%, #09090b 95%); border:4px solid #a855f7; position:relative; overflow:hidden;">
+            <div id="spin-a" style="position:absolute; width:40px; height:40px; border-radius:50%; background:conic-gradient(#ef4444, #991b1b, #fca5a5, #ef4444); border:2px solid #fff; left:80px; top:130px; transform:translate(-20px,-20px); animation: spinBlade 0.25s linear infinite;"></div>
+            <div id="spin-b" style="position:absolute; width:40px; height:40px; border-radius:50%; background:conic-gradient(#3b82f6, #1e40af, #93c5fd, #3b82f6); border:2px solid #fff; left:180px; top:130px; transform:translate(-20px,-20px); animation: spinBlade 0.25s linear infinite;"></div>
         </div>
         <div style="display:grid; grid-template-columns:repeat(3, 64px); gap:8px; justify-content:center; margin-top:14px;">
+            <div></div>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button>
+            <div></div>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','left')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬅️</button>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','down')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬇️</button>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','right')" style="padding:14px; font-size:1.2rem; border-radius:12px;">➡️</button>
+        </div>
+    </div>
+   <div style="display:grid; grid-template-columns:repeat(3, 64px); gap:8px; justify-content:center; margin-top:14px;">
             <div></div>
             <button onclick="playSound('tap'); socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button>
             <div></div>

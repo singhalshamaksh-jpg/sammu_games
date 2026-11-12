@@ -12,7 +12,7 @@ let hostId = null;
 let sessionMemory = {};
 let drawTimer = null, bombTimer = null, memoryTimer = null;
 
-const ADMIN_SECRET_KEY = "#sammu alpha bravo charlie delta echo foxtrot golf hotel india";
+const ADMIN_SECRET_KEY = "#bhaicharaontop";
 
 let botMemory = {
     lastWinner: null,
@@ -24,22 +24,21 @@ let botMemory = {
 };
 
 const gifLibrary = {
-    fire: "https://giphy.com",
-    gg: "https://giphy.com",
-    cry: "https://giphy.com",
-    dance: "https://giphy.com",
-    win: "https://giphy.com",
-    clown: "https://giphy.com",
-    sus: "https://giphy.com",
-    hype: "https://giphy.com",
-    savage: "https://giphy.com",
-    bye: "https://giphy.com",
-    roast: "https://giphy.com",
-    noob: "https://giphy.com",
-    laugh: "https://giphy.com",
-    shock: "https://giphy.com"
+    fire: "https://tenor.com",
+    gg: "https://tenor.com",
+    cry: "https://tenor.com",
+    dance: "https://tenor.com",
+    win: "https://tenor.com",
+    clown: "https://tenor.com",
+    sus: "https://tenor.com",
+    hype: "https://tenor.com",
+    savage: "https://tenor.com",
+    bye: "https://tenor.com",
+    roast: "https://tenor.com",
+    noob: "https://tenor.com",
+    laugh: "https://tenor.com",
+    shock: "https://tenor.com"
 };
-
 const quizBank = [
     { q: "🌍 GEOGRAPHY: Which country has the largest population in the world?", a: "india" },
     { q: "⚡ SCIENCE: What is the chemical symbol for Gold?", a: "au" },

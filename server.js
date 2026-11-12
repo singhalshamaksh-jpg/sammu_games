@@ -22,22 +22,21 @@ let botMemory = {
     activeTask: null,
     chatCount: 0
 };
-
 const gifLibrary = {
-    fire: "https://tenor.com",
-    gg: "https://tenor.com",
-    cry: "https://tenor.com",
-    dance: "https://tenor.com",
-    win: "https://tenor.com",
-    clown: "https://tenor.com",
-    sus: "https://tenor.com",
-    hype: "https://tenor.com",
-    savage: "https://tenor.com",
-    bye: "https://tenor.com",
-    roast: "https://tenor.com",
-    noob: "https://tenor.com",
-    laugh: "https://tenor.com",
-    shock: "https://tenor.com"
+    fire: "🔥|ON FIRE!|pulse",
+    gg: "🎉|GOOD GAME!|bounce",
+    cry: "😭|CRYING HARD|shake",
+    dance: "💃|VICTORY DANCE|spin",
+    win: "🏆|CHAMPION!|bounce",
+    clown: "🤡|CLOWN MOMENT|shake",
+    sus: "👀|VERY SUS...|pulse",
+    hype: "⚡|MAX HYPE!|bounce",
+    savage: "😎|THUG LIFE SAVAGE|pulse",
+    bye: "👋|BYE BYE!|shake",
+    roast: "🧯|EMOTIONAL DAMAGE|shake",
+    noob: "💀|TOTAL NOOB|spin",
+    laugh: "😂|LMAOOO!|bounce",
+    shock: "😱|WHAT?!|shake"
 };
 const quizBank = [
     { q: "🌍 GEOGRAPHY: Which country has the largest population in the world?", a: "india" },

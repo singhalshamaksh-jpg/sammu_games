@@ -602,7 +602,7 @@
         playSound('chat');
         const chatArea = document.getElementById('chat-area');
         const container = document.createElement('div');
-        const gifHtml = data.gifUrl ? `<img src="${data.gifUrl}" class="chat-gif" alt="GIF">` : '';
+        const gifHtml = data.gifUrl ? `<img src="${data.gifUrl}" class="chat-gif" alt="GIF" onerror="this.outerHTML='<div style=\\'font-size:2.2rem;padding:8px;text-align:center;\\'>🎬 ${data.text} 🎬</div>'">` : '';
         if (data.username === 'SYSTEM') {
             container.className = 'bubble-container msg-container-system';
             container.innerHTML = `<div class="msg-bubble">${data.text}${gifHtml}</div>`;

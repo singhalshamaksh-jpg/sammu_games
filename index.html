@@ -6,13 +6,130 @@
     <title>Sammu Games</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        :root { --glass-bg: rgba(28, 28, 36, 0.75); --glass-border: rgba(255, 255, 255, 0.12); --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5); --incoming-bg: rgba(255, 255, 255, 0.1); --text-main: #f3f4f6; }
-        @keyframes discoParty { 0% { background-color: #1e1b4b; } 25% { background-color: #311042; } 50% { background-color: #062f22; } 75% { background-color: #4c0519; } 100% { background-color: #1e1b4b; } }
+        :root {
+            --glass-bg: rgba(28, 28, 36, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
+            --incoming-bg: rgba(255, 255, 255, 0.1);
+            --text-main: #f3f4f6;
+        }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 14px;
+            background: #0b0b10;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(18, 18, 26, 0.92);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+        }
+        h1 {
+            text-align: center;
+            margin: 0 0 14px 0;
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #a5b4fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h3 { margin: 12px 0 8px 0; font-size: 1rem; color: #cbd5e1; }
+        label { display: block; font-size: 0.82rem; color: #9ca3af; margin: 8px 0 4px 0; }
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.07);
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            margin-bottom: 10px;
+        }
+        select option { background: #1c1c24; color: #fff; }
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.1s ease, opacity 0.15s ease;
+        }
+        button:active { transform: scale(0.97); }
+        .avatar-select { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+        .avatar-opt {
+            flex: 1;
+            text-align: center;
+            font-size: 1.8rem;
+            padding: 10px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .avatar-opt.selected { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.25); }
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 10px 14px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .team-arena { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .team-box { padding: 10px; border-radius: 14px; background: rgba(255, 255, 255, 0.05); }
+        .team-box.red { border: 1px solid rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); }
+        .team-box.blue { border: 1px solid rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.1); }
+        .team-box h4 { margin: 0 0 6px 0; font-size: 0.9rem; }
+        .react-box { display: flex; gap: 8px; margin: 10px 0; }
+        .react-btn { flex: 1; padding: 8px; font-size: 1.3rem; background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-border); }
+        #player-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        .player-card { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-border); padding: 6px 10px; border-radius: 12px; font-size: 0.85rem; }
+        .player-card.selectable { border-color: #ffc107; background: rgba(255, 193, 7, 0.18); cursor: pointer; }
+        @keyframes discoParty {
+            0% { background-color: #1e1b4b; }
+            25% { background-color: #311042; }
+            50% { background-color: #062f22; }
+            75% { background-color: #4c0519; }
+            100% { background-color: #1e1b4b; }
+        }
         .disco-active { animation: discoParty 1.5s linear infinite !important; }
         @keyframes spinBlade { 100% { transform: translate(-22px,-22px) rotate(360deg); } }
         @keyframes bombPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
         @keyframes bubblePop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        #chat-area { background: var(--glass-bg) !important; border: 1px solid var(--glass-border) !important; border-radius: 18px !important; padding: 16px !important; height: 420px !important; min-height: 420px !important; max-height: 420px !important; overflow-y: auto !important; display: flex !important; flex-direction: column !important; gap: 12px !important; scroll-behavior: smooth !important; margin-bottom: 10px !important; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important; }
+        #chat-area {
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 18px !important;
+            padding: 16px !important;
+            height: 420px !important;
+            min-height: 420px !important;
+            max-height: 420px !important;
+            overflow-y: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            scroll-behavior: smooth !important;
+            margin-bottom: 10px !important;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important;
+        }
         .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem; line-height: 1.4; color: var(--text-main); word-break: break-word; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.15); animation: bubblePop 0.2s ease-out forwards; }
         .bubble-container { display: flex; flex-direction: column; width: 100%; margin: 2px 0; }
         .msg-container-outgoing { align-items: flex-end; }
@@ -23,12 +140,15 @@
         .msg-container-system { align-items: center; text-align: center; }
         .msg-container-system .msg-bubble { background: rgba(252, 211, 77, 0.1); border: 1px solid rgba(252, 211, 77, 0.2); color: #fcd34d; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; }
         .chirp-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding: 2px 0; }
-        .chirp-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; padding: 6px 12px; border-radius: 14px; font-size: 0.78rem; white-space: nowrap; cursor: pointer; }
+        .chirp-btn { width: auto; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; padding: 6px 12px; border-radius: 14px; font-size: 0.78rem; white-space: nowrap; cursor: pointer; }
         #chat-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 24px; color: var(--text-main); outline: none; font-size: 0.95rem; }
         .btn-disco { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-weight: bold; border: none; border-radius: 12px; padding: 10px; margin-bottom: 8px; width: 100%; cursor: pointer; }
         #floating-container { position: fixed; bottom: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; overflow: hidden; }
         .floating-emoji { position: absolute; bottom: -50px; font-size: 2rem; user-select: none; animation: floatUpAndFade 2.5s ease-out forwards; opacity: 0; }
         @keyframes floatUpAndFade { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-105vh) translateX(var(--random-x)) scale(1.1); opacity: 0; } }
+        .chat-gif { max-width: 190px; border-radius: 12px; margin-top: 6px; display: block; }
+        .cap-tag-a { background: #ef4444; color: #fff; font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+        .cap-tag-b { background: #3b82f6; color: #fff; font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
     </style>
 </head>
 <body>
@@ -44,6 +164,7 @@
     </div>
     <button onclick="joinGame()">ENTER LOBBY</button>
 </div>
+
 <div class="container" id="game-screen" style="display:none;">
     <h1 id="room-title">Sammu Arena</h1>
     <button class="btn-disco" onclick="toggleDisco()">🪩 TOGGLE LOBBY DISCO MODE 🪩</button>
@@ -51,15 +172,37 @@
         <button onclick="changeProfile()" style="flex:1; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:12px; padding:8px; cursor:pointer; font-size:0.85rem;">✏️ Change Name</button>
         <button id="btn-sound-toggle" onclick="toggleSound()" style="flex:1; background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(16,185,129,0.4); border-radius:12px; padding:8px; cursor:pointer; font-size:0.85rem;">🔊 Sound: ON</button>
     </div>
-    <div id="score-display" class="score-board" style="display:none;"><div id="scoreA-text">🔴 Team A: 0</div><div id="scoreB-text">🔵 Team B: 0</div></div>
+
+    <div id="score-display" class="score-board" style="display:none;">
+        <div id="scoreA-text">🔴 Team A: 0</div>
+        <div id="scoreB-text">🔵 Team B: 0</div>
+    </div>
+
     <div id="draft-arena-zone" style="display:none;">
         <h3 id="draft-instructions" style="text-align:center; color:#ffc107; margin:5px 0; font-size:1rem;"></h3>
-        <div class="team-arena"><div class="team-box red" id="box-teamA"><h4 id="head-teamA">Team A</h4><div id="list-teamA"></div></div><div class="team-box blue" id="box-teamB"><h4 id="head-teamB">Team B</h4><div id="list-teamB"></div></div></div>
+        <div class="team-arena">
+            <div class="team-box red" id="box-teamA">
+                <h4 id="head-teamA">Team A</h4>
+                <div id="list-teamA"></div>
+            </div>
+            <div class="team-box blue" id="box-teamB">
+                <h4 id="head-teamB">Team B</h4>
+                <div id="list-teamB"></div>
+            </div>
+        </div>
     </div>
-    <div id="battle-zone" style="display:none; text-align:center;"><h3 id="battle-status" style="color:#ff0055; padding: 8px;">⚔️ Match Live ⚔️</h3><div class="board" id="ttt-board"></div></div>
+
+    <div id="battle-zone" style="display:none; text-align:center;">
+        <h3 id="battle-status" style="color:#ff0055; padding: 8px;">⚔️ Match Live ⚔️</h3>
+        <div class="board" id="ttt-board"></div>
+    </div>
+
     <div id="sumo-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #444;">
         <h2 style="color:#ffcc00; font-size:1.1rem; margin:0 0 10px 0;">🤼 SUMO RING SMASH 🤼</h2>
-        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;"><div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div><div id="sumo-wrestler" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ffcc00; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🤼</div></div>
+        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:15px 0; border:2px solid #333;">
+            <div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div>
+            <div id="sumo-wrestler" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ffcc00; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🤼</div>
+        </div>
         <button id="btn-sumo-push" onclick="playSound('tap'); socket.emit('sumoPush')" style="background:linear-gradient(135deg, #ffcc00, #ff9900); color:#000; font-size:1.3rem; font-weight:900;">TAP FAST TO PUSH! 🔥</button>
     </div>
     <div id="spinner-zone" style="display:none; text-align:center; padding:15px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #a855f7;">
@@ -69,26 +212,32 @@
             <div id="spin-b" style="position:absolute; width:44px; height:44px; border-radius:50%; background:conic-gradient(#3b82f6, #1e40af, #93c5fd, #3b82f6); border:2px solid #fff; left:210px; top:150px; transform:translate(-22px,-22px); animation: spinBlade 0.25s linear infinite;"></div>
         </div>
         <div style="display:grid; grid-template-columns:repeat(3, 64px); gap:8px; justify-content:center; margin-top:14px;">
-            <div></div><button onclick="playSound('tap'); socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button><div></div>
+            <div></div>
+            <button onclick="playSound('tap'); socket.emit('spinnerMove','up')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬆️</button>
+            <div></div>
             <button onclick="playSound('tap'); socket.emit('spinnerMove','left')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬅️</button>
             <button onclick="playSound('tap'); socket.emit('spinnerMove','down')" style="padding:14px; font-size:1.2rem; border-radius:12px;">⬇️</button>
             <button onclick="playSound('tap'); socket.emit('spinnerMove','right')" style="padding:14px; font-size:1.2rem; border-radius:12px;">➡️</button>
         </div>
     </div>
+
     <div id="quickdraw-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #ef4444;">
         <h2 style="color:#fca5a5; font-size:1.1rem; margin:0 0 12px 0;">🤠 QUICK-DRAW REFLEX DUEL 🤠</h2>
         <button id="btn-draw-fire" onclick="playSound('tap'); socket.emit('quickDrawFire')" style="width:100%; height:130px; border-radius:16px; background:#dc2626; color:#fff; font-size:1.6rem; font-weight:900; border:none;">WAIT FOR GREEN... 🛑</button>
     </div>
+
     <div id="math-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #10b981;">
         <h2 style="color:#6ee7b7; font-size:1.1rem; margin:0 0 8px 0;">🧠 MATH BLITZ SHOWDOWN 🧠</h2>
         <div id="math-question" style="font-size:1.8rem; font-weight:900; color:#fff; margin:14px 0;"></div>
         <div id="math-options" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
     </div>
+
     <div id="bomb-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #f97316;">
         <h2 style="color:#fdba74; font-size:1.1rem; margin:0 0 10px 0;">💣 HOT POTATO BOMB PASS 💣</h2>
         <div id="bomb-status" style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:12px;"></div>
         <button id="btn-bomb-pass" onclick="playSound('tap'); socket.emit('passBomb')" style="width:100%; padding:18px; border-radius:16px; background:#ea580c; color:#fff; font-size:1.4rem; font-weight:900; border:none; animation: bombPulse 0.6s infinite;">PASS BOMB! 🔥</button>
     </div>
+
     <div id="rps-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #38bdf8;">
         <h2 style="color:#7dd3fc; font-size:1.1rem; margin:0 0 8px 0;">🪨 ROCK PAPER SCISSORS ✂️</h2>
         <div id="rps-status" style="font-size:0.95rem; color:#cbd5e1; margin-bottom:12px;">Pick your weapon secretly!</div>
@@ -98,21 +247,73 @@
             <button onclick="playSound('tap'); socket.emit('pickRPS','✂️')" style="flex:1; padding:16px; font-size:2rem; border-radius:14px;">✂️</button>
         </div>
     </div>
+
     <div id="memory-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #ec4899;">
         <h2 style="color:#f472b6; font-size:1.1rem; margin:0 0 8px 0;">✨ EMOJI MEMORY GRID ✨</h2>
         <div id="memory-prompt" style="font-size:1.15rem; font-weight:800; color:#fff; margin-bottom:10px;">Memorize the grid!</div>
         <div id="memory-grid" style="display:grid; grid-template-columns:repeat(3, 75px); gap:8px; justify-content:center;"></div>
     </div>
+
     <div id="tug-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #eab308;">
         <h2 style="color:#fde047; font-size:1.1rem; margin:0 0 6px 0;">🪢 ALL-PLAYERS TUG-OF-WAR 🪢</h2>
         <p style="font-size:0.8rem; color:#9ca3af; margin:0 0 10px 0;">Everyone on Team A & Team B tap together!</p>
-        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:12px 0; border:2px solid #333;"><div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div><div id="tug-knot" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🪢</div></div>
+        <div style="width:100%; height:32px; background:#0b0b0d; border-radius:16px; position:relative; overflow:hidden; margin:12px 0; border:2px solid #333;">
+            <div style="position:absolute; left:50%; top:0; width:2px; height:100%; background:#fff; opacity:0.3;"></div>
+            <div id="tug-knot" style="position:absolute; top:2px; left:50%; width:26px; height:26px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transform:translateX(-13px); transition: left 0.08s ease-out;">🪢</div>
+        </div>
         <button onclick="playSound('tap'); socket.emit('tugPull')" style="width:100%; padding:16px; border-radius:14px; background:linear-gradient(135deg, #ef4444, #3b82f6); color:#fff; font-size:1.3rem; font-weight:900;">PULL FOR YOUR TEAM! 💪</button>
     </div>
+    <div id="colortrap-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #14b8a6;">
+        <h2 style="color:#5eead4; font-size:1.1rem; margin:0 0 8px 0;">🎨 COLOR TRAP REFLEX 🎨</h2>
+        <div id="colortrap-prompt" style="font-size:1.4rem; font-weight:900; margin:10px 0;"></div>
+        <div id="colortrap-options" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+    </div>
+
+    <div id="scramble-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #f59e0b;">
+        <h2 style="color:#fcd34d; font-size:1.1rem; margin:0 0 8px 0;">🔤 WORD SCRAMBLE RUSH 🔤</h2>
+        <div id="scramble-word" style="font-size:1.8rem; font-weight:900; letter-spacing:4px; color:#fff; margin:12px 0;"></div>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="scramble-input" placeholder="Unscramble..." style="flex:1; margin:0;">
+            <button onclick="submitScramble()" style="width:auto; padding:10px 18px; background:#f59e0b; color:#000;">GO</button>
+        </div>
+    </div>
+
+    <div id="dice-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #8b5cf6;">
+        <h2 style="color:#c4b5fd; font-size:1.1rem; margin:0 0 8px 0;">🎲 HIGH-LOW DICE DUEL 🎲</h2>
+        <div id="dice-status" style="font-size:1.1rem; color:#e2e8f0; margin-bottom:12px;">Roll your dice!</div>
+        <button onclick="playSound('tap'); socket.emit('rollArenaDice')" style="background:#8b5cf6; color:#fff; font-size:1.3rem; font-weight:900;">ROLL DICE 🎲</button>
+    </div>
+
+    <div id="penalty-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #22c55e;">
+        <h2 style="color:#86efac; font-size:1.1rem; margin:0 0 8px 0;">⚽ PENALTY SHOOTOUT 🥅</h2>
+        <div id="penalty-status" style="font-size:0.95rem; color:#cbd5e1; margin-bottom:12px;">Captain A shoots, Captain B dives!</div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="playSound('tap'); socket.emit('penaltyPick','LEFT')" style="flex:1;">⬅️ LEFT</button>
+            <button onclick="playSound('tap'); socket.emit('penaltyPick','CENTER')" style="flex:1;">⬆️ CENTER</button>
+            <button onclick="playSound('tap'); socket.emit('penaltyPick','RIGHT')" style="flex:1;">➡️ RIGHT</button>
+        </div>
+    </div>
+
+    <div id="typing-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #06b6d4;">
+        <h2 style="color:#67e8f9; font-size:1.1rem; margin:0 0 8px 0;">⌨️ SPEED TYPING SPRINT ⌨️</h2>
+        <div id="typing-target" style="font-size:1.25rem; font-weight:800; color:#fde047; margin:10px 0;"></div>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="typing-input" placeholder="Type exact phrase..." style="flex:1; margin:0;">
+            <button onclick="submitTyping()" style="width:auto; padding:10px 18px; background:#06b6d4; color:#000;">SEND</button>
+        </div>
+    </div>
+
+    <div id="treasure-zone" style="display:none; text-align:center; padding:18px; margin:15px 0; background:#1c1c24; border-radius:16px; border:1px solid #eab308;">
+        <h2 style="color:#fef08a; font-size:1.1rem; margin:0 0 8px 0;">💎 TREASURE CHEST HUNT 💎</h2>
+        <div id="treasure-status" style="font-size:0.95rem; color:#cbd5e1; margin-bottom:10px;">Find the hidden Diamond!</div>
+        <div id="treasure-grid" style="display:grid; grid-template-columns:repeat(3, 75px); gap:8px; justify-content:center;"></div>
+    </div>
     <div id="host-panel" style="display:none; background:#1c1c24; padding:15px; border-radius:16px; margin-bottom:15px; border: 1px solid #ffc107;">
-        <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL (9 ARENAS)</h4>
-        <label>Choose Captain A</label><select id="select-capA"></select>
-        <label>Choose Captain B</label><select id="select-capB"></select>
+        <h4 style="margin:0 0 10px 0; color:#ffc107; font-weight:800;">👑 HOST PANEL (15 ARENAS)</h4>
+        <label>Choose Captain A</label>
+        <select id="select-capA"></select>
+        <label>Choose Captain B</label>
+        <select id="select-capB"></select>
         <button id="btn-captains" onclick="hostSubmitCaptains()" style="background:#ffc107; color:#000; margin-bottom:8px;">Appoint Captains (For Team Draft)</button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
             <button onclick="hostStartDuel()" style="background:#00bcd4; color:#000; font-size:0.85rem;">1. Tic-Tac-Toe ⚔️</button>
@@ -123,102 +324,473 @@
             <button onclick="hostLaunchGame('launchBomb')" style="background:#f97316; color:#fff; font-size:0.85rem;">6. Bomb Pass 💣</button>
             <button onclick="hostLaunchGame('launchRPS')" style="background:#38bdf8; color:#000; font-size:0.85rem;">7. RPS Clash ✂️</button>
             <button onclick="hostLaunchGame('launchMemory')" style="background:#ec4899; color:#fff; font-size:0.85rem;">8. Memory Grid ✨</button>
+            <button onclick="hostLaunchGame('launchColorTrap')" style="background:#14b8a6; color:#000; font-size:0.85rem;">10. Color Trap 🎨</button>
+            <button onclick="hostLaunchGame('launchScramble')" style="background:#f59e0b; color:#000; font-size:0.85rem;">11. Word Scramble 🔤</button>
+            <button onclick="hostLaunchGame('launchDice')" style="background:#8b5cf6; color:#fff; font-size:0.85rem;">12. High-Low Dice 🎲</button>
+            <button onclick="hostLaunchGame('launchPenalty')" style="background:#22c55e; color:#000; font-size:0.85rem;">13. Penalty Kick ⚽</button>
+            <button onclick="hostLaunchGame('launchTyping')" style="background:#06b6d4; color:#000; font-size:0.85rem;">14. Speed Typing ⌨️</button>
+            <button onclick="hostLaunchGame('launchTreasure')" style="background:#eab308; color:#000; font-size:0.85rem;">15. Treasure Hunt 💎</button>
         </div>
         <button onclick="hostLaunchGame('launchTug')" style="background:linear-gradient(90deg, #ef4444, #3b82f6); color:#fff; margin-top:6px;">9. All-Players Tug-of-War 🪢</button>
         <button onclick="hostReset()" style="background:#444; margin-top:8px;">Full Lobby Reset</button>
     </div>
-    <div class="react-box"><button class="react-btn" onclick="sendReaction('🔥')">🔥</button><button class="react-btn" onclick="sendReaction('👑')">👑</button><button class="react-btn" onclick="sendReaction('🤡')">🤡</button><button class="react-btn" onclick="sendReaction('💀')">💀</button></div>
-    <h3 id="list-header-title">Players in Room</h3><div id="player-list"></div>
-    <h3>Lobby Chat Room</h3><div id="chat-area"></div>
-    <div class="chirp-row"><button class="chirp-btn" onclick="sendQuickChirp('!task')">⚡ Drop Task</button><button class="chirp-btn" onclick="sendQuickChirp('Loser! 🤫')">Loser! 🤫</button><button class="chirp-btn" onclick="sendQuickChirp('EZ! 🥱')">EZ! 🥱</button><button class="chirp-btn" onclick="sendQuickChirp('Go Team! 🔥')">Go Team! 🔥</button></div>
-    <input type="text" id="chat-input" placeholder="Type tasks or chat with Sammu's Bot..." onkeypress="handleChatKey(event)">
+
+    <div class="react-box">
+        <button class="react-btn" onclick="sendReaction('🔥')">🔥</button>
+        <button class="react-btn" onclick="sendReaction('👑')">👑</button>
+        <button class="react-btn" onclick="sendReaction('🤡')">🤡</button>
+        <button class="react-btn" onclick="sendReaction('💀')">💀</button>
+    </div>
+
+    <div id="mvp-box" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:8px 12px; margin:8px 0; font-size:0.82rem; color:#fde047;">🏆 MVP Leaderboard: Play games or solve !quiz / !task to rank up!</div>
+
+    <h3 id="list-header-title">Players in Room</h3>
+    <div id="player-list"></div>
+
+    <h3>Lobby Chat Room</h3>
+    <div id="chat-area"></div>
+
+    <div class="chirp-row">
+        <button class="chirp-btn" onclick="sendQuickChirp('!task')">⚡ Drop Task</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('!quiz')">🧠 Quiz</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('!riddle')">❓ Riddle</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('!mvp')">🏆 MVP</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('/gif fire')">🔥 GIF</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('/gif gg')">🎉 GG GIF</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('Loser! 🤫')">Loser! 🤫</button>
+        <button class="chirp-btn" onclick="sendQuickChirp('EZ! 🥱')">EZ! 🥱</button>
+    </div>
+    <input type="text" id="chat-input" placeholder="Type tasks, !quiz, !riddle, /gif fire, or chat..." onkeypress="handleChatKey(event)">
 </div>
 <div id="floating-container"></div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
-    let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [], currentGameState = 'lobby', activeTurnPickerId = null, localUsername = "";
+    let selectedAvatar = '🥷', myId = null, isIAmHost = false, currentPlayers = [];
+    let currentGameState = 'lobby', activeTurnPickerId = null, localUsername = "";
     let soundEnabled = true, discoInterval = null, discoStep = 0;
+    let currentCapA = null, currentCapB = null;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSound(type) {
         if (!soundEnabled) return;
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const now = audioCtx.currentTime, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        if (type === 'chat') { osc.type = 'sine'; osc.frequency.setValueAtTime(520, now); osc.frequency.exponentialRampToValueAtTime(780, now + 0.08); gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09); osc.start(now); osc.stop(now + 0.09); }
-        else if (type === 'tap') { osc.type = 'triangle'; osc.frequency.setValueAtTime(320, now); osc.frequency.exponentialRampToValueAtTime(140, now + 0.07); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08); osc.start(now); osc.stop(now + 0.08); }
-        else if (type === 'emoji') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(900, now + 0.06); osc.frequency.setValueAtTime(1200, now + 0.12); gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22); osc.start(now); osc.stop(now + 0.22); }
-        else if (type === 'win') { [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'triangle'; o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(freq, now + i * 0.1); g.gain.setValueAtTime(0.2, now + i * 0.1); g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25); o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.25); }); }
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'chat') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(520, now);
+            osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+            osc.start(now);
+            osc.stop(now + 0.09);
+        } else if (type === 'tap') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(140, now + 0.07);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        } else if (type === 'emoji') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.setValueAtTime(900, now + 0.06);
+            osc.frequency.setValueAtTime(1200, now + 0.12);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+            osc.start(now);
+            osc.stop(now + 0.22);
+        } else if (type === 'win') {
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.type = 'triangle';
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                o.frequency.setValueAtTime(freq, now + i * 0.1);
+                g.gain.setValueAtTime(0.2, now + i * 0.1);
+                g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25);
+                o.start(now + i * 0.1);
+                o.stop(now + i * 0.1 + 0.25);
+            });
+        }
     }
 
     function playDiscoBeat() {
         if (!soundEnabled || !document.body.classList.contains('disco-active')) return;
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const now = audioCtx.currentTime, kick = audioCtx.createOscillator(), kGain = audioCtx.createGain();
-        kick.type = 'sine'; kick.frequency.setValueAtTime(140, now); kick.frequency.exponentialRampToValueAtTime(40, now + 0.12);
-        kGain.gain.setValueAtTime(0.28, now); kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14); kick.connect(kGain); kGain.connect(audioCtx.destination); kick.start(now); kick.stop(now + 0.14);
-        const notes = [110, 110, 130.81, 146.83, 164.81, 146.83, 130.81, 98], bass = audioCtx.createOscillator(), bGain = audioCtx.createGain();
-        bass.type = 'sawtooth'; bass.frequency.setValueAtTime(notes[discoStep % notes.length], now + 0.12); bGain.gain.setValueAtTime(0.08, now + 0.12); bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28); bass.connect(bGain); bGain.connect(audioCtx.destination); bass.start(now + 0.12); bass.stop(now + 0.28); discoStep++;
+        const now = audioCtx.currentTime;
+        const kick = audioCtx.createOscillator();
+        const kGain = audioCtx.createGain();
+        kick.type = 'sine';
+        kick.frequency.setValueAtTime(140, now);
+        kick.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+        kGain.gain.setValueAtTime(0.28, now);
+        kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        kick.connect(kGain);
+        kGain.connect(audioCtx.destination);
+        kick.start(now);
+        kick.stop(now + 0.14);
+
+        const notes = [110, 110, 130.81, 146.83, 164.81, 146.83, 130.81, 98];
+        const bass = audioCtx.createOscillator();
+        const bGain = audioCtx.createGain();
+        bass.type = 'sawtooth';
+        bass.frequency.setValueAtTime(notes[discoStep % notes.length], now + 0.12);
+        bGain.gain.setValueAtTime(0.08, now + 0.12);
+        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        bass.connect(bGain);
+        bGain.connect(audioCtx.destination);
+        bass.start(now + 0.12);
+        bass.stop(now + 0.28);
+        discoStep++;
     }
 
-    function toggleSound() { soundEnabled = !soundEnabled; const btn = document.getElementById('btn-sound-toggle'); btn.innerText = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF'; btn.style.background = soundEnabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'; btn.style.color = soundEnabled ? '#6ee7b7' : '#fca5a5'; if (soundEnabled) playSound('chat'); }
-    function toggleDisco() { playSound('tap'); if (document.body.classList.toggle('disco-active')) { discoStep = 0; playDiscoBeat(); discoInterval = setInterval(playDiscoBeat, 320); } else { clearInterval(discoInterval); discoInterval = null; } }
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        const btn = document.getElementById('btn-sound-toggle');
+        btn.innerText = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+        btn.style.background = soundEnabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
+        btn.style.color = soundEnabled ? '#6ee7b7' : '#fca5a5';
+        if (soundEnabled) playSound('chat');
+    }
 
-    localStorage.removeItem('sammu_username'); localStorage.removeItem('sammu_avatar');
-    function changeProfile() { playSound('tap'); sessionStorage.clear(); document.getElementById('game-screen').style.display = 'none'; document.getElementById('login-screen').style.display = 'block'; }
-    function selectAvatar(a, el) { playSound('tap'); document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); selectedAvatar = a; }
+    function toggleDisco() {
+        playSound('tap');
+        if (document.body.classList.toggle('disco-active')) {
+            discoStep = 0;
+            playDiscoBeat();
+            discoInterval = setInterval(playDiscoBeat, 320);
+        } else {
+            clearInterval(discoInterval);
+            discoInterval = null;
+        }
+    }
+
+    localStorage.removeItem('sammu_username');
+    localStorage.removeItem('sammu_avatar');
+
+    function changeProfile() {
+        playSound('tap');
+        sessionStorage.clear();
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('login-screen').style.display = 'block';
+    }
+
+    function selectAvatar(a, el) {
+        playSound('tap');
+        document.querySelectorAll('.avatar-opt').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedAvatar = a;
+    }
+
     function joinGame() {
-        const u = document.getElementById('username').value.trim(); if(!u) return alert("Enter name!");
-        playSound('win'); localUsername = u; sessionStorage.setItem('sammu_username', u); sessionStorage.setItem('sammu_avatar', selectedAvatar);
-        document.getElementById('login-screen').style.display = 'none'; document.getElementById('game-screen').style.display = 'block';
-        myId = socket.id; socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
+        const u = document.getElementById('username').value.trim();
+        if (!u) return alert("Enter name!");
+        playSound('win');
+        localUsername = u;
+        sessionStorage.setItem('sammu_username', u);
+        sessionStorage.setItem('sammu_avatar', selectedAvatar);
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        myId = socket.id;
+        socket.emit('joinRoom', { username: u, avatar: selectedAvatar });
     }
-    socket.on('connect', () => { myId = socket.id; const sn = sessionStorage.getItem('sammu_username'), sa = sessionStorage.getItem('sammu_avatar'); if (sn && sa && document.getElementById('game-screen').style.display === 'block') { localUsername = sn; selectedAvatar = sa; socket.emit('joinRoom', { username: sn, avatar: sa }); } });
 
-    function sendQuickChirp(t) { playSound('tap'); socket.emit('chatMessage', t); }
-    function hostSubmitCaptains() { const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value; if(!capA || !capB) return alert("Pick Captain A and Captain B first! 🛑"); playSound('tap'); socket.emit('makeCaptains', { capA, capB }); }
-    function hostStartDuel() { const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value; if(!capA || !capB) return alert("Pick Captain A and Captain B first! ⚔️"); playSound('tap'); socket.emit('assignFighters', { fightA: capA, fightB: capB }); }
-    function hostLaunchGame(eventName) { const capA = document.getElementById('select-capA').value, capB = document.getElementById('select-capB').value; if(!capA || !capB) return alert("Pick Captain A and Captain B from the dropdowns first! 🛑"); playSound('tap'); socket.emit('makeCaptains', { capA, capB }); setTimeout(() => socket.emit(eventName), 150); }
-    function hostReset() { playSound('tap'); socket.emit('resetToLobby'); }
-    socket.on('initRole', (data) => { isIAmHost = data.isHost; document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none'; document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena"; });
-    socket.on('updatePlayers', (p) => { currentPlayers = p; const selA = document.getElementById('select-capA'), selB = document.getElementById('select-capB'), valA = selA.value, valB = selB.value; selA.innerHTML = '<option value="">-- Choose Captain A --</option>'; selB.innerHTML = '<option value="">-- Choose Captain B --</option>'; p.forEach(pl => { selA.innerHTML += `<option value="${pl.id}">${pl.username}</option>`; selB.innerHTML += `<option value="${pl.id}">${pl.username}</option>`; }); selA.value = valA; selB.value = valB; renderPlayerList(); });
-    function renderPlayerList() { const list = document.getElementById('player-list'); list.innerHTML = ''; currentPlayers.forEach(pl => { const card = document.createElement('div'); const isDrafted = document.getElementById('list-teamA').innerText.includes(pl.username) || document.getElementById('list-teamB').innerText.includes(pl.username); card.className = (currentGameState === 'drafting' && !isDrafted) ? 'player-card selectable' : 'player-card'; if (currentGameState === 'drafting' && !isDrafted && myId === activeTurnPickerId) card.onclick = () => { playSound('tap'); socket.emit('draftPlayer', pl.id); }; card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b> ${pl.isHost ? '<i style="color:#ffc107;margin-left:5px;">(Host)👑</i>' : ''}`; list.appendChild(card); }); }
-    function handleChatKey(e) { if (e.key === 'Enter') { const i = document.getElementById('chat-input'); if (i.value.trim()) { socket.emit('chatMessage', i.value.trim()); i.value = ''; } } }
-
-    socket.on('message', (data) => {
-        playSound('chat'); const chatArea = document.getElementById('chat-area'), container = document.createElement('div');
-        if (data.username === 'SYSTEM') { container.className = 'bubble-container msg-container-system'; container.innerHTML = `<div class="msg-bubble">${data.text}</div>`; }
-        else if (data.username === "Sammu's Bot") { container.className = 'bubble-container msg-container-incoming'; container.innerHTML = `<div class="msg-sender-title" style="color:#34d399;">🤖 Sammu's Bot <span style="background:rgba(16,185,129,0.2); border:1px solid #10b981; font-size:0.65rem; padding:1px 5px; border-radius:4px;">AI</span></div><div class="msg-bubble" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#ecfdf5;">${data.text}</div>`; }
-        else { const isMe = (data.username === localUsername); container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming'; const mp = currentPlayers.find(p => p.username === data.username), icon = mp ? mp.avatar : '👤'; container.innerHTML = `${!isMe ? `<div class="msg-sender-title">${icon} ${data.username}</div>` : ''}<div class="msg-bubble">${data.text}</div>`; }
-        chatArea.appendChild(container); chatArea.scrollTop = chatArea.scrollHeight;
+    socket.on('connect', () => {
+        myId = socket.id;
+        const sn = sessionStorage.getItem('sammu_username');
+        const sa = sessionStorage.getItem('sammu_avatar');
+        if (sn && sa && document.getElementById('game-screen').style.display === 'block') {
+            localUsername = sn;
+            selectedAvatar = sa;
+            socket.emit('joinRoom', { username: sn, avatar: sa });
+        }
     });
 
-    socket.on('incomingReaction', (emoji) => { playSound('emoji'); const container = document.getElementById('floating-container') || document.body; for (let i = 0; i < 12; i++) { const el = document.createElement('div'); el.className = 'floating-emoji'; el.innerText = emoji; el.style.left = (Math.random() * 80 + 10) + '%'; el.style.setProperty('--random-x', (Math.random() * 120 - 60) + 'px'); el.style.animationDelay = (Math.random() * 0.4) + 's'; container.appendChild(el); setTimeout(() => el.remove(), 3000); } });
+    function sendQuickChirp(t) { playSound('tap'); socket.emit('chatMessage', t); }
+    function submitScramble() {
+        const inp = document.getElementById('scramble-input');
+        if (inp && inp.value.trim()) { playSound('tap'); socket.emit('submitScramble', inp.value.trim()); inp.value = ''; }
+    }
+    function submitTyping() {
+        const inp = document.getElementById('typing-input');
+        if (inp && inp.value.trim()) { playSound('tap'); socket.emit('submitTyping', inp.value.trim()); inp.value = ''; }
+    }
+    function hostSubmitCaptains() {
+        const capA = document.getElementById('select-capA').value;
+        const capB = document.getElementById('select-capB').value;
+        if (!capA || !capB) return alert("Pick Captain A and Captain B first! 🛑");
+        playSound('tap');
+        socket.emit('makeCaptains', { capA, capB });
+    }
+    function hostStartDuel() {
+        const capA = document.getElementById('select-capA').value;
+        const capB = document.getElementById('select-capB').value;
+        if (!capA || !capB) return alert("Pick Captain A and Captain B first! ⚔️");
+        playSound('tap');
+        socket.emit('assignFighters', { fightA: capA, fightB: capB });
+    }
+    function hostLaunchGame(eventName) {
+        const capA = document.getElementById('select-capA').value;
+        const capB = document.getElementById('select-capB').value;
+        if (!capA || !capB) return alert("Pick Captain A and Captain B from the dropdowns first! 🛑");
+        playSound('tap');
+        socket.emit('makeCaptains', { capA, capB });
+        setTimeout(() => socket.emit(eventName), 150);
+    }
+    function hostReset() { playSound('tap'); socket.emit('resetToLobby'); }
+    socket.on('initRole', (data) => {
+        isIAmHost = data.isHost;
+        document.getElementById('host-panel').style.display = isIAmHost ? 'block' : 'none';
+        document.getElementById('room-title').innerText = isIAmHost ? "Sammu Games (HOST) 👑" : "Sammu Arena";
+    });
+
+    socket.on('updatePlayers', (p) => {
+        currentPlayers = p;
+        const selA = document.getElementById('select-capA');
+        const selB = document.getElementById('select-capB');
+        const valA = selA.value, valB = selB.value;
+        selA.innerHTML = '<option value="">-- Choose Captain A --</option>';
+        selB.innerHTML = '<option value="">-- Choose Captain B --</option>';
+        p.forEach(pl => {
+            selA.innerHTML += `<option value="${pl.id}">${pl.username}</option>`;
+            selB.innerHTML += `<option value="${pl.id}">${pl.username}</option>`;
+        });
+        selA.value = valA;
+        selB.value = valB;
+        renderPlayerList();
+    });
+
+    function renderPlayerList() {
+        const list = document.getElementById('player-list');
+        list.innerHTML = '';
+        currentPlayers.forEach(pl => {
+            const card = document.createElement('div');
+            const isDrafted = document.getElementById('list-teamA').innerText.includes(pl.username) || document.getElementById('list-teamB').innerText.includes(pl.username);
+            card.className = (currentGameState === 'drafting' && !isDrafted) ? 'player-card selectable' : 'player-card';
+            if (currentGameState === 'drafting' && !isDrafted && myId === activeTurnPickerId) {
+                card.onclick = () => { playSound('tap'); socket.emit('draftPlayer', pl.id); };
+            }
+            const capBadge = (currentCapA && pl.id === currentCapA.id) ? '<span class="cap-tag-a">CAP A</span>' : ((currentCapB && pl.id === currentCapB.id) ? '<span class="cap-tag-b">CAP B</span>' : '');
+            card.innerHTML = `<span>${pl.avatar}</span> <b>${pl.username}</b>${capBadge} ${pl.isHost ? '<i style="color:#ffc107;margin-left:5px;">(Host)👑</i>' : ''}`;
+            list.appendChild(card);
+        });
+    }
+
+    function handleChatKey(e) {
+        if (e.key === 'Enter') {
+            const i = document.getElementById('chat-input');
+            if (i.value.trim()) { socket.emit('chatMessage', i.value.trim()); i.value = ''; }
+        }
+    }
+
+    socket.on('updateMVP', (board) => {
+        const box = document.getElementById('mvp-box');
+        if (!box) return;
+        if (!board || board.length === 0) { box.innerText = '🏆 MVP Leaderboard: Play games or solve !quiz / !task to rank up!'; return; }
+        box.innerHTML = '🏆 <b>MVP Top 5:</b> ' + board.slice(0, 5).map((e, i) => `#${i + 1} ${e.name} (${e.pts} pts)`).join(' • ');
+    });
+
+    socket.on('message', (data) => {
+        playSound('chat');
+        const chatArea = document.getElementById('chat-area');
+        const container = document.createElement('div');
+        const gifHtml = data.gifUrl ? `<img src="${data.gifUrl}" class="chat-gif" alt="GIF">` : '';
+        if (data.username === 'SYSTEM') {
+            container.className = 'bubble-container msg-container-system';
+            container.innerHTML = `<div class="msg-bubble">${data.text}${gifHtml}</div>`;
+        } else if (data.username === "Sammu's Bot") {
+            container.className = 'bubble-container msg-container-incoming';
+            container.innerHTML = `<div class="msg-sender-title" style="color:#34d399;">🤖 Sammu's Bot <span style="background:rgba(16,185,129,0.2); border:1px solid #10b981; font-size:0.65rem; padding:1px 5px; border-radius:4px;">AI</span></div><div class="msg-bubble" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#ecfdf5;">${data.text}${gifHtml}</div>`;
+        } else {
+            const isMe = (data.username === localUsername);
+            container.className = isMe ? 'bubble-container msg-container-outgoing' : 'bubble-container msg-container-incoming';
+            const mp = currentPlayers.find(p => p.username === data.username);
+            const icon = mp ? mp.avatar : '👤';
+            const capTag = (currentCapA && currentCapA.username === data.username) ? '<span class="cap-tag-a">CAP A</span>' : ((currentCapB && currentCapB.username === data.username) ? '<span class="cap-tag-b">CAP B</span>' : '');
+            container.innerHTML = `${!isMe ? `<div class="msg-sender-title">${icon} ${data.username}${capTag}</div>` : ''}<div class="msg-bubble">${data.text}${gifHtml}</div>`;
+        }
+        chatArea.appendChild(container);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    });
+
+    socket.on('incomingReaction', (emoji) => {
+        playSound('emoji');
+        const container = document.getElementById('floating-container') || document.body;
+        for (let i = 0; i < 12; i++) {
+            const el = document.createElement('div');
+            el.className = 'floating-emoji';
+            el.innerText = emoji;
+            el.style.left = (Math.random() * 80 + 10) + '%';
+            el.style.setProperty('--random-x', (Math.random() * 120 - 60) + 'px');
+            el.style.animationDelay = (Math.random() * 0.4) + 's';
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+    });
+
     function sendReaction(emoji) { socket.emit('sendReaction', emoji); }
-    socket.on('announceWinner', (data) => { playSound('win'); alert(data.icon ? `GAME OVER! Winner: ${data.winner} ${data.icon}` : `GAME OVER: ${data.winner}!`); });
-    socket.on('spinnerTick', (spin) => { const sA = document.getElementById('spin-a'), sB = document.getElementById('spin-b'); if (sA) { sA.style.left = spin.a.x + 'px'; sA.style.top = spin.a.y + 'px'; } if (sB) { sB.style.left = spin.b.x + 'px'; sB.style.top = spin.b.y + 'px'; } });
+    socket.on('announceWinner', (data) => {
+        playSound('win');
+        alert(data.icon ? `GAME OVER! Winner: ${data.winner} ${data.icon}` : `GAME OVER: ${data.winner}!`);
+    });
 
+    socket.on('spinnerTick', (spin) => {
+        const sA = document.getElementById('spin-a');
+        const sB = document.getElementById('spin-b');
+        if (sA) { sA.style.left = spin.a.x + 'px'; sA.style.top = spin.a.y + 'px'; }
+        if (sB) { sB.style.left = spin.b.x + 'px'; sB.style.top = spin.b.y + 'px'; }
+    });
     socket.on('syncGame', (g) => {
-        currentGameState = g.gameState; activeTurnPickerId = g.currentTurnPicker;
-        const started = (g.gameState !== 'lobby'), show = (id, c) => { const el = document.getElementById(id); if (el) el.style.display = c ? 'block' : 'none'; };
-        if (document.getElementById('score-display')) { document.getElementById('score-display').style.display = started ? 'flex' : 'none'; document.getElementById('scoreA-text').innerText = `🔴 Team A: ${g.scores.teamA}`; document.getElementById('scoreB-text').innerText = `🔵 Team B: ${g.scores.teamB}`; }
-        show('draft-arena-zone', started); show('sumo-zone', g.gameState === 'sumo'); show('spinner-zone', g.gameState === 'spinner');
-        show('quickdraw-zone', g.gameState === 'quickdraw'); show('math-zone', g.gameState === 'math'); show('battle-zone', g.gameState === 'duel');
-        show('bomb-zone', g.gameState === 'bomb'); show('rps-zone', g.gameState === 'rps'); show('memory-zone', g.gameState === 'memory'); show('tug-zone', g.gameState === 'tug');
+        currentGameState = g.gameState;
+        activeTurnPickerId = g.currentTurnPicker;
+        currentCapA = g.captainA;
+        currentCapB = g.captainB;
+        const started = (g.gameState !== 'lobby');
+        const show = (id, c) => { const el = document.getElementById(id); if (el) el.style.display = c ? 'block' : 'none'; };
 
-        if (started) { document.getElementById('list-teamA').innerHTML = g.teamA.map(p => `<div>${p.avatar} ${p.username}</div>`).join(''); document.getElementById('list-teamB').innerHTML = g.teamB.map(p => `<div>${p.avatar} ${p.username}</div>`).join(''); const picker = currentPlayers.find(p => p.id === g.currentTurnPicker); document.getElementById('draft-instructions').innerText = (g.gameState === 'drafting' && picker) ? `🎯 ${picker.username}'s turn to pick a player!` : ''; }
-        else { document.getElementById('list-teamA').innerHTML = ''; document.getElementById('list-teamB').innerHTML = ''; }
+        if (document.getElementById('score-display')) {
+            document.getElementById('score-display').style.display = started ? 'flex' : 'none';
+            document.getElementById('scoreA-text').innerText = `🔴 Team A: ${g.scores.teamA}`;
+            document.getElementById('scoreB-text').innerText = `🔵 Team B: ${g.scores.teamB}`;
+        }
+
+        show('draft-arena-zone', started);
+        show('sumo-zone', g.gameState === 'sumo');
+        show('spinner-zone', g.gameState === 'spinner');
+        show('quickdraw-zone', g.gameState === 'quickdraw');
+        show('math-zone', g.gameState === 'math');
+        show('battle-zone', g.gameState === 'duel');
+        show('bomb-zone', g.gameState === 'bomb');
+        show('rps-zone', g.gameState === 'rps');
+        show('memory-zone', g.gameState === 'memory');
+        show('tug-zone', g.gameState === 'tug');
+        show('colortrap-zone', g.gameState === 'colortrap');
+        show('scramble-zone', g.gameState === 'scramble');
+        show('dice-zone', g.gameState === 'dice');
+        show('penalty-zone', g.gameState === 'penalty');
+        show('typing-zone', g.gameState === 'typing');
+        show('treasure-zone', g.gameState === 'treasure');
+
+        if (started) {
+            document.getElementById('list-teamA').innerHTML = g.teamA.map(p => `<div>${p.avatar} ${p.username}</div>`).join('');
+            document.getElementById('list-teamB').innerHTML = g.teamB.map(p => `<div>${p.avatar} ${p.username}</div>`).join('');
+            const picker = currentPlayers.find(p => p.id === g.currentTurnPicker);
+            document.getElementById('draft-instructions').innerText = (g.gameState === 'drafting' && picker) ? `🎯 ${picker.username}'s turn to pick a player!` : '';
+        } else {
+            document.getElementById('list-teamA').innerHTML = '';
+            document.getElementById('list-teamB').innerHTML = '';
+        }
         renderPlayerList();
 
-        if (g.gameState === 'quickdraw') { const btn = document.getElementById('btn-draw-fire'); if (btn) { if (g.drawReady) playSound('emoji'); btn.style.background = g.drawReady ? '#10b981' : '#dc2626'; btn.innerText = g.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑'; } }
-        if (g.gameState === 'math' && g.mathQ) { document.getElementById('math-question').innerText = g.mathQ.question; const box = document.getElementById('math-options'); box.innerHTML = ''; g.mathQ.options.forEach(opt => { const b = document.createElement('button'); b.innerText = opt; b.style.cssText = 'padding:14px; font-size:1.2rem; font-weight:bold; border-radius:12px;'; b.onclick = () => { playSound('tap'); socket.emit('submitMath', opt); }; box.appendChild(b); }); }
-        if (g.gameState === 'duel' && g.tttBoard) { const board = document.getElementById('ttt-board'), st = document.getElementById('battle-status'); if (st && g.tttTurn) { const f = currentPlayers.find(p => p.id === g.tttTurn); st.innerText = f ? `⚔️ Turn: ${f.username} ⚔️` : `⚔️ Match Live ⚔️`; } if (board) { board.innerHTML = ''; g.tttBoard.forEach((v, idx) => { const b = document.createElement('button'); b.className = 'cell'; b.style.cssText = 'width:80px; height:80px; margin:4px; font-size:1.8rem; font-weight:900;'; b.innerText = v || ''; b.onclick = () => { playSound('tap'); socket.emit('makeMove', idx); }; board.appendChild(b); }); } }
-        if (g.gameState === 'bomb') { const holder = currentPlayers.find(p => p.id === g.bombHolder); document.getElementById('bomb-status').innerText = holder ? `💣 Bomb is with: ${holder.username}!` : '💣 Ticking...'; }
-        if (g.gameState === 'rps') { const aOk = g.rpsChoices.a ? '✅' : '⏳', bOk = g.rpsChoices.b ? '✅' : '⏳'; document.getElementById('rps-status').innerText = `🔴 Red: ${aOk}  |  🔵 Blue: ${bOk}`; }
-        if (g.gameState === 'memory') { document.getElementById('memory-prompt').innerText = g.memoryHidden ? `❓ Where was the ${g.memoryTarget} ?` : '👀 Memorize the emojis!'; const grid = document.getElementById('memory-grid'); grid.innerHTML = ''; g.memoryGrid.forEach((em, idx) => { const b = document.createElement('button'); b.style.cssText = 'height:75px; font-size:2rem; border-radius:12px;'; b.innerText = g.memoryHidden ? '❓' : em; b.onclick = () => { playSound('tap'); socket.emit('pickMemory', idx); }; grid.appendChild(b); }); }
-        const w = document.getElementById('sumo-wrestler'); if (w && g.sumoPosition) w.style.left = g.sumoPosition + '%';
-        const k = document.getElementById('tug-knot'); if (k && g.tugPosition) k.style.left = g.tugPosition + '%';
+        if (g.gameState === 'quickdraw') {
+            const btn = document.getElementById('btn-draw-fire');
+            if (btn) {
+                if (g.drawReady) playSound('emoji');
+                btn.style.background = g.drawReady ? '#10b981' : '#dc2626';
+                btn.innerText = g.drawReady ? 'FIRE NOW!! 🔫⚡' : 'HOLD STEADY... 🛑';
+            }
+        }
+        if (g.gameState === 'math' && g.mathQ) {
+            document.getElementById('math-question').innerText = g.mathQ.question;
+            const box = document.getElementById('math-options');
+            box.innerHTML = '';
+            g.mathQ.options.forEach(opt => {
+                const b = document.createElement('button');
+                b.innerText = opt;
+                b.style.cssText = 'padding:14px; font-size:1.2rem; font-weight:bold; border-radius:12px;';
+                b.onclick = () => { playSound('tap'); socket.emit('submitMath', opt); };
+                box.appendChild(b);
+            });
+        }
+        if (g.gameState === 'duel' && g.tttBoard) {
+            const board = document.getElementById('ttt-board');
+            const st = document.getElementById('battle-status');
+            if (st && g.tttTurn) {
+                const f = currentPlayers.find(p => p.id === g.tttTurn);
+                st.innerText = f ? `⚔️ Turn: ${f.username} ⚔️` : `⚔️ Match Live ⚔️`;
+            }
+            if (board) {
+                board.innerHTML = '';
+                g.tttBoard.forEach((v, idx) => {
+                    const b = document.createElement('button');
+                    b.className = 'cell';
+                    b.style.cssText = 'width:80px; height:80px; margin:4px; font-size:1.8rem; font-weight:900;';
+                    b.innerText = v || '';
+                    b.onclick = () => { playSound('tap'); socket.emit('makeMove', idx); };
+                    board.appendChild(b);
+                });
+            }
+        }
+        if (g.gameState === 'bomb') {
+            const holder = currentPlayers.find(p => p.id === g.bombHolder);
+            document.getElementById('bomb-status').innerText = holder ? `💣 Bomb is with: ${holder.username}!` : '💣 Ticking...';
+        }
+        if (g.gameState === 'rps') {
+            const aOk = g.rpsChoices.a ? '✅' : '⏳';
+            const bOk = g.rpsChoices.b ? '✅' : '⏳';
+            document.getElementById('rps-status').innerText = `🔴 Red: ${aOk}  |  🔵 Blue: ${bOk}`;
+        }
+        if (g.gameState === 'memory') {
+            document.getElementById('memory-prompt').innerText = g.memoryHidden ? `❓ Where was the ${g.memoryTarget} ?` : '👀 Memorize the emojis!';
+            const grid = document.getElementById('memory-grid');
+            grid.innerHTML = '';
+            g.memoryGrid.forEach((em, idx) => {
+                const b = document.createElement('button');
+                b.style.cssText = 'height:75px; font-size:2rem; border-radius:12px;';
+                b.innerText = g.memoryHidden ? '❓' : em;
+                b.onclick = () => { playSound('tap'); socket.emit('pickMemory', idx); };
+                grid.appendChild(b);
+            });
+        }
+        if (g.gameState === 'colortrap' && g.colorTrap) {
+            const pr = document.getElementById('colortrap-prompt');
+            pr.innerText = `TAP THE COLOR: ${g.colorTrap.targetName}`;
+            pr.style.color = g.colorTrap.fakeHex;
+            const box = document.getElementById('colortrap-options');
+            box.innerHTML = '';
+            g.colorTrap.options.forEach(c => {
+                const b = document.createElement('button');
+                b.innerText = c.name;
+                b.style.cssText = `padding:16px; font-size:1.1rem; font-weight:900; border-radius:12px; background:${c.hex}; color:#fff; border:2px solid #fff;`;
+                b.onclick = () => { playSound('tap'); socket.emit('pickColorTrap', c.name); };
+                box.appendChild(b);
+            });
+        }
+        if (g.gameState === 'scramble') { document.getElementById('scramble-word').innerText = g.scrambleWord || ''; }
+        if (g.gameState === 'dice' && g.diceRolls) {
+            const rA = g.diceRolls.a ? `🎲 ${g.diceRolls.a}` : '⏳';
+            const rB = g.diceRolls.b ? `🎲 ${g.diceRolls.b}` : '⏳';
+            document.getElementById('dice-status').innerText = `🔴 Red: ${rA}  |  🔵 Blue: ${rB}`;
+        }
+        if (g.gameState === 'penalty' && g.penaltyPicks) {
+            const sOk = g.penaltyPicks.shooter ? '✅ Locked' : '⏳ Choosing...';
+            const kOk = g.penaltyPicks.keeper ? '✅ Locked' : '⏳ Choosing...';
+            document.getElementById('penalty-status').innerText = `⚽ Shooter (Red): ${sOk} | 🧤 Keeper (Blue): ${kOk}`;
+        }
+        if (g.gameState === 'typing') { document.getElementById('typing-target').innerText = g.typingPhrase || ''; }
+        if (g.gameState === 'treasure' && g.treasureGrid) {
+            const grid = document.getElementById('treasure-grid');
+            grid.innerHTML = '';
+            g.treasureGrid.forEach((cell, idx) => {
+                const b = document.createElement('button');
+                b.style.cssText = 'height:75px; font-size:1.8rem; border-radius:12px;';
+                b.innerText = cell.opened ? cell.icon : '📦';
+                b.onclick = () => { playSound('tap'); socket.emit('pickTreasure', idx); };
+                grid.appendChild(b);
+            });
+        }
+        const w = document.getElementById('sumo-wrestler');
+        if (w && g.sumoPosition) w.style.left = g.sumoPosition + '%';
+        const k = document.getElementById('tug-knot');
+        if (k && g.tugPosition) k.style.left = g.tugPosition + '%';
     });
 </script>
 </body>

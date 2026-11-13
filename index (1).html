@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sammu Games</title>
+    <script src="https://cloudflare.com"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(28, 28, 36, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.14);
+            --outgoing-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
+            --incoming-bg: rgba(255, 255, 255, 0.1);
+            --text-main: #f3f4f6;
+        }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 10px;
+            background: #0b0b10;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .page-card {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            background: rgba(18, 18, 26, 0.96);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 16px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65);
+        }
+        #game-screen { display: none; }
+        h1 {
+            text-align: center;
+            margin: 0 0 12px 0;
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #a5b4fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h3 { margin: 12px 0 8px 0; font-size: 1rem; color: #cbd5e1; }
+        label { display: block; font-size: 0.82rem; color: #9ca3af; margin: 8px 0 4px 0; }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            margin-bottom: 10px;
+        }
+        select option { background: #1c1c24; color: #fff; }
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        button:active { transform: scale(0.97); }
+             .avatar-select { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+        .avatar-opt {
+            flex: 1;
+            text-align: center;
+            font-size: 1.9rem;
+            padding: 12px 6px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .avatar-opt.selected { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.28); }
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 10px 14px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .team-arena { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .team-box { padding: 10px; border-radius: 14px; background: rgba(255, 255, 255, 0.05); }
+        .team-box.red { border: 1px solid rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); }
+        .team-box.blue { border: 1px solid rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.1); }
+        .team-box h4 { margin: 0 0 6px 0; font-size: 0.9rem; }
+        .react-box { display: flex; gap: 8px; margin: 10px 0; }
+        .react-btn { flex: 1; padding: 8px; font-size: 1.3rem; background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-border); }
+        #player-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        .player-card { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-border); padding: 6px 10px; border-radius: 12px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px; }
+        .player-card.selectable { border-color: #ffc107; background: rgba(255, 193, 7, 0.18); cursor: pointer; }
+        @keyframes discoParty {
+            0% { background-color: #1e1b4b; }
+            25% { background-color: #311042; }
+            50% { background-color: #062f22; }
+            75% { background-color: #4c0519; }
+            100% { background-color: #1e1b4b; }
+        }
+        .disco-active { animation: discoParty 1.5s linear infinite !important; }
+        @keyframes spinBlade { 100% { transform: translate(-20px,-20px) rotate(360deg); } }
+        @keyframes bombPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        @keyframes bubblePop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            #chat-area {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 14px;
+            height: 460px;
+            min-height: 460px;
+            max-height: 460px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+            margin-bottom: 10px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.45);
+            width: 100%;
+        }
+        .msg-bubble { max-width: 82%; padding: 10px 14px; border-radius: 16px; font-size: 0.94rem; line-height: 1.4; color: var(--text-main); word-break: break-word; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.15); animation: bubblePop 0.2s ease-out forwards; }
+        .bubble-container { display: flex; flex-direction: column; width: 100%; margin: 2px 0; }
+        .msg-container-outgoing { align-items: flex-end; }
+        .msg-container-outgoing .msg-bubble { background: var(--outgoing-gradient); border-bottom-right-radius: 4px; }
+        .msg-container-incoming { align-items: flex-start; }
+        .msg-container-incoming .msg-bubble { background: var(--incoming-bg); border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.06); }
+        .msg-sender-title { font-size: 0.78rem; color: #a5b4fc; margin-bottom: 3px; padding: 0 4px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+        .msg-container-system { align-items: center; text-align: center; }
+        .msg-container-system .msg-bubble { background: rgba(252, 211, 77, 0.12); border: 1px solid rgba(252, 211, 77, 0.25); color: #fcd34d; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; }
+        .chirp-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding: 2px 0; }
+        .chirp-btn { width: auto; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; padding: 7px 12px; border-radius: 14px; font-size: 0.8rem; white-space: nowrap; cursor: pointer; }
+        .btn-disco { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-weight: bold; border: none; border-radius: 12px; padding: 10px; margin-bottom: 8px; width: 100%; cursor: pointer; }
+        #floating-container { position: fixed; bottom: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; overflow: hidden; }
+        .floating-emoji { position: absolute; bottom: -50px; font-size: 2rem; user-select: none; animation: floatUpAndFade 2.5s ease-out forwards; opacity: 0; }
+        @keyframes floatUpAndFade { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-105vh) translateX(var(--random-x)) scale(1.1); opacity: 0; } }
+        .cap-tag-a { background: #ef4444; color: #fff; font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+        .cap-tag-b { background: #3b82f6; color: #fff; font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+        .trophy-pill { background: rgba(250, 204, 21, 0.18); border: 1px solid rgba(250, 204, 21, 0.4); color: #fde047; font-size: 0.72rem; padding: 2px 7px; border-radius: 8px; display: inline-block; margin: 2px; }
+                .arena-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 14px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .ttt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 240px; margin: 10px auto; }
+        .ttt-cell { height: 70px; background: rgba(255,255,255,0.08); border-radius: 12px; font-size: 2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--glass-border); }
+        .dpad { display: grid; grid-template-columns: repeat(3, 60px); gap: 6px; justify-content: center; margin-top: 10px; }
+        .dpad button { padding: 14px; font-size: 1.2rem; }
+        .gif-card { padding: 10px 14px; border-radius: 14px; background: rgba(139, 92, 246, 0.25); border: 1px solid rgba(167, 139, 250, 0.5); text-align: center; font-weight: 900; }
+        .gif-pulse { animation: bombPulse 0.7s infinite; }
+        .gif-bounce { animation: bubblePop 0.5s infinite alternate; }
+        .gif-shake { animation: bombPulse 0.3s infinite; }
+        .gif-spin { animation: bombPulse 0.6s infinite; }
+        #gif-drawer {
+            display: none;
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 8px;
+            background: rgba(15, 15, 24, 0.92);
+            padding: 10px;
+            border-radius: 14px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(139, 92, 246, 0.45);
+            scroll-snap-type: x mandatory;
+        }
+        .gif-preview-card {
+            min-width: 88px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 8px 6px;
+            text-align: center;
+            cursor: pointer;
+            scroll-snap-align: start;
+            flex-shrink: 0;
+        }
+        .gif-preview-card:active { transform: scale(0.95); border-color: #a855f7; }
+        .pfp-img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; vertical-align: middle; border: 1px solid #a5b4fc; }
+        .chat-shared-img { max-width: 210px; max-height: 210px; border-radius: 12px; display: block; margin-top: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+        #img-preview-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; padding: 16px; }
+        #img-preview-modal img { max-width: 95%; max-height: 85vh; border-radius: 16px; }
+        #draw-modal { display: none; position: fixed; inset: 0; background: rgba(10,10,16,0.96); z-index: 9998; flex-direction: column; align-items: center; justify-content: center; padding: 14px; }
+        #draw-canvas { background: #ffffff; border-radius: 16px; touch-action: none; border: 2px solid #8b5cf6; max-width: 100%; }
+        #stk-screen { display: none; position: fixed; inset: 0; background: #1e293b; z-index: 9995; flex-direction: column; }
+        #stk-canvas-wrap { flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; }
+        .stk-hud-top { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; z-index: 10; pointer-events: none; }
+        .stk-pill { background: rgba(15, 15, 25, 0.85); border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 14px; font-weight: 800; font-size: 0.85rem; pointer-events: auto; }
+        .stk-controls { position: absolute; bottom: 14px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 10; pointer-events: none; }
+        .stk-controls > div { pointer-events: auto; }
+    </style>
+</head>
+  <body>
+    <div id="floating-container"></div>
+
+    <div id="img-preview-modal" onclick="this.style.display='none'">
+        <img id="img-preview-full" src="" alt="Preview">
+    </div>
+
+    <div id="draw-modal">
+        <div style="width:100%;max-width:420px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <strong style="color:#a5b4fc;">🎨 Sammu Art Studio</strong>
+            <button style="width:auto;padding:6px 12px;background:#ef4444;" onclick="closeDrawPad()">✕ Close</button>
+        </div>
+        <canvas id="draw-canvas" width="340" height="340"></canvas>
+        <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;justify-content:center;max-width:360px;">
+            <button class="chirp-btn" style="background:#000000;border:2px solid #fff;" onclick="setBrushColor('#000000')">⚫</button>
+            <button class="chirp-btn" style="background:#ef4444;" onclick="setBrushColor('#ef4444')">🔴</button>
+            <button class="chirp-btn" style="background:#3b82f6;" onclick="setBrushColor('#3b82f6')">🔵</button>
+            <button class="chirp-btn" style="background:#10b981;" onclick="setBrushColor('#10b981')">🟢</button>
+            <button class="chirp-btn" style="background:#eab308;" onclick="setBrushColor('#eab308')">🟡</button>
+            <button class="chirp-btn" style="background:#a855f7;" onclick="setBrushColor('#a855f7')">🟣</button>
+            <button class="chirp-btn" style="background:#ec4899;" onclick="setBrushColor('#ec4899')">🩷</button>
+            <button class="chirp-btn" style="background:#f97316;" onclick="setBrushColor('#f97316')">🟠</button>
+            <button class="chirp-btn" style="background:#06b6d4;" onclick="setBrushColor('#06b6d4')">🩵</button>
+            <button class="chirp-btn" style="background:#92400e;" onclick="setBrushColor('#92400e')">🟤</button>
+            <button class="chirp-btn" style="background:#6b7280;" onclick="setBrushColor('#6b7280')">🔘</button>
+            <button class="chirp-btn" style="background:#ffffff;color:#000;" onclick="setBrushColor('#ffffff')">🧽</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;justify-content:center;max-width:360px;">
+            <button id="tool-brush-btn" class="chirp-btn" style="background:#6366f1;" onclick="setDrawTool('brush')">🖌️ Brush</button>
+            <button id="tool-bucket-btn" class="chirp-btn" onclick="setDrawTool('bucket')">🪣 Bucket Fill</button>
+            <button class="chirp-btn" onclick="setBrushSize(3)">• Thin</button>
+            <button class="chirp-btn" onclick="setBrushSize(8)">● Med</button>
+            <button class="chirp-btn" onclick="setBrushSize(16)">⬤ Thick</button>
+            <button class="chirp-btn" onclick="clearDrawCanvas()">🗑️ Clear</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;width:100%;max-width:340px;">
+            <button style="background:#10b981;" onclick="saveDrawingToPhone()">💾 Save PNG</button>
+            <button style="background:#6366f1;" onclick="sendDrawingToChat()">📤 Post to Chat</button>
+        </div>
+    </div>
+
+    <div id="login-screen" class="page-card">
+        <h1>🎮 Sammu Games</h1>
+        <label>Enter Your Name</label>
+        <input type="text" id="username-input" placeholder="e.g. Sammu" maxlength="16">
+
+        <label>Choose Avatar OR Upload Profile Photo (Chess.com Style 📸)</label>
+        <div class="avatar-select">
+            <div class="avatar-opt selected" onclick="selectAvatar(this, '🥷')">🥷</div>
+            <div class="avatar-opt" onclick="selectAvatar(this, '🤖')">🤖</div>
+            <div class="avatar-opt" onclick="selectAvatar(this, '🦁')">🦁</div>
+            <div class="avatar-opt" onclick="selectAvatar(this, '👽')">👽</div>
+            <label for="pfp-upload" class="avatar-opt" id="pfp-opt-box" style="margin:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📸</label>
+            <input type="file" id="pfp-upload" accept="image/*" style="display:none;" onchange="handlePfpUpload(event)">
+        </div>
+        <div id="pfp-preview-wrap" style="display:none;text-align:center;margin-bottom:10px;">
+            <img id="pfp-preview-img" src="" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #8b5cf6;">
+            <div style="font-size:0.75rem;color:#a5b4fc;">Custom Profile Photo Ready! ✅</div>
+        </div>
+
+        <button onclick="enterLobby()">ENTER LOBBY 🚀</button>
+    </div>
+
+    <div id="game-screen" class="page-card">
+        <h1>🏆 Sammu Arena</h1>
+        <div class="score-board">
+            <span style="color:#f87171;">🔴 Team A: <span id="score-a">0</span></span>
+            <span style="color:#60a5fa;">🔵 Team B: <span id="score-b">0</span></span>
+        </div>
+        <div id="mvp-bar" style="margin-bottom:8px;text-align:center;"></div>
+
+        <div id="legendary-hall" style="display:none;background:linear-gradient(135deg,rgba(250,204,21,0.14),rgba(139,92,246,0.16));border:1px solid rgba(250,204,21,0.45);border-radius:16px;padding:10px;margin-bottom:10px;">
+            <div style="font-size:0.85rem;font-weight:900;color:#fde047;text-align:center;margin-bottom:8px;">🏛️ HALL OF LEGENDARIES (Host Featured Art)</div>
+            <div id="legendary-grid" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;"></div>
+        </div>
+              <div class="team-arena">
+            <div class="team-box red">
+                <h4>🔴 Team A</h4>
+                <div id="team-a-list" style="font-size:0.82rem;">Waiting...</div>
+            </div>
+            <div class="team-box blue">
+                <h4>🔵 Team B</h4>
+                <div id="team-b-list" style="font-size:0.82rem;">Waiting...</div>
+            </div>
+        </div>
+
+        <div id="draft-banner" style="display:none;background:rgba(250,204,21,0.18);border:1px solid #facc15;color:#fde047;padding:8px;border-radius:12px;text-align:center;font-weight:700;margin-bottom:8px;"></div>
+
+        <h3>👥 Lobby Players (<span id="player-count">0</span>)</h3>
+        <div id="player-list"></div>
+
+        <div class="react-box">
+            <button class="react-btn" onclick="sendReaction('🔥')">🔥</button>
+            <button class="react-btn" onclick="sendReaction('😂')">😂</button>
+            <button class="react-btn" onclick="sendReaction('💀')">💀</button>
+            <button class="react-btn" onclick="sendReaction('👑')">👑</button>
+            <button class="react-btn" onclick="sendReaction('❤️')">❤️</button>
+        </div>
+
+        <div id="host-panel" style="display:none;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.4);border-radius:16px;padding:12px;margin-bottom:12px;">
+            <h3 style="margin-top:0;color:#c4b5fd;">👑 Host Admin Panel</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <select id="cap-a-select"></select>
+                <select id="cap-b-select"></select>
+            </div>
+            <button onclick="assignCaptains()" style="margin-bottom:8px;">Set Captains & Draft ⚔️</button>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <select id="fight-a-select"></select>
+                <select id="fight-b-select"></select>
+            </div>
+            <button onclick="startTTT()" style="margin-bottom:8px;background:linear-gradient(135deg,#ec4899,#8b5cf6);">1. ⚔️ Tic-Tac-Toe Duel</button>
+
+            <label style="color:#fca5a5;">🔨 Moderate / Ban Disturbing Player</label>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <select id="ban-player-select" style="margin-bottom:0;"></select>
+                <button onclick="banSelectedPlayer()" style="width:auto;background:#ef4444;padding:10px 14px;">🔨 Ban</button>
+            </div>
+
+            <label style="color:#fde047;">🎵 Live Captain Song / Custom Task</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+                <input type="text" id="host-song-kw" placeholder="Word e.g. dupatta" style="margin-bottom:0;">
+                <button onclick="sendHostSongTask()" style="width:auto;background:#f59e0b;color:#000;padding:10px 12px;">🎵 Ask</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+                <button onclick="hostAwardPoint('A')" style="background:#ef4444;padding:8px;font-size:0.82rem;">+1 🔴 Team A</button>
+                <button onclick="hostAwardPoint('B')" style="background:#3b82f6;padding:8px;font-size:0.82rem;">+1 🔵 Team B</button>
+            </div>
+                        <label style="color:#a5b4fc;">🎮 Launch Captain Mini-Games (1 – 20)</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+                <button onclick="socket.emit('launchSumo')">2. 🤼 Sumo Push</button>
+                <button onclick="socket.emit('launchSpinner')">3. 🌀 Spinner Clash</button>
+                <button onclick="socket.emit('launchQuickDraw')">4. 🤠 Quick-Draw</button>
+                <button onclick="socket.emit('launchMath')">5. 🧮 Math Blitz</button>
+                <button onclick="socket.emit('launchBomb')">6. 💣 Bomb Pass</button>
+                <button onclick="socket.emit('launchRPS')">7. 🪨 Rock Paper</button>
+                <button onclick="socket.emit('launchMemory')">8. 🧠 Emoji Memory</button>
+                <button onclick="socket.emit('launchTug')">9. 🪢 Tug of War</button>
+                <button onclick="socket.emit('launchColorTrap')">10. 🎨 Color Trap</button>
+                <button onclick="socket.emit('launchScramble')">11. 🔤 Word Scramble</button>
+                <button onclick="socket.emit('launchDice')">12. 🎲 High Dice</button>
+                <button onclick="socket.emit('launchPenalty')">13. ⚽ Penalty Kick</button>
+                <button onclick="socket.emit('launchTyping')">14. ⌨️ Typing Race</button>
+                <button onclick="socket.emit('launchTreasure')">15. 💎 Treasure Hunt</button>
+                <button onclick="socket.emit('launchSimon')">16. 🚨 Simon Says</button>
+                <button onclick="socket.emit('launchCards')">17. 🃏 High / Low</button>
+                <button onclick="socket.emit('launchDefuse')">18. ✂️ Wire Defusal</button>
+                <button onclick="socket.emit('launchGuess')">19. 🔢 Number Guess</button>
+                <button onclick="socket.emit('launchTarget')" style="grid-column:span 2;">20. 🎯 Target Sniper</button>
+            </div>
+
+            <div style="background:rgba(239,68,68,0.16);border:1px solid #ef4444;border-radius:12px;padding:8px;margin-bottom:8px;">
+                <label style="color:#fca5a5;margin-top:0;">🔪 21. 3D SURVIVE THE KILLER (Choose Killer)</label>
+                <div style="display:flex;gap:6px;">
+                    <select id="stk-killer-select" style="margin-bottom:0;"></select>
+                    <button onclick="startSTK()" style="width:auto;background:#dc2626;padding:10px 14px;">🔪 Start 3D</button>
+                </div>
+            </div>
+
+            <button onclick="socket.emit('resetToLobby')" style="background:#374151;">🔄 Reset Arena to Lobby</button>
+        </div>
+                <div id="arena-container">
+            <div id="arena-duel" class="arena-box" style="display:none;">
+                <h3>⚔️ Tic-Tac-Toe Duel</h3>
+                <div id="ttt-status" style="font-size:0.85rem;color:#fcd34d;"></div>
+                <div id="ttt-board" class="ttt-grid"></div>
+            </div>
+
+            <div id="arena-sumo" class="arena-box" style="display:none;">
+                <h3>🤼 Sumo Push (Tap Fast!)</h3>
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:800;margin-bottom:4px;">
+                    <span style="color:#f87171;">🔴 Team A</span>
+                    <span style="color:#60a5fa;">🔵 Team B</span>
+                </div>
+                <div style="position:relative;background:#1f2937;height:32px;border-radius:16px;overflow:visible;margin:14px 0;border:1px solid rgba(255,255,255,0.15);">
+                    <div id="sumo-bar" style="width:50%;height:100%;background:linear-gradient(90deg,#ef4444,#3b82f6);border-radius:16px;transition:width 0.1s;"></div>
+                    <div id="sumo-emoji" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;transition:left 0.1s;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8));">🤼</div>
+                </div>
+                <button onclick="socket.emit('sumoPush')" style="padding:18px;font-size:1.2rem;">💥 PUSH!</button>
+            </div>
+
+            <div id="arena-spinner" class="arena-box" style="display:none;">
+                <h3>🌀 Spinner Clash</h3>
+                <canvas id="spinner-canvas" width="260" height="260" style="background:#111827;border-radius:50%;border:3px solid #8b5cf6;"></canvas>
+                <div class="dpad">
+                    <div></div><button onclick="socket.emit('spinnerMove','up')">⬆️</button><div></div>
+                    <button onclick="socket.emit('spinnerMove','left')">⬅️</button><button onclick="socket.emit('spinnerMove','down')">⬇️</button><button onclick="socket.emit('spinnerMove','right')">➡️</button>
+                </div>
+            </div>
+
+            <div id="arena-quickdraw" class="arena-box" style="display:none;">
+                <h3>🤠 Quick-Draw</h3>
+                <button id="qd-btn" onclick="socket.emit('quickDrawFire')" style="padding:26px;font-size:1.3rem;background:#dc2626;">WAIT...</button>
+            </div>
+
+            <div id="arena-math" class="arena-box" style="display:none;">
+                <h3>🧮 Math Blitz</h3>
+                <div id="math-q" style="font-size:1.4rem;font-weight:800;margin:10px 0;"></div>
+                <div id="math-opts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+            </div>
+
+            <div id="arena-bomb" class="arena-box" style="display:none;">
+                <h3>💣 Bomb Pass</h3>
+                <div id="bomb-holder-text" style="font-size:1.1rem;font-weight:800;margin:10px 0;animation:bombPulse 0.5s infinite;"></div>
+                <button onclick="socket.emit('passBomb')" style="background:#f59e0b;color:#000;padding:16px;">🔥 PASS BOMB!</button>
+            </div>
+
+            <div id="arena-rps" class="arena-box" style="display:none;">
+                <h3>🪨 Rock Paper Scissors</h3>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="socket.emit('pickRPS','🪨')" style="font-size:1.6rem;">🪨</button>
+                    <button onclick="socket.emit('pickRPS','📄')" style="font-size:1.6rem;">📄</button>
+                    <button onclick="socket.emit('pickRPS','✂️')" style="font-size:1.6rem;">✂️</button>
+                </div>
+            </div>
+
+            <div id="arena-memory" class="arena-box" style="display:none;">
+                <h3>🧠 Emoji Memory</h3>
+                <div id="memory-target" style="font-size:1.1rem;font-weight:800;margin-bottom:8px;"></div>
+                <div id="memory-grid" class="ttt-grid"></div>
+            </div>
+
+            <div id="arena-tug" class="arena-box" style="display:none;">
+                <h3>🪢 Team Tug of War</h3>
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:800;margin-bottom:4px;">
+                    <span style="color:#f87171;">🔴 Team A</span>
+                    <span style="color:#60a5fa;">🔵 Team B</span>
+                </div>
+                <div style="position:relative;background:#1f2937;height:32px;border-radius:16px;overflow:visible;margin:14px 0;border:1px solid rgba(255,255,255,0.15);">
+                    <div id="tug-bar" style="width:50%;height:100%;background:linear-gradient(90deg,#ef4444,#3b82f6);border-radius:16px;transition:width 0.1s;"></div>
+                    <div id="tug-emoji" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;transition:left 0.1s;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8));">🪢</div>
+                </div>
+                <button onclick="socket.emit('tugPull')" style="padding:18px;font-size:1.2rem;">🪢 PULL ROPE!</button>
+            </div>
+
+            <div id="arena-colortrap" class="arena-box" style="display:none;">
+                <h3>🎨 Color Trap (Tap the WORD, Not Ink!)</h3>
+                <div id="colortrap-word" style="font-size:2rem;font-weight:900;margin:10px 0;"></div>
+                <div id="colortrap-opts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+            </div>
+                       <div id="arena-scramble" class="arena-box" style="display:none;">
+                <h3>🔤 Word Scramble</h3>
+                <div id="scramble-word" style="font-size:1.8rem;font-weight:900;letter-spacing:4px;margin:10px 0;color:#fde047;"></div>
+                <input type="text" id="scramble-input" placeholder="Type unscrambled word...">
+                <button onclick="sendScramble()">Submit Word ✅</button>
+            </div>
+
+            <div id="arena-dice" class="arena-box" style="display:none;">
+                <h3>🎲 High Dice Duel</h3>
+                <div id="dice-status" style="margin:8px 0;font-weight:700;"></div>
+                <button onclick="socket.emit('rollArenaDice')" style="font-size:1.2rem;padding:16px;">🎲 ROLL DICE</button>
+            </div>
+
+            <div id="arena-penalty" class="arena-box" style="display:none;">
+                <h3>⚽ Penalty Shootout</h3>
+                <div style="font-size:0.85rem;color:#9ca3af;margin-bottom:8px;">Team A Shoots | Team B Saves</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+                    <button onclick="socket.emit('penaltyPick','LEFT')">⬅️ LEFT</button>
+                    <button onclick="socket.emit('penaltyPick','CENTER')">⬆️ MID</button>
+                    <button onclick="socket.emit('penaltyPick','RIGHT')">➡️ RIGHT</button>
+                </div>
+            </div>
+
+            <div id="arena-typing" class="arena-box" style="display:none;">
+                <h3>⌨️ Speed Typing Race</h3>
+                <div id="typing-phrase" style="font-size:1.1rem;font-weight:800;color:#a5b4fc;margin:10px 0;"></div>
+                <input type="text" id="typing-input" placeholder="Type exact phrase...">
+                <button onclick="sendTyping()">Submit ⚡</button>
+            </div>
+
+            <div id="arena-treasure" class="arena-box" style="display:none;">
+                <h3>💎 Treasure Hunt (Find the 💎!)</h3>
+                <div id="treasure-grid" class="ttt-grid"></div>
+            </div>
+
+            <div id="arena-simon" class="arena-box" style="display:none;">
+                <h3>🚨 Simon Says</h3>
+                <div id="simon-cmd" style="font-size:1.3rem;font-weight:900;color:#fde047;margin:12px 0;"></div>
+                <button onclick="socket.emit('tapSimon')" style="padding:20px;font-size:1.2rem;background:#10b981;">✋ TAP!</button>
+            </div>
+
+            <div id="arena-cards" class="arena-box" style="display:none;">
+                <h3>🃏 Higher or Lower</h3>
+                <div id="card-val" style="font-size:2.4rem;font-weight:900;margin:10px 0;">7 ♠️</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <button onclick="socket.emit('pickCard','higher')" style="background:#10b981;">⬆️ HIGHER</button>
+                    <button onclick="socket.emit('pickCard','lower')" style="background:#ef4444;">⬇️ LOWER</button>
+                </div>
+            </div>
+
+            <div id="arena-defuse" class="arena-box" style="display:none;">
+                <h3>✂️ Wire Cut Defusal</h3>
+                <div id="defuse-turn" style="font-size:0.85rem;color:#fcd34d;margin-bottom:8px;"></div>
+                <div id="defuse-wires" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+            </div>
+
+            <div id="arena-guess" class="arena-box" style="display:none;">
+                <h3>🔢 Number Guess Blitz</h3>
+                <div id="guess-hint" style="font-size:1.1rem;font-weight:800;color:#fde047;margin:8px 0;"></div>
+                <input type="number" id="guess-input" placeholder="1 - 100">
+                <button onclick="sendGuess()">Guess 🎯</button>
+            </div>
+
+            <div id="arena-target" class="arena-box" style="display:none;">
+                <h3>🎯 Target Sniper</h3>
+                <div style="position:relative;height:180px;background:#111827;border-radius:14px;border:1px solid var(--glass-border);overflow:hidden;">
+                    <button id="sniper-target" onclick="socket.emit('hitTarget')" style="position:absolute;width:52px;height:52px;border-radius:50%;padding:0;font-size:1.5rem;background:#ef4444;left:40%;top:40%;">🎯</button>
+                </div>
+            </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+            <button class="btn-disco" style="margin-bottom:0;" onclick="toggleDisco()">🪩 Disco Mode</button>
+            <button id="audio-toggle-btn" class="btn-disco" style="margin-bottom:0;background:linear-gradient(135deg,#10b981,#059669);" onclick="toggleAudioEngine()">🔊 SFX: ON</button>
+        </div>
+
+        <div class="chirp-row">
+            <button class="chirp-btn" onclick="openDrawPad()">🎨 Draw Pad</button>
+            <button class="chirp-btn" onclick="toggleMusicStudio()">🎹 Jam</button>
+            <button class="chirp-btn" onclick="toggleGifDrawer()">🎬 GIFs (50)</button>
+            <button class="chirp-btn" onclick="quickBotCmd('!task')">⚡ !task</button>
+            <button class="chirp-btn" onclick="quickBotCmd('!song')">🎵 !song</button>
+            <button class="chirp-btn" onclick="quickBotCmd('!quiz')">🧠 !quiz</button>
+            <button class="chirp-btn" onclick="quickBotCmd('!riddle')">❓ !riddle</button>
+            <button class="chirp-btn" onclick="quickBotCmd('!roast')">🔥 !roast</button>
+            <button class="chirp-btn" onclick="quickBotCmd('!truth')">👀 !truth</button>
+            <button class="chirp-btn" onclick="quickBotCmd('!dare')">⚔️ !dare</button>
+        </div>
+
+        <div id="gif-drawer"></div>
+
+        <div id="music-studio" style="display:none;background:rgba(15,15,24,0.95);border:1px solid rgba(139,92,246,0.45);border-radius:16px;padding:10px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:0.82rem;font-weight:800;color:#c4b5fd;">🎹 Live Lobby Piano & Drums <span id="jam-live-tag" style="color:#fde047;font-size:0.75rem;"></span></span>
+                <button onclick="toggleMusicStudio()" style="width:auto;padding:3px 8px;font-size:0.72rem;background:#ef4444;border-radius:8px;">✕</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:8px;">
+                <button ontouchstart="triggerNote('piano',261.63,'C')" onclick="triggerNote('piano',261.63,'C')" style="background:#f8fafc;color:#0f172a;padding:18px 2px;border-radius:8px;font-size:0.75rem;">C</button>
+                <button ontouchstart="triggerNote('piano',293.66,'D')" onclick="triggerNote('piano',293.66,'D')" style="background:#f8fafc;color:#0f172a;padding:18px 2px;border-radius:8px;font-size:0.75rem;">D</button>
+                <button ontouchstart="triggerNote('piano',329.63,'E')" onclick="triggerNote('piano',329.63,'E')" style="background:#f8fafc;color:#0f172a;padding:18px 2px;border-radius:8px;font-size:0.75rem;">E</button>
+                <button ontouchstart="triggerNote('piano',349.23,'F')" onclick="triggerNote('piano',349.23,'F')" style="background:#f8fafc;color:#0f172a;padding:18px 2px;border-radius:8px;font-size:0.75rem;">F</button>
+                <button ontouchstart="triggerNote('piano',392.00,'G')" onclick="triggerNote('piano',392.00,'G')" style="background:#f8fafc;color:#0f172a;padding:18px 2px;border-radius:8px;font-size:0.75rem;">G</button>
+                <button ontouchstart="triggerNote('piano',440.00,'A')" onclick="triggerNote('piano',440.00,'A')" style="background:#f8fafc;color:#0f172a;padding:18px 2px;border-radius:8px;font-size:0.75rem;">A</button>
+                <button ontouchstart="triggerNote('piano',493.88,'B')" onclick="triggerNote('piano',493.88,'B')" style="background:#f8fafc;color:#0f172a;padding:18px 2px;border-radius:8px;font-size:0.75rem;">B</button>
+                <button ontouchstart="triggerNote('piano',523.25,'C5')" onclick="triggerNote('piano',523.25,'C5')" style="background:#e2e8f0;color:#0f172a;padding:18px 2px;border-radius:8px;font-size:0.75rem;">C5</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+                <button ontouchstart="triggerNote('kick',110,'🥁 Kick')" onclick="triggerNote('kick',110,'🥁 Kick')" style="background:#ef4444;padding:10px 4px;font-size:0.78rem;">🥁 Kick</button>
+                <button ontouchstart="triggerNote('snare',220,'👏 Snare')" onclick="triggerNote('snare',220,'👏 Snare')" style="background:#f59e0b;color:#000;padding:10px 4px;font-size:0.78rem;">👏 Snare</button>
+                <button ontouchstart="triggerNote('hihat',800,'🔔 Hat')" onclick="triggerNote('hihat',800,'🔔 Hat')" style="background:#10b981;padding:10px 4px;font-size:0.78rem;">🔔 Hat</button>
+                <button ontouchstart="triggerNote('tom',165,'🪘 Tom')" onclick="triggerNote('tom',165,'🪘 Tom')" style="background:#3b82f6;padding:10px 4px;font-size:0.78rem;">🪘 Tom</button>
+            </div>
+        </div>
+
+        <div id="chat-area"></div>
+
+        <div style="display:flex;gap:6px;align-items:center;">
+            <label for="chat-photo-input" style="width:auto;margin:0;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,0.1);border:1px solid var(--glass-border);cursor:pointer;font-size:1.1rem;" title="Share Photo">📷</label>
+            <input type="file" id="chat-photo-input" accept="image/*" style="display:none;" onchange="handleChatPhoto(event)">
+            <input type="text" id="chat-input" placeholder="Message or command..." style="margin-bottom:0;flex:1;" onkeypress="if(event.key==='Enter') sendChat()">
+            <button onclick="sendChat()" style="width:auto;padding:12px 18px;">➤</button>
+        </div>
+    </div>
+        <div id="stk-screen">
+        <div id="stk-canvas-wrap">
+            <div class="stk-hud-top">
+                <div class="stk-pill" id="stk-role-badge" style="color:#fca5a5;">🔪 ROLE</div>
+                <div class="stk-pill" id="stk-timer-badge" style="color:#fde047;">⏱️ 60s</div>
+                <button id="stk-host-exit" onclick="socket.emit('resetToLobby')" style="display:none;width:auto;padding:6px 12px;background:#ef4444;font-size:0.8rem;">🚪 End</button>
+            </div>
+
+            <div id="stk-exit-banner" style="display:none;position:absolute;top:52px;left:50%;transform:translateX(-50%);background:rgba(16,185,129,0.9);color:#fff;padding:6px 14px;border-radius:14px;font-weight:900;font-size:0.85rem;z-index:10;">
+                🚪 EXIT GATE OPEN AT NORTH WALL! RUN!
+            </div>
+
+            <div class="stk-controls">
+                <div class="dpad" style="margin-top:0;">
+                    <div></div><button ontouchstart="moveSTK(0,-1.4)" onclick="moveSTK(0,-1.4)">⬆️</button><div></div>
+                    <button ontouchstart="moveSTK(-1.4,0)" onclick="moveSTK(-1.4,0)">⬅️</button>
+                    <button ontouchstart="moveSTK(0,1.4)" onclick="moveSTK(0,1.4)">⬇️</button>
+                    <button ontouchstart="moveSTK(1.4,0)" onclick="moveSTK(1.4,0)">➡️</button>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+                    <div id="stk-fly-controls" style="display:none;gap:6px;">
+                        <button onclick="flySTK(2)" style="width:auto;padding:10px 12px;background:#8b5cf6;">🦅 Fly Up</button>
+                        <button onclick="flySTK(-2)" style="width:auto;padding:10px 12px;background:#6366f1;">🦅 Down</button>
+                    </div>
+                    <button id="stk-slash-btn" onclick="socket.emit('stkAction','slash')" style="display:none;width:auto;padding:16px 20px;background:#dc2626;font-size:1.1rem;">🔪 SLASH!</button>
+                    <button id="stk-revive-btn" onclick="socket.emit('stkAction','revive')" style="display:none;width:auto;padding:16px 20px;background:#10b981;font-size:1.1rem;">❤️‍🩹 REVIVE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let myDeviceId = localStorage.getItem('sammu_device_id');
+        if (!myDeviceId) {
+            myDeviceId = 'dev_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+            localStorage.setItem('sammu_device_id', myDeviceId);
+        }
+
+        let myUsername = sessionStorage.getItem('sammu_username') || "";
+        let myAvatar = sessionStorage.getItem('sammu_avatar') || "🥷";
+        let isHost = false;
+        let currentGameData = null, latestPlayers = [];
+
+        if (myUsername) {
+            document.getElementById('username-input').value = myUsername;
+        }
+                const gifItems = [
+            { k: "fire", e: "🔥", l: "ON FIRE!" }, { k: "gg", e: "🎉", l: "GOOD GAME!" },
+            { k: "cry", e: "😭", l: "CRYING" }, { k: "dance", e: "💃", l: "DANCE" },
+            { k: "win", e: "🏆", l: "CHAMPION" }, { k: "clown", e: "🤡", l: "CLOWN" },
+            { k: "sus", e: "👀", l: "VERY SUS" }, { k: "hype", e: "⚡", l: "MAX HYPE" },
+            { k: "savage", e: "😎", l: "SAVAGE" }, { k: "bye", e: "👋", l: "BYE BYE" },
+            { k: "roast", e: "🧯", l: "ROASTED" }, { k: "noob", e: "💀", l: "NOOB" },
+            { k: "laugh", e: "😂", l: "LMAOOO" }, { k: "shock", e: "😱", l: "WHAT?!" },
+            { k: "love", e: "❤️", l: "LOVE" }, { k: "bro", e: "🤜", l: "MY BRO" },
+            { k: "chad", e: "🗿", l: "GIGA CHAD" }, { k: "sigma", e: "🐺", l: "SIGMA" },
+            { k: "rip", e: "🪦", l: "R.I.P" }, { k: "boom", e: "💥", l: "KABOOM" },
+            { k: "goat", e: "🐐", l: "G.O.A.T" }, { k: "king", e: "👑", l: "KING" },
+            { k: "queen", e: "👸", l: "SLAY QUEEN" }, { k: "flex", e: "💪", l: "FLEX" },
+            { k: "sleep", e: "😴", l: "BORING" }, { k: "hungry", e: "🍔", l: "HUNGRY" },
+            { k: "party", e: "🥳", l: "PARTY!" }, { k: "rich", e: "💸", l: "PAISA" },
+            { k: "fast", e: "🏎️", l: "TOO FAST" }, { k: "slow", e: "🐢", l: "SO SLOW" },
+            { k: "brain", e: "🧠", l: "BIG BRAIN" }, { k: "dumb", e: "🤪", l: "ZERO IQ" },
+            { k: "angry", e: "🤬", l: "RAGE" }, { k: "cool", e: "🧊", l: "ICE COLD" },
+            { k: "facepalm", e: "🤦", l: "REALLY?!" }, { k: "salute", e: "🫡", l: "RESPECT" },
+            { k: "magic", e: "🪄", l: "MAGIC" }, { k: "ghost", e: "👻", l: "GHOSTED" },
+            { k: "ninja", e: "🥷", l: "NINJA" }, { k: "alien", e: "👽", l: "ALIEN" },
+            { k: "lion", e: "🦁", l: "LION KING" }, { k: "robot", e: "🤖", l: "AI BOT" },
+            { k: "pizza", e: "🍕", l: "PIZZA" }, { k: "trophy", e: "🏅", l: "MVP" },
+            { k: "rocket", e: "🚀", l: "TO MOON" }, { k: "heart", e: "💖", l: "DIL SE" },
+            { k: "star", e: "🌟", l: "STAR" }, { k: "lightning", e: "⚡", l: "THUNDER" },
+            { k: "peace", e: "✌️", l: "PEACE" }, { k: "hello", e: "👋", l: "NAMASTE" }
+        ];
+
+        function buildGifDrawer() {
+            const drawer = document.getElementById('gif-drawer');
+            drawer.innerHTML = gifItems.map(g => `
+                <div class="gif-preview-card" onclick="sendGif('${g.k}')">
+                    <div style="font-size:1.8rem;">${g.e}</div>
+                    <div style="font-size:0.68rem;font-weight:800;color:#e2e8f0;margin-top:3px;">${g.l}</div>
+                </div>
+            `).join('');
+        }
+        buildGifDrawer();
+
+        function toggleGifDrawer() {
+            const d = document.getElementById('gif-drawer');
+            d.style.display = d.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function sendGif(key) {
+            socket.emit('chatMessage', { text: '/gif ' + key, username: myUsername, avatar: myAvatar });
+            document.getElementById('gif-drawer').style.display = 'none';
+        }
+
+        function selectAvatar(el, emoji) {
+            document.querySelectorAll('.avatar-opt').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+            myAvatar = emoji;
+            sessionStorage.setItem('sammu_avatar', myAvatar);
+            document.getElementById('pfp-preview-wrap').style.display = 'none';
+        }
+
+        function handlePfpUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 96;
+                    canvas.height = 96;
+                    const ctx = canvas.getContext('2d');
+                    const minSide = Math.min(img.width, img.height);
+                    const sx = (img.width - minSide) / 2;
+                    const sy = (img.height - minSide) / 2;
+                    ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, 96, 96);
+                    myAvatar = canvas.toDataURL('image/jpeg', 0.75);
+                    sessionStorage.setItem('sammu_avatar', myAvatar);
+                    document.querySelectorAll('.avatar-opt').forEach(opt => opt.classList.remove('selected'));
+                    document.getElementById('pfp-opt-box').classList.add('selected');
+                    document.getElementById('pfp-preview-img').src = myAvatar;
+                    document.getElementById('pfp-preview-wrap').style.display = 'block';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderAvatarHTML(av) {
+            if (av && av.startsWith('data:image')) {
+                return `<img src="${av}" class="pfp-img" alt="pfp">`;
+            }
+            return `<span>${av || '🥷'}</span>`;
+        }
+
+        function enterLobby() {
+            const inputName = document.getElementById('username-input').value.trim();
+            myUsername = inputName || ("Player_" + Math.floor(Math.random() * 900 + 100));
+            sessionStorage.setItem('sammu_username', myUsername);
+            sessionStorage.setItem('sammu_avatar', myAvatar);
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            socket.emit('joinRoom', { username: myUsername, avatar: myAvatar, deviceId: myDeviceId, isReconnect: false });
+        }
+
+        function toggleDisco() {
+            document.body.classList.toggle('disco-active');
+        }
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        function toggleAudioEngine() {
+            audioEnabled = !audioEnabled;
+            const btn = document.getElementById('audio-toggle-btn');
+            btn.textContent = audioEnabled ? '🔊 SFX: ON' : '🔇 SFX: OFF';
+            btn.style.background = audioEnabled
+                ? 'linear-gradient(135deg,#10b981,#059669)'
+                : 'linear-gradient(135deg,#4b5563,#374151)';
+            if (audioEnabled) playSFX('pop');
+        }
+
+        function getAudioCtx() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AC();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function playSFX(type) {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioCtx();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'pop') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc.start(now); osc.stop(now + 0.09);
+                } else if (type === 'start') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(330, now);
+                    osc.frequency.setValueAtTime(440, now + 0.08);
+                    osc.frequency.setValueAtTime(660, now + 0.16);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'triangle';
+                        o.connect(g); g.connect(ctx.destination);
+                        o.frequency.setValueAtTime(freq, now + idx * 0.11);
+                        g.gain.setValueAtTime(0.16, now + idx * 0.11);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.11 + 0.25);
+                        o.start(now + idx * 0.11); o.stop(now + idx * 0.11 + 0.25);
+                    });
+                } else if (type === 'slash') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(65, now + 0.22);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+                    osc.start(now); osc.stop(now + 0.24);
+                }
+            } catch (e) {}
+        }
+
+        function toggleMusicStudio() {
+            const box = document.getElementById('music-studio');
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function synthesizeInstrument(type, freq) {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioCtx();
+                const now = ctx.currentTime;
+                if (type === 'piano') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.start(now); osc.stop(now + 0.55);
+                } else if (type === 'kick') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(140, now);
+                    osc.frequency.exponentialRampToValueAtTime(38, now + 0.25);
+                    gain.gain.setValueAtTime(0.42, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.start(now); osc.stop(now + 0.28);
+                } else if (type === 'snare' || type === 'hihat') {
+                    const bufferSize = ctx.sampleRate * (type === 'snare' ? 0.18 : 0.07);
+                    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                    const noise = ctx.createBufferSource();
+                    noise.buffer = buffer;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = type === 'snare' ? 'bandpass' : 'highpass';
+                    filter.frequency.value = type === 'snare' ? 1200 : 6000;
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(0.28, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (type === 'snare' ? 0.18 : 0.07));
+                    noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+                    noise.start(now);
+                } else if (type === 'tom') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(75, now + 0.22);
+                    gain.gain.setValueAtTime(0.32, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.start(now); osc.stop(now + 0.24);
+                }
+            } catch (e) {}
+        }
+
+        function triggerNote(type, freq, label) {
+            synthesizeInstrument(type, freq);
+            socket.emit('playMusicNote', { type, freq, label, username: myUsername, avatar: myAvatar });
+        }
+
+        socket.on('incomingMusicNote', (data) => {
+            if (data.player !== myUsername) synthesizeInstrument(data.type, data.freq);
+            const tag = document.getElementById('jam-live-tag');
+            if (tag) tag.textContent = `• ${data.player}: ${data.label}`;
+        });
+        function handleChatPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const maxW = 420;
+                    const scale = Math.min(1, maxW / img.width);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const compressed = canvas.toDataURL('image/jpeg', 0.72);
+                    socket.emit('chatImage', { image: compressed, caption: '', username: myUsername, avatar: myAvatar });
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function openImagePreview(src) {
+            document.getElementById('img-preview-full').src = src;
+            document.getElementById('img-preview-modal').style.display = 'flex';
+        }
+
+        const drawCanvas = document.getElementById('draw-canvas');
+        const drawCtx = drawCanvas.getContext('2d');
+        let isDrawing = false, brushColor = '#000000', brushSize = 5, drawTool = 'brush';
+
+        function clearDrawCanvas() {
+            drawCtx.fillStyle = '#ffffff';
+            drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+        }
+        clearDrawCanvas();
+
+        function openDrawPad() { document.getElementById('draw-modal').style.display = 'flex'; }
+        function closeDrawPad() { document.getElementById('draw-modal').style.display = 'none'; }
+        function setBrushColor(c) {
+            brushColor = c;
+            if (c === '#ffffff') setDrawTool('brush');
+        }
+        function setBrushSize(s) { brushSize = s; }
+        function setDrawTool(t) {
+            drawTool = t;
+            document.getElementById('tool-brush-btn').style.background = (t === 'brush') ? '#6366f1' : 'rgba(255,255,255,0.08)';
+            document.getElementById('tool-bucket-btn').style.background = (t === 'bucket') ? '#f59e0b' : 'rgba(255,255,255,0.08)';
+        }
+
+        function getDrawCoords(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * (drawCanvas.width / rect.width),
+                y: (clientY - rect.top) * (drawCanvas.height / rect.height)
+            };
+        }
+
+        function hexToRgb(hex) {
+            const clean = hex.replace('#', '');
+            return [
+                parseInt(clean.substring(0, 2), 16),
+                parseInt(clean.substring(2, 4), 16),
+                parseInt(clean.substring(4, 6), 16)
+            ];
+        }
+
+        function floodFillCanvas(startX, startY, fillHex) {
+            const x0 = Math.floor(startX), y0 = Math.floor(startY);
+            const w = drawCanvas.width, h = drawCanvas.height;
+            if (x0 < 0 || x0 >= w || y0 < 0 || y0 >= h) return;
+
+            const imgData = drawCtx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+            const startIdx = (y0 * w + x0) * 4;
+            const sr = data[startIdx], sg = data[startIdx + 1], sb = data[startIdx + 2];
+            const [fr, fg, fb] = hexToRgb(fillHex);
+
+            if (Math.abs(sr - fr) < 10 && Math.abs(sg - fg) < 10 && Math.abs(sb - fb) < 10) return;
+
+            const stack = [[x0, y0]];
+            const visited = new Uint8Array(w * h);
+
+            while (stack.length) {
+                const [cx, cy] = stack.pop();
+                if (cx < 0 || cx >= w || cy < 0 || cy >= h) continue;
+                const pos = cy * w + cx;
+                if (visited[pos]) continue;
+                const idx = pos * 4;
+                if (Math.abs(data[idx] - sr) < 28 && Math.abs(data[idx + 1] - sg) < 28 && Math.abs(data[idx + 2] - sb) < 28) {
+                    visited[pos] = 1;
+                    data[idx] = fr; data[idx + 1] = fg; data[idx + 2] = fb; data[idx + 3] = 255;
+                    stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+                }
+            }
+            drawCtx.putImageData(imgData, 0, 0);
+        }
+
+        drawCanvas.addEventListener('pointerdown', (e) => {
+            const pos = getDrawCoords(e);
+            if (drawTool === 'bucket') {
+                floodFillCanvas(pos.x, pos.y, brushColor);
+                return;
+            }
+            isDrawing = true;
+            drawCtx.beginPath();
+            drawCtx.moveTo(pos.x, pos.y);
+        });
+        drawCanvas.addEventListener('pointermove', (e) => {
+            if (!isDrawing || drawTool !== 'brush') return;
+            const pos = getDrawCoords(e);
+            drawCtx.lineWidth = brushColor === '#ffffff' ? 20 : brushSize;
+            drawCtx.lineCap = 'round';
+            drawCtx.strokeStyle = brushColor;
+            drawCtx.lineTo(pos.x, pos.y);
+            drawCtx.stroke();
+        });
+        window.addEventListener('pointerup', () => { isDrawing = false; });
+
+        function saveDrawingToPhone() {
+            const link = document.createElement('a');
+            link.download = 'sammu-drawing-' + Date.now() + '.png';
+            link.href = drawCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function sendDrawingToChat() {
+            const imgData = drawCanvas.toDataURL('image/jpeg', 0.8);
+            socket.emit('chatImage', { image: imgData, caption: '🎨 Artwork by ' + myUsername, username: myUsername, avatar: myAvatar });
+            closeDrawPad();
+        }
+        function sendChat() {
+            const inp = document.getElementById('chat-input');
+            const txt = inp.value.trim();
+            if (!txt) return;
+            socket.emit('chatMessage', { text: txt, username: myUsername, avatar: myAvatar });
+            inp.value = '';
+        }
+
+        function quickBotCmd(cmd) {
+            socket.emit('chatMessage', { text: cmd, username: myUsername, avatar: myAvatar });
+        }
+
+        function sendReaction(emoji) {
+            socket.emit('sendReaction', emoji);
+        }
+
+        socket.on('incomingReaction', (emoji) => {
+            const container = document.getElementById('floating-container');
+            const el = document.createElement('div');
+            el.className = 'floating-emoji';
+            el.textContent = emoji;
+            el.style.left = Math.floor(Math.random() * 80 + 10) + 'vw';
+            el.style.setProperty('--random-x', (Math.random() * 80 - 40) + 'px');
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 2600);
+        });
+
+        socket.on('bannedNotice', (reason) => {
+            alert('🔨 ' + reason);
+            myUsername = "";
+            sessionStorage.removeItem('sammu_username');
+            document.getElementById('stk-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'block';
+        });
+
+        function banSelectedPlayer() {
+            const targetId = document.getElementById('ban-player-select').value;
+            if (targetId) socket.emit('banPlayer', targetId);
+        }
+
+        function sendHostSongTask() {
+            const kw = document.getElementById('host-song-kw').value.trim();
+            if (!kw) return;
+            socket.emit('chatMessage', { text: '/songtask ' + kw, username: myUsername, avatar: myAvatar });
+            document.getElementById('host-song-kw').value = '';
+        }
+
+        function hostAwardPoint(team) {
+            socket.emit('awardTeamPoint', team);
+        }
+
+        function assignCaptains() {
+            const capA = document.getElementById('cap-a-select').value;
+            const capB = document.getElementById('cap-b-select').value;
+            if (capA && capB && capA !== capB) socket.emit('makeCaptains', { capA, capB });
+        }
+
+        function startTTT() {
+            const fightA = document.getElementById('fight-a-select').value;
+            const fightB = document.getElementById('fight-b-select').value;
+            if (fightA && fightB && fightA !== fightB) socket.emit('assignFighters', { fightA, fightB });
+        }
+
+        function startSTK() {
+            const killerId = document.getElementById('stk-killer-select').value;
+            socket.emit('launchSTK', killerId);
+        }
+        function formatMarkdown(str) {
+            return str
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.35);padding:2px 5px;border-radius:6px;">$1</code>');
+        }
+
+        socket.on('message', (data) => {
+            const chat = document.getElementById('chat-area');
+            const wrap = document.createElement('div');
+            const isSystem = data.username === 'SYSTEM';
+            const isMine = data.senderId && data.senderId === socket.id;
+
+            wrap.className = 'bubble-container ' + (isSystem ? 'msg-container-system' : (isMine ? 'msg-container-outgoing' : 'msg-container-incoming'));
+
+            if (!isSystem) {
+                const title = document.createElement('div');
+                title.className = 'msg-sender-title';
+                title.innerHTML = `${renderAvatarHTML(data.avatar)} <span>${data.username}</span>`;
+                wrap.appendChild(title);
+            }
+
+            const bubble = document.createElement('div');
+            bubble.className = 'msg-bubble';
+
+            if (data.gifUrl) {
+                const [emoji, label, anim] = data.gifUrl.split('|');
+                bubble.innerHTML = `<div class="gif-card gif-${anim}"><div style="font-size:2rem;">${emoji}</div><div>${label}</div></div>`;
+            } else if (data.imageUrl) {
+                const cap = data.text ? `<div style="margin-bottom:4px;font-size:0.82rem;">${formatMarkdown(data.text)}</div>` : '';
+                const imgEl = document.createElement('img');
+                imgEl.src = data.imageUrl;
+                imgEl.className = 'chat-shared-img';
+                imgEl.onclick = () => openImagePreview(data.imageUrl);
+                bubble.innerHTML = cap;
+                bubble.appendChild(imgEl);
+
+                if (isHost) {
+                    const featBtn = document.createElement('button');
+                    featBtn.textContent = '🏛️ Add to Hall of Legendaries';
+                    featBtn.style.cssText = 'margin-top:6px;padding:6px 10px;font-size:0.75rem;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;border-radius:10px;';
+                    featBtn.onclick = () => socket.emit('addToLegendaryGallery', { artist: data.username, imageUrl: data.imageUrl });
+                    bubble.appendChild(featBtn);
+                }
+            } else {
+                bubble.innerHTML = formatMarkdown(data.text || '');
+            }
+
+            wrap.appendChild(bubble);
+            chat.appendChild(wrap);
+            chat.scrollTop = chat.scrollHeight;
+            playSFX('pop');
+        });
+
+        socket.on('announceWinner', (data) => {
+            const chat = document.getElementById('chat-area');
+            const banner = document.createElement('div');
+            banner.className = 'bubble-container msg-container-system';
+            banner.innerHTML = `<div class="msg-bubble" style="background:rgba(16,185,129,0.25);border-color:#10b981;color:#6ee7b7;font-weight:900;">${data.icon || '🏆'} WINNER: ${data.winner}</div>`;
+            chat.appendChild(banner);
+            chat.scrollTop = chat.scrollHeight;
+            playSFX('win');
+        });
+
+        socket.on('updateMVP', (data) => {
+            const bar = document.getElementById('mvp-bar');
+            if (!data || !data.board || data.board.length === 0) { bar.innerHTML = ''; return; }
+            bar.innerHTML = data.board.slice(0, 3).map((p, i) =>
+                `<span class="trophy-pill">#${i + 1} ${p.name}: ${p.pts}pts ${p.trophies}</span>`
+            ).join('');
+        });
+
+        socket.on('updateGallery', (gallery) => {
+            const hall = document.getElementById('legendary-hall');
+            const grid = document.getElementById('legendary-grid');
+            if (!gallery || gallery.length === 0) {
+                hall.style.display = 'none';
+                return;
+            }
+            hall.style.display = 'block';
+            grid.innerHTML = gallery.map(item => `
+                <div style="min-width:110px;background:rgba(0,0,0,0.45);border:1px solid rgba(250,204,21,0.4);border-radius:12px;padding:6px;text-align:center;">
+                    <img src="${item.imageUrl}" onclick="openImagePreview(this.src)" style="width:96px;height:96px;object-fit:cover;border-radius:8px;cursor:pointer;">
+                    <div style="font-size:0.72rem;font-weight:800;color:#fde047;margin-top:4px;">🎨 ${item.artist}</div>
+                    ${isHost ? `<button onclick="socket.emit('removeFromLegendaryGallery','${item.id}')" style="margin-top:4px;padding:3px 6px;font-size:0.65rem;background:#ef4444;border-radius:6px;">✕ Remove</button>` : ''}
+                </div>
+            `).join('');
+        });
+
+        socket.on('initRole', (data) => {
+            isHost = Boolean(data.isHost);
+            document.getElementById('host-panel').style.display = isHost ? 'block' : 'none';
+            if (data.gameData) renderGameState(data.gameData);
+        });
+
+        socket.on('updatePlayers', (list) => {
+            latestPlayers = list || [];
+            document.getElementById('player-count').textContent = latestPlayers.length;
+            renderPlayerCards();
+
+            const opts = latestPlayers.map(p => `<option value="${p.id}">${p.username}${p.isHost ? ' 👑' : ''}</option>`).join('');
+            ['cap-a-select', 'cap-b-select', 'fight-a-select', 'fight-b-select', 'stk-killer-select'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const prevVal = el.value;
+                el.innerHTML = opts;
+                if (prevVal && latestPlayers.some(p => p.id === prevVal)) {
+                    el.value = prevVal;
+                }
+            });
+
+            const banEl = document.getElementById('ban-player-select');
+            if (banEl) {
+                const prevBan = banEl.value;
+                const nonHosts = latestPlayers.filter(p => !p.isHost);
+                banEl.innerHTML = nonHosts.map(p => `<option value="${p.id}">${p.username}</option>`).join('');
+                if (prevBan && nonHosts.some(p => p.id === prevBan)) {
+                    banEl.value = prevBan;
+                }
+            }
+        });
+        function renderPlayerCards() {
+            const container = document.getElementById('player-list');
+            const isDrafting = currentGameData && currentGameData.gameState === 'drafting' && currentGameData.currentTurnPicker === socket.id;
+            container.innerHTML = latestPlayers.map(p => {
+                const inA = currentGameData && currentGameData.teamA && currentGameData.teamA.some(m => m.id === p.id);
+                const inB = currentGameData && currentGameData.teamB && currentGameData.teamB.some(m => m.id === p.id);
+                const canPick = isDrafting && !inA && !inB;
+                const capTag = (currentGameData && currentGameData.captainA && currentGameData.captainA.id === p.id) ? '<span class="cap-tag-a">CAP A</span>' :
+                               ((currentGameData && currentGameData.captainB && currentGameData.captainB.id === p.id) ? '<span class="cap-tag-b">CAP B</span>' : '');
+                return `<div class="player-card ${canPick ? 'selectable' : ''}" onclick="${canPick ? `socket.emit('draftPlayer','${p.id}')` : ''}">
+                    ${renderAvatarHTML(p.avatar)} <span>${p.username}${p.isHost ? ' 👑' : ''}</span>${capTag}
+                </div>`;
+            }).join('');
+        }
+
+        socket.on('syncGame', (gd) => {
+            if (currentGameData && gd && currentGameData.gameState !== gd.gameState && gd.gameState !== 'lobby') {
+                playSFX(gd.gameState === 'stk' ? 'slash' : 'start');
+            }
+            currentGameData = gd;
+            renderGameState(gd);
+        });
+
+        function renderGameState(gd) {
+            if (!gd) return;
+            document.getElementById('score-a').textContent = gd.scores ? gd.scores.teamA : 0;
+            document.getElementById('score-b').textContent = gd.scores ? gd.scores.teamB : 0;
+
+            document.getElementById('team-a-list').innerHTML = (gd.teamA && gd.teamA.length)
+                ? gd.teamA.map(m => `<div>${renderAvatarHTML(m.avatar)} ${m.username}</div>`).join('') : 'Waiting...';
+            document.getElementById('team-b-list').innerHTML = (gd.teamB && gd.teamB.length)
+                ? gd.teamB.map(m => `<div>${renderAvatarHTML(m.avatar)} ${m.username}</div>`).join('') : 'Waiting...';
+
+            const draftBanner = document.getElementById('draft-banner');
+            if (gd.gameState === 'drafting') {
+                draftBanner.style.display = 'block';
+                const pickerName = (gd.currentTurnPicker === gd.captainA.id) ? gd.captainA.username : gd.captainB.username;
+                draftBanner.textContent = (gd.currentTurnPicker === socket.id) ? '👇 YOUR TURN! Tap a yellow player below to draft!' : `⏳ Waiting for ${pickerName} to pick a player...`;
+            } else {
+                draftBanner.style.display = 'none';
+            }
+
+            renderPlayerCards();
+
+            const stkScreen = document.getElementById('stk-screen');
+            const gameScreen = document.getElementById('game-screen');
+            if (gd.gameState === 'stk' && gd.stkState) {
+                gameScreen.style.display = 'none';
+                stkScreen.style.display = 'flex';
+                initThreeSTK();
+                updateSTKScene(gd.stkState);
+                return;
+            } else {
+                stkScreen.style.display = 'none';
+                if (myUsername) gameScreen.style.display = 'block';
+                stopThreeSTK();
+            }
+
+            const allArenas = [
+                'arena-duel','arena-sumo','arena-spinner','arena-quickdraw','arena-math',
+                'arena-bomb','arena-rps','arena-memory','arena-tug','arena-colortrap',
+                'arena-scramble','arena-dice','arena-penalty','arena-typing','arena-treasure',
+                'arena-simon','arena-cards','arena-defuse','arena-guess','arena-target'
+            ];
+            allArenas.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+
+            if (gd.gameState === 'duel') {
+                document.getElementById('arena-duel').style.display = 'block';
+                document.getElementById('ttt-status').textContent = (gd.tttTurn === socket.id) ? '🔥 YOUR TURN!' : '⏳ Opponent Turn...';
+                document.getElementById('ttt-board').innerHTML = gd.tttBoard.map((cell, i) =>
+                    `<div class="ttt-cell" onclick="socket.emit('makeMove',${i})">${cell || ''}</div>`
+                ).join('');
+            } else if (gd.gameState === 'sumo') {
+                document.getElementById('arena-sumo').style.display = 'block';
+                document.getElementById('sumo-bar').style.width = gd.sumoPosition + '%';
+                document.getElementById('sumo-emoji').style.left = gd.sumoPosition + '%';
+            } else if (gd.gameState === 'spinner') {
+                document.getElementById('arena-spinner').style.display = 'block';
+                drawSpinner(gd.spinner);
+            } else if (gd.gameState === 'quickdraw') {
+                document.getElementById('arena-quickdraw').style.display = 'block';
+                const btn = document.getElementById('qd-btn');
+                btn.style.background = gd.drawReady ? '#10b981' : '#dc2626';
+                btn.textContent = gd.drawReady ? '🔥 FIRE NOW!!' : '✋ HOLD... WAIT...';
+            } else if (gd.gameState === 'math') {
+                document.getElementById('arena-math').style.display = 'block';
+                document.getElementById('math-q').textContent = gd.mathQ.question;
+                document.getElementById('math-opts').innerHTML = gd.mathQ.options.map(opt =>
+                    `<button onclick="socket.emit('submitMath',${opt})">${opt}</button>`
+                ).join('');
+            } else if (gd.gameState === 'bomb') {
+                document.getElementById('arena-bomb').style.display = 'block';
+                const holderObj = latestPlayers.find(p => p.id === gd.bombHolder);
+                const hName = holderObj ? holderObj.username : 'Captain';
+                document.getElementById('bomb-holder-text').textContent = (gd.bombHolder === socket.id) ? '💣 YOU HAVE THE BOMB! PASS IT!' : `💣 ${hName} has the bomb!`;
+            } else if (gd.gameState === 'rps') {
+                document.getElementById('arena-rps').style.display = 'block';
+            } else if (gd.gameState === 'memory') {
+                document.getElementById('arena-memory').style.display = 'block';
+                document.getElementById('memory-target').textContent = gd.memoryHidden ? `🔍 Find: ${gd.memoryTarget}` : `👀 Memorize: ${gd.memoryTarget}`;
+                document.getElementById('memory-grid').innerHTML = gd.memoryGrid.map((em, i) =>
+                    `<div class="ttt-cell" onclick="socket.emit('pickMemory',${i})">${gd.memoryHidden ? '❓' : em}</div>`
+                ).join('');
+            } else if (gd.gameState === 'tug') {
+                document.getElementById('arena-tug').style.display = 'block';
+                document.getElementById('tug-bar').style.width = gd.tugPosition + '%';
+                document.getElementById('tug-emoji').style.left = gd.tugPosition + '%';
+            } else if (gd.gameState === 'colortrap' && gd.colorTrap) {
+                document.getElementById('arena-colortrap').style.display = 'block';
+                const w = document.getElementById('colortrap-word');
+                w.textContent = gd.colorTrap.targetName;
+                w.style.color = gd.colorTrap.fakeHex;
+                document.getElementById('colortrap-opts').innerHTML = gd.colorTrap.options.map(c =>
+                    `<button style="background:${c.hex};" onclick="socket.emit('pickColorTrap','${c.name}')">${c.name}</button>`
+                ).join('');
+            }
+            else if (gd.gameState === 'scramble') {
+                document.getElementById('arena-scramble').style.display = 'block';
+                document.getElementById('scramble-word').textContent = gd.scrambleWord;
+            } else if (gd.gameState === 'dice') {
+                document.getElementById('arena-dice').style.display = 'block';
+                document.getElementById('dice-status').textContent = `🔴 Red: ${gd.diceRolls.a || '⏳'}  |  🔵 Blue: ${gd.diceRolls.b || '⏳'}`;
+            } else if (gd.gameState === 'penalty') {
+                document.getElementById('arena-penalty').style.display = 'block';
+            } else if (gd.gameState === 'typing') {
+                document.getElementById('arena-typing').style.display = 'block';
+                document.getElementById('typing-phrase').textContent = gd.typingPhrase;
+            } else if (gd.gameState === 'treasure') {
+                document.getElementById('arena-treasure').style.display = 'block';
+                document.getElementById('treasure-grid').innerHTML = gd.treasureGrid.map((box, i) =>
+                    `<div class="ttt-cell" onclick="socket.emit('pickTreasure',${i})">${box.opened ? box.icon : '📦'}</div>`
+                ).join('');
+            } else if (gd.gameState === 'simon') {
+                document.getElementById('arena-simon').style.display = 'block';
+                document.getElementById('simon-cmd').textContent = gd.simonCommand;
+            } else if (gd.gameState === 'cards') {
+                document.getElementById('arena-cards').style.display = 'block';
+                const cardNames = {1:'A',11:'J',12:'Q',13:'K'};
+                document.getElementById('card-val').textContent = (cardNames[gd.cardCurrent] || gd.cardCurrent) + ' ♠️';
+            } else if (gd.gameState === 'defuse') {
+                document.getElementById('arena-defuse').style.display = 'block';
+                document.getElementById('defuse-turn').textContent = (gd.defuseTurn === socket.id) ? '✂️ YOUR TURN TO CUT A WIRE!' : '⏳ Opponent is cutting a wire...';
+                document.getElementById('defuse-wires').innerHTML = gd.defuseWires.map((w, i) =>
+                    `<button ${w.cut ? 'disabled style="opacity:0.35;"' : ''} onclick="socket.emit('cutWire',${i})">${w.cut ? '✂️ CUT' : w.label}</button>`
+                ).join('');
+            } else if (gd.gameState === 'guess') {
+                document.getElementById('arena-guess').style.display = 'block';
+                document.getElementById('guess-hint').textContent = gd.guessHint;
+            } else if (gd.gameState === 'target') {
+                document.getElementById('arena-target').style.display = 'block';
+                const t = document.getElementById('sniper-target');
+                t.style.left = gd.targetPos.x + '%';
+                t.style.top = gd.targetPos.y + '%';
+            }
+        }
+
+        function sendScramble() {
+            const el = document.getElementById('scramble-input');
+            if (el.value.trim()) { socket.emit('submitScramble', el.value); el.value = ''; }
+        }
+        function sendTyping() {
+            const el = document.getElementById('typing-input');
+            if (el.value.trim()) { socket.emit('submitTyping', el.value); el.value = ''; }
+        }
+        function sendGuess() {
+            const el = document.getElementById('guess-input');
+            if (el.value.trim()) { socket.emit('submitGuess', el.value); el.value = ''; }
+        }
+
+        socket.on('spinnerTick', (sp) => { drawSpinner(sp); });
+        function drawSpinner(sp) {
+            const c = document.getElementById('spinner-canvas');
+            if (!c || !sp) return;
+            const ctx = c.getContext('2d');
+            ctx.clearRect(0, 0, 260, 260);
+            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(130, 130, 108, 0, Math.PI * 2); ctx.stroke();
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(sp.a.x, sp.a.y, 18, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(sp.b.x, sp.b.y, 18, 0, Math.PI * 2); ctx.fill();
+        }
+        let stkScene = null, stkCamera = null, stkRenderer = null, stkAnimId = null;
+        let stkMeshes = {}, stkExitMesh = null, stkLocalPos = { x: 0, y: 1, z: 0 };
+
+        function initThreeSTK() {
+            if (stkRenderer) return;
+            const wrap = document.getElementById('stk-canvas-wrap');
+            const w = wrap.clientWidth || window.innerWidth;
+            const h = wrap.clientHeight || window.innerHeight;
+
+            stkScene = new THREE.Scene();
+            stkScene.background = new THREE.Color(0x1e293b);
+
+            stkCamera = new THREE.PerspectiveCamera(65, w / h, 0.1, 150);
+            stkCamera.position.set(0, 13, 16);
+
+            stkRenderer = new THREE.WebGLRenderer({ antialias: false });
+            stkRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            stkRenderer.setSize(w, h);
+            stkRenderer.domElement.style.display = 'block';
+            stkRenderer.domElement.style.width = '100%';
+            stkRenderer.style.height = '100%';
+            wrap.insertBefore(stkRenderer.domElement, wrap.firstChild);
+
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 1.25);
+            stkScene.add(hemiLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+            dirLight.position.set(15, 30, 15);
+            stkScene.add(dirLight);
+
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(42, 42),
+                new THREE.MeshStandardMaterial({ color: 0x334155 })
+            );
+            floor.rotation.x = -Math.PI / 2;
+            stkScene.add(floor);
+
+            const grid = new THREE.GridHelper(40, 20, 0x818cf8, 0x475569);
+            stkScene.add(grid);
+
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x64748b });
+            const houseMat = new THREE.MeshStandardMaterial({ color: 0x92400e });
+            const lockerMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
+
+            function addBox(x, y, z, sx, sy, sz, mat) {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+                m.position.set(x, y, z);
+                stkScene.add(m);
+            }
+
+            addBox(0, 2, 20.5, 42, 4, 1, wallMat);
+            addBox(-20.5, 2, 0, 1, 4, 42, wallMat);
+            addBox(20.5, 2, 0, 1, 4, 42, wallMat);
+            addBox(-11.5, 2, -20.5, 18, 4, 1, wallMat);
+            addBox(11.5, 2, -20.5, 18, 4, 1, wallMat);
+
+            addBox(-10, 1.8, -8, 8, 3.6, 0.8, houseMat);
+            addBox(-14, 1.8, -3, 0.8, 3.6, 10, houseMat);
+            addBox(10, 1.8, -8, 8, 3.6, 0.8, houseMat);
+            addBox(14, 1.8, -3, 0.8, 3.6, 10, houseMat);
+            addBox(-9, 1.8, 9, 8, 3.6, 0.8, houseMat);
+            addBox(9, 1.8, 9, 8, 3.6, 0.8, houseMat);
+
+            const lockerSpots = [[-12,-6], [12,-6], [-12,7],, [-6,-14], [6,-14]];
+            lockerSpots.forEach(([lx, lz]) => {
+                addBox(lx, 1.4, lz, 2.2, 2.8, 2.2, lockerMat);
+            });
+
+            stkExitMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(5, 4, 0.9),
+                new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x991b1b })
+            );
+            stkExitMesh.position.set(0, 2, -20.2);
+            stkScene.add(stkExitMesh);
+
+            function animateSTK() {
+                stkAnimId = requestAnimationFrame(animateSTK);
+                if (stkRenderer && stkScene && stkCamera) stkRenderer.render(stkScene, stkCamera);
+            }
+            animateSTK();
+        }
+
+        function stopThreeSTK() {
+            if (stkAnimId) cancelAnimationFrame(stkAnimId);
+            stkAnimId = null;
+            if (stkRenderer) {
+                stkRenderer.dispose();
+                if (stkRenderer.domElement && stkRenderer.domElement.parentNode) {
+                    stkRenderer.domElement.parentNode.removeChild(stkRenderer.domElement);
+                }
+                stkRenderer = null;
+            }
+            stkScene = null;
+            stkMeshes = {};
+        }
+        socket.on('stkTick', (st) => {
+            if (document.getElementById('stk-screen').style.display === 'flex') {
+                updateSTKScene(st);
+            }
+        });
+
+        function updateSTKScene(st) {
+            if (!st || !stkScene) return;
+            document.getElementById('stk-timer-badge').textContent = `⏱️ ${st.timeLeft}s`;
+            document.getElementById('stk-exit-banner').style.display = st.exitOpen ? 'block' : 'none';
+            document.getElementById('stk-host-exit').style.display = isHost ? 'block' : 'none';
+
+            if (stkExitMesh) {
+                stkExitMesh.material.color.setHex(st.exitOpen ? 0x10b981 : 0xdc2626);
+                stkExitMesh.material.emissive.setHex(st.exitOpen ? 0x059669 : 0x7f1d1d);
+            }
+
+            const me = st.players[socket.id];
+            if (me) {
+                stkLocalPos = { x: me.x, y: me.y, z: me.z };
+                const roleBadge = document.getElementById('stk-role-badge');
+                if (me.role === 'killer') {
+                    roleBadge.textContent = '🔪 YOU ARE THE KILLER';
+                    roleBadge.style.color = '#f87171';
+                } else if (me.role === 'spectator') {
+                    roleBadge.textContent = '🦅 HOST SPECTATOR (FLY)';
+                    roleBadge.style.color = '#c4b5fd';
+                } else {
+                    roleBadge.textContent = me.status === 'downed' ? `🩸 DOWNED (${me.bleedTimer}s)` :
+                                            (me.status === 'escaped' ? '🚪 ESCAPED!' : '🏃‍♂️ SURVIVOR');
+                    roleBadge.style.color = me.status === 'downed' ? '#ef4444' : '#6ee7b7';
+                }
+
+                document.getElementById('stk-slash-btn').style.display = (me.role === 'killer') ? 'block' : 'none';
+                document.getElementById('stk-revive-btn').style.display = (me.role === 'survivor' && me.status === 'alive') ? 'block' : 'none';
+                document.getElementById('stk-fly-controls').style.display = isHost ? 'flex' : 'none';
+
+                if (stkCamera) {
+                    const camHeight = isHost ? Math.max(8, me.y + 6) : 11;
+                    stkCamera.position.set(me.x, camHeight, me.z + 12);
+                    stkCamera.lookAt(me.x, me.y, me.z);
+                }
+            }
+
+            const activeIds = new Set(Object.keys(st.players));
+            Object.keys(stkMeshes).forEach(id => {
+                if (!activeIds.has(id)) {
+                    stkScene.remove(stkMeshes[id]);
+                    delete stkMeshes[id];
+                }
+            });
+
+            Object.values(st.players).forEach(p => {
+                if (p.status === 'dead' || p.status === 'escaped') {
+                    if (stkMeshes[p.id]) stkMeshes[p.id].visible = false;
+                    return;
+                }
+                if (!stkMeshes[p.id]) {
+                    const col = p.role === 'killer' ? 0xef4444 : (p.role === 'spectator' ? 0xa855f7 : 0x38bdf8);
+                    const mesh = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.7, 0.7, 1.9, 12),
+                        new THREE.MeshStandardMaterial({ color: col })
+                    );
+                    stkScene.add(mesh);
+                    stkMeshes[p.id] = mesh;
+                }
+                const m = stkMeshes[p.id];
+                m.visible = true;
+                m.position.set(p.x, p.y, p.z);
+                m.rotation.z = (p.status === 'downed') ? Math.PI / 2 : 0;
+            });
+        }
+
+        function moveSTK(dx, dz) {
+            stkLocalPos.x = Math.max(-19, Math.min(19, stkLocalPos.x + dx));
+            stkLocalPos.z = Math.max(-19, Math.min(19, stkLocalPos.z + dz));
+            socket.emit('stkMove', stkLocalPos);
+        }
+
+        function flySTK(dy) {
+            if (!isHost) return;
+            stkLocalPos.y = Math.max(1, Math.min(22, stkLocalPos.y + dy));
+            socket.emit('stkMove', stkLocalPos);
+        }
+
+        socket.on('connect', () => {
+            if (myUsername) {
+                socket.emit('joinRoom', { username: myUsername, avatar: myAvatar, deviceId: myDeviceId, isReconnect: true });
+            }
+        });
+    </script>
+</body>
+</html>

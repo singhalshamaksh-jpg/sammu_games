@@ -1436,13 +1436,19 @@
             ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(sp.a.x, sp.a.y, 18, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(sp.b.x, sp.b.y, 18, 0, Math.PI * 2); ctx.fill();
         }
-        let stkScene = null, stkCamera = null, stkRenderer = null, stkAnimId = null;
+           let stkScene = null, stkCamera = null, stkRenderer = null, stkAnimId = null;
         let stkMeshes = {}, stkExitMesh = null, stkLocalPos = { x: 0, y: 1, z: 0 };
+        let latestStkState = null;
 
         function initThreeSTK() {
             if (stkRenderer) return;
             if (typeof THREE === 'undefined') {
-                alert('3D Engine still loading—check internet and try again!');
+                setTimeout(() => {
+                    if (document.getElementById('stk-screen').style.display === 'flex') {
+                        initThreeSTK();
+                        if (latestStkState) updateSTKScene(latestStkState);
+                    }
+                }, 300);
                 return;
             }
             const wrap = document.getElementById('stk-canvas-wrap');
@@ -1466,7 +1472,7 @@
             stkRenderer.domElement.style.zIndex = '1';
             wrap.insertBefore(stkRenderer.domElement, wrap.firstChild);
 
-            const ambient = new THREE.AmbientLight(0xffffff, 0.9);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.95);
             stkScene.add(ambient);
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
             dirLight.position.set(15, 30, 15);
@@ -1523,6 +1529,7 @@
                 if (stkRenderer && stkScene && stkCamera) stkRenderer.render(stkScene, stkCamera);
             }
             animateSTK();
+            if (latestStkState) updateSTKScene(latestStkState);
         }
 
         function stopThreeSTK() {
@@ -1538,23 +1545,28 @@
             stkScene = null;
             stkMeshes = {};
         }
+
         socket.on('stkTick', (st) => {
+            latestStkState = st;
             if (document.getElementById('stk-screen').style.display === 'flex') {
                 updateSTKScene(st);
             }
         });
 
         function updateSTKScene(st) {
-            if (!st || !stkScene) return;
+            if (!st) return;
+            latestStkState = st;
             document.getElementById('stk-timer-badge').textContent = `⏱️ ${st.timeLeft}s`;
             document.getElementById('stk-exit-banner').style.display = st.exitOpen ? 'block' : 'none';
             document.getElementById('stk-host-exit').style.display = isHost ? 'block' : 'none';
+
+            if (!stkScene) return;
 
             if (stkExitMesh) {
                 stkExitMesh.material.color.setHex(st.exitOpen ? 0x10b981 : 0xef4444);
             }
 
-            const me = st.players[socket.id];
+            const me = st.players[socket.id] || Object.values(st.players).find(p => p.username === myUsername);
             if (me) {
                 stkLocalPos = { x: me.x, y: me.y, z: me.z };
                 const roleBadge = document.getElementById('stk-role-badge');
@@ -1630,3 +1642,4 @@
     </script>
 </body>
 </html>
+                             

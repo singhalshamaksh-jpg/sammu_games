@@ -547,6 +547,7 @@ const NEW_ARENAS_WIDGET = `
   window.addEventListener('DOMContentLoaded', () => { injectHostGamesAndSfx(); bindMegaSockets(); setTimeout(() => { injectHostGamesAndSfx(); bindMegaSockets(); }, 1300); });
 })();
 </script>
+     ';
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');
     fs.readFile(indexPath, 'utf8', (err, html) => {

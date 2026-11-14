@@ -517,11 +517,6 @@ const MAKEUP_STUDIO_WIDGET = `
     setTimeout(bindSkincareSocket, 1000);
   });
 })();
-  window.addEventListener('DOMContentLoaded', () => {
-    bindSkincareSocket();
-    setTimeout(bindSkincareSocket, 1000);
-  });
-})();
 </script>
 `;
 

@@ -576,6 +576,8 @@ let tourneyState = {
     matchScores: {},
     currentPair: null
 };
+let activeMysteryBox = null;
+let mysteryBoxTimer = null;
 
 function generateBoxCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

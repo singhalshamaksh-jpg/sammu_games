@@ -559,19 +559,6 @@ app.get(['/', '/index.html'], (req, res, next) => {
         res.send(injected);
     });
 });
-
-</script>
-`;
-
-app.get(['/', '/index.html'], (req, res, next) => {
-    const indexPath = path.join(__dirname, 'index.html');
-    fs.readFile(indexPath, 'utf8', (err, html) => {
-        if (err) return next();
-        const injected = html.replace('</body>', MAKEUP_STUDIO_WIDGET + '\n</body>');
-        res.send(injected);
-    });
-});
-
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 io.engine.pingTimeout = 60000;

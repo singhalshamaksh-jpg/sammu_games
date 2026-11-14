@@ -143,10 +143,10 @@ const MAKEUP_STUDIO_WIDGET = `
 
       const oc = lastSwatch.getAttribute('onclick') || '';
       if (oc) {
-        const updatedOc = oc.replace(/(['"])#[0-9a-fA-F]{3,8}\1|(['"])rgb\([^)]+\)\2|(['"])[a-zA-Z]+\3/, "'#ffffff'");
+                const fnMatch = oc.match(/^([a-zA-Z0-9_$.]+)/);
+        const updatedOc = fnMatch ? fnMatch.at(1) + "('#ffffff', this)" : "setColor('#ffffff', this)";
         whiteBtn.setAttribute('onclick', updatedOc);
       }
-
       whiteBtn.addEventListener('click', () => {
         if (typeof window.setDrawColor === 'function') window.setDrawColor('#ffffff', whiteBtn);
         else if (typeof window.setColor === 'function') window.setColor('#ffffff', whiteBtn);

@@ -575,7 +575,7 @@ let mutedUsers = new Map();
 let activeMysteryBox = null;
 let mysteryBoxTimer = null;
 let skincareSession = null;
-
+let didiPromoActive = false;
 let drawTimer = null, bombTimer = null, memoryTimer = null;
 let simonTimer = null, tourneyTimer = null;
 let spinnerEnded = false;
@@ -1646,6 +1646,7 @@ io.on('connection', (socket) => {
             io.emit('message', { username: "Sammu's Bot", text: `✨ Yo ${avatarDisplay} **${finalizedName}** joined! Type \`!task\`, \`!anime\`, \`!movie\`, \`!shayari\`, or say hi to **🐱 Mochi** & **🐶 Tommy**! 🤖` });
         }
     });
+      socket.emit('toggleDidiPromo', didiPromoActive);  
     socket.on('chatImage', (payload) => {
         if (!payload || !payload.image || typeof payload.image !== 'string') return;
         const { name, avatar } = resolvePlayerIdentity(socket, payload);
@@ -1788,6 +1789,15 @@ io.on('connection', (socket) => {
             tourneyState.active = false;
             if (tourneyTimer) clearTimeout(tourneyTimer);
             io.emit('message', { username: "Sammu's Bot", text: `🛑 Host stopped the Tournament.` });
+            return;
+        }
+        if (socket.id === hostId && (lowerMsg === '/promo on' || lowerMsg === '/promo off')) {
+            didiPromoActive = (lowerMsg === '/promo on');
+            io.emit('toggleDidiPromo', didiPromoActive);
+            socket.emit('message', { 
+                username: 'SYSTEM', 
+                text: `📢 Entry Screen Didi Banner is now **${didiPromoActive ? 'ON ✅' : 'OFF ❌'}**` 
+            });
             return;
         }
 

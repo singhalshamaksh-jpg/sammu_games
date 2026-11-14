@@ -347,35 +347,33 @@ const DIDI_PROMO_WIDGET = `
 `;
 const MASTERCHEF_STUDIO_WIDGET = `
 <style>
-  #chefModal { display:none; position:fixed; inset:0; background:rgba(15,10,5,0.92); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(10px); font-family:inherit; }
-  #chefCard { background:linear-gradient(155deg,#2b1608,#4a250d); border:2px solid #f59e0b; border-radius:22px; padding:16px; width:94%; max-width:410px; color:#fff; box-shadow:0 0 35px rgba(245,158,11,0.45); text-align:center; }
-  .cf-tabs { display:flex; gap:6px; justify-content:center; margin:8px 0; flex-wrap:wrap; }
+  #chefModal { display:none; position:fixed; inset:0; background:rgba(15,10,5,0.92); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(10px); font-family:inherit; padding:10px; }
+  #chefCard { background:linear-gradient(155deg,#2b1608,#4a250d); border:2px solid #f59e0b; border-radius:20px; padding:12px; width:100%; max-width:380px; max-height:92vh; overflow-y:auto; color:#fff; box-shadow:0 0 35px rgba(245,158,11,0.45); text-align:center; }
+  .cf-tabs { display:flex; gap:6px; justify-content:center; margin:6px 0; flex-wrap:wrap; }
   .cf-btn { background:#5c2d0c; border:1px solid #f59e0b; color:#fff; padding:6px 11px; border-radius:12px; cursor:pointer; font-size:12px; font-weight:bold; transition:0.2s; }
   .cf-btn.active, .cf-btn:hover { background:#f59e0b; color:#1f0d02; }
-  #chefCanvas { background:radial-gradient(circle at 50% 45%, #fffbeb, #fde68a); border-radius:18px; border:2px solid #fcd34d; cursor:crosshair; max-width:100%; box-shadow:inset 0 0 18px rgba(245,158,11,0.25); }
-  .cf-banner { background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); border-radius:10px; padding:5px 10px; font-size:12px; font-weight:bold; color:#fde68a; margin:8px 0; }
-  .cf-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin:7px 0; }
-  .cf-pill { background:#6e3610; border:1px solid #fbbf24; color:#fff; padding:5px 10px; border-radius:18px; font-size:12px; cursor:pointer; font-weight:bold; transition:0.15s; }
-  .cf-pill.selected, .cf-pill:hover { background:#fbbf24; color:#1f0d02; transform:scale(1.08); }
+  #chefCanvas { background:radial-gradient(circle at 50% 45%, #fffbeb, #fde68a); border-radius:16px; border:2px solid #fcd34d; cursor:crosshair; max-width:100%; touch-action:manipulation; }
+  .cf-row { display:flex; gap:5px; flex-wrap:wrap; justify-content:center; margin:6px 0; }
+  .cf-pill { background:#6e3610; border:1px solid #fbbf24; color:#fff; padding:4px 9px; border-radius:16px; font-size:12px; cursor:pointer; font-weight:bold; }
+  .cf-pill.selected, .cf-pill:hover { background:#fbbf24; color:#1f0d02; }
 </style>
 <div id="chefModal">
   <div id="chefCard">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-weight:bold;font-size:16px;color:#fbbf24;">👨‍🍳 MasterChef Kitchen Studio</span>
-      <button onclick="document.getElementById('chefModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-weight:bold;">✕</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <button onclick="document.getElementById('chefModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-weight:bold;font-size:12px;">⬅ Back</button>
+      <span style="font-weight:bold;font-size:14px;color:#fbbf24;">👨‍🍳 MasterChef Kitchen</span>
+      <button onclick="serveDishToChat()" style="background:linear-gradient(90deg,#10b981,#059669);border:none;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-weight:bold;font-size:12px;">📤 Upload</button>
     </div>
     <div class="cf-tabs">
-      <button class="cf-btn active" id="modePizzaBtn" onclick="setChefMode('pizza')">🍕 Pizza Maker</button>
-      <button class="cf-btn" id="modeCakeBtn" onclick="setChefMode('cake')">🎂 Cake Bakery</button>
+      <button class="cf-btn active" id="modePizzaBtn" onclick="setChefMode('pizza')">🍕 Pizza</button>
+      <button class="cf-btn" id="modeCakeBtn" onclick="setChefMode('cake')">🎂 Cake</button>
+      <button class="cf-btn" onclick="resetChefDish()">🔄 Clear</button>
     </div>
-    <div class="cf-banner">👆 Pick a sauce/frosting, then tap anywhere on the dish to add toppings!</div>
-    <canvas id="chefCanvas" width="310" height="290"></canvas>
+    <div style="font-size:11px;color:#fde68a;margin-bottom:4px;">👆 Pick base & topping, then tap on the dish!</div>
+    <canvas id="chefCanvas" width="230" height="210"></canvas>
     <div class="cf-row" id="chefBaseRow"></div>
     <div class="cf-row" id="chefToppingRow"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;">
-      <button class="cf-btn" onclick="resetChefDish()">🔄 Clear Dish</button>
-      <button class="cf-btn" style="background:linear-gradient(90deg,#f59e0b,#ef4444);border:none;padding:7px 14px;color:#fff;" onclick="serveDishToChat()">🍽️ Serve to Chat</button>
-    </div>
+    <button class="cf-btn" style="background:linear-gradient(90deg,#f59e0b,#ef4444);border:none;padding:9px 16px;color:#fff;width:100%;margin-top:6px;font-size:13px;" onclick="serveDishToChat()">🍽️ Serve & Upload to Chat</button>
   </div>
 </div>
 <script>
@@ -384,11 +382,11 @@ const MASTERCHEF_STUDIO_WIDGET = `
   let dishState = { baseColor: '#dc2626', items: new Array() };
   const configs = {
     pizza: {
-      bases: new Array({ label: '🍅 Marinara', color: '#dc2626' }, { label: '🧀 Extra Cheese', color: '#facc15' }, { label: '🌿 Pesto', color: '#16a34a' }, { label: '🔥 Peri-Peri', color: '#ea580c' }),
+      bases: new Array({ label: '🍅 Marinara', color: '#dc2626' }, { label: '🧀 Cheese', color: '#facc15' }, { label: '🌿 Pesto', color: '#16a34a' }, { label: '🔥 Peri-Peri', color: '#ea580c' }),
       toppings: new Array('🍄', '🌶️', '🫒', '🍍', '🧅', '🍅', '🌽', '🍗', '🧀', '🌿')
     },
     cake: {
-      bases: new Array({ label: '🍓 Strawberry', color: '#f472b6' }, { label: '🍫 Chocolate', color: '#5c2d16' }, { label: '🍦 Vanilla', color: '#fef3c7' }, { label: '🫐 Blueberry', color: '#6366f1' }),
+      bases: new Array({ label: '🍓 Berry', color: '#f472b6' }, { label: '🍫 Choco', color: '#5c2d16' }, { label: '🍦 Vanilla', color: '#fef3c7' }, { label: '🫐 Blueberry', color: '#6366f1' }),
       toppings: new Array('🍓', '🍒', '🍫', '🍪', '🕯️', '✨', '💖', '🍬', '🥭', '🌸')
     }
   };
@@ -406,7 +404,7 @@ const MASTERCHEF_STUDIO_WIDGET = `
     canvas.addEventListener('click', (e) => {
       const rect = canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) * (canvas.width / rect.width), y = (e.clientY - rect.top) * (canvas.height / rect.height);
-      if (Math.hypot(x - 155, y - 145) <= 105) { dishState.items.push({ emoji: selectedTopping, x, y, rot: (Math.random() - 0.5) * 0.6 }); renderChefDish(); }
+      if (Math.hypot(x - 115, y - 105) <= 85) { dishState.items.push({ emoji: selectedTopping, x, y, rot: (Math.random() - 0.5) * 0.6 }); renderChefDish(); }
     });
     setChefMode('pizza');
   }
@@ -425,23 +423,23 @@ const MASTERCHEF_STUDIO_WIDGET = `
   function renderChefDish() {
     const canvas = document.getElementById('chefCanvas'), ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(155, 145, 132, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 4; ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(115, 105, 96, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 3; ctx.stroke();
     if (cfMode === 'pizza') {
-      ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.arc(155, 145, 118, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = dishState.baseColor; ctx.beginPath(); ctx.arc(155, 145, 102, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(254, 240, 138, 0.55)'; ctx.beginPath(); ctx.arc(155, 145, 95, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.arc(115, 105, 86, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = dishState.baseColor; ctx.beginPath(); ctx.arc(115, 105, 74, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(254, 240, 138, 0.55)'; ctx.beginPath(); ctx.arc(115, 105, 68, 0, Math.PI * 2); ctx.fill();
     } else {
-      ctx.fillStyle = dishState.baseColor; ctx.beginPath(); ctx.arc(155, 145, 114, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.stroke();
+      ctx.fillStyle = dishState.baseColor; ctx.beginPath(); ctx.arc(115, 105, 82, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.stroke();
     }
-    ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '22px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     dishState.items.forEach(it => { ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot); ctx.fillText(it.emoji, 0, 0); ctx.restore(); });
   }
   window.setChefMode = function(mode) { cfMode = mode; document.getElementById('modePizzaBtn').classList.toggle('active', mode === 'pizza'); document.getElementById('modeCakeBtn').classList.toggle('active', mode === 'cake'); dishState = { baseColor: configs[mode].bases.at(0).color, items: new Array() }; selectedTopping = configs[mode].toppings.at(0); renderChefControls(); renderChefDish(); };
   window.resetChefDish = function() { dishState.items = new Array(); renderChefDish(); };
   window.serveDishToChat = function() {
-    const srcCanvas = document.getElementById('chefCanvas'), outCanvas = document.createElement('canvas'); outCanvas.width = 300; outCanvas.height = 280;
-    outCanvas.getContext('2d').drawImage(srcCanvas, 0, 0, 300, 280);
+    const srcCanvas = document.getElementById('chefCanvas'), outCanvas = document.createElement('canvas'); outCanvas.width = 230; outCanvas.height = 210;
+    outCanvas.getContext('2d').drawImage(srcCanvas, 0, 0, 230, 210);
     const imgData = outCanvas.toDataURL('image/jpeg', 0.85);
     const storedName = localStorage.getItem('sammu_username') || localStorage.getItem('username') || '';
     const storedAvatar = localStorage.getItem('sammu_avatar') || localStorage.getItem('avatar') || '👨‍🍳';

@@ -2631,8 +2631,16 @@ io.on('connection', (socket) => {
         io.emit('syncGame', gameData);
         announceMatchup("🗡️ Fruit Slash Blitz");
     });
-    socket.on('fruitScoreTick', (pts) => {
-        if (gameData.gameState !== 'fruit' || Number(pts)  {
+        socket.on('fruitScoreTick', (pts) => {
+        if (gameData.gameState !== 'fruit' || !(Number(pts) >= 10)) return;
+        const { name } = resolvePlayerIdentity(socket, null);
+        const isB = gameData.captainB && socket.id === gameData.captainB.id;
+        if (isB) { gameData.scores.teamB++; } else { gameData.scores.teamA++; }
+        recordWin(name + " (Fruit Ninja Master!)", '🗡️', name, "🗡️ Fruit Ninja");
+        gameData.gameState = 'lobby'; io.emit('syncGame', gameData);
+    });
+
+    socket.on('launchReflex', () => {
         if (socket.id !== hostId) return;
         ensureCaptains(); clearAllTimers(); gameData.gameState = 'reflex'; gameData.reflexGreen = false;
         io.emit('syncGame', gameData);

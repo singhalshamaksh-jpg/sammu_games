@@ -548,6 +548,46 @@ const NEW_ARENAS_WIDGET = `
 })();
 </script>
 `;
+app.get(['/', '/index.html'], (req, res, next) => {
+    const indexPath = path.join(__dirname, 'index.html');
+    fs.readFile(indexPath, 'utf8', (err, html) => {
+        if (err) return next();
+        const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET).join('\n');
+        res.send(html.replace('</body>', allWidgets + '\n</body>'));
+    });
+});
+app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
+io.engine.pingTimeout = 60000;
+io.engine.pingInterval = 25000;
+
+let players = new Array();
+let hostId = null;
+let hostUsername = null;
+let sessionMemory = {};
+let bannedUsers = new Set();
+let bannedDevices = new Set();
+let bannedRealIPs = new Set();
+let mutedUsers = new Map();
+let skincareSession = null;
+let didiPromoActive = false;
+let drawTimer = null, bombTimer = null, memoryTimer = null;
+let simonTimer = null, tourneyTimer = null, reflexTimer = null;
+let spinnerEnded = false;
+
+const ADMIN_SECRET_KEY = "#universalbrother";
+const VIP_WHITELIST = new Set([
+    "sammu", "heer", "advait", "milly", "zoro",
+    "izzan", "sus", "noob", "moon", "sid",
+    "sarah", "neha", "ruwii", "saeron", "samaksh"
+]);
+
+function isWhitelisted(username) {
+    if (!username) return false;
+    const clean = username.toLowerCase().trim();
+    return VIP_WHITELIST.has(clean) || (hostUsername && clean === hostUsername.toLowerCase().trim());
+}
+
 let botMemory = {
     lastWinner: null,
     winStreaks: {},

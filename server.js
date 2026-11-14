@@ -517,6 +517,54 @@ const MAKEUP_STUDIO_WIDGET = `
     setTimeout(bindSkincareSocket, 1000);
   });
 })();
+  window.addEventListener('DOMContentLoaded', () => {
+    bindSkincareSocket();
+    setTimeout(bindSkincareSocket, 1000);
+  });
+})();
+</script>
+`;
+
+// 👉 PASTE DIDI_PROMO_WIDGET RIGHT HERE!
+const DIDI_PROMO_WIDGET = `
+<script>
+(function() {
+  let inArena = false;
+  function bindPromoSocket() {
+    if (typeof socket === 'undefined' || window._promoBound) return;
+    window._promoBound = true;
+
+    socket.on('toggleDidiPromo', (show) => {
+      const box = document.getElementById('didiPromoBox');
+      if (box && !inArena) {
+        box.style.display = show ? 'block' : 'none';
+      }
+    });
+
+    socket.on('initRole', () => {
+      inArena = true;
+      const box = document.getElementById('didiPromoBox');
+      if (box) box.style.display = 'none';
+    });
+  }
+  window.addEventListener('DOMContentLoaded', () => {
+    bindPromoSocket();
+    setTimeout(bindPromoSocket, 800);
+  });
+})();
+</script>
+`;
+
+// 👉 AND UPDATE THIS LINE RIGHT BELOW IT:
+app.get(['/', '/index.html'], (req, res, next) => {
+    const indexPath = path.join(__dirname, 'index.html');
+    fs.readFile(indexPath, 'utf8', (err, html) => {
+        if (err) return next();
+        const injected = html.replace('</body>', MAKEUP_STUDIO_WIDGET + '\n' + DIDI_PROMO_WIDGET + '\n</body>');
+        res.send(injected);
+    });
+});
+
 </script>
 `;
 

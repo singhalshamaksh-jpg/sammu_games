@@ -55,14 +55,13 @@ module.exports = function initMultiServers(app, io) {
             owner: "sammu", 
             theme: "diamond", 
             max: 20, 
-            type: "secret", 
-            password: OG_CLAIM_SECRET
+            type: "secret"
         }
     };
 
     let serversDB = { ...defaultServers };
-    let verifiedHostDevices = {}; // Maps ownerUsername -> [deviceId1, deviceId2]
-    let superAdminDevices = new Set(); // Stores Sammu/Samaksh verified phone IDs
+    let verifiedHostDevices = {};
+    let superAdminDevices = new Set();
 
     if (fs.existsSync(DB_FILE)) {
         try {
@@ -99,6 +98,11 @@ module.exports = function initMultiServers(app, io) {
         return list.includes(deviceId);
     }
 
+    function isAnyVerifiedOGDevice(deviceId) {
+        if (!deviceId) return false;
+        return Object.values(verifiedHostDevices).some(list => Array.isArray(list) && list.includes(deviceId));
+    }
+
     function getPublicServerList() {
         const now = Date.now();
         return Object.values(serversDB).map(s => {
@@ -110,7 +114,7 @@ module.exports = function initMultiServers(app, io) {
             return {
                 id: s.id, name: s.name, owner: s.owner, ownerDevice: s.ownerDevice || null,
                 theme: s.theme, max: s.max || 20, count: activeCounts[s.id] || 0, type: s.type,
-                locked: Boolean(s.password), expired, permanent: Boolean(s.permanent),
+                locked: Boolean(s.password) || s.type === 'secret', expired, permanent: Boolean(s.permanent),
                 daysLeft, refCount
             };
         });
@@ -218,7 +222,7 @@ module.exports = function initMultiServers(app, io) {
           let badge = (s.locked ? '🔐 ' : '') + s.count + '/' + s.max + ' 👥';
           let subLine = 'Host: ' + s.owner.toUpperCase();
 
-          if (s.type === 'secret') badge = '🔐 OG PASS | ' + s.count + '/' + s.max + ' 👥';
+          if (s.type === 'secret') badge = '🔐 OG DEVICE | ' + s.count + '/' + s.max + ' 👥';
           else if (s.expired) {
             badge = '🔒 EXPIRED (' + (s.refCount || 0) + '/15 Refs)';
             subLine = 'Bring ' + (15 - (s.refCount || 0)) + ' more refs or email singhalshamaksh@gmail.com';
@@ -254,7 +258,7 @@ module.exports = function initMultiServers(app, io) {
           return;
         }
         let pass = '';
-        if (srv.locked && !(srv.ownerDevice && srv.ownerDevice === devId)) {
+        if (srv.locked && srv.type !== 'secret' && !(srv.ownerDevice && srv.ownerDevice === devId)) {
           pass = prompt('🔐 Enter Password for ' + srv.name + ':');
           if (!pass) return;
         }
@@ -328,11 +332,6 @@ module.exports = function initMultiServers(app, io) {
         io.to(roomId).emit('updatePlayers', roomPlayers);
     }
 
-    function isAnyVerifiedOGDevice(deviceId) {
-        if (!deviceId) return false;
-        return Object.values(verifiedHostDevices).some(list => Array.isArray(list) && list.includes(deviceId));
-    }
-
     io.on('connection', (socket) => {
         socket.on('registerClientDevice', (devId) => {
             if (devId) socket.clientDeviceId = String(devId);
@@ -376,7 +375,6 @@ module.exports = function initMultiServers(app, io) {
                 return socket.emit('serverAccessDenied', 'Server is full (20/20)! Pick another server.');
             }
 
-            // Diamond Server: Device-locked to verified OG Hosts only!
             if (srv.type === 'secret') {
                 if (!isAnyVerifiedOGDevice(socket.clientDeviceId)) {
                     return socket.emit('serverAccessDenied', '💠 Diamond Server is locked to Verified OG Host devices only! Claim your phone in any Official Server first using /claimhost.');
@@ -405,6 +403,7 @@ module.exports = function initMultiServers(app, io) {
             socket.emit('serverAccessGranted', srv);
             broadcastRoomPlayers(serverId);
         });
+
         socket.on('createCustomServer', ({ name, owner, password, theme, deviceId }) => {
             if (deviceId) socket.clientDeviceId = String(deviceId);
             const cleanId = 'custom_' + Date.now();
@@ -434,7 +433,6 @@ module.exports = function initMultiServers(app, io) {
                 socket.emit('serverAccessDenied', '❌ Only the device that created this server can delete it!');
             }
         });
-
         socket.on('joinRoom', (data) => {
             if (data && data.deviceId) socket.clientDeviceId = String(data.deviceId);
             if (!socket.activeServerId) {
@@ -465,7 +463,7 @@ module.exports = function initMultiServers(app, io) {
                     setTimeout(() => {
                         socket.emit('message', {
                             username: "Sammu's Bot",
-                            text: `🔐 **${data.username}**, if this is your real phone, type \`/claimhost #bhaibahencharaontop\` once to verify your device and unlock Host powers!`
+                            text: `🔐 **${data.username}**, if this is your real phone, type \`/claimhost #bhaibahencharaontop\` once to lock your Host powers to this device!`
                         });
                     }, 600);
                 }
@@ -480,13 +478,20 @@ module.exports = function initMultiServers(app, io) {
             const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
             const dev = socket.clientDeviceId;
 
-            // 1. One-time Device Claim (#bhaibahencharaontop is ONLY used here for host verification!)
+            // 1. Strict 1-Phone Device Claim (#bhaibahencharaontop is ONLY used here!)
             if (clean === '/claimhost ' + OG_CLAIM_SECRET) {
                 if (!OG_HOSTS.has(sender) || !dev) {
                     socket.emit('message', { username: 'SYSTEM', text: `❌ Your username **${sender}** is not on the OG Host list!` });
                     return;
                 }
                 if (!Array.isArray(verifiedHostDevices[sender])) verifiedHostDevices[sender] = [];
+
+                // Block if ANOTHER phone has already claimed this username!
+                if (verifiedHostDevices[sender].length >= 1 && !verifiedHostDevices[sender].includes(dev)) {
+                    socket.emit('message', { username: 'SYSTEM', text: `🚫 **ACCESS DENIED!** **${sender}** is already locked to another phone!` });
+                    return;
+                }
+
                 if (!verifiedHostDevices[sender].includes(dev)) verifiedHostDevices[sender].push(dev);
                 if (sender === 'sammu' || sender === 'samaksh') superAdminDevices.add(dev);
                 saveDB();
@@ -495,13 +500,22 @@ module.exports = function initMultiServers(app, io) {
                 socket.emit('initRole', { isHost: true });
                 socket.emit('message', {
                     username: "Sammu's Bot",
-                    text: `✅ **DEVICE VERIFIED!** This phone is now permanently bound to **${sender}**! You will get Host powers & Diamond Server access automatically! 👑`
+                    text: `✅ **DEVICE LOCKED!** **${sender}** is now permanently bound to THIS phone only! 👑`
                 });
                 return;
             }
 
             // 2. Super-Admin Commands (Locked strictly to Sammu/Samaksh's verified phone!)
             if (!superAdminDevices.has(dev)) return;
+
+            if (clean.toLowerCase().startsWith('/resetdevice ')) {
+                const targetUser = clean.slice(13).trim().toLowerCase();
+                if (verifiedHostDevices[targetUser]) {
+                    delete verifiedHostDevices[targetUser];
+                    saveDB();
+                    socket.emit('message', { username: 'SYSTEM', text: `🔄 Device lock reset for **${targetUser}**! They can now claim a new phone.` });
+                }
+            }
 
             if (clean.toLowerCase().startsWith('/renameserver ')) {
                 const parts = clean.slice(14).trim().split(/\s+/);

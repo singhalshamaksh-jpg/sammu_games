@@ -1065,13 +1065,17 @@ module.exports = function initMultiServers(app, io) {
             }
         });
 
+        
         socket.on('postArenaMeme', (data) => {
             if (!socket.activeServerId || !data || !data.image) return;
             const senderName = socket.username || 'Player';
+            const senderAvatar = socket.avatar || '😂';
             io.to(socket.activeServerId).emit('message', {
+                senderId: socket.id,
                 username: senderName,
+                avatar: senderAvatar,
                 text: `😂 **${senderName}** dropped a fresh meme!`,
-                image: data.image,
+                imageUrl: data.image,
                 _serverId: socket.activeServerId
             });
         });

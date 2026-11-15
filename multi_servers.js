@@ -500,20 +500,25 @@ module.exports = function initMultiServers(app, io) {
         renderMemeCanvas();
       };
 
-      window.loadCustomMemePhoto = function(e) {
-        const file = e.target.files && e.target.files.at(0);
+            window.loadCustomMemePhoto = function(e) {
+        const file = (e && e.target && e.target.files) ? e.target.files.at(0) : null;
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function(ev) {
           const img = new Image();
           img.onload = function() {
-            window._memeCustomImg = img;
+            const off = document.createElement('canvas');
+            off.width = 340;
+            off.height = 250;
+            off.getContext('2d').drawImage(img, 0, 0, 340, 250);
+            window._memeCustomImg = off;
             renderMemeCanvas();
           };
           img.src = ev.target.result;
         };
         reader.readAsDataURL(file);
       };
+
 
       window.renderMemeCanvas = function() {
         const c = document.getElementById('arenaMemeCanvas');

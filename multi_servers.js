@@ -29,6 +29,7 @@ module.exports = function initMultiServers(app, io) {
             password: "#bhaibahencharaontop" 
         }
     };
+
     let serversDB = { ...defaultServers };
     let lockedOGSignatures = {};
     let millyPromoOn = false;
@@ -51,12 +52,11 @@ module.exports = function initMultiServers(app, io) {
 
     function saveDB() {
         try {
-            const toSave = {
+            fs.writeFileSync(DB_FILE, JSON.stringify({
                 ...serversDB,
                 _lockedOGSignatures: lockedOGSignatures,
                 _millyPromoOn: millyPromoOn
-            };
-            fs.writeFileSync(DB_FILE, JSON.stringify(toSave, null, 2));
+            }, null, 2));
         } catch (e) {}
     }
     saveDB();
@@ -67,16 +67,43 @@ module.exports = function initMultiServers(app, io) {
         "sarah", "advait", "ruwii", "saeron", "shubhi", "sid"
     ]);
     const MASTER_KEYS = new Set(["#bhaibahencharaontop", "#universalbrother"]);
-    const GLOBAL_EVENTS = new Set(['serverListUpdate']);
-    const ROOM_EVENTS = new Set([
-        'incomingMusicNote', 'playMemeSfx', 'message', 'syncGame', 'spinnerTick',
-        'announceWinner', 'updateMVP', 'updateGallery', 'incomingGift', 'incomingReaction',
-        'openSkincareClinic', 'closeSkincareClinic', 'toggleDidiPromo'
-    ]);
+    const arenas = new Map();
+
+    function getArena(serverId) {
+        if (!arenas.has(serverId)) {
+            arenas.set(serverId, {
+                id: serverId,
+                players: [],
+                hostId: null,
+                captainA: null,
+                captainB: null,
+                scores: { teamA: 0, teamB: 0 },
+                gameState: 'lobby',
+                tourney: {
+                    active: false,
+                    round: 0,
+                    maxGames: 15,
+                    gamesPlayed: 0,
+                    queue: [],
+                    nextRound: [],
+                    eliminated: [],
+                    matchScores: {},
+                    currentPair: null,
+                    timer: null
+                }
+            });
+        }
+        return arenas.get(serverId);
+    }
+
+    function syncArenaPlayers(serverId) {
+        const arena = getArena(serverId);
+        const roomSockets = io.sockets.adapter.rooms.get(serverId) || new Set();
+        arena.players = arena.players.filter(p => roomSockets.has(p.id));
+        io.to(serverId).emit('updatePlayers', arena.players);
+    }
 
     const origIoEmit = io.emit.bind(io);
-    let currentSourceServerId = null;
-    let lastActiveServerId = null;
     const playerServerMap = new Map();
 
     function getSocketServerId(socketId) {
@@ -84,30 +111,35 @@ module.exports = function initMultiServers(app, io) {
         return s ? s.activeServerId : null;
     }
 
-    function resolveTargetServerForMessage(msgObj) {
-        if (currentSourceServerId) return currentSourceServerId;
-        if (msgObj && typeof msgObj === 'object') {
-            if (msgObj.senderId) {
-                const byId = getSocketServerId(msgObj.senderId);
-                if (byId) return byId;
-            }
-            if (msgObj.username && playerServerMap.has(msgObj.username.toLowerCase())) {
-                return playerServerMap.get(msgObj.username.toLowerCase());
-            }
-            if (typeof msgObj.text === 'string') {
-                const lowerText = msgObj.text.toLowerCase();
-                for (const [uname, srvId] of playerServerMap.entries()) {
-                    if (uname.length >= 2 && lowerText.includes(uname)) {
-                        return srvId;
-                    }
-                }
+    function findServerForPayload(payload) {
+        if (!payload || typeof payload !== 'object') return null;
+        if (payload._serverId) return payload._serverId;
+        if (payload.senderId) {
+            const byId = getSocketServerId(payload.senderId);
+            if (byId) return byId;
+        }
+        if (payload.captainA && payload.captainA.id) {
+            const byA = getSocketServerId(payload.captainA.id);
+            if (byA) return byA;
+        }
+        if (payload.captainB && payload.captainB.id) {
+            const byB = getSocketServerId(payload.captainB.id);
+            if (byB) return byB;
+        }
+        if (payload.username && playerServerMap.has(payload.username.toLowerCase())) {
+            return playerServerMap.get(payload.username.toLowerCase());
+        }
+        if (typeof payload.text === 'string') {
+            const lower = payload.text.toLowerCase();
+            for (const [uname, srvId] of playerServerMap.entries()) {
+                if (uname.length >= 2 && lower.includes(uname)) return srvId;
             }
         }
-        return lastActiveServerId;
+        return null;
     }
 
     io.emit = function(event, ...args) {
-        if (GLOBAL_EVENTS.has(event)) {
+        if (event === 'serverListUpdate') {
             return origIoEmit(event, ...args);
         }
         if (event === 'toggleDidiPromo') {
@@ -120,50 +152,25 @@ module.exports = function initMultiServers(app, io) {
             return true;
         }
         if (event === 'updatePlayers' && Array.isArray(args.at(0))) {
-            const allPlayers = args.at(0);
-            const rooms = io.sockets.adapter.rooms;
-            allPlayers.forEach(p => {
-                const sId = getSocketServerId(p.id);
-                if (sId && p.username) playerServerMap.set(p.username.toLowerCase(), sId);
-            });
-            Object.keys(serversDB).forEach(srvId => {
-                const roomSockets = rooms.get(srvId);
-                const roomPlayers = roomSockets ? allPlayers.filter(p => roomSockets.has(p.id)) : [];
-                io.to(srvId).emit('updatePlayers', roomPlayers);
-            });
+            Object.keys(serversDB).forEach(srvId => syncArenaPlayers(srvId));
             return true;
         }
-        if (event === 'message' && args.at(0) && typeof args.at(0) === 'object') {
-            const msgPayload = args.at(0);
-            const targetSrv = resolveTargetServerForMessage(msgPayload);
-            if (targetSrv) {
-                return io.to(targetSrv).emit('message', { ...msgPayload, _serverId: targetSrv });
+        const payload = args.at(0);
+        const targetSrv = findServerForPayload(payload);
+        if (targetSrv) {
+            if (event === 'syncGame' && payload && typeof payload === 'object') {
+                const arena = getArena(targetSrv);
+                arena.gameState = payload.gameState || 'lobby';
+                arena.scores = payload.scores || arena.scores;
+                if (payload.captainA) arena.captainA = payload.captainA;
+                if (payload.captainB) arena.captainB = payload.captainB;
             }
-            return true;
+            const stamped = (payload && typeof payload === 'object' && !Array.isArray(payload))
+                ? { ...payload, _serverId: targetSrv }
+                : payload;
+            return io.to(targetSrv).emit(event, stamped);
         }
-        if ((event === 'syncGame' || event === 'spinnerTick' || event === 'announceWinner') && args.at(0) && typeof args.at(0) === 'object') {
-            const payloadObj = args.at(0);
-            let targetSrv = currentSourceServerId;
-            if (!targetSrv && payloadObj.captainA && payloadObj.captainA.id) {
-                targetSrv = getSocketServerId(payloadObj.captainA.id);
-            }
-            if (!targetSrv && payloadObj.captainB && payloadObj.captainB.id) {
-                targetSrv = getSocketServerId(payloadObj.captainB.id);
-            }
-            if (!targetSrv) targetSrv = lastActiveServerId;
-            if (targetSrv) {
-                return io.to(targetSrv).emit(event, { ...payloadObj, _serverId: targetSrv });
-            }
-            return true;
-        }
-        if (ROOM_EVENTS.has(event)) {
-            const targetSrv = currentSourceServerId || lastActiveServerId;
-            if (targetSrv) {
-                return io.to(targetSrv).emit(event, ...args);
-            }
-            return true;
-        }
-        return origIoEmit(event, ...args);
+        return true;
     };
     function getRealIP(socket) {
         const fwd = socket.handshake && socket.handshake.headers && socket.handshake.headers['x-forwarded-for'];
@@ -183,9 +190,6 @@ module.exports = function initMultiServers(app, io) {
         socket.trackedBrowser = getBrowserSig(socket, socket.trackedBrowserFp);
         if (socket.username && socket.activeServerId) {
             playerServerMap.set(socket.username.toLowerCase(), socket.activeServerId);
-        }
-        if (socket.activeServerId) {
-            lastActiveServerId = socket.activeServerId;
         }
     }
 
@@ -371,6 +375,7 @@ module.exports = function initMultiServers(app, io) {
           }
         });
       }
+
       function selectAndEnterServer(srv) {
         if (srv.expired && !isLockedHostDevice) {
           const link = window.location.origin + '/?ref=' + encodeURIComponent(srv.owner);
@@ -443,6 +448,199 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>
     `;
+    const EXTRA_ANIME_QUIZ = [
+        { q: "🌸 ANIME: What is the name of Naruto's nine-tailed fox?", a: ["kurama", "kyuubi", "nine tails"] },
+        { q: "🏴‍☠️ ANIME: Who is the navigator of the Straw Hat Pirates?", a: ["nami"] },
+        { q: "⚔️ ANIME: What is the name of Tanjiro Kamado's sister in Demon Slayer?", a: ["nezuko", "nezuko kamado"] },
+        { q: "📓 ANIME: Which Shinigami dropped the Death Note into the human world?", a: ["ryuk"] },
+        { q: "🐉 ANIME: What planet was Goku originally born on?", a: ["vegeta", "planet vegeta"] },
+        { q: "🤞 ANIME: What is Satoru Gojo's Domain Expansion called?", a: ["unlimited void", "infinite void"] },
+        { q: "🧱 ANIME: Which Titan power does Eren Yeager inherit first?", a: ["attack titan", "founding titan"] },
+        { q: "⚗️ ANIME: What is the name of Edward Elric's younger brother in Fullmetal Alchemist?", a: ["alphonse", "alphonse elric", "al"] },
+        { q: "🦸 ANIME: What is Izuku Midoriya's hero name in My Hero Academia?", a: ["deku"] },
+        { q: "⛓️ ANIME: What kind of devil is Pochita in Chainsaw Man?", a: ["chainsaw", "chainsaw devil"] },
+        { q: "🕵️ ANIME: What is Loid Forger's spy codename in Spy x Family?", a: ["twilight"] },
+        { q: "🏐 ANIME: What position does Shoyo Hinata play in Haikyuu?", a: ["middle blocker"] },
+        { q: "⚔️ ANIME: What is Kirito's dual-wielding black sword called in Sword Art Online?", a: ["elucidator"] },
+        { q: "👊 ANIME: How many push-ups a day did Saitama do to get his strength?", a: ["100", "one hundred"] },
+        { q: "👁️ ANIME: What is the name of Kakashi's signature lightning jutsu?", a: ["chidori", "raikiri", "lightning blade"] },
+        { q: "👒 ANIME: Who gave Luffy his iconic straw hat?", a: ["shanks", "red haired shanks"] },
+        { q: "🔥 ANIME: Which Hashira is known as the Flame Hashira in Demon Slayer?", a: ["rengoku", "kyojuro rengoku"] },
+        { q: "👻 ANIME: What is Ichigo Kurosaki's Zanpakuto called in Bleach?", a: ["zangetsu"] },
+        { q: "🃏 ANIME: What is Gon Freecss's Nen type in Hunter x Hunter?", a: ["enhancer", "enhancement"] },
+        { q: "♟️ ANIME: What is Lelouch's alter-ego name in Code Geass?", a: ["zero"] },
+        { q: "🧪 ANIME: What is Senku Ishigami's catchphrase percentage in Dr. Stone?", a: ["10 billion", "ten billion", "10 billion percent"] },
+        { q: "⚽ ANIME: What is the name of the striker training facility in Blue Lock?", a: ["blue lock"] },
+        { q: "🐺 ANIME: Who is the main protagonist of Berserk?", a: ["guts"] },
+        { q: "🌀 ANIME: What is the name of Naruto's signature spinning chakra sphere?", a: ["rasengan"] },
+        { q: "🐍 ANIME: Who is one of the Legendary Sannin obsessed with snakes?", a: ["orochimaru"] },
+        { q: "⚡ ANIME: What is Zenitsu's Breathing Style in Demon Slayer?", a: ["thunder", "thunder breathing"] },
+        { q: "🍖 ANIME: What Devil Fruit did Monkey D. Luffy eat?", a: ["gomu gomu", "gum gum", "hito hito"] },
+        { q: "🩸 ANIME: What is Kaneki Ken's ghoul nickname in Tokyo Ghoul?", a: ["eyepatch", "centipede"] },
+        { q: "📖 ANIME: What type of grimoire does Asta receive in Black Clover?", a: ["five leaf", "5 leaf", "five leaf clover"] },
+        { q: "🔮 ANIME: Who is the main telepath child in Spy x Family?", a: ["anya", "anya forger"] },
+        { q: "🌌 ANIME: What is the name of the ship in Cowboy Bebop?", a: ["bebop"] },
+        { q: "⏳ ANIME: What microwave gadget sends text messages to the past in Steins;Gate?", a: ["phonewave", "phone microwave"] },
+        { q: "🗡️ ANIME: Who is humanity's strongest soldier in Attack on Titan?", a: ["levi", "levi ackerman"] },
+        { q: "🌊 ANIME: What is Giyu Tomioka's Breathing Style in Demon Slayer?", a: ["water", "water breathing"] },
+        { q: "👹 ANIME: Who is the King of Curses inside Yuji Itadori?", a: ["sukuna", "ryomen sukuna"] },
+        { q: "🐉 ANIME: How many Dragon Balls are needed to summon Shenron?", a: ["7", "seven"] },
+        { q: "🕶️ ANIME: What percentage does Mob reach when his emotions explode in Mob Psycho 100?", a: ["100", "100%", "one hundred"] },
+        { q: "🎻 ANIME: What instrument does Kaori Miyazono play in Your Lie in April?", a: ["violin"] },
+        { q: "🍎 ANIME: What fruit does Ryuk love eating in Death Note?", a: ["apple", "apples"] },
+        { q: "🦊 ANIME: Who is the 4th Hokage of the Hidden Leaf Village?", a: ["minato", "minato namikaze"] },
+        { q: "⚔️ ANIME: How many swords does Roronoa Zoro use in his signature style?", a: ["3", "three", "santoryu"] },
+        { q: "🔥 ANIME: What is Ace's Devil Fruit power in One Piece?", a: ["mera mera", "flame", "fire"] },
+        { q: "👑 ANIME: Who is the main shadow monarch in Solo Leveling?", a: ["sung jinwoo", "jinwoo", "sung jin woo"] },
+        { q: "💥 ANIME: What is Katsuki Bakugo's Quirk in My Hero Academia?", a: ["explosion"] },
+        { q: "🧊 ANIME: What are Shoto Todoroki's two Quirk elements?", a: ["fire and ice", "ice and fire", "half cold half hot"] },
+        { q: "🎭 ANIME: What organization wears black cloaks with red clouds in Naruto?", a: ["akatsuki"] },
+        { q: "🦋 ANIME: Who is the Insect Hashira in Demon Slayer?", a: ["shinobu", "shinobu kocho"] },
+        { q: "🏀 ANIME: Who is the phantom sixth man in Kuroko's Basketball?", a: ["kuroko", "tetsuya kuroko"] },
+        { q: "🗡️ ANIME: What is Meliodas's sin title in The Seven Deadly Sins?", a: ["wrath", "dragon sin of wrath"] },
+        { q: "🌟 ANIME: What is the name of the guild Natsu Dragneel belongs to?", a: ["fairy tail"] }
+    ];
+
+    const activeAnimeQuizByServer = new Map();
+
+    function triggerServerAnimeQuiz(serverId) {
+        const picked = EXTRA_ANIME_QUIZ.at(Math.floor(Math.random() * EXTRA_ANIME_QUIZ.length));
+        if (!picked) return;
+        const old = activeAnimeQuizByServer.get(serverId);
+        if (old && old.timer) clearTimeout(old.timer);
+
+        const timer = setTimeout(() => {
+            if (activeAnimeQuizByServer.has(serverId)) {
+                activeAnimeQuizByServer.delete(serverId);
+                io.to(serverId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `⏰ **Time's Up!** Answer was: **${picked.a.at(0).toUpperCase()}**`,
+                    _serverId: serverId
+                });
+            }
+        }, 25000);
+
+        activeAnimeQuizByServer.set(serverId, { answers: picked.a, timer });
+        io.to(serverId).emit('message', {
+            username: "Sammu's Bot",
+            text: `${picked.q}\n*(Type your answer in chat within 25s!)*`,
+            _serverId: serverId
+        });
+    }
+    const ARENA_TOURNEY_GAMES = [
+        { name: "⚔️ Tic-Tac-Toe Duel", ev: "assignFighters" },
+        { name: "🤼 Sumo Push", ev: "launchSumo" },
+        { name: "🌀 Spinner Clash", ev: "launchSpinner" },
+        { name: "🤠 Quick-Draw", ev: "launchQuickDraw" },
+        { name: "🧮 Math Blitz", ev: "launchMath" },
+        { name: "💣 Bomb Pass", ev: "launchBomb" },
+        { name: "🪨 Rock Paper Scissors", ev: "launchRPS" },
+        { name: "🧠 Emoji Memory", ev: "launchMemory" },
+        { name: "🪢 Tug of War", ev: "launchTug" },
+        { name: "🎨 Color Trap", ev: "launchColorTrap" },
+        { name: "🔤 Word Scramble", ev: "launchScramble" },
+        { name: "🎲 High Dice", ev: "launchDice" },
+        { name: "⚽ Penalty Kick", ev: "launchPenalty" },
+        { name: "⌨️ Typing Race", ev: "launchTyping" },
+        { name: "💎 Treasure Hunt", ev: "launchTreasure" },
+        { name: "🚨 Simon Says", ev: "launchSimon" },
+        { name: "🃏 Higher or Lower", ev: "launchCards" },
+        { name: "✂️ Wire Defusal", ev: "launchDefuse" },
+        { name: "🔢 Number Guess", ev: "launchGuess" },
+        { name: "🎯 Target Sniper", ev: "launchTarget" },
+        { name: "🗡️ Fruit Slash", ev: "launchFruit" },
+        { name: "⚡ Lightning Reflex", ev: "launchReflex" },
+        { name: "🏀 Hoop Shootout", ev: "launchHoop" }
+    ];
+
+    function startArenaTournament(serverId, hostSocket) {
+        const arena = getArena(serverId);
+        syncArenaPlayers(serverId);
+        const contestants = arena.players.filter(p => p.id !== hostSocket.id).sort(() => Math.random() - 0.5);
+        if (contestants.length < 2) {
+            io.to(serverId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚠️ Need at least **2 non-host players inside this server** to start a Tournament!`,
+                _serverId: serverId
+            });
+            return;
+        }
+        if (arena.tourney.timer) clearTimeout(arena.tourney.timer);
+        arena.tourney = {
+            active: true, round: 1, maxGames: 15, gamesPlayed: 0,
+            queue: [...contestants], nextRound: [], eliminated: [],
+            matchScores: {}, currentPair: null, timer: null
+        };
+        contestants.forEach(p => { arena.tourney.matchScores[p.username] = 0; });
+        io.to(serverId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🏆 **ISOLATED TOURNAMENT STARTED IN THIS ARENA!** (${contestants.length} Players | Up to 15 Matches)\n🥇 1st: **Trophy** | 🥈 2nd: **Silver** | 🥉 3rd: **Bronze**`,
+            _serverId: serverId
+        });
+        advanceArenaTournament(serverId, hostSocket);
+    }
+
+    function advanceArenaTournament(serverId, hostSocket) {
+        const arena = getArena(serverId);
+        const t = arena.tourney;
+        if (!t.active) return;
+
+        syncArenaPlayers(serverId);
+        const activeIds = new Set(arena.players.map(p => p.id));
+        t.queue = t.queue.filter(p => activeIds.has(p.id));
+        t.nextRound = t.nextRound.filter(p => activeIds.has(p.id));
+
+        if (t.queue.length === 1) {
+            const byePlayer = t.queue.pop();
+            t.nextRound.push(byePlayer);
+            io.to(serverId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🍀 **${byePlayer.username}** gets a bye to Round ${t.round + 1}!`,
+                _serverId: serverId
+            });
+        }
+
+        if (t.queue.length === 0) {
+            if (t.nextRound.length <= 1 || t.gamesPlayed >= t.maxGames) {
+                t.active = false;
+                const champ = t.nextRound.at(0) ? t.nextRound.at(0).username : (t.currentPair ? t.currentPair.winner : 'Champion');
+                io.to(serverId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🎊 **ARENA TOURNAMENT FINISHED!** 🥇 Champion: **${champ}**! 🏆`,
+                    _serverId: serverId
+                });
+                return;
+            }
+            t.round++;
+            t.queue = [...t.nextRound].sort(() => Math.random() - 0.5);
+            t.nextRound = [];
+        }
+
+        const pA = t.queue.shift(), pB = t.queue.shift();
+        if (!pA || !pB) { t.active = false; return; }
+
+        t.gamesPlayed++;
+        t.currentPair = { pA, pB, winner: null };
+        arena.captainA = pA;
+        arena.captainB = pB;
+
+        const chosen = ARENA_TOURNEY_GAMES.at(Math.floor(Math.random() * ARENA_TOURNEY_GAMES.length));
+        io.to(serverId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🏟️ **TOURNEY MATCH #${t.gamesPlayed}** (Round ${t.round})\n⚔️ 🔴 **${pA.username}** vs 🔵 **${pB.username}**\n🎮 Game: **${chosen.name}**!`,
+            _serverId: serverId
+        });
+
+        if (hostSocket && hostSocket.connected) {
+            hostSocket.onevent({ type: 2, nsp: '/', data: ['makeCaptains', { capA: pA.id, capB: pB.id }] });
+            setTimeout(() => {
+                if (hostSocket.connected) {
+                    hostSocket.onevent({ type: 2, nsp: '/', data: [chosen.ev, { fightA: pA.id, fightB: pB.id }] });
+                }
+            }, 250);
+        }
+    }
+
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function (body) {
@@ -453,15 +651,56 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
-
     io.on('connection', (socket) => {
         attachTracking(socket, null);
 
         socket.use((packet, next) => {
-            currentSourceServerId = socket.activeServerId || null;
-            if (socket.activeServerId) lastActiveServerId = socket.activeServerId;
-
             const evName = packet && packet.at(0);
+
+            if (evName === 'chatMessage') {
+                const payload = packet.at(1);
+                const rawText = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
+                if (typeof rawText === 'string') {
+                    const low = rawText.trim().toLowerCase();
+                    if (low === '!anime' || low === '!animequiz') {
+                        if (socket.activeServerId) triggerServerAnimeQuiz(socket.activeServerId);
+                        return;
+                    }
+                    if (socket.activeServerId && activeAnimeQuizByServer.has(socket.activeServerId)) {
+                        const qState = activeAnimeQuizByServer.get(socket.activeServerId);
+                        if (qState.answers.some(ans => low === ans || low.includes(ans))) {
+                            clearTimeout(qState.timer);
+                            activeAnimeQuizByServer.delete(socket.activeServerId);
+                            const winnerName = (typeof payload === 'object' && payload.username) ? payload.username : (socket.username || 'Player');
+                            setTimeout(() => {
+                                io.to(socket.activeServerId).emit('message', {
+                                    username: "Sammu's Bot",
+                                    text: `🎉🎌 **${winnerName}** nailed the Anime Quiz! Answer: **${qState.answers.at(0).toUpperCase()}** (+100 Vibe Pts!)`,
+                                    _serverId: socket.activeServerId
+                                });
+                            }, 150);
+                        }
+                    }
+                    if (low === '/tournament' || low === '/tournamnet' || low === '/tourney') {
+                        if (socket.activeServerId) startArenaTournament(socket.activeServerId, socket);
+                        return;
+                    }
+                    if (low === '/stoptournament' || low === '/stoptourney') {
+                        if (socket.activeServerId) {
+                            const arena = getArena(socket.activeServerId);
+                            arena.tourney.active = false;
+                            if (arena.tourney.timer) clearTimeout(arena.tourney.timer);
+                            io.to(socket.activeServerId).emit('message', {
+                                username: "Sammu's Bot",
+                                text: `🛑 Tournament stopped in this arena.`,
+                                _serverId: socket.activeServerId
+                            });
+                        }
+                        return;
+                    }
+                }
+            }
+
             const gameEvents = new Set([
                 'assignFighters', 'makeMove', 'launchSumo', 'sumoPush', 'launchSpinner', 'spinnerMove',
                 'launchQuickDraw', 'quickDrawFire', 'launchMath', 'submitMath', 'launchBomb', 'passBomb',
@@ -476,24 +715,53 @@ module.exports = function initMultiServers(app, io) {
 
             if (gameEvents.has(evName)) {
                 if (!socket.activeServerId) return;
-                if (evName.startsWith('launch') || evName === 'assignFighters') {
-                    const roomSockets = io.sockets.adapter.rooms.get(socket.activeServerId);
-                    const roomIds = roomSockets ? [...roomSockets] : [];
-                    const nonHostIds = roomIds.filter(id => id !== socket.id);
-                    const pool = nonHostIds.length >= 2 ? nonHostIds : roomIds;
-                    if (pool.length < 2) {
+                const arena = getArena(socket.activeServerId);
+
+                for (const [otherId, otherArena] of arenas.entries()) {
+                    if (otherId !== socket.activeServerId && otherArena.gameState !== 'lobby' && evName.startsWith('launch')) {
                         socket.emit('message', {
                             username: "Sammu's Bot",
-                            text: `⚠️ Need at least **2 players inside THIS server** to launch a 1v1 game!`,
+                            text: `⏳ **${serversDB[otherId]?.name || 'Another arena'}** is currently finishing a quick match! Try launching in a few seconds.`,
                             _serverId: socket.activeServerId
                         });
                         return;
                     }
                 }
+
+                if (evName === 'makeCaptains' || evName === 'assignFighters') {
+                    const d = packet.at(1);
+                    if (d && typeof d === 'object') {
+                        const pA = arena.players.find(p => p.id === (d.capA || d.fightA));
+                        const pB = arena.players.find(p => p.id === (d.capB || d.fightB));
+                        if (pA && pB && pA.id !== pB.id) {
+                            arena.captainA = pA;
+                            arena.captainB = pB;
+                        }
+                    }
+                }
+
+                if (evName.startsWith('launch') || evName === 'assignFighters') {
+                    syncArenaPlayers(socket.activeServerId);
+                    if (arena.players.length < 2) {
+                        socket.emit('message', {
+                            username: "Sammu's Bot",
+                            text: `⚠️ Need at least **2 players inside THIS server** to start a game!`,
+                            _serverId: socket.activeServerId
+                        });
+                        return;
+                    }
+                    if (!arena.captainA || !arena.captainB ||
+                        !arena.players.some(p => p.id === arena.captainA.id) ||
+                        !arena.players.some(p => p.id === arena.captainB.id)) {
+                        const nonHost = arena.players.filter(p => p.id !== socket.id);
+                        const pool = nonHost.length >= 2 ? nonHost : arena.players;
+                        arena.captainA = pool.at(0);
+                        arena.captainB = pool.at(1);
+                    }
+                }
             }
             next();
         });
-
         socket.on('checkOGSignature', (data) => {
             attachTracking(socket, data);
             socket.emit('ogDeviceVerified', isAnyLockedOGSignature(socket));
@@ -529,6 +797,7 @@ module.exports = function initMultiServers(app, io) {
             saveDB();
             origIoEmit('serverListUpdate', getPublicServerList());
         });
+
         socket.on('verifyServerAccess', (data) => {
             const { serverId, password } = data || {};
             attachTracking(socket, data);
@@ -553,12 +822,12 @@ module.exports = function initMultiServers(app, io) {
             }
 
             if (socket.activeServerId && activeCounts[socket.activeServerId]) {
-                socket.leave(socket.activeServerId);
-                activeCounts[socket.activeServerId] = Math.max(0, activeCounts[socket.activeServerId] - 1);
+                const oldSrv = socket.activeServerId;
+                socket.leave(oldSrv);
+                activeCounts[oldSrv] = Math.max(0, activeCounts[oldSrv] - 1);
+                syncArenaPlayers(oldSrv);
             }
             socket.activeServerId = serverId;
-            currentSourceServerId = serverId;
-            lastActiveServerId = serverId;
             socket.join(serverId);
             activeCounts[serverId] = (activeCounts[serverId] || 0) + 1;
             origIoEmit('serverListUpdate', getPublicServerList());
@@ -586,37 +855,41 @@ module.exports = function initMultiServers(app, io) {
             origIoEmit('serverListUpdate', getPublicServerList());
             socket.emit('serverAccessDenied', '✅ Custom Server "' + name + '" created with 7-Day FREE Trial!\nShare /?ref=' + cleanOwner + ' with 15 friends for +7 days, or email a gift code to singhalshamaksh@gmail.com for permanent access!');
         });
-
         socket.on('joinRoom', (data) => {
             attachTracking(socket, data);
             const srv = serversDB[socket.activeServerId];
-            const uname = (data && data.username) ? data.username.trim().toLowerCase() : '';
-            if (uname && socket.activeServerId) {
-                playerServerMap.set(uname, socket.activeServerId);
-            }
-            if (srv && uname) {
-                const isCustomOwner = (srv.owner && uname === srv.owner.toLowerCase() && !OG_HOSTS.has(uname)) && (
+            const uname = (data && data.username) ? data.username.trim() : '';
+            const cleanU = uname.toLowerCase();
+            if (cleanU && socket.activeServerId) {
+                playerServerMap.set(cleanU, socket.activeServerId);
+                const arena = getArena(socket.activeServerId);
+                arena.players = arena.players.filter(p => p.id !== socket.id && p.username.toLowerCase() !== cleanU);
+                const isCustomOwner = (srv && srv.owner && cleanU === srv.owner.toLowerCase() && !OG_HOSTS.has(cleanU)) && (
                     !srv.ownerSig ||
                     (socket.trackedDeviceId && srv.ownerSig.deviceId === socket.trackedDeviceId) ||
                     (socket.trackedIP && socket.trackedBrowser && srv.ownerSig.ip === socket.trackedIP && srv.ownerSig.browser === socket.trackedBrowser)
                 );
-                const isVerifiedOG = verifyOGHostTripleLock(uname, socket, false);
+                const isVerifiedOG = verifyOGHostTripleLock(cleanU, socket, false);
                 if (isVerifiedOG) socket.emit('ogDeviceVerified', true);
 
-                if (isCustomOwner || isVerifiedOG) {
-                    socket.serverHostFor = srv.id;
+                const isHost = Boolean(isCustomOwner || isVerifiedOG);
+                if (isHost) arena.hostId = socket.id;
+                arena.players.push({ id: socket.id, username: uname || 'Player', avatar: (data && data.avatar) || '🥷', isHost });
+                syncArenaPlayers(socket.activeServerId);
+
+                if (srv && isHost) {
                     setTimeout(() => {
                         socket.emit('initRole', { isHost: true });
                         socket.emit('message', {
                             username: "Sammu's Bot",
-                            text: `👑 Welcome to **${srv.name}**, **${data.username}**! Super-Host Admin Panel unlocked!`,
+                            text: `👑 Welcome to **${srv.name}**, **${uname}**! Super-Host Admin Panel unlocked!`,
                             _serverId: srv.id
                         });
                     }, 500);
-                } else if (OG_HOSTS.has(uname)) {
+                } else if (srv && OG_HOSTS.has(cleanU)) {
                     socket.emit('message', {
                         username: 'SYSTEM',
-                        text: `🛡️ **${data.username}** is device/IP/browser-locked to the real host! Host powers blocked.`,
+                        text: `🛡️ **${uname}** is device/IP/browser-locked to the real host! Host powers blocked.`,
                         _serverId: srv.id
                     });
                 }
@@ -625,6 +898,7 @@ module.exports = function initMultiServers(app, io) {
                 setTimeout(() => socket.emit('toggleDidiPromo', true), 600);
             }
         });
+
         socket.on('chatMessage', (payload) => {
             const text = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
             if (!text || typeof text !== 'string') return;
@@ -704,6 +978,7 @@ module.exports = function initMultiServers(app, io) {
                     const delName = found.name;
                     delete serversDB[found.id];
                     delete activeCounts[found.id];
+                    arenas.delete(found.id);
                     saveDB();
                     origIoEmit('serverListUpdate', getPublicServerList());
                     io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `🗑️ **SERVER DELETED:** **${delName}** (Owner: **${ownerTarget}**) was permanently removed!`, _serverId: socket.activeServerId });
@@ -728,7 +1003,9 @@ module.exports = function initMultiServers(app, io) {
 
         socket.on('disconnect', () => {
             if (socket.activeServerId && activeCounts[socket.activeServerId]) {
-                activeCounts[socket.activeServerId] = Math.max(0, activeCounts[socket.activeServerId] - 1);
+                const srvId = socket.activeServerId;
+                activeCounts[srvId] = Math.max(0, activeCounts[srvId] - 1);
+                syncArenaPlayers(srvId);
                 origIoEmit('serverListUpdate', getPublicServerList());
             }
         });

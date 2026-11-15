@@ -256,8 +256,6 @@ module.exports = function initMultiServers(app, io) {
         </div>
       </div>
     </div>
-// === END PIECE 3A ===
-// === START PIECE 3B ===
     <script>
     (function() {
       let currentTab = 'official', allServers = [];

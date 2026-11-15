@@ -1,4 +1,4 @@
-// === START PIECE 1 ===
+
 const fs = require('fs');
 const path = require('path');
 
@@ -69,8 +69,8 @@ module.exports = function initMultiServers(app, io) {
         "sarah", "advait", "ruwii", "saeron", "shubhi", "sid"
     ]);
     const MASTER_KEYS = new Set(["#bhaibahencharaontop", "#universalbrother"]);
-// === END PIECE 1 ===
-// === START PIECE 2 ===
+
+
     const GLOBAL_EVENTS = new Set(['serverListUpdate']);
     const ROOM_EVENTS = new Set([
         'incomingMusicNote', 'playMemeSfx', 'message', 'syncGame', 'spinnerTick',
@@ -209,8 +209,8 @@ module.exports = function initMultiServers(app, io) {
             };
         });
     }
-// === END PIECE 2 ===
-// === START PIECE 3A ===
+
+
     const MULTI_SERVER_UI = `
     <style>
       #srvBrowserOverlay { position:fixed; inset:0; background:rgba(7,11,25,0.96); z-index:999999; display:flex; align-items:center; justify-content:center; padding:12px; font-family:inherit; backdrop-filter:blur(12px); }
@@ -526,8 +526,8 @@ module.exports = function initMultiServers(app, io) {
             origIoEmit('serverListUpdate', getPublicServerList());
             socket.emit('serverAccessGranted', { ...srv, millyPromoOn });
         });
-// === END PIECE 4 ===
-// === START PIECE 5 ===
+
+
         socket.on('createCustomServer', (data) => {
             const { name, owner, theme } = data || {};
             attachTracking(socket, data);
@@ -689,4 +689,3 @@ module.exports = function initMultiServers(app, io) {
         });
     });
 };
-// === END PIECE 5 ===

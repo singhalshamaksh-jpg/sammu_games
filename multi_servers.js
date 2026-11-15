@@ -2,37 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = function initMultiServers(app, io) {
-    // 🔒 AUTOMATIC ROOM ISOLATOR: Keeps chat, player lists & mini-games 100% separate per server!
-    let currentEventRoom = null;
-    const globalEvents = new Set(['serverListUpdate', 'toggleDidiPromo']);
-    const origIoEmit = io.emit.bind(io);
-
-    io.emit = function (ev, ...args) {
-        if (globalEvents.has(ev)) {
-            return origIoEmit(ev, ...args);
-        }
-        if (currentEventRoom) {
-            return io.to(currentEventRoom).emit(ev, ...args);
-        }
-        return origIoEmit(ev, ...args);
-    };
-
-    io.on('connection', (socket) => {
-        socket.use((packet, next) => {
-            currentEventRoom = socket.activeServerId || 'srv_samaksh';
-            next();
-        });
-
-        const origSocketEmit = socket.emit.bind(socket);
-        socket.emit = function (ev, ...args) {
-            const prevRoom = currentEventRoom;
-            const res = origSocketEmit(ev, ...args);
-            currentEventRoom = prevRoom;
-            return res;
-        };
-    });
     const DB_FILE = path.join(__dirname, 'servers_db.json');
-    const OG_CLAIM_SECRET = "#bhaibahencharaontop";
 
     const defaultServers = {
         srv_samaksh: { id: 'srv_samaksh', name: "💎 Samaksh's Arena",   owner: "samaksh", theme: "diamond", max: 20, type: "official" },
@@ -55,52 +25,147 @@ module.exports = function initMultiServers(app, io) {
             owner: "sammu", 
             theme: "diamond", 
             max: 20, 
-            type: "secret"
+            type: "secret", 
+            password: "#bhaibahencharaontop" 
         }
     };
-
     let serversDB = { ...defaultServers };
-    let verifiedHostDevices = {};
-    let superAdminDevices = new Set();
+    let lockedOGSignatures = {};
+    let millyPromoOn = false;
 
     if (fs.existsSync(DB_FILE)) {
         try {
-            const raw = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-            const savedServers = raw.servers || raw;
-            delete savedServers.srv_bonus;
-            serversDB = { ...defaultServers, ...savedServers };
-            if (raw.verifiedHostDevices) verifiedHostDevices = raw.verifiedHostDevices;
-            if (Array.isArray(raw.superAdminDevices)) superAdminDevices = new Set(raw.superAdminDevices);
+            const saved = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+            delete saved.srv_bonus;
+            if (saved._lockedOGSignatures) {
+                lockedOGSignatures = saved._lockedOGSignatures;
+                delete saved._lockedOGSignatures;
+            }
+            if (typeof saved._millyPromoOn === 'boolean') {
+                millyPromoOn = saved._millyPromoOn;
+                delete saved._millyPromoOn;
+            }
+            serversDB = { ...defaultServers, ...saved };
         } catch (e) {}
     }
 
     function saveDB() {
         try {
-            fs.writeFileSync(DB_FILE, JSON.stringify({
-                servers: serversDB,
-                verifiedHostDevices,
-                superAdminDevices: Array.from(superAdminDevices)
-            }, null, 2));
+            const toSave = {
+                ...serversDB,
+                _lockedOGSignatures: lockedOGSignatures,
+                _millyPromoOn: millyPromoOn
+            };
+            fs.writeFileSync(DB_FILE, JSON.stringify(toSave, null, 2));
         } catch (e) {}
     }
     saveDB();
+
     const activeCounts = {};
     const OG_HOSTS = new Set([
         "sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus",
         "sarah", "advait", "ruwii", "saeron", "shubhi", "sid"
     ]);
+    const MASTER_KEYS = new Set(["#bhaibahencharaontop", "#universalbrother"]);
+    const GLOBAL_EVENTS = new Set(['serverListUpdate']);
+    const ROOM_EVENTS = new Set([
+        'incomingMusicNote', 'playMemeSfx', 'message', 'syncGame', 'spinnerTick',
+        'announceWinner', 'updateMVP', 'updateGallery', 'incomingGift', 'incomingReaction',
+        'openSkincareClinic', 'closeSkincareClinic', 'toggleDidiPromo'
+    ]);
 
-    function isVerifiedOG(username, deviceId) {
-        if (!username || !deviceId) return false;
-        const clean = username.trim().toLowerCase();
-        if (!OG_HOSTS.has(clean)) return false;
-        const list = verifiedHostDevices[clean] || [];
-        return list.includes(deviceId);
+    const origIoEmit = io.emit.bind(io);
+    let currentSourceServerId = null;
+
+    io.emit = function(event, ...args) {
+        if (GLOBAL_EVENTS.has(event)) {
+            return origIoEmit(event, ...args);
+        }
+        // Keep Didi Promo strictly inside Milly's Palace (srv_milly)
+        if (event === 'toggleDidiPromo') {
+            millyPromoOn = Boolean(args[0]);
+            saveDB();
+            io.to('srv_milly').emit('toggleDidiPromo', millyPromoOn);
+            Object.keys(serversDB).forEach(id => {
+                if (id !== 'srv_milly') io.to(id).emit('toggleDidiPromo', false);
+            });
+            return true;
+        }
+        if (event === 'updatePlayers' && Array.isArray(args)) {
+            const allPlayers = args[0];
+            const rooms = io.sockets.adapter.rooms;
+            Object.keys(serversDB).forEach(srvId => {
+                const roomSockets = rooms.get(srvId);
+                if (!roomSockets) return;
+                const roomPlayers = allPlayers.filter(p => roomSockets.has(p.id));
+                io.to(srvId).emit('updatePlayers', roomPlayers);
+            });
+            return true;
+        }
+        if (ROOM_EVENTS.has(event) && currentSourceServerId) {
+            return io.to(currentSourceServerId).emit(event, ...args);
+        }
+        return origIoEmit(event, ...args);
+    };
+    function getRealIP(socket) {
+        const fwd = socket.handshake && socket.handshake.headers && socket.handshake.headers['x-forwarded-for'];
+        if (fwd && typeof fwd === 'string') return fwd.split(',')[0].trim();
+        return (socket.handshake && socket.handshake.address) || null;
     }
 
-    function isAnyVerifiedOGDevice(deviceId) {
-        if (!deviceId) return false;
-        return Object.values(verifiedHostDevices).some(list => Array.isArray(list) && list.includes(deviceId));
+    function getBrowserSig(socket, clientBrowserFp) {
+        const ua = (socket.handshake && socket.handshake.headers && socket.handshake.headers['user-agent']) || '';
+        return `${ua}|${clientBrowserFp || ''}`.trim();
+    }
+
+    function attachTracking(socket, data) {
+        if (data && data.deviceId) socket.trackedDeviceId = String(data.deviceId);
+        if (data && data.browserFp) socket.trackedBrowserFp = String(data.browserFp);
+        socket.trackedIP = getRealIP(socket);
+        socket.trackedBrowser = getBrowserSig(socket, socket.trackedBrowserFp);
+    }
+
+    function verifyOGHostTripleLock(uname, socket, secretKeyProvided = false) {
+        const clean = (uname || '').trim().toLowerCase();
+        if (!clean || !OG_HOSTS.has(clean)) return false;
+
+        const devId = socket.trackedDeviceId || null;
+        const ip = socket.trackedIP || getRealIP(socket);
+        const browser = socket.trackedBrowser || getBrowserSig(socket, socket.trackedBrowserFp);
+
+        const existing = lockedOGSignatures[clean];
+        if (!existing || secretKeyProvided) {
+            lockedOGSignatures[clean] = { deviceId: devId, ip: ip, browser: browser };
+            saveDB();
+            return true;
+        }
+
+        const devMatch = devId && existing.deviceId && devId === existing.deviceId;
+        const ipMatch = ip && existing.ip && ip === existing.ip;
+        const browserMatch = browser && existing.browser && browser === existing.browser;
+
+        if (devMatch || (ipMatch && browserMatch)) {
+            if (devId && !existing.deviceId) existing.deviceId = devId;
+            if (ip && existing.ip !== ip && devMatch) existing.ip = ip;
+            if (devId && existing.deviceId !== devId && (ipMatch && browserMatch)) existing.deviceId = devId;
+            saveDB();
+            return true;
+        }
+        return false;
+    }
+
+    function isAnyLockedOGSignature(socket) {
+        const devId = socket.trackedDeviceId || null;
+        const ip = socket.trackedIP || getRealIP(socket);
+        const browser = socket.trackedBrowser || getBrowserSig(socket, socket.trackedBrowserFp);
+
+        return Object.values(lockedOGSignatures).some(sig => {
+            if (!sig) return false;
+            const devMatch = devId && sig.deviceId && devId === sig.deviceId;
+            const ipMatch = ip && sig.ip && ip === sig.ip;
+            const browserMatch = browser && sig.browser && browser === sig.browser;
+            return devMatch || (ipMatch && browserMatch);
+        });
     }
 
     function getPublicServerList() {
@@ -112,14 +177,13 @@ module.exports = function initMultiServers(app, io) {
                 : null;
             const refCount = Array.isArray(s.referrals) ? s.referrals.length : 0;
             return {
-                id: s.id, name: s.name, owner: s.owner, ownerDevice: s.ownerDevice || null,
-                theme: s.theme, max: s.max || 20, count: activeCounts[s.id] || 0, type: s.type,
-                locked: Boolean(s.password) || s.type === 'secret', expired, permanent: Boolean(s.permanent),
+                id: s.id, name: s.name, owner: s.owner, theme: s.theme,
+                max: s.max || 20, count: activeCounts[s.id] || 0, type: s.type,
+                locked: s.type === 'secret' || Boolean(s.password), expired, permanent: Boolean(s.permanent),
                 daysLeft, refCount
             };
         });
     }
-
     const MULTI_SERVER_UI = `
     <style>
       #srvBrowserOverlay { position:fixed; inset:0; background:rgba(7,11,25,0.96); z-index:999999; display:flex; align-items:center; justify-content:center; padding:12px; font-family:inherit; backdrop-filter:blur(12px); }
@@ -143,14 +207,13 @@ module.exports = function initMultiServers(app, io) {
         </div>
         <div class="srv-tabs">
           <button class="srv-tab active" id="tabOfficial" onclick="switchSrvTab('official')">🏟️ 15 Official Servers</button>
-          <button class="srv-tab" id="tabCustom" onclick="switchSrvTab('custom')">✨ Private / Custom Servers</button>
+          <button class="srv-tab" id="tabCustom" onclick="switchSrvTab('custom')">✨ Custom / Trial Servers</button>
         </div>
         <div id="srvListContainer"></div>
         <div id="createSrvSection" style="display:none;margin-top:10px;border-top:1px solid rgba(255,255,255,0.15);padding-top:10px;">
-          <div style="font-weight:bold;font-size:13px;color:#fde047;margin-bottom:6px;">🎁 Create Private Server (7-Day FREE Trial!)</div>
-          <input id="newSrvName" class="srv-input" placeholder="Private Server Name (e.g. Aarav's Squad)" maxlength="24">
+          <div style="font-weight:bold;font-size:13px;color:#fde047;margin-bottom:6px;">🎁 Create Your Own Server (7-Day FREE Trial!)</div>
+          <input id="newSrvName" class="srv-input" placeholder="Server Name (e.g. Aarav's Squad)" maxlength="24">
           <input id="newSrvOwner" class="srv-input" placeholder="Your Exact Username (Gets Host Commands)" maxlength="20">
-          <input id="newSrvPass" class="srv-input" placeholder="Set Room Password (Leave empty for Open)" maxlength="20">
           <select id="newSrvTheme" class="srv-input">
             <option value="cyber">🌌 Cyber Theme</option>
             <option value="diamond">💎 Diamond Theme</option>
@@ -161,19 +224,16 @@ module.exports = function initMultiServers(app, io) {
           <button onclick="createTrialServer()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;cursor:pointer;">🚀 Launch 7-Day Free Trial Server</button>
           <div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;line-height:1.4;">
             🔗 <b>Extend Free:</b> Bring <b>15 new players</b> via your referral link = <b>+1 Extra Week FREE!</b><br>
-            💎 <b>Permanent VIP Server:</b> Email any Gift Card Code (Google Play, Amazon, Flipkart) to <b style="color:#38bdf8;">singhalshamaksh@gmail.com</b>
+            💎 <b>Permanent VIP Server:</b> Email an Amazon Pay or Google Play Gift Code to <b style="color:#38bdf8;">singhalshamaksh@gmail.com</b>
           </div>
         </div>
       </div>
     </div>
-    <div id="activeSrvTopBar" style="display:none;position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:99990;background:rgba(15,23,42,0.88);border:1.5px solid #38bdf8;color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,0.5);backdrop-filter:blur(6px);pointer-events:none;">
-      🌐 <span id="activeSrvTopName">Sammu Games</span>
-    </div>
     <script>
     (function() {
-      let currentTab = 'official';
-      window.selectedServerId = 'srv_samaksh';
-      let allServers = ${JSON.stringify(getPublicServerList())};
+      let currentTab = 'official', allServers = [];
+      let isLockedHostDevice = false;
+      window.selectedServerId = null;
 
       const urlParams = new URLSearchParams(window.location.search);
       const refOwner = urlParams.get('ref');
@@ -184,6 +244,15 @@ module.exports = function initMultiServers(app, io) {
         devId = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
         localStorage.setItem('sammu_dev_uid', devId);
       }
+
+      const browserFp = [
+        navigator.platform || '',
+        screen.width + 'x' + screen.height + 'x' + screen.colorDepth,
+        navigator.hardwareConcurrency || '',
+        navigator.deviceMemory || '',
+        Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+        navigator.language || ''
+      ].join('~');
 
       window.switchSrvTab = function(tab) {
         currentTab = tab;
@@ -196,14 +265,7 @@ module.exports = function initMultiServers(app, io) {
       window.copyMyRefLink = function(ownerName) {
         const link = window.location.origin + '/?ref=' + encodeURIComponent(ownerName.toLowerCase());
         if (navigator.clipboard) navigator.clipboard.writeText(link);
-        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 15 new players using this link for +7 DAYS FREE, or email any Gift Card Code to singhalshamaksh@gmail.com for a PERMANENT server!');
-      };
-
-      window.deleteMyPrivateServer = function(serverId, serverName) {
-        if (!confirm('🗑️ Are you sure you want to permanently DELETE "' + serverName + '"?')) return;
-        if (typeof socket !== 'undefined') {
-          socket.emit('deleteOwnCustomServer', { serverId: serverId, deviceId: devId });
-        }
+        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 15 new players using this link for +7 DAYS FREE, or email an Amazon/Google Play Gift Code to singhalshamaksh@gmail.com for a PERMANENT server!');
       };
 
       function renderServerList() {
@@ -212,99 +274,104 @@ module.exports = function initMultiServers(app, io) {
         box.innerHTML = '';
         const filtered = allServers.filter(s => currentTab === 'official' ? (s.type === 'official' || s.type === 'secret') : s.type === 'custom');
         if (filtered.length === 0) {
-          box.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:14px;">No private servers yet! Create your 7-day free trial below 👇</div>';
+          box.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:14px;">No custom servers yet! Create your 7-day free trial below 👇</div>';
           return;
         }
         filtered.forEach(s => {
           const isFull = s.count >= s.max;
           const div = document.createElement('div');
           div.className = 'srv-card ' + (s.theme || '') + (isFull ? ' full' : '');
-          let badge = (s.locked ? '🔐 ' : '') + s.count + '/' + s.max + ' 👥';
+          let badge = s.count + '/' + s.max + ' 👥';
           let subLine = 'Host: ' + s.owner.toUpperCase();
 
-          if (s.type === 'secret') badge = '🔐 OG PASS | ' + s.count + '/' + s.max + ' 👥';
+          if (s.locked) badge = '🔐 OG PASS | ' + badge;
           else if (s.expired) {
-            badge = '🔒 EXPIRED (' + (s.refCount || 0) + '/15 Refs)';
-            subLine = 'Bring ' + (15 - (s.refCount || 0)) + ' more refs or email singhalshamaksh@gmail.com';
+            badge = '🔒 EXPIRED (' + s.refCount + '/15 Refs)';
+            subLine = 'Bring ' + (15 - s.refCount) + ' more refs or email singhalshamaksh@gmail.com';
           } else if (s.type === 'custom' && !s.permanent) {
-            badge = (s.locked ? '🔐 ' : '') + '⏳ ' + (s.daysLeft || 7) + 'd | ' + s.count + '/' + s.max + ' 👥';
-            subLine = 'Host: ' + s.owner.toUpperCase() + ' | Refs: ' + (s.refCount || 0) + '/15';
+            badge = '⏳ ' + s.daysLeft + 'd | ' + badge;
+            subLine = 'Host: ' + s.owner.toUpperCase() + ' | Refs: ' + s.refCount + '/15';
           } else if (s.permanent) {
-            badge = (s.locked ? '🔐 ' : '') + '⭐ VIP | ' + s.count + '/' + s.max + ' 👥';
+            badge = '⭐ VIP | ' + badge;
           }
 
           div.innerHTML = '<div><div style="font-weight:bold;font-size:13px;">' + s.name + '</div><div style="font-size:11px;color:#94a3b8;">' + subLine + '</div></div><div class="srv-pill">' + badge + '</div>';
           div.onclick = () => selectAndEnterServer(s);
           box.appendChild(div);
 
-          if (s.type === 'custom') {
-            const actionRow = document.createElement('div');
-            actionRow.style.cssText = 'display:flex;justify-content:flex-end;gap:6px;margin:-4px 0 8px 0;';
-            if (!s.permanent) {
-              actionRow.innerHTML += '<button onclick="event.stopPropagation();copyMyRefLink(\\'' + s.owner + '\\')" style="background:#059669;border:none;color:#fff;font-size:11px;font-weight:bold;padding:3px 10px;border-radius:8px;cursor:pointer;">🔗 Copy Link (' + (s.refCount || 0) + '/15)</button>';
-            }
-            if (s.ownerDevice && s.ownerDevice === devId) {
-              actionRow.innerHTML += '<button onclick="event.stopPropagation();deleteMyPrivateServer(\\'' + s.id + '\\', \\'' + s.name.replace(/'/g, '') + '\\')" style="background:#dc2626;border:none;color:#fff;font-size:11px;font-weight:bold;padding:3px 10px;border-radius:8px;cursor:pointer;">🗑️ Delete</button>';
-            }
-            if (actionRow.innerHTML) box.appendChild(actionRow);
+          if (s.type === 'custom' && !s.permanent) {
+            const refBtn = document.createElement('div');
+            refBtn.style.cssText = 'text-align:right;margin:-4px 0 8px 0;';
+            refBtn.innerHTML = '<button onclick="event.stopPropagation();copyMyRefLink(\\'' + s.owner + '\\')" style="background:#059669;border:none;color:#fff;font-size:11px;font-weight:bold;padding:3px 10px;border-radius:8px;cursor:pointer;">🔗 Copy Invite Link (' + s.refCount + '/15 for +7 Days)</button>';
+            box.appendChild(refBtn);
           }
         });
       }
-
       function selectAndEnterServer(srv) {
-        if (srv.expired) {
+        if (srv.expired && !isLockedHostDevice) {
           const link = window.location.origin + '/?ref=' + encodeURIComponent(srv.owner);
-          alert('🔒 Your 7-Day Free Trial has ended!\\n\\nOption 1 (FREE): Share your link with ' + (15 - (srv.refCount || 0)) + ' more friends to unlock +7 DAYS:\\n' + link + '\\n\\nOption 2 (PERMANENT): Email any Gift Card Code (with your Server Name) to singhalshamaksh@gmail.com!');
+          alert('🔒 Your 7-Day Free Trial has ended!\\n\\nOption 1 (FREE): Share your link with ' + (15 - srv.refCount) + ' more friends to unlock +7 DAYS:\\n' + link + '\\n\\nOption 2 (PERMANENT): Email an Amazon Pay or Google Play Gift Code (with your Server Name) to singhalshamaksh@gmail.com!');
           return;
         }
         let pass = '';
-        if (srv.locked && !(srv.ownerDevice && srv.ownerDevice === devId)) {
-          pass = prompt('🔐 Enter Password for ' + srv.name + ':');
+        if (srv.locked && !isLockedHostDevice) {
+          pass = prompt('💠 PRIVATE SERVER\\nEnter Secret Password:');
           if (!pass) return;
         }
         if (typeof socket !== 'undefined') {
-          socket.emit('verifyServerAccess', { serverId: srv.id, password: pass, deviceId: devId });
-        } else {
-          window.selectedServerId = srv.id;
-          document.getElementById('srvBrowserOverlay').style.display = 'none';
-          document.getElementById('activeSrvTopName').textContent = srv.name;
-          document.getElementById('activeSrvTopBar').style.display = 'block';
+          socket.emit('verifyServerAccess', { serverId: srv.id, password: pass, deviceId: devId, browserFp });
         }
       }
 
       window.createTrialServer = function() {
         const name = document.getElementById('newSrvName').value.trim();
         const owner = document.getElementById('newSrvOwner').value.trim();
-        const password = document.getElementById('newSrvPass').value.trim();
         const theme = document.getElementById('newSrvTheme').value;
         if (!name || !owner) { alert('Please enter both Server Name and your Username!'); return; }
-        if (typeof socket !== 'undefined') socket.emit('createCustomServer', { name, owner, password, theme, deviceId: devId });
+        if (typeof socket !== 'undefined') {
+          socket.emit('createCustomServer', { name, owner, theme, deviceId: devId, browserFp });
+        }
       };
 
-      renderServerList();
-      const socketWatcher = setInterval(() => {
-        if (typeof socket !== 'undefined' && !window._srvHooked) {
-          window._srvHooked = true;
-          clearInterval(socketWatcher);
-          socket.emit('requestServerList');
-          socket.emit('registerClientDevice', devId);
+      function updateDidiBannerVisibility(show) {
+        const box = document.getElementById('didiPromoBox');
+        if (!box) return;
+        // Show Didi banner ONLY inside Milly's Palace (srv_milly) when /promo on is active
+        box.style.display = (show && window.selectedServerId === 'srv_milly') ? 'block' : 'none';
+      }
 
-          const pendingRef = localStorage.getItem('sammu_pending_ref');
-          if (pendingRef) {
-            socket.emit('registerReferral', { refOwner: pendingRef, deviceId: devId });
-            localStorage.removeItem('sammu_pending_ref');
-          }
+      function hookServerSocket() {
+        if (typeof socket === 'undefined' || window._srvHooked) return;
+        window._srvHooked = true;
 
-          socket.on('serverListUpdate', (list) => { allServers = list; renderServerList(); });
-          socket.on('serverAccessGranted', (srv) => {
-            window.selectedServerId = srv.id;
-            document.getElementById('srvBrowserOverlay').style.display = 'none';
-            document.getElementById('activeSrvTopName').textContent = srv.name;
-            document.getElementById('activeSrvTopBar').style.display = 'block';
-          });
-          socket.on('serverAccessDenied', (msg) => alert(msg));
+        const origOnevent = socket.onevent;
+        socket.onevent = function(packet) {
+          const ev = packet && packet.data && packet.data[0];
+          const isolated = ['incomingMusicNote', 'playMemeSfx', 'message', 'syncGame', 'spinnerTick', 'announceWinner', 'openSkincareClinic'];
+          if (!window.selectedServerId && isolated.includes(ev)) return;
+          return origOnevent.apply(this, arguments);
+        };
+
+        socket.emit('checkOGSignature', { deviceId: devId, browserFp });
+        socket.emit('requestServerList');
+
+        const pendingRef = localStorage.getItem('sammu_pending_ref');
+        if (pendingRef) {
+          socket.emit('registerReferral', { refOwner: pendingRef, deviceId: devId });
+          localStorage.removeItem('sammu_pending_ref');
         }
-      }, 300);
+
+        socket.on('ogDeviceVerified', (ok) => { isLockedHostDevice = Boolean(ok); });
+        socket.on('serverListUpdate', (list) => { allServers = list; renderServerList(); });
+        socket.on('toggleDidiPromo', (show) => { updateDidiBannerVisibility(show); });
+        socket.on('serverAccessGranted', (srv) => {
+          window.selectedServerId = srv.id;
+          document.getElementById('srvBrowserOverlay').style.display = 'none';
+          updateDidiBannerVisibility(Boolean(srv.millyPromoOn));
+        });
+        socket.on('serverAccessDenied', (msg) => alert(msg));
+      }
+      window.addEventListener('DOMContentLoaded', () => { hookServerSocket(); setTimeout(hookServerSocket, 600); });
     })();
     </script>
     `;
@@ -319,22 +386,37 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
 
-    function broadcastRoomPlayers(roomId) {
-        if (!roomId) return;
-        const roomSockets = io.sockets.adapter.rooms.get(roomId) || new Set();
-        const roomPlayers = [];
-        roomSockets.forEach(sid => {
-            const s = io.sockets.sockets.get(sid);
-            if (s && s.username) {
-                roomPlayers.push({ id: s.id, username: s.username, avatar: s.avatar || '🥷', isHost: Boolean(s.isRoomHost) });
-            }
-        });
-        io.to(roomId).emit('updatePlayers', roomPlayers);
-    }
-
     io.on('connection', (socket) => {
-        socket.on('registerClientDevice', (devId) => {
-            if (devId) socket.clientDeviceId = String(devId);
+        attachTracking(socket, null);
+
+        socket.use((packet, next) => {
+            currentSourceServerId = socket.activeServerId || null;
+
+            const evName = packet && packet[0];
+            const gameEvents = new Set([
+                'assignFighters', 'makeMove', 'launchSumo', 'sumoPush', 'launchSpinner', 'spinnerMove',
+                'launchQuickDraw', 'quickDrawFire', 'launchMath', 'submitMath', 'launchBomb', 'passBomb',
+                'launchRPS', 'pickRPS', 'launchMemory', 'pickMemory', 'launchTug', 'tugPull',
+                'launchColorTrap', 'pickColorTrap', 'launchScramble', 'submitScramble', 'launchDice',
+                'rollArenaDice', 'launchPenalty', 'penaltyPick', 'launchTyping', 'submitTyping',
+                'launchTreasure', 'pickTreasure', 'launchSimon', 'tapSimon', 'launchCards', 'pickCard',
+                'launchDefuse', 'cutWire', 'launchGuess', 'submitGuess', 'launchTarget', 'hitTarget',
+                'launchFruit', 'fruitScoreTick', 'launchReflex', 'reflexTap', 'launchHoop', 'hoopShoot',
+                'launchSTK', 'skincareStepComplete', 'resetToLobby', 'makeCaptains', 'draftPlayer', 'awardTeamPoint'
+            ]);
+
+            if (gameEvents.has(evName)) {
+                if (!socket.activeServerId) return;
+                if (socket.serverHostFor && socket.serverHostFor !== socket.activeServerId && evName.startsWith('launch')) {
+                    return;
+                }
+            }
+            next();
+        });
+
+        socket.on('checkOGSignature', (data) => {
+            attachTracking(socket, data);
+            socket.emit('ogDeviceVerified', isAnyLockedOGSignature(socket));
         });
 
         socket.on('requestServerList', () => {
@@ -358,44 +440,33 @@ module.exports = function initMultiServers(app, io) {
                 const baseTime = Math.max(Date.now(), srv.expiresAt || Date.now());
                 srv.expiresAt = baseTime + (7 * 24 * 60 * 60 * 1000);
                 srv.referrals = [];
-                io.to(srv.id).emit('message', {
+                origIoEmit('message', {
                     username: "Sammu's Bot",
-                    text: `🎉🔥 **15 REFERRALS REACHED!** **${srv.name}** has been automatically extended for **+7 MORE DAYS**! 🚀`
+                    text: `🎉🔥 **15 REFERRALS REACHED!** **${srv.name}** (Host: **${srv.owner}**) has been automatically extended for **+7 MORE DAYS**! 🚀`
                 });
             }
             saveDB();
             origIoEmit('serverListUpdate', getPublicServerList());
         });
-
-        socket.on('verifyServerAccess', ({ serverId, password, deviceId }) => {
-            if (deviceId) socket.clientDeviceId = String(deviceId);
+        socket.on('verifyServerAccess', (data) => {
+            const { serverId, password } = data || {};
+            attachTracking(socket, data);
             const srv = serversDB[serverId];
             if (!srv) return socket.emit('serverAccessDenied', 'Server not found!');
-            if ((activeCounts[serverId] || 0) >= (srv.max || 20)) {
+
+            const isCreatorSignature = srv.ownerSig && (
+                (socket.trackedDeviceId && srv.ownerSig.deviceId === socket.trackedDeviceId) ||
+                (socket.trackedIP && socket.trackedBrowser && srv.ownerSig.ip === socket.trackedIP && srv.ownerSig.browser === socket.trackedBrowser)
+            );
+            const isHostBypass = isAnyLockedOGSignature(socket) || isCreatorSignature;
+
+            if (!isHostBypass && (activeCounts[serverId] || 0) >= (srv.max || 20)) {
                 return socket.emit('serverAccessDenied', 'Server is full (20/20)! Pick another server.');
             }
-
-            // Diamond Server: Accepts EITHER verified OG device OR #bhaibahencharaontop password!
-            if (srv.type === 'secret') {
-                const isVerified = isAnyVerifiedOGDevice(socket.clientDeviceId);
-                if (!isVerified && password !== OG_CLAIM_SECRET) {
-                    return socket.emit('serverAccessDenied', '❌ Wrong Password for Diamond Server!');
-                }
-                if (socket.clientDeviceId && password === OG_CLAIM_SECRET) {
-                    if (!Array.isArray(verifiedHostDevices['diamond_og'])) verifiedHostDevices['diamond_og'] = [];
-                    if (!verifiedHostDevices['diamond_og'].includes(socket.clientDeviceId)) {
-                        verifiedHostDevices['diamond_og'].push(socket.clientDeviceId);
-                        saveDB();
-                    }
-                }
-            } else {
-                const isCreatorDevice = (srv.ownerDevice && socket.clientDeviceId === srv.ownerDevice);
-                if (srv.password && !isCreatorDevice && password !== srv.password) {
-                    return socket.emit('serverAccessDenied', '❌ Wrong Password for ' + srv.name + '!');
-                }
+            if ((srv.type === 'secret' || srv.password) && !isHostBypass && password !== srv.password) {
+                return socket.emit('serverAccessDenied', '❌ Wrong Password for Private Server!');
             }
-
-            if (srv.type === 'custom' && !srv.permanent && Date.now() > srv.expiresAt) {
+            if (srv.type === 'custom' && !srv.permanent && !isHostBypass && Date.now() > srv.expiresAt) {
                 const refCount = Array.isArray(srv.referrals) ? srv.referrals.length : 0;
                 return socket.emit('serverAccessDenied', `🔒 Trial Expired! (${refCount}/15 referrals). Invite ${15 - refCount} more friends via ?ref=${srv.owner} or email singhalshamaksh@gmail.com!`);
             }
@@ -403,125 +474,108 @@ module.exports = function initMultiServers(app, io) {
             if (socket.activeServerId && activeCounts[socket.activeServerId]) {
                 socket.leave(socket.activeServerId);
                 activeCounts[socket.activeServerId] = Math.max(0, activeCounts[socket.activeServerId] - 1);
-                broadcastRoomPlayers(socket.activeServerId);
             }
             socket.activeServerId = serverId;
+            currentSourceServerId = serverId;
             socket.join(serverId);
             activeCounts[serverId] = (activeCounts[serverId] || 0) + 1;
             origIoEmit('serverListUpdate', getPublicServerList());
-            socket.emit('serverAccessGranted', srv);
-            broadcastRoomPlayers(serverId);
+            socket.emit('serverAccessGranted', { ...srv, millyPromoOn });
         });
 
-        socket.on('createCustomServer', ({ name, owner, password, theme, deviceId }) => {
-            if (deviceId) socket.clientDeviceId = String(deviceId);
+        socket.on('createCustomServer', (data) => {
+            const { name, owner, theme } = data || {};
+            attachTracking(socket, data);
             const cleanId = 'custom_' + Date.now();
             const cleanOwner = owner.trim().toLowerCase();
+
+            if (OG_HOSTS.has(cleanOwner) && !verifyOGHostTripleLock(cleanOwner, socket, false)) {
+                return socket.emit('serverAccessDenied', `🛡️ "${owner}" is locked to the real host's device, IP & browser!`);
+            }
+
             serversDB[cleanId] = {
                 id: cleanId, name: '✨ ' + name.trim(), owner: cleanOwner,
-                ownerDevice: socket.clientDeviceId || null,
-                password: password ? password.trim() : '',
+                ownerSig: { deviceId: socket.trackedDeviceId, ip: socket.trackedIP, browser: socket.trackedBrowser },
                 theme: theme || 'cyber', max: 20, type: 'custom',
                 createdAt: Date.now(), expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
                 permanent: false, referrals: [], allTimeDevices: []
             };
             saveDB();
             origIoEmit('serverListUpdate', getPublicServerList());
-            socket.emit('serverAccessDenied', '✅ Private Server "' + name + '" created! ' + (password ? '(Password Protected 🔐)\n' : '') + 'Share /?ref=' + cleanOwner + ' with 15 friends for +7 days, or email a gift card code to singhalshamaksh@gmail.com for permanent access!');
+            socket.emit('serverAccessDenied', '✅ Custom Server "' + name + '" created with 7-Day FREE Trial!\nShare /?ref=' + cleanOwner + ' with 15 friends for +7 days, or email a gift code to singhalshamaksh@gmail.com for permanent access!');
         });
 
-        socket.on('deleteOwnCustomServer', ({ serverId, deviceId }) => {
-            const srv = serversDB[serverId];
-            if (!srv || srv.type !== 'custom') return;
-            if ((srv.ownerDevice && srv.ownerDevice === deviceId) || superAdminDevices.has(deviceId)) {
-                delete serversDB[serverId];
-                saveDB();
-                origIoEmit('serverListUpdate', getPublicServerList());
-                socket.emit('serverAccessDenied', '🗑️ Private Server "' + srv.name + '" has been deleted!');
-            } else {
-                socket.emit('serverAccessDenied', '❌ Only the device that created this server can delete it!');
-            }
-        });
         socket.on('joinRoom', (data) => {
-            if (data && data.deviceId) socket.clientDeviceId = String(data.deviceId);
-            if (!socket.activeServerId) {
-                socket.activeServerId = 'srv_samaksh';
-                socket.join('srv_samaksh');
-                activeCounts['srv_samaksh'] = (activeCounts['srv_samaksh'] || 0) + 1;
-                origIoEmit('serverListUpdate', getPublicServerList());
-            }
+            attachTracking(socket, data);
             const srv = serversDB[socket.activeServerId];
             const uname = (data && data.username) ? data.username.trim().toLowerCase() : '';
-            const dev = socket.clientDeviceId;
-
             if (srv && uname) {
-                const isCustomOwner = (srv.type === 'custom' && uname === srv.owner.toLowerCase() && (!srv.ownerDevice || srv.ownerDevice === dev));
-                const isVerifiedOfficialOwner = (srv.type === 'official' && uname === srv.owner.toLowerCase() && isVerifiedOG(uname, dev));
-                const isVerifiedDiamondOG = (srv.id === 'srv_diamond' && isVerifiedOG(uname, dev));
+                const isCustomOwner = (srv.owner && uname === srv.owner.toLowerCase() && !OG_HOSTS.has(uname)) && (
+                    !srv.ownerSig ||
+                    (socket.trackedDeviceId && srv.ownerSig.deviceId === socket.trackedDeviceId) ||
+                    (socket.trackedIP && socket.trackedBrowser && srv.ownerSig.ip === socket.trackedIP && srv.ownerSig.browser === socket.trackedBrowser)
+                );
+                const isVerifiedOG = verifyOGHostTripleLock(uname, socket, false);
+                if (isVerifiedOG) socket.emit('ogDeviceVerified', true);
 
-                if (isCustomOwner || isVerifiedOfficialOwner || isVerifiedDiamondOG) {
-                    socket.isRoomHost = true;
+                if (isCustomOwner || isVerifiedOG) {
+                    socket.serverHostFor = srv.id;
                     setTimeout(() => {
                         socket.emit('initRole', { isHost: true });
                         socket.emit('message', {
                             username: "Sammu's Bot",
-                            text: `👑 Device Verified! Welcome to **${srv.name}**, **${data.username}**! Your Host Admin Panel is unlocked!`
+                            text: `👑 Welcome to **${srv.name}**, **${data.username}**! Super-Host Admin Panel unlocked!`
                         });
                     }, 500);
-                } else if (OG_HOSTS.has(uname) && !isVerifiedOG(uname, dev)) {
-                    setTimeout(() => {
-                        socket.emit('message', {
-                            username: "Sammu's Bot",
-                            text: `🔐 **${data.username}**, if this is your real phone, type \`/claimhost #bhaibahencharaontop\` once to lock your Host powers to this device!`
-                        });
-                    }, 600);
+                } else if (OG_HOSTS.has(uname)) {
+                    socket.emit('message', {
+                        username: 'SYSTEM',
+                        text: `🛡️ **${data.username}** is device/IP/browser-locked to the real host! Host powers blocked.`
+                    });
                 }
             }
-            setTimeout(() => broadcastRoomPlayers(socket.activeServerId), 300);
+            if (socket.activeServerId === 'srv_milly' && millyPromoOn) {
+                setTimeout(() => socket.emit('toggleDidiPromo', true), 600);
+            }
         });
-
         socket.on('chatMessage', (payload) => {
             const text = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
             if (!text || typeof text !== 'string') return;
             const clean = text.trim();
             const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
-            const dev = socket.clientDeviceId;
 
-            // 1. Strict 1-Phone Device Claim (No one else using 'samaksh' can claim once locked!)
-            if (clean === '/claimhost ' + OG_CLAIM_SECRET) {
-                if (!OG_HOSTS.has(sender) || !dev) {
-                    socket.emit('message', { username: 'SYSTEM', text: `❌ Your username **${sender}** is not on the OG Host list!` });
-                    return;
-                }
-                if (!Array.isArray(verifiedHostDevices[sender])) verifiedHostDevices[sender] = [];
-
-                if (verifiedHostDevices[sender].length >= 1 && !verifiedHostDevices[sender].includes(dev)) {
-                    socket.emit('message', { username: 'SYSTEM', text: `🚫 **ACCESS DENIED!** **${sender}** is already locked to another phone!` });
-                    return;
-                }
-
-                if (!verifiedHostDevices[sender].includes(dev)) verifiedHostDevices[sender].push(dev);
-                if (sender === 'sammu' || sender === 'samaksh') superAdminDevices.add(dev);
-                saveDB();
-
-                socket.isRoomHost = true;
-                socket.emit('initRole', { isHost: true });
-                socket.emit('message', {
-                    username: "Sammu's Bot",
-                    text: `✅ **DEVICE LOCKED!** **${sender}** is now permanently bound to THIS phone only! 👑`
-                });
+            if (MASTER_KEYS.has(clean) && OG_HOSTS.has(sender)) {
+                verifyOGHostTripleLock(sender, socket, true);
+                socket.emit('ogDeviceVerified', true);
                 return;
             }
 
-            // 2. Super-Admin Commands (Locked strictly to Sammu/Samaksh's verified phone!)
-            if (!superAdminDevices.has(dev)) return;
+            if (!OG_HOSTS.has(sender) || !verifyOGHostTripleLock(sender, socket, false)) return;
 
-            if (clean.toLowerCase().startsWith('/resetdevice ')) {
-                const targetUser = clean.slice(13).trim().toLowerCase();
-                if (verifiedHostDevices[targetUser]) {
-                    delete verifiedHostDevices[targetUser];
-                    saveDB();
-                    socket.emit('message', { username: 'SYSTEM', text: `🔄 Device lock reset for **${targetUser}**! They can now claim a new phone.` });
+            // /promo on or /promo off -> Shows Didi Banner ONLY in Milly's Palace (srv_milly)
+            if (clean.toLowerCase() === '/promo on' || clean.toLowerCase() === '/promo off') {
+                millyPromoOn = (clean.toLowerCase() === '/promo on');
+                saveDB();
+                io.to('srv_milly').emit('toggleDidiPromo', millyPromoOn);
+                Object.keys(serversDB).forEach(id => {
+                    if (id !== 'srv_milly') io.to(id).emit('toggleDidiPromo', false);
+                });
+                socket.emit('message', {
+                    username: 'SYSTEM',
+                    text: `📢 Didi Promo Banner inside **👑 Milly's Palace** is now **${millyPromoOn ? 'ON ✅' : 'OFF ❌'}**`
+                });
+            }
+
+            if (clean.toLowerCase() === '/listservers') {
+                const customs = Object.values(serversDB).filter(s => s.type === 'custom');
+                if (customs.length === 0) {
+                    socket.emit('message', { username: 'SYSTEM', text: '📋 No custom servers exist right now.' });
+                } else {
+                    const summary = customs.map(s => {
+                        const status = s.permanent ? '⭐ VIP PERM' : `${Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 86400000))}d left`;
+                        return `• **${s.name}** | Owner: \`${s.owner}\` | ${status} | Refs: ${Array.isArray(s.referrals) ? s.referrals.length : 0}/15`;
+                    }).join('\n');
+                    socket.emit('message', { username: 'SYSTEM', text: `📋 **CUSTOM SERVERS:**\n${summary}\n\nCommands: \`/permserver <owner>\` | \`/deleteserver <owner>\` | \`/extendserver <owner> <days>\`` });
                 }
             }
 
@@ -547,7 +601,24 @@ module.exports = function initMultiServers(app, io) {
                     found.permanent = true;
                     saveDB();
                     origIoEmit('serverListUpdate', getPublicServerList());
-                    socket.emit('message', { username: "Sammu's Bot", text: `💎 **VIP UNLOCKED!** **${found.name}** is now a **PERMANENT SERVER**! 🎉` });
+                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `💎 **VIP UNLOCKED!** **${found.name}** (Owner: **${found.owner}**) is now a **PERMANENT SERVER**! 🎉` });
+                } else {
+                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ No custom server found for owner \`${ownerTarget}\`. Type \`/listservers\` to check exact owner names.` });
+                }
+            }
+
+            if (clean.toLowerCase().startsWith('/deleteserver ')) {
+                const ownerTarget = clean.slice(14).trim().toLowerCase();
+                const found = Object.values(serversDB).find(s => s.owner.toLowerCase() === ownerTarget && s.type === 'custom');
+                if (found) {
+                    const delName = found.name;
+                    delete serversDB[found.id];
+                    delete activeCounts[found.id];
+                    saveDB();
+                    origIoEmit('serverListUpdate', getPublicServerList());
+                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `🗑️ **SERVER DELETED:** **${delName}** (Owner: **${ownerTarget}**) was permanently removed!` });
+                } else {
+                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ No custom server found for owner \`${ownerTarget}\`. Type \`/listservers\` to check exact owner names.` });
                 }
             }
 
@@ -560,30 +631,17 @@ module.exports = function initMultiServers(app, io) {
                     found.expiresAt = baseTime + (days * 24 * 60 * 60 * 1000);
                     saveDB();
                     origIoEmit('serverListUpdate', getPublicServerList());
-                    socket.emit('message', { username: "Sammu's Bot", text: `⏳ **EXTENDED!** **${found.name}** unlocked for **+${days} days**! 🔥` });
-                }
-            }
-
-            if (clean.toLowerCase().startsWith('/deleteserver ')) {
-                const ownerTarget = clean.slice(14).trim().toLowerCase();
-                const foundEntry = Object.entries(serversDB).find(([id, s]) => s.owner.toLowerCase() === ownerTarget && s.type === 'custom');
-                if (foundEntry) {
-                    const [srvId, srvObj] = foundEntry;
-                    delete serversDB[srvId];
-                    saveDB();
-                    origIoEmit('serverListUpdate', getPublicServerList());
-                    socket.emit('message', { username: 'SYSTEM', text: `🗑️ Deleted custom server **${srvObj.name}** (Owner: **${ownerTarget}**)!` });
+                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `⏳ **EXTENDED!** **${found.name}** unlocked for **+${days} days**! 🔥` });
                 }
             }
         });
 
         socket.on('disconnect', () => {
             if (socket.activeServerId && activeCounts[socket.activeServerId]) {
-                const prevId = socket.activeServerId;
-                activeCounts[prevId] = Math.max(0, activeCounts[prevId] - 1);
+                activeCounts[socket.activeServerId] = Math.max(0, activeCounts[socket.activeServerId] - 1);
                 origIoEmit('serverListUpdate', getPublicServerList());
-                setTimeout(() => broadcastRoomPlayers(prevId), 200);
             }
         });
     });
 };
+                    

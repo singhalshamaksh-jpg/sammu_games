@@ -5,7 +5,7 @@ module.exports = function initMultiServers(app, io) {
     const DB_FILE = path.join(__dirname, 'servers_db.json');
 
     const defaultServers = {
-        srv_samaksh: { id: 'srv_samaksh', name: "💎 Samaksh's Arena",   owner: "samaksh", theme: "diamond", max: 20, type: "official" },
+        srv_shamaksh: { id: 'srv_shamaksh', name: "💎 Samaksh's Arena",   owner: "samaksh", theme: "diamond", max: 20, type: "official" },
         srv_zoro:    { id: 'srv_zoro',    name: "⚔️ Zoro's Dojo",       owner: "zoro",    theme: "matrix",  max: 20, type: "official" },
         srv_milly:   { id: 'srv_milly',   name: "👑 Milly's Palace",    owner: "milly",   theme: "gold",    max: 20, type: "official" },
         srv_moon:    { id: 'srv_moon',    name: "🌙 Moon's Galaxy",     owner: "moon",    theme: "cyber",   max: 20, type: "official" },
@@ -106,7 +106,8 @@ module.exports = function initMultiServers(app, io) {
           <button onclick="createTrialServer()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;cursor:pointer;">🚀 Launch 7-Day Free Trial Server</button>
           <div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;line-height:1.4;">
             🔗 <b>Extend Free:</b> Bring <b>15 new players</b> via your referral link = <b>+1 Extra Week FREE!</b><br>
-            💎 <b>Permanent VIP Server:</b> Email an Amazon Pay or Google Play Gift Code to <b style="color:#38bdf8;">singhalshamaksh@gmail.com</b>
+            💎 <b>Permanent VIP Server:</b> Email any Gift Card Code (Google Play, Amazon, Flipkart, etc.) to <b style="color:#38bdf8;">singhalshamaksh@gmail.com</b>
+            
           </div>
         </div>
       </div>

@@ -8,7 +8,6 @@ const fs = require('fs');
 const { AsyncLocalStorage } = require('async_hooks');
 const _srvStore = new AsyncLocalStorage();
 const _srvHosts = new Map();
-
 // 1. Auto-fix Meme Studio Photo Upload & Gallery Picker in the browser
 app.use((req, res, next) => {
     const _send = res.send;
@@ -16,31 +15,29 @@ app.use((req, res, next) => {
         if (typeof body === 'string' && body.includes('</body>')) {
             const clientFix = `<script>
             window.loadCustomMemePhoto = function(e) {
-                const file = (e && e.target && e.target.files) ? e.target.files.at(0) : null;
+                const input = e && e.target ? e.target : document.getElementById('memeFileInputFixed');
+                const file = input && input.files && input.files.at(0);
                 if (!file) return;
-                const url = (window.URL || window.webkitURL).createObjectURL(file);
-                const img = new Image();
-                img.onload = function() {
-                    window._memeCustomImg = img;
-                    if (typeof renderMemeCanvas === 'function') renderMemeCanvas();
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Resize huge camera photos so 6yr old phone GPU renders them 100% of the time
+                        const off = document.createElement('canvas');
+                        off.width = 340; off.height = 250;
+                        off.getContext('2d').drawImage(img, 0, 0, 340, 250);
+                        const smallImg = new Image();
+                        smallImg.onload = function() {
+                            window._memeCustomImg = smallImg;
+                            if (typeof renderMemeCanvas === 'function') renderMemeCanvas();
+                        };
+                        smallImg.src = off.toDataURL('image/jpeg', 0.85);
+                        if (input) input.value = '';
+                    };
+                    img.src = ev.target.result;
                 };
-                img.src = url;
-                e.target.value = '';
+                reader.readAsDataURL(file);
             };
-            setInterval(() => {
-                const modal = document.getElementById('arenaMemeModal');
-                if (!modal) return;
-                const inp = modal.querySelector('input[type="file"]');
-                if (inp && !inp.dataset.patched) {
-                    inp.dataset.patched = '1';
-                    inp.id = 'memeFileInputFixed';
-                    inp.style.cssText = 'position:fixed;left:-9999px;opacity:0;';
-                    inp.onchange = window.loadCustomMemePhoto;
-                    document.body.appendChild(inp);
-                    const btn = modal.querySelector('label, button[onclick*="memeFileInput"]');
-                    if (btn) btn.onclick = (ev) => { ev.preventDefault(); inp.click(); };
-                }
-            }, 700);
             </script>`;
             body = body.replace('</body>', clientFix + '\n</body>');
         }
@@ -48,6 +45,7 @@ app.use((req, res, next) => {
     };
     next();
 });
+
 
 // 2. Route every bot reply (!dare, !truth, !quiz) & meme image to the exact server
 const _origEmit = io.emit.bind(io);

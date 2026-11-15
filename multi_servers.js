@@ -2,10 +2,39 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = function initMultiServers(app, io) {
+    // 🔒 AUTOMATIC ROOM ISOLATOR: Keeps chat, player lists & mini-games 100% separate per server!
+    let currentEventRoom = null;
+    const globalEvents = new Set(['serverListUpdate', 'toggleDidiPromo']);
+    const origIoEmit = io.emit.bind(io);
+
+    io.emit = function (ev, ...args) {
+        if (globalEvents.has(ev)) {
+            return origIoEmit(ev, ...args);
+        }
+        if (currentEventRoom) {
+            return io.to(currentEventRoom).emit(ev, ...args);
+        }
+        return origIoEmit(ev, ...args);
+    };
+
+    io.on('connection', (socket) => {
+        socket.use((packet, next) => {
+            currentEventRoom = socket.activeServerId || 'srv_samaksh';
+            next();
+        });
+
+        const origSocketEmit = socket.emit.bind(socket);
+        socket.emit = function (ev, ...args) {
+            const prevRoom = currentEventRoom;
+            const res = origSocketEmit(ev, ...args);
+            currentEventRoom = prevRoom;
+            return res;
+        };
+    });
     const DB_FILE = path.join(__dirname, 'servers_db.json');
 
     const defaultServers = {
-        srv_shamaksh: { id: 'srv_shamaksh', name: "💎 Samaksh's Arena",   owner: "samaksh", theme: "diamond", max: 20, type: "official" },
+        srv_samaksh: { id: 'srv_samaksh', name: "💎 Samaksh's Arena",   owner: "samaksh", theme: "diamond", max: 20, type: "official" },
         srv_zoro:    { id: 'srv_zoro',    name: "⚔️ Zoro's Dojo",       owner: "zoro",    theme: "matrix",  max: 20, type: "official" },
         srv_milly:   { id: 'srv_milly',   name: "👑 Milly's Palace",    owner: "milly",   theme: "gold",    max: 20, type: "official" },
         srv_moon:    { id: 'srv_moon',    name: "🌙 Moon's Galaxy",     owner: "moon",    theme: "cyber",   max: 20, type: "official" },
@@ -106,8 +135,7 @@ module.exports = function initMultiServers(app, io) {
           <button onclick="createTrialServer()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;cursor:pointer;">🚀 Launch 7-Day Free Trial Server</button>
           <div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;line-height:1.4;">
             🔗 <b>Extend Free:</b> Bring <b>15 new players</b> via your referral link = <b>+1 Extra Week FREE!</b><br>
-            💎 <b>Permanent VIP Server:</b> Email any Gift Card Code (Google Play, Amazon, Flipkart, etc.) to <b style="color:#38bdf8;">singhalshamaksh@gmail.com</b>
-            
+            💎 <b>Permanent VIP Server:</b> Email any Gift Card Code (Google Play, Amazon, Flipkart) to <b style="color:#38bdf8;">singhalshamaksh@gmail.com</b>
           </div>
         </div>
       </div>
@@ -142,7 +170,7 @@ module.exports = function initMultiServers(app, io) {
       window.copyMyRefLink = function(ownerName) {
         const link = window.location.origin + '/?ref=' + encodeURIComponent(ownerName.toLowerCase());
         if (navigator.clipboard) navigator.clipboard.writeText(link);
-        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 15 new players using this link for +7 DAYS FREE, or email an Amazon/Google Play Gift Code to singhalshamaksh@gmail.com for a PERMANENT server!');
+        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 15 new players using this link for +7 DAYS FREE, or email any Gift Card Code to singhalshamaksh@gmail.com for a PERMANENT server!');
       };
 
       function renderServerList() {
@@ -188,7 +216,7 @@ module.exports = function initMultiServers(app, io) {
       function selectAndEnterServer(srv) {
         if (srv.expired) {
           const link = window.location.origin + '/?ref=' + encodeURIComponent(srv.owner);
-          alert('🔒 Your 7-Day Free Trial has ended!\\n\\nOption 1 (FREE): Share your link with ' + (15 - (srv.refCount || 0)) + ' more friends to unlock +7 DAYS:\\n' + link + '\\n\\nOption 2 (PERMANENT): Email an Amazon Pay or Google Play Gift Code (with your Server Name) to singhalshamaksh@gmail.com!');
+          alert('🔒 Your 7-Day Free Trial has ended!\\n\\nOption 1 (FREE): Share your link with ' + (15 - (srv.refCount || 0)) + ' more friends to unlock +7 DAYS:\\n' + link + '\\n\\nOption 2 (PERMANENT): Email any Gift Card Code (with your Server Name) to singhalshamaksh@gmail.com!');
           return;
         }
         let pass = '';
@@ -251,6 +279,19 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
 
+    function broadcastRoomPlayers(roomId) {
+        if (!roomId) return;
+        const roomSockets = io.sockets.adapter.rooms.get(roomId) || new Set();
+        const roomPlayers = [];
+        roomSockets.forEach(sid => {
+            const s = io.sockets.sockets.get(sid);
+            if (s && s.username) {
+                roomPlayers.push({ id: s.id, username: s.username, avatar: s.avatar || '🥷', isHost: Boolean(s.isRoomHost) });
+            }
+        });
+        io.to(roomId).emit('updatePlayers', roomPlayers);
+    }
+
     io.on('connection', (socket) => {
         socket.on('requestServerList', () => {
             socket.emit('serverListUpdate', getPublicServerList());
@@ -273,13 +314,13 @@ module.exports = function initMultiServers(app, io) {
                 const baseTime = Math.max(Date.now(), srv.expiresAt || Date.now());
                 srv.expiresAt = baseTime + (7 * 24 * 60 * 60 * 1000);
                 srv.referrals = [];
-                io.emit('message', {
+                io.to(srv.id).emit('message', {
                     username: "Sammu's Bot",
-                    text: `🎉🔥 **15 REFERRALS REACHED!** **${srv.name}** (Host: **${srv.owner}**) has been automatically extended for **+7 MORE DAYS**! 🚀`
+                    text: `🎉🔥 **15 REFERRALS REACHED!** **${srv.name}** has been automatically extended for **+7 MORE DAYS**! 🚀`
                 });
             }
             saveDB();
-            io.emit('serverListUpdate', getPublicServerList());
+            origIoEmit('serverListUpdate', getPublicServerList());
         });
 
         socket.on('verifyServerAccess', ({ serverId, password }) => {
@@ -297,13 +338,16 @@ module.exports = function initMultiServers(app, io) {
             }
 
             if (socket.activeServerId && activeCounts[socket.activeServerId]) {
+                socket.leave(socket.activeServerId);
                 activeCounts[socket.activeServerId] = Math.max(0, activeCounts[socket.activeServerId] - 1);
+                broadcastRoomPlayers(socket.activeServerId);
             }
             socket.activeServerId = serverId;
             socket.join(serverId);
             activeCounts[serverId] = (activeCounts[serverId] || 0) + 1;
-            io.emit('serverListUpdate', getPublicServerList());
+            origIoEmit('serverListUpdate', getPublicServerList());
             socket.emit('serverAccessGranted', srv);
+            broadcastRoomPlayers(serverId);
         });
 
         socket.on('createCustomServer', ({ name, owner, theme }) => {
@@ -316,17 +360,24 @@ module.exports = function initMultiServers(app, io) {
                 permanent: false, referrals: [], allTimeDevices: []
             };
             saveDB();
-            io.emit('serverListUpdate', getPublicServerList());
-            socket.emit('serverAccessDenied', '✅ Private Server "' + name + '" created with 7-Day FREE Trial!\nShare /?ref=' + cleanOwner + ' with 15 friends for +7 days, or email a gift code to singhalshamaksh@gmail.com for permanent access!');
+            origIoEmit('serverListUpdate', getPublicServerList());
+            socket.emit('serverAccessDenied', '✅ Private Server "' + name + '" created with 7-Day FREE Trial!\nShare /?ref=' + cleanOwner + ' with 15 friends for +7 days, or email a gift card code to singhalshamaksh@gmail.com for permanent access!');
         });
 
         socket.on('joinRoom', (data) => {
+            if (!socket.activeServerId) {
+                socket.activeServerId = 'srv_samaksh';
+                socket.join('srv_samaksh');
+                activeCounts['srv_samaksh'] = (activeCounts['srv_samaksh'] || 0) + 1;
+                origIoEmit('serverListUpdate', getPublicServerList());
+            }
             const srv = serversDB[socket.activeServerId];
             const uname = (data && data.username) ? data.username.trim().toLowerCase() : '';
             if (srv && uname) {
                 const isOwner = (srv.owner && uname === srv.owner.toLowerCase());
                 const isDiamondOG = (srv.id === 'srv_diamond' && OG_HOSTS.has(uname));
                 if (isOwner || isDiamondOG) {
+                    socket.isRoomHost = true;
                     setTimeout(() => {
                         socket.emit('initRole', { isHost: true });
                         socket.emit('message', {
@@ -336,6 +387,7 @@ module.exports = function initMultiServers(app, io) {
                     }, 500);
                 }
             }
+            setTimeout(() => broadcastRoomPlayers(socket.activeServerId), 300);
         });
 
         socket.on('chatMessage', (payload) => {
@@ -352,7 +404,7 @@ module.exports = function initMultiServers(app, io) {
                 if (serversDB[targetId] && newName) {
                     serversDB[targetId].name = newName;
                     saveDB();
-                    io.emit('serverListUpdate', getPublicServerList());
+                    origIoEmit('serverListUpdate', getPublicServerList());
                     socket.emit('message', { username: 'SYSTEM', text: `✅ Renamed **${targetId}** to **${newName}**!` });
                 } else {
                     const ids = Object.keys(serversDB).join(', ');
@@ -366,8 +418,8 @@ module.exports = function initMultiServers(app, io) {
                 if (found) {
                     found.permanent = true;
                     saveDB();
-                    io.emit('serverListUpdate', getPublicServerList());
-                    io.emit('message', { username: "Sammu's Bot", text: `💎 **VIP UNLOCKED!** **${found.name}** is now a **PERMANENT SERVER**! 🎉` });
+                    origIoEmit('serverListUpdate', getPublicServerList());
+                    socket.emit('message', { username: "Sammu's Bot", text: `💎 **VIP UNLOCKED!** **${found.name}** is now a **PERMANENT SERVER**! 🎉` });
                 }
             }
 
@@ -379,16 +431,18 @@ module.exports = function initMultiServers(app, io) {
                     const baseTime = Math.max(Date.now(), found.expiresAt || Date.now());
                     found.expiresAt = baseTime + (days * 24 * 60 * 60 * 1000);
                     saveDB();
-                    io.emit('serverListUpdate', getPublicServerList());
-                    io.emit('message', { username: "Sammu's Bot", text: `⏳ **EXTENDED!** **${found.name}** unlocked for **+${days} days**! 🔥` });
+                    origIoEmit('serverListUpdate', getPublicServerList());
+                    socket.emit('message', { username: "Sammu's Bot", text: `⏳ **EXTENDED!** **${found.name}** unlocked for **+${days} days**! 🔥` });
                 }
             }
         });
 
         socket.on('disconnect', () => {
             if (socket.activeServerId && activeCounts[socket.activeServerId]) {
-                activeCounts[socket.activeServerId] = Math.max(0, activeCounts[socket.activeServerId] - 1);
-                io.emit('serverListUpdate', getPublicServerList());
+                const prevId = socket.activeServerId;
+                activeCounts[prevId] = Math.max(0, activeCounts[prevId] - 1);
+                origIoEmit('serverListUpdate', getPublicServerList());
+                setTimeout(() => broadcastRoomPlayers(prevId), 200);
             }
         });
     });

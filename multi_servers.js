@@ -1127,6 +1127,8 @@ module.exports = function initMultiServers(app, io) {
             const text = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
             if (!text || typeof text !== 'string') return;
             const clean = text.trim();
+                     if (payload && payload.username) socket.username = payload.username.trim();
+
             const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
             if (sender && socket.activeServerId) {
                 playerServerMap.set(sender, socket.activeServerId);

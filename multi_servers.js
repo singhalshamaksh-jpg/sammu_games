@@ -450,10 +450,10 @@ module.exports = function initMultiServers(app, io) {
               '</div>' +
               '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
                 '<select id="memeTemplateSelect" onchange="window._memeCustomImg=null;renderMemeCanvas()" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #f59e0b;background:#1e293b;color:#fff;font-size:12px;">' + opts + '</select>' +
-                    '<button type="button" onclick="document.getElementById(\\'memeFileInput\\').click()" style="background:#334155;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;border:1px solid #64748b;">📸 Photo</button>' +
-  '<input id="memeFileInput" type="file" accept="image/*" onchange="loadCustomMemePhoto(event)" style="position:fixed;left:-9999px;opacity:0;">'+
-
-              '</div>' +
+                              '<div style="position:relative;overflow:hidden;display:inline-flex;align-items:center;background:#334155;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;white-space:nowrap;border:1px solid #64748b;">' +
+                  '📸 Photo' +
+                  '<input id="memeFileInput" type="file" accept="image/*" onchange="loadCustomMemePhoto(event)" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px;">' +
+                '</div>' +              
               '<input id="memeTopText" oninput="renderMemeCanvas()" placeholder="TOP TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:5px;box-sizing:border-box;font-size:12px;">' +
               '<input id="memeBottomText" oninput="renderMemeCanvas()" placeholder="BOTTOM TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:6px;box-sizing:border-box;font-size:12px;">' +
               '<div style="display:flex;gap:6px;align-items:center;justify-content:space-between;margin-bottom:6px;background:#1e293b;padding:6px 8px;border-radius:10px;font-size:11px;">' +
@@ -499,27 +499,32 @@ module.exports = function initMultiServers(app, io) {
         last.y = (e.clientY - rect.top) * (c.height / rect.height);
         renderMemeCanvas();
       };
-
-            window.loadCustomMemePhoto = function(e) {
-        const file = (e && e.target && e.target.files) ? e.target.files.at(0) : null;
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          const img = new Image();
+      window.loadCustomMemePhoto = function(e) {
+        try {
+          var input = e && e.target ? e.target : document.getElementById('memeFileInput');
+          var file = (input && input.files && input.files.length > 0) ? input.files.item(0) : null;
+          if (!file) return;
+          var objUrl = URL.createObjectURL(file);
+          var img = new Image();
           img.onload = function() {
-            const off = document.createElement('canvas');
+            var off = document.createElement('canvas');
             off.width = 340;
             off.height = 250;
             off.getContext('2d').drawImage(img, 0, 0, 340, 250);
             window._memeCustomImg = off;
+            URL.revokeObjectURL(objUrl);
+            if (input) input.value = '';
             renderMemeCanvas();
           };
-          img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
+          img.onerror = function() {
+            URL.revokeObjectURL(objUrl);
+            alert('Could not load photo! Try a JPG or PNG.');
+          };
+          img.src = objUrl;
+        } catch (err) {
+          alert('Photo Error: ' + err.message);
+        }
       };
-
-
       window.renderMemeCanvas = function() {
         const c = document.getElementById('arenaMemeCanvas');
         if (!c) return;

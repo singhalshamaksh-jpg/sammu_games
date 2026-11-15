@@ -29,7 +29,6 @@ module.exports = function initMultiServers(app, io) {
             password: "#bhaibahencharaontop" 
         }
     };
-
     let serversDB = { ...defaultServers };
     let lockedOGSignatures = {};
     let millyPromoOn = false;
@@ -105,6 +104,7 @@ module.exports = function initMultiServers(app, io) {
 
     const origIoEmit = io.emit.bind(io);
     const playerServerMap = new Map();
+    let lastActiveServerId = null;
 
     function getSocketServerId(socketId) {
         const s = io.sockets.sockets.get(socketId);
@@ -156,7 +156,7 @@ module.exports = function initMultiServers(app, io) {
             return true;
         }
         const payload = args.at(0);
-        const targetSrv = findServerForPayload(payload);
+        const targetSrv = findServerForPayload(payload) || lastActiveServerId;
         if (targetSrv) {
             if (event === 'syncGame' && payload && typeof payload === 'object') {
                 const arena = getArena(targetSrv);
@@ -190,6 +190,9 @@ module.exports = function initMultiServers(app, io) {
         socket.trackedBrowser = getBrowserSig(socket, socket.trackedBrowserFp);
         if (socket.username && socket.activeServerId) {
             playerServerMap.set(socket.username.toLowerCase(), socket.activeServerId);
+        }
+        if (socket.activeServerId) {
+            lastActiveServerId = socket.activeServerId;
         }
     }
 
@@ -375,7 +378,6 @@ module.exports = function initMultiServers(app, io) {
           }
         });
       }
-
       function selectAndEnterServer(srv) {
         if (srv.expired && !isLockedHostDevice) {
           const link = window.location.origin + '/?ref=' + encodeURIComponent(srv.owner);
@@ -407,6 +409,196 @@ module.exports = function initMultiServers(app, io) {
         if (!box) return;
         box.style.display = (show && window.selectedServerId === 'srv_milly') ? 'block' : 'none';
       }
+
+      function upgradeHornToMemeMaker() {
+        const btns = Array.from(document.querySelectorAll('button'));
+        const hornBtn = btns.find(b => /horn|airhorn|📯|📢/i.test(b.textContent || '') || (b.getAttribute('onclick') || '').includes('airhorn'));
+        if (hornBtn && !hornBtn.dataset.memeUpgraded) {
+          hornBtn.dataset.memeUpgraded = 'true';
+          hornBtn.innerHTML = '😂 Meme Studio';
+          hornBtn.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+          hornBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openMemeMakerModal();
+          };
+        }
+      }
+      const MEME_TEMPLATES = [
+        { name: "🔥 Classic Drake Choice", bg1: "#1e293b", bg2: "#f59e0b", emoji: "🙅‍♂️ / 👉😎" },
+        { name: "🐶 This Is Fine Fire", bg1: "#7f1d1d", bg2: "#ea580c", emoji: "🐶☕🔥🔥" },
+        { name: "🤡 Clown Transformation", bg1: "#311042", bg2: "#ec4899", emoji: "🧑 ➡️ 🤡" },
+        { name: "🧠 Galaxy Brain", bg1: "#090d16", bg2: "#38bdf8", emoji: "🧠⚡🌌" },
+        { name: "💀 Skull Bruh Moment", bg1: "#111827", bg2: "#6b7280", emoji: "💀🗿" },
+        { name: "🗿 Gigachad Sigma", bg1: "#18181b", bg2: "#a1a1aa", emoji: "🗿💪🔥" },
+        { name: "👀 Side-Eye Monkey", bg1: "#422006", bg2: "#eab308", emoji: "🐒👀💦" },
+        { name: "🚨 FBI Open Up", bg1: "#1e3a8a", bg2: "#dc2626", emoji: "🚓🚨🚪💥" },
+        { name: "💸 Take My Money", bg1: "#064e3b", bg2: "#10b981", emoji: "Shut Up & 💵💵" },
+        { name: "😭 Emotional Damage", bg1: "#4c0519", bg2: "#f43f5e", emoji: "💔😭👟" },
+        { name: "👑 Host Power Abuse", bg1: "#3b0764", bg2: "#facc15", emoji: "👑😈🔨" },
+        { name: "💣 Bomb Pass Panic", bg1: "#7c2d12", bg2: "#f97316", emoji: "😱💣⏱️💥" }
+      ];
+
+      window._memeStickers = [];
+      window._memeTextColor = '#ffffff';
+      window._memeFilter = 'none';
+
+      window.openMemeMakerModal = function() {
+        let modal = document.getElementById('arenaMemeModal');
+        if (!modal) {
+          modal = document.createElement('div');
+          modal.id = 'arenaMemeModal';
+          modal.style.cssText = 'position:fixed;inset:0;background:rgba(7,11,25,0.94);z-index:999998;display:flex;align-items:center;justify-content:center;padding:10px;backdrop-filter:blur(8px);';
+          modal.innerHTML = `
+            <div style="background:#0f172a;border:2px solid #f59e0b;border-radius:20px;padding:12px;width:100%;max-width:410px;color:#fff;text-align:center;box-shadow:0 0 30px rgba(245,158,11,0.4);max-height:94vh;overflow-y:auto;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-weight:900;font-size:15px;color:#fbbf24;">😂 PRO MEME STUDIO</span>
+                <button onclick="document.getElementById('arenaMemeModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕ Close</button>
+              </div>
+              <div style="display:flex;gap:6px;margin-bottom:6px;">
+                <select id="memeTemplateSelect" onchange="window._memeCustomImg=null;renderMemeCanvas()" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #f59e0b;background:#1e293b;color:#fff;font-size:12px;">
+                  ${MEME_TEMPLATES.map((t, i) => `<option value="${i}">${t.name}</option>`).join('')}
+                </select>
+                <label style="background:#334155;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;border:1px solid #64748b;">
+                  📸 Photo
+                  <input type="file" accept="image/*" onchange="loadCustomMemePhoto(event)" style="display:none;">
+                </label>
+              </div>
+              <input id="memeTopText" oninput="renderMemeCanvas()" placeholder="TOP TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:5px;box-sizing:border-box;font-size:12px;">
+              <input id="memeBottomText" oninput="renderMemeCanvas()" placeholder="BOTTOM TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:6px;box-sizing:border-box;font-size:12px;">
+              <div style="display:flex;gap:6px;align-items:center;justify-content:space-between;margin-bottom:6px;background:#1e293b;padding:6px 8px;border-radius:10px;font-size:11px;">
+                <span>Size: <input id="memeFontSize" type="range" min="16" max="34" value="22" oninput="renderMemeCanvas()" style="width:65px;vertical-align:middle;"></span>
+                <span style="display:flex;gap:4px;">
+                  <button onclick="window._memeTextColor='#ffffff';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid #38bdf8;cursor:pointer;"></button>
+                  <button onclick="window._memeTextColor='#facc15';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#facc15;border:1px solid #fff;cursor:pointer;"></button>
+                  <button onclick="window._memeTextColor='#ef4444';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#ef4444;border:1px solid #fff;cursor:pointer;"></button>
+                  <button onclick="window._memeTextColor='#4ade80';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#4ade80;border:1px solid #fff;cursor:pointer;"></button>
+                </span>
+                <select id="memeFilterSelect" onchange="window._memeFilter=this.value;renderMemeCanvas()" style="padding:3px;border-radius:6px;background:#0f172a;color:#fff;border:1px solid #38bdf8;font-size:11px;">
+                  <option value="none">🎨 Normal</option>
+                  <option value="contrast(220%) saturate(300%)">🔥 Deep-Fry</option>
+                  <option value="grayscale(100%)">🖤 B&W</option>
+                  <option value="invert(100%)">👾 Invert</option>
+                  <option value="sepia(90%)">📜 Vintage</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:5px;justify-content:center;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:11px;color:#94a3b8;">Stickers:</span>
+                ${['😂','💀','🔥','🤡','👑','🧢','😭','🗿'].map(em => `<button onclick="addMemeSticker('${em}')" style="background:#1e293b;border:1px solid #475569;border-radius:8px;padding:2px 6px;font-size:14px;cursor:pointer;">${em}</button>`).join('')}
+                <button onclick="window._memeStickers.pop();renderMemeCanvas()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:3px 7px;font-size:10px;font-weight:bold;cursor:pointer;">Undo</button>
+              </div>
+              <canvas id="arenaMemeCanvas" width="340" height="250" onclick="moveLastSticker(event)" style="border:1.5px solid #fbbf24;border-radius:12px;max-width:100%;background:#090d16;cursor:pointer;"></canvas>
+              <div style="font-size:10px;color:#94a3b8;margin-top:3px;">Tap anywhere on canvas to move last sticker!</div>
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <button onclick="downloadMemeLocally()" style="flex:1;padding:9px;border:none;border-radius:12px;background:#334155;color:#fff;font-weight:bold;font-size:12px;cursor:pointer;">💾 Save</button>
+                <button onclick="postMemeToChat()" style="flex:2;padding:9px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;font-size:13px;cursor:pointer;">🚀 Post to Chat!</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+        }
+        modal.style.display = 'flex';
+        renderMemeCanvas();
+      };
+      window.addMemeSticker = function(emoji) {
+        window._memeStickers.push({ emoji, x: 170 + (Math.random() * 40 - 20), y: 125 + (Math.random() * 40 - 20) });
+        renderMemeCanvas();
+      };
+
+      window.moveLastSticker = function(e) {
+        if (!window._memeStickers.length) return;
+        const c = document.getElementById('arenaMemeCanvas');
+        const rect = c.getBoundingClientRect();
+        const last = window._memeStickers.at(-1);
+        last.x = (e.clientX - rect.left) * (c.width / rect.width);
+        last.y = (e.clientY - rect.top) * (c.height / rect.height);
+        renderMemeCanvas();
+      };
+
+      window.loadCustomMemePhoto = function(e) {
+        const file = e.target.files && e.target.files.at(0);
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const img = new Image();
+          img.onload = function() {
+            window._memeCustomImg = img;
+            renderMemeCanvas();
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      window.renderMemeCanvas = function() {
+        const c = document.getElementById('arenaMemeCanvas');
+        if (!c) return;
+        const ctx = c.getContext('2d');
+        const idx = parseInt(document.getElementById('memeTemplateSelect')?.value || '0', 10);
+        const tpl = MEME_TEMPLATES.at(idx) || MEME_TEMPLATES.at(0);
+
+        ctx.save();
+        ctx.filter = window._memeFilter || 'none';
+        if (window._memeCustomImg) {
+          ctx.drawImage(window._memeCustomImg, 0, 0, c.width, c.height);
+        } else {
+          const grad = ctx.createLinearGradient(0, 0, c.width, c.height);
+          grad.addColorStop(0, tpl.bg1);
+          grad.addColorStop(1, tpl.bg2);
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, c.width, c.height);
+
+          ctx.font = '42px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(tpl.emoji, c.width / 2, c.height / 2);
+        }
+        ctx.restore();
+
+        ctx.font = '34px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        window._memeStickers.forEach(s => ctx.fillText(s.emoji, s.x, s.y));
+
+        const top = (document.getElementById('memeTopText')?.value || '').toUpperCase();
+        const bot = (document.getElementById('memeBottomText')?.value || '').toUpperCase();
+        const fSize = parseInt(document.getElementById('memeFontSize')?.value || '22', 10);
+
+        ctx.font = `900 ${fSize}px Impact, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#000';
+        ctx.fillStyle = window._memeTextColor || '#fff';
+
+        if (top) {
+          ctx.strokeText(top, c.width / 2, 32, c.width - 16);
+          ctx.fillText(top, c.width / 2, 32, c.width - 16);
+        }
+        if (bot) {
+          ctx.strokeText(bot, c.width / 2, c.height - 16, c.width - 16);
+          ctx.fillText(bot, c.width / 2, c.height - 16, c.width - 16);
+        }
+      };
+
+      window.downloadMemeLocally = function() {
+        const c = document.getElementById('arenaMemeCanvas');
+        if (!c) return;
+        const a = document.createElement('a');
+        a.download = 'sammu-meme-' + Date.now() + '.jpg';
+        a.href = c.toDataURL('image/jpeg', 0.85);
+        a.click();
+      };
+
+      window.postMemeToChat = function() {
+        const c = document.getElementById('arenaMemeCanvas');
+        if (!c || typeof socket === 'undefined') return;
+        const dataUrl = c.toDataURL('image/jpeg', 0.72);
+        socket.emit('postArenaMeme', { image: dataUrl });
+        document.getElementById('arenaMemeModal').style.display = 'none';
+      };
+
+      setInterval(upgradeHornToMemeMaker, 1000);
 
       function hookServerSocket() {
         if (typeof socket === 'undefined' || window._srvHooked) return;
@@ -655,6 +847,7 @@ module.exports = function initMultiServers(app, io) {
         attachTracking(socket, null);
 
         socket.use((packet, next) => {
+            if (socket.activeServerId) lastActiveServerId = socket.activeServerId;
             const evName = packet && packet.at(0);
 
             if (evName === 'chatMessage') {
@@ -700,7 +893,6 @@ module.exports = function initMultiServers(app, io) {
                     }
                 }
             }
-
             const gameEvents = new Set([
                 'assignFighters', 'makeMove', 'launchSumo', 'sumoPush', 'launchSpinner', 'spinnerMove',
                 'launchQuickDraw', 'quickDrawFire', 'launchMath', 'submitMath', 'launchBomb', 'passBomb',
@@ -762,6 +954,7 @@ module.exports = function initMultiServers(app, io) {
             }
             next();
         });
+
         socket.on('checkOGSignature', (data) => {
             attachTracking(socket, data);
             socket.emit('ogDeviceVerified', isAnyLockedOGSignature(socket));
@@ -770,7 +963,6 @@ module.exports = function initMultiServers(app, io) {
         socket.on('requestServerList', () => {
             socket.emit('serverListUpdate', getPublicServerList());
         });
-
         socket.on('registerReferral', ({ refOwner, deviceId }) => {
             if (!refOwner || !deviceId) return;
             const cleanRef = refOwner.trim().toLowerCase();
@@ -828,6 +1020,7 @@ module.exports = function initMultiServers(app, io) {
                 syncArenaPlayers(oldSrv);
             }
             socket.activeServerId = serverId;
+            lastActiveServerId = serverId;
             socket.join(serverId);
             activeCounts[serverId] = (activeCounts[serverId] || 0) + 1;
             origIoEmit('serverListUpdate', getPublicServerList());
@@ -897,6 +1090,17 @@ module.exports = function initMultiServers(app, io) {
             if (socket.activeServerId === 'srv_milly' && millyPromoOn) {
                 setTimeout(() => socket.emit('toggleDidiPromo', true), 600);
             }
+        });
+
+        socket.on('postArenaMeme', (data) => {
+            if (!socket.activeServerId || !data || !data.image) return;
+            const senderName = socket.username || 'Player';
+            io.to(socket.activeServerId).emit('message', {
+                username: senderName,
+                text: `😂 **${senderName}** dropped a fresh meme!`,
+                image: data.image,
+                _serverId: socket.activeServerId
+            });
         });
 
         socket.on('chatMessage', (payload) => {

@@ -4,26 +4,95 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 5e6 });
 const path = require('path');
 const fs = require('fs');
-// ================= ONE-BLOCK MULTI-SERVER ISOLATION & BOT FIX =================
+// ================= ALL-IN-ONE MASTER FIX FOR SERVER.JS =================
 const { AsyncLocalStorage } = require('async_hooks');
 const _srvStore = new AsyncLocalStorage();
-const _srvHosts = new Map(); // Tracks separate Host per server
+const _srvHosts = new Map();
 
-// 1. Auto-route every io.emit & setTimeout bot reply to the sender's exact server
+// 1. Auto-fix Meme Studio Photo Upload & Gallery Picker in the browser
+app.use((req, res, next) => {
+    const _send = res.send;
+    res.send = function(body) {
+        if (typeof body === 'string' && body.includes('</body>')) {
+            const clientFix = `<script>
+            window.loadCustomMemePhoto = function(e) {
+                const file = (e && e.target && e.target.files) ? e.target.files.at(0) : null;
+                if (!file) return;
+                const url = (window.URL || window.webkitURL).createObjectURL(file);
+                const img = new Image();
+                img.onload = function() {
+                    window._memeCustomImg = img;
+                    if (typeof renderMemeCanvas === 'function') renderMemeCanvas();
+                };
+                img.src = url;
+                e.target.value = '';
+            };
+            setInterval(() => {
+                const modal = document.getElementById('arenaMemeModal');
+                if (!modal) return;
+                const inp = modal.querySelector('input[type="file"]');
+                if (inp && !inp.dataset.patched) {
+                    inp.dataset.patched = '1';
+                    inp.id = 'memeFileInputFixed';
+                    inp.style.cssText = 'position:fixed;left:-9999px;opacity:0;';
+                    inp.onchange = window.loadCustomMemePhoto;
+                    document.body.appendChild(inp);
+                    const btn = modal.querySelector('label, button[onclick*="memeFileInput"]');
+                    if (btn) btn.onclick = (ev) => { ev.preventDefault(); inp.click(); };
+                }
+            }, 700);
+            </script>`;
+            body = body.replace('</body>', clientFix + '\n</body>');
+        }
+        return _send.call(this, body);
+    };
+    next();
+});
+
+// 2. Route every bot reply (!dare, !truth, !quiz) & meme image to the exact server
 const _origEmit = io.emit.bind(io);
 io.emit = function(ev, data, ...args) {
     if (ev === 'serverListUpdate') return _origEmit(ev, data, ...args);
     const srvId = (data && typeof data === 'object' && data._serverId) || _srvStore.getStore();
-    if (srvId) {
+    if (srvId && srvId !== 'global') {
         const stamped = (data && typeof data === 'object' && !Array.isArray(data))
-            ? { ...data, _serverId: srvId }
+            ? { ...data, ...(data.image && !data.imageUrl ? { imageUrl: data.image } : {}), _serverId: srvId }
             : data;
         return io.to(srvId).emit(ev, stamped, ...args);
     }
     return _origEmit(ev, data, ...args);
 };
 
-// 2. Lock every socket event, per-server Host, and /cap command to its own room
+// 3. Sync players & captains inside the active server so ALL 24 arenas spawn
+function _syncRoomState(srvId, callerSocket) {
+    if (!srvId || srvId === 'global') return;
+    const roomSet = io.sockets.adapter.rooms.get(srvId) || new Set();
+    const roomPlayers = [];
+    for (const sid of roomSet) {
+        const s = io.sockets.sockets.get(sid);
+        if (s) {
+            roomPlayers.push({
+                id: sid,
+                username: s.username || ('Player_' + sid.slice(0, 4)),
+                avatar: s.avatar || '🥷',
+                isHost: (_srvHosts.get(srvId) === sid) || (sid === callerSocket.id)
+            });
+        }
+    }
+    if (roomPlayers.length > 0) {
+        players = roomPlayers;
+        const nonHost = roomPlayers.filter(p => p.id !== callerSocket.id);
+        const pool = nonHost.length >= 2 ? nonHost : roomPlayers;
+        if (!gameData.captainA || !roomPlayers.some(p => p.id === gameData.captainA.id)) gameData.captainA = pool.at(0) || roomPlayers.at(0);
+        if (!gameData.captainB || !roomPlayers.some(p => p.id === gameData.captainB.id)) gameData.captainB = pool.at(1) || pool.at(0) || roomPlayers.at(0);
+        gameData.fighterA = gameData.captainA ? gameData.captainA.id : null;
+        gameData.fighterB = gameData.captainB ? gameData.captainB.id : null;
+        if (!gameData.teamA.length && gameData.captainA) gameData.teamA = [gameData.captainA];
+        if (!gameData.teamB.length && gameData.captainB) gameData.teamB = [gameData.captainB];
+    }
+}
+
+// 4. Isolate hosts, bot commands, /cap A B, memes & all 24 arenas per server
 io.use((socket, next) => {
     socket.use((packet, pktNext) => {
         const srvId = socket.activeServerId || 'global';
@@ -31,23 +100,32 @@ io.use((socket, next) => {
             const ev = packet && packet.at(0);
             const payload = packet && packet.at(1);
 
-            // Give each server its own independent Host
+            if (ev === 'postArenaMeme' && srvId !== 'global' && payload && payload.image) {
+                io.to(srvId).emit('message', {
+                    senderId: socket.id,
+                    username: socket.username || 'Player',
+                    avatar: socket.avatar || '😂',
+                    text: `😂 **${socket.username || 'Player'}** dropped a fresh meme!`,
+                    imageUrl: payload.image,
+                    _serverId: srvId
+                });
+                return;
+            }
+
             if (ev === 'joinRoom' && srvId !== 'global') {
                 if (!_srvHosts.has(srvId)) _srvHosts.set(srvId, socket.id);
                 socket.isServerHost = (_srvHosts.get(srvId) === socket.id);
             }
-            if (socket.isServerHost && srvId !== 'global') {
-                hostId = socket.id; // Temporarily sync hostId for this server's packet
+
+            if (srvId !== 'global' && (socket.isServerHost || socket.id === _srvHosts.get(srvId) || (ev && (ev.startsWith('launch') || ev === 'assignFighters' || ev === 'makeCaptains' || ev === 'resetToLobby')))) {
+                hostId = socket.id;
+                _syncRoomState(srvId, socket);
             }
 
-            // Fix /cap A B so it works for every server's host
             if (ev === 'chatMessage' && srvId !== 'global') {
                 const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
                 if (typeof raw === 'string' && raw.trim().toLowerCase().startsWith('/cap ')) {
-                    if (!socket.isServerHost && socket.id !== hostId) {
-                        socket.emit('message', { username: "Sammu's Bot", text: "🛡️ Only this server's Host can use /cap!", _serverId: srvId });
-                        return;
-                    }
+                    _syncRoomState(srvId, socket);
                     const names = raw.trim().slice(5).replace(/@/g, '').split(/\s+vs\s+|\s+/i);
                     if (names.length >= 2) {
                         const pA = players.find(p => p.username.toLowerCase().startsWith(names.at(0).toLowerCase()));
@@ -60,7 +138,8 @@ io.use((socket, next) => {
                             io.to(srvId).emit('syncGame', { ...gameData, _serverId: srvId });
                             io.to(srvId).emit('message', { username: "Sammu's Bot", text: `👑 **CAPTAINS LOCKED:** 🔴 **${pA.username}** vs 🔵 **${pB.username}**!`, _serverId: srvId });
                         } else {
-                            socket.emit('message', { username: "Sammu's Bot", text: `⚠️ Couldn't find both players in this server!`, _serverId: srvId });
+                            const online = players.map(p => p.username).join(', ');
+                            socket.emit('message', { username: "Sammu's Bot", text: `⚠️ Couldn't find both players! Online here: **${online}**`, _serverId: srvId });
                         }
                     }
                     return;
@@ -70,13 +149,12 @@ io.use((socket, next) => {
         });
     });
     socket.on('disconnect', () => {
-        if (socket.activeServerId && _srvHosts.get(socket.activeServerId) === socket.id) {
-            _srvHosts.delete(socket.activeServerId);
-        }
+        if (socket.activeServerId && _srvHosts.get(socket.activeServerId) === socket.id) _srvHosts.delete(socket.activeServerId);
     });
     next();
 });
-// ==============================================================================
+// =========================================================================
+
 
 require('./multi_servers')(app, io);
 const MAKEUP_STUDIO_WIDGET = `

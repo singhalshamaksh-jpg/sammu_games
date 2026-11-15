@@ -4,6 +4,80 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 5e6 });
 const path = require('path');
 const fs = require('fs');
+// ================= ONE-BLOCK MULTI-SERVER ISOLATION & BOT FIX =================
+const { AsyncLocalStorage } = require('async_hooks');
+const _srvStore = new AsyncLocalStorage();
+const _srvHosts = new Map(); // Tracks separate Host per server
+
+// 1. Auto-route every io.emit & setTimeout bot reply to the sender's exact server
+const _origEmit = io.emit.bind(io);
+io.emit = function(ev, data, ...args) {
+    if (ev === 'serverListUpdate') return _origEmit(ev, data, ...args);
+    const srvId = (data && typeof data === 'object' && data._serverId) || _srvStore.getStore();
+    if (srvId) {
+        const stamped = (data && typeof data === 'object' && !Array.isArray(data))
+            ? { ...data, _serverId: srvId }
+            : data;
+        return io.to(srvId).emit(ev, stamped, ...args);
+    }
+    return _origEmit(ev, data, ...args);
+};
+
+// 2. Lock every socket event, per-server Host, and /cap command to its own room
+io.use((socket, next) => {
+    socket.use((packet, pktNext) => {
+        const srvId = socket.activeServerId || 'global';
+        _srvStore.run(srvId, () => {
+            const ev = packet && packet.at(0);
+            const payload = packet && packet.at(1);
+
+            // Give each server its own independent Host
+            if (ev === 'joinRoom' && srvId !== 'global') {
+                if (!_srvHosts.has(srvId)) _srvHosts.set(srvId, socket.id);
+                socket.isServerHost = (_srvHosts.get(srvId) === socket.id);
+            }
+            if (socket.isServerHost && srvId !== 'global') {
+                hostId = socket.id; // Temporarily sync hostId for this server's packet
+            }
+
+            // Fix /cap A B so it works for every server's host
+            if (ev === 'chatMessage' && srvId !== 'global') {
+                const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+                if (typeof raw === 'string' && raw.trim().toLowerCase().startsWith('/cap ')) {
+                    if (!socket.isServerHost && socket.id !== hostId) {
+                        socket.emit('message', { username: "Sammu's Bot", text: "🛡️ Only this server's Host can use /cap!", _serverId: srvId });
+                        return;
+                    }
+                    const names = raw.trim().slice(5).replace(/@/g, '').split(/\s+vs\s+|\s+/i);
+                    if (names.length >= 2) {
+                        const pA = players.find(p => p.username.toLowerCase().startsWith(names.at(0).toLowerCase()));
+                        const pB = players.find(p => p.username.toLowerCase().startsWith(names.at(1).toLowerCase()));
+                        if (pA && pB && pA.id !== pB.id) {
+                            gameData.captainA = pA; gameData.captainB = pB;
+                            gameData.fighterA = pA.id; gameData.fighterB = pB.id;
+                            gameData.teamA = [pA]; gameData.teamB = [pB];
+                            gameData.gameState = 'lobby';
+                            io.to(srvId).emit('syncGame', { ...gameData, _serverId: srvId });
+                            io.to(srvId).emit('message', { username: "Sammu's Bot", text: `👑 **CAPTAINS LOCKED:** 🔴 **${pA.username}** vs 🔵 **${pB.username}**!`, _serverId: srvId });
+                        } else {
+                            socket.emit('message', { username: "Sammu's Bot", text: `⚠️ Couldn't find both players in this server!`, _serverId: srvId });
+                        }
+                    }
+                    return;
+                }
+            }
+            pktNext();
+        });
+    });
+    socket.on('disconnect', () => {
+        if (socket.activeServerId && _srvHosts.get(socket.activeServerId) === socket.id) {
+            _srvHosts.delete(socket.activeServerId);
+        }
+    });
+    next();
+});
+// ==============================================================================
+
 require('./multi_servers')(app, io);
 const MAKEUP_STUDIO_WIDGET = `
 <style>

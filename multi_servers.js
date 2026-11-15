@@ -5,15 +5,20 @@ module.exports = function initMultiServers(app, io) {
     const DB_FILE = path.join(__dirname, 'servers_db.json');
 
     const defaultServers = {
-        srv_samaksh: { id: 'srv_samaksh', name: "💎 Samaksh's Arena",  owner: "samaksh", theme: "diamond", max: 20, type: "official" },
-        srv_zoro:    { id: 'srv_zoro',    name: "⚔️ Zoro's Dojo",      owner: "zoro",    theme: "matrix",  max: 20, type: "official" },
-        srv_milly:   { id: 'srv_milly',   name: "👑 Milly's Palace",   owner: "milly",   theme: "gold",    max: 20, type: "official" },
-        srv_moon:    { id: 'srv_moon',    name: "🌙 Moon's Galaxy",    owner: "moon",    theme: "cyber",   max: 20, type: "official" },
-        srv_heer:    { id: 'srv_heer',    name: "🌸 Heer's Haven",     owner: "heer",    theme: "crimson", max: 20, type: "official" },
-        srv_izzan:   { id: 'srv_izzan',   name: "🔥 Izzan's Fortress", owner: "izzan",   theme: "crimson", max: 20, type: "official" },
-        srv_ishika:  { id: 'srv_ishika',  name: "✨ Ishika's Lounge",  owner: "ishika",  theme: "gold",    max: 20, type: "official" },
-        srv_sus:     { id: 'srv_sus',     name: "👀 Sus Bunker",       owner: "sus",     theme: "matrix",  max: 20, type: "official" },
-        srv_bonus:   { id: 'srv_bonus',   name: "🎮 Sammu's Main Hub", owner: "sammu",   theme: "cyber",   max: 20, type: "official" },
+        srv_samaksh: { id: 'srv_samaksh', name: "💎 Samaksh's Arena",   owner: "samaksh", theme: "diamond", max: 20, type: "official" },
+        srv_zoro:    { id: 'srv_zoro',    name: "⚔️ Zoro's Dojo",       owner: "zoro",    theme: "matrix",  max: 20, type: "official" },
+        srv_milly:   { id: 'srv_milly',   name: "👑 Milly's Palace",    owner: "milly",   theme: "gold",    max: 20, type: "official" },
+        srv_moon:    { id: 'srv_moon',    name: "🌙 Moon's Galaxy",     owner: "moon",    theme: "cyber",   max: 20, type: "official" },
+        srv_heer:    { id: 'srv_heer',    name: "🌸 Heer's Haven",      owner: "heer",    theme: "crimson", max: 20, type: "official" },
+        srv_izzan:   { id: 'srv_izzan',   name: "🔥 Izzan's Fortress",  owner: "izzan",   theme: "crimson", max: 20, type: "official" },
+        srv_ishika:  { id: 'srv_ishika',  name: "✨ Ishika's Lounge",   owner: "ishika",  theme: "gold",    max: 20, type: "official" },
+        srv_sus:     { id: 'srv_sus',     name: "👀 Sus Bunker",        owner: "sus",     theme: "matrix",  max: 20, type: "official" },
+        srv_sarah:   { id: 'srv_sarah',   name: "🦋 Sarah's Sanctuary", owner: "sarah",   theme: "cyber",   max: 20, type: "official" },
+        srv_advait:  { id: 'srv_advait',  name: "⚡ Advait's Citadel",  owner: "advait",  theme: "diamond", max: 20, type: "official" },
+        srv_ruwii:   { id: 'srv_ruwii',   name: "🌺 Ruwii's Garden",    owner: "ruwii",   theme: "gold",    max: 20, type: "official" },
+        srv_saeron:  { id: 'srv_saeron',  name: "🪐 Saeron's Orbit",    owner: "saeron",  theme: "cyber",   max: 20, type: "official" },
+        srv_shubhi:  { id: 'srv_shubhi',  name: "💖 Shubhi's Castle",   owner: "shubhi",  theme: "crimson", max: 20, type: "official" },
+        srv_sid:     { id: 'srv_sid',     name: "🦁 Sid's Kingdom",     owner: "sid",     theme: "gold",    max: 20, type: "official" },
         srv_diamond: { 
             id: 'srv_diamond', 
             name: "💠 DIAMOND SERVER (OG Hosts Only)", 
@@ -29,6 +34,7 @@ module.exports = function initMultiServers(app, io) {
     if (fs.existsSync(DB_FILE)) {
         try {
             const saved = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+            delete saved.srv_bonus;
             serversDB = { ...defaultServers, ...saved };
         } catch (e) {}
     }
@@ -37,9 +43,11 @@ module.exports = function initMultiServers(app, io) {
         try { fs.writeFileSync(DB_FILE, JSON.stringify(serversDB, null, 2)); } catch (e) {}
     }
     saveDB();
-
     const activeCounts = {};
-    const OG_HOSTS = new Set(["sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus"]);
+    const OG_HOSTS = new Set([
+        "sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus",
+        "sarah", "advait", "ruwii", "saeron", "shubhi", "sid"
+    ]);
 
     function getPublicServerList() {
         const now = Date.now();
@@ -80,7 +88,7 @@ module.exports = function initMultiServers(app, io) {
           <div style="font-size:12px;color:#cbd5e1;">Select a Server (Max 20 Players Each)</div>
         </div>
         <div class="srv-tabs">
-          <button class="srv-tab active" id="tabOfficial" onclick="switchSrvTab('official')">🏟️ 10 Official Servers</button>
+          <button class="srv-tab active" id="tabOfficial" onclick="switchSrvTab('official')">🏟️ 15 Official Servers</button>
           <button class="srv-tab" id="tabCustom" onclick="switchSrvTab('custom')">✨ Custom / Trial Servers</button>
         </div>
         <div id="srvListContainer"></div>
@@ -96,7 +104,10 @@ module.exports = function initMultiServers(app, io) {
             <option value="crimson">🔥 Crimson Theme</option>
           </select>
           <button onclick="createTrialServer()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;cursor:pointer;">🚀 Launch 7-Day Free Trial Server</button>
-          <div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;">🔗 <b>Extend Free:</b> Bring <b>15 new players</b> via your referral link = <b>+1 Extra Week FREE!</b></div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;line-height:1.4;">
+            🔗 <b>Extend Free:</b> Bring <b>15 new players</b> via your referral link = <b>+1 Extra Week FREE!</b><br>
+            💎 <b>Permanent VIP Server:</b> Email an Amazon Pay or Google Play Gift Code to <b style="color:#38bdf8;">singhalshamaksh@gmail.com</b>
+          </div>
         </div>
       </div>
     </div>
@@ -126,8 +137,9 @@ module.exports = function initMultiServers(app, io) {
       window.copyMyRefLink = function(ownerName) {
         const link = window.location.origin + '/?ref=' + encodeURIComponent(ownerName.toLowerCase());
         if (navigator.clipboard) navigator.clipboard.writeText(link);
-        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 15 new players using this link to automatically extend your custom server by +7 DAYS!');
+        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 15 new players using this link for +7 DAYS FREE, or email an Amazon/Google Play Gift Code to singhalshamaksh@gmail.com for a PERMANENT server!');
       };
+
       function renderServerList() {
         const box = document.getElementById('srvListContainer');
         if (!box) return;
@@ -147,7 +159,7 @@ module.exports = function initMultiServers(app, io) {
           if (s.locked) badge = '🔐 OG PASS | ' + badge;
           else if (s.expired) {
             badge = '🔒 EXPIRED (' + s.refCount + '/15 Refs)';
-            subLine = 'Bring ' + (15 - s.refCount) + ' more refs via ?ref=' + s.owner + ' to unlock +7d!';
+            subLine = 'Bring ' + (15 - s.refCount) + ' more refs or email singhalshamaksh@gmail.com';
           } else if (s.type === 'custom' && !s.permanent) {
             badge = '⏳ ' + s.daysLeft + 'd | ' + badge;
             subLine = 'Host: ' + s.owner.toUpperCase() + ' | Refs: ' + s.refCount + '/15';
@@ -171,7 +183,7 @@ module.exports = function initMultiServers(app, io) {
       function selectAndEnterServer(srv) {
         if (srv.expired) {
           const link = window.location.origin + '/?ref=' + encodeURIComponent(srv.owner);
-          alert('🔒 Your 7-Day Free Trial has ended!\\n\\nProgress: ' + srv.refCount + '/15 Referrals.\\nShare your invite link with ' + (15 - srv.refCount) + ' more friends to automatically unlock +7 MORE DAYS:\\n' + link);
+          alert('🔒 Your 7-Day Free Trial has ended!\\n\\nOption 1 (FREE): Share your link with ' + (15 - srv.refCount) + ' more friends to unlock +7 DAYS:\\n' + link + '\\n\\nOption 2 (PERMANENT): Email an Amazon Pay or Google Play Gift Code (with your Server Name) to singhalshamaksh@gmail.com!');
           return;
         }
         let pass = '';
@@ -211,8 +223,7 @@ module.exports = function initMultiServers(app, io) {
       window.addEventListener('DOMContentLoaded', () => { hookServerSocket(); setTimeout(hookServerSocket, 600); });
     })();
     </script>
-    `;
-    app.use((req, res, next) => {
+     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function (body) {
             if (typeof body === 'string' && body.includes('</body>')) {
@@ -265,7 +276,7 @@ module.exports = function initMultiServers(app, io) {
             }
             if (srv.type === 'custom' && !srv.permanent && Date.now() > srv.expiresAt) {
                 const refCount = Array.isArray(srv.referrals) ? srv.referrals.length : 0;
-                return socket.emit('serverAccessDenied', `🔒 Trial Expired! (${refCount}/15 referrals). Invite ${15 - refCount} more friends via ?ref=${srv.owner} to unlock +7 days!`);
+                return socket.emit('serverAccessDenied', `🔒 Trial Expired! (${refCount}/15 referrals). Invite ${15 - refCount} more friends via ?ref=${srv.owner} or email singhalshamaksh@gmail.com!`);
             }
 
             if (socket.activeServerId && activeCounts[socket.activeServerId]) {
@@ -289,7 +300,7 @@ module.exports = function initMultiServers(app, io) {
             };
             saveDB();
             io.emit('serverListUpdate', getPublicServerList());
-            socket.emit('serverAccessDenied', '✅ Custom Server "' + name + '" created with 7-Day FREE Trial!\nShare your invite link (/?ref=' + cleanOwner + ') with 15 friends to extend +7 more days!');
+            socket.emit('serverAccessDenied', '✅ Custom Server "' + name + '" created with 7-Day FREE Trial!\nShare /?ref=' + cleanOwner + ' with 15 friends for +7 days, or email a gift code to singhalshamaksh@gmail.com for permanent access!');
         });
 
         socket.on('joinRoom', (data) => {
@@ -365,3 +376,4 @@ module.exports = function initMultiServers(app, io) {
         });
     });
 };
+   `;

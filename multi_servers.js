@@ -434,7 +434,7 @@ module.exports = function initMultiServers(app, io) {
       window._memeStickers = [];
       window._memeTextColor = '#ffffff';
       window._memeFilter = 'none';
-      window.openMemeMakerModal = function() {
+          window.openMemeMakerModal = function() {
         let modal = document.getElementById('arenaMemeModal');
         if (!modal) {
           modal = document.createElement('div');
@@ -450,12 +450,14 @@ module.exports = function initMultiServers(app, io) {
               '</div>' +
               '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
                 '<select id="memeTemplateSelect" onchange="window._memeCustomImg=null;renderMemeCanvas()" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #f59e0b;background:#1e293b;color:#fff;font-size:12px;">' + opts + '</select>' +
-                              '<div style="position:relative;overflow:hidden;display:inline-flex;align-items:center;background:#334155;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;white-space:nowrap;border:1px solid #64748b;">' +
+                '<button type="button" onclick="loadMemeFromUrl()" style="background:#0284c7;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;border:1px solid #38bdf8;">🌐 Link</button>' +
+                '<label style="background:#334155;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;border:1px solid #64748b;display:inline-flex;align-items:center;">' +
                   '📸 Photo' +
-                  '<input id="memeFileInput" type="file" accept="image/*" onchange="loadCustomMemePhoto(event)" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px;">' +
-                '</div>' +              
-              '<input id="memeTopText" oninput="renderMemeCanvas()" placeholder="TOP TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:5px;box-sizing:border-box;font-size:12px;">' +
-              '<input id="memeBottomText" oninput="renderMemeCanvas()" placeholder="BOTTOM TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:6px;box-sizing:border-box;font-size:12px;">' +
+                  '<input id="memeFileInput" type="file" accept="image/*" onchange="loadCustomMemePhoto(event)" style="width:1px;height:1px;opacity:0;position:absolute;">' +
+                '</label>' +
+              '</div>' +
+              '<input id="memeTopText" oninput="renderMemeCanvas()" placeholder="TOP TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:5px;box-sizing:border-box;font-size:16px;">' +
+              '<input id="memeBottomText" oninput="renderMemeCanvas()" placeholder="BOTTOM TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:6px;box-sizing:border-box;font-size:16px;">' +
               '<div style="display:flex;gap:6px;align-items:center;justify-content:space-between;margin-bottom:6px;background:#1e293b;padding:6px 8px;border-radius:10px;font-size:11px;">' +
                 '<span>Size: <input id="memeFontSize" type="range" min="16" max="34" value="22" oninput="renderMemeCanvas()" style="width:65px;vertical-align:middle;"></span>' +
                 '<span style="display:flex;gap:4px;">' +
@@ -485,6 +487,26 @@ module.exports = function initMultiServers(app, io) {
         modal.style.display = 'flex';
         renderMemeCanvas();
       };
+
+      window.loadMemeFromUrl = function() {
+        var url = prompt('Paste any Image Link (JPG/PNG/GIF):');
+        if (!url) return;
+        var img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          var off = document.createElement('canvas');
+          off.width = 340;
+          off.height = 250;
+          off.getContext('2d').drawImage(img, 0, 0, 340, 250);
+          window._memeCustomImg = off;
+          renderMemeCanvas();
+        };
+        img.onerror = function() {
+          alert('That website blocks direct image loading—try another image link!');
+        };
+        img.src = url.trim();
+      };
+
       window.addMemeSticker = function(emoji) {
         window._memeStickers.push({ emoji, x: 170 + (Math.random() * 40 - 20), y: 125 + (Math.random() * 40 - 20) });
         renderMemeCanvas();

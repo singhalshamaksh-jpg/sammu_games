@@ -500,32 +500,36 @@ module.exports = function initMultiServers(app, io) {
         last.y = (e.clientY - rect.top) * (c.height / rect.height);
         renderMemeCanvas();
       };
-      window.loadCustomMemePhoto = function(e) {
-        const file = (e && e.target && e.target.files) ? e.target.files : null;
-        if (!file) return;
-        const objUrl = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = function() {
-          const off = document.createElement('canvas');
-          off.width = 340;
-          off.height = 250;
-          off.getContext('2d').drawImage(img, 0, 0, 340, 250);
-          window._memeCustomImg = off;
-          URL.revokeObjectURL(objUrl);
-          e.target.value = '';
-          renderMemeCanvas();
-        };
-        img.onerror = function() {
-          URL.revokeObjectURL(objUrl);
-          alert('Could not load this image format. Try a JPG or PNG!');
-        };
-        img.src = objUrl;
+           window.loadCustomMemePhoto = function(e) {
+        try {
+          var input = e && e.target ? e.target : document.getElementById('memeFileInput');
+          var file = (input && input.files && input.files.length > 0) ? input.files.item(0) : null;
+          if (!file) {
+            alert('No file received from gallery!');
+            return;
+          }
+          var objUrl = URL.createObjectURL(file);
+          var img = new Image();
+          img.onload = function() {
+            var off = document.createElement('canvas');
+            off.width = 340;
+            off.height = 250;
+            off.getContext('2d').drawImage(img, 0, 0, 340, 250);
+            window._memeCustomImg = off;
+            URL.revokeObjectURL(objUrl);
+            if (input) input.value = '';
+            renderMemeCanvas();
+          };
+          img.onerror = function() {
+            URL.revokeObjectURL(objUrl);
+            alert('Image failed to decode!');
+          };
+          img.src = objUrl;
+        } catch (err) {
+          alert('Photo Error: ' + err.message);
+        }
       };
-
-            
-    
-
-
+ 
       window.renderMemeCanvas = function() {
         const c = document.getElementById('arenaMemeCanvas');
         if (!c) return;

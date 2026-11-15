@@ -448,10 +448,14 @@ module.exports = function initMultiServers(app, io) {
                 '<span style="font-weight:900;font-size:15px;color:#fbbf24;">😂 PRO MEME STUDIO</span>' +
                 '<button onclick="document.getElementById(\\'arenaMemeModal\\').style.display=\\'none\\'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕ Close</button>' +
               '</div>' +
-              '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
+                            '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
                 '<select id="memeTemplateSelect" onchange="window._memeCustomImg=null;renderMemeCanvas()" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #f59e0b;background:#1e293b;color:#fff;font-size:12px;">' + opts + '</select>' +
-                                        '<label for="memeFileInput" style="background:#334155;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;border:1px solid #64748b;display:inline-flex;align-items:center;">📸 Photo</label>' +
-                    '<input id="memeFileInput" type="file" accept="image/*" onchange="loadCustomMemePhoto(event)" style="display:none;">' +
+                '<div style="position:relative;overflow:hidden;display:inline-flex;align-items:center;background:#334155;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;white-space:nowrap;border:1px solid #64748b;">' +
+                  '📸 Photo' +
+                  '<input id="memeFileInput" type="file" accept="image/*" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px;">' +
+                '</div>' +
+              '</div>' +
+
 
 
               '</div>' +
@@ -482,10 +486,12 @@ module.exports = function initMultiServers(app, io) {
               '</div>' +
             '</div>';
           document.body.appendChild(modal);
+          var fIn = document.getElementById('memeFileInput');
+          if (fIn) fIn.addEventListener('change', window.loadCustomMemePhoto, false);
         }
         modal.style.display = 'flex';
         renderMemeCanvas();
-      };
+
       window.addMemeSticker = function(emoji) {
         window._memeStickers.push({ emoji, x: 170 + (Math.random() * 40 - 20), y: 125 + (Math.random() * 40 - 20) });
         renderMemeCanvas();

@@ -48,18 +48,12 @@ module.exports = function initMultiServers(app, io) {
             const daysLeft = (s.type === 'custom' && !s.permanent && s.expiresAt) 
                 ? Math.max(0, Math.ceil((s.expiresAt - now) / (1000 * 60 * 60 * 24))) 
                 : null;
+            const refCount = Array.isArray(s.referrals) ? s.referrals.length : 0;
             return {
-                id: s.id,
-                name: s.name,
-                owner: s.owner,
-                theme: s.theme,
-                max: s.max || 20,
-                count: activeCounts[s.id] || 0,
-                type: s.type,
-                locked: s.type === 'secret',
-                expired,
-                permanent: Boolean(s.permanent),
-                daysLeft
+                id: s.id, name: s.name, owner: s.owner, theme: s.theme,
+                max: s.max || 20, count: activeCounts[s.id] || 0, type: s.type,
+                locked: s.type === 'secret', expired, permanent: Boolean(s.permanent),
+                daysLeft, refCount
             };
         });
     }
@@ -73,7 +67,7 @@ module.exports = function initMultiServers(app, io) {
       .srv-card.diamond { border-color:#67e8f9; background:linear-gradient(90deg,rgba(6,182,212,0.25),rgba(168,85,247,0.25)); box-shadow:0 0 15px rgba(103,232,249,0.3); }
       .srv-card.gold { border-color:#facc15; }
       .srv-card.full { opacity:0.55; pointer-events:none; }
-      .srv-pill { font-size:11px; font-weight:bold; padding:4px 9px; border-radius:12px; background:#0284c7; color:#fff; }
+      .srv-pill { font-size:11px; font-weight:bold; padding:4px 9px; border-radius:12px; background:#0284c7; color:#fff; text-align:right; }
       .srv-tabs { display:flex; gap:6px; margin:10px 0; }
       .srv-tab { flex:1; padding:8px; border-radius:12px; border:1px solid #38bdf8; background:#1e293b; color:#fff; font-weight:bold; font-size:12px; cursor:pointer; }
       .srv-tab.active { background:#38bdf8; color:#090d16; }
@@ -102,7 +96,7 @@ module.exports = function initMultiServers(app, io) {
             <option value="crimson">🔥 Crimson Theme</option>
           </select>
           <button onclick="createTrialServer()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;cursor:pointer;">🚀 Launch 7-Day Free Trial Server</button>
-          <div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;">After 7 days, send a ₹50/₹100 Flipkart Gift Card code to <b>@verma_diary_18</b> to make it permanent!</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;">🔗 <b>Extend Free:</b> Bring <b>15 new players</b> via your referral link = <b>+1 Extra Week FREE!</b></div>
         </div>
       </div>
     </div>
@@ -110,6 +104,16 @@ module.exports = function initMultiServers(app, io) {
     (function() {
       let currentTab = 'official', allServers = [];
       window.selectedServerId = 'srv_samaksh';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const refOwner = urlParams.get('ref');
+      if (refOwner) localStorage.setItem('sammu_pending_ref', refOwner.trim().toLowerCase());
+
+      let devId = localStorage.getItem('sammu_dev_uid');
+      if (!devId) {
+        devId = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem('sammu_dev_uid', devId);
+      }
 
       window.switchSrvTab = function(tab) {
         currentTab = tab;
@@ -119,6 +123,11 @@ module.exports = function initMultiServers(app, io) {
         renderServerList();
       };
 
+      window.copyMyRefLink = function(ownerName) {
+        const link = window.location.origin + '/?ref=' + encodeURIComponent(ownerName.toLowerCase());
+        if (navigator.clipboard) navigator.clipboard.writeText(link);
+        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 15 new players using this link to automatically extend your custom server by +7 DAYS!');
+      };
       function renderServerList() {
         const box = document.getElementById('srvListContainer');
         if (!box) return;
@@ -133,20 +142,36 @@ module.exports = function initMultiServers(app, io) {
           const div = document.createElement('div');
           div.className = 'srv-card ' + (s.theme || '') + (isFull ? ' full' : '');
           let badge = s.count + '/' + s.max + ' 👥';
-          if (s.locked) badge = '🔐 OG PASS | ' + badge;
-          else if (s.expired) badge = '🔒 TRIAL ENDED';
-          else if (s.type === 'custom' && !s.permanent) badge = '⏳ ' + s.daysLeft + 'd left | ' + badge;
-          else if (s.permanent) badge = '⭐ VIP | ' + badge;
+          let subLine = 'Host: ' + s.owner.toUpperCase();
 
-          div.innerHTML = '<div><div style="font-weight:bold;font-size:13px;">' + s.name + '</div><div style="font-size:11px;color:#94a3b8;">Host: ' + s.owner.toUpperCase() + '</div></div><div class="srv-pill">' + badge + '</div>';
+          if (s.locked) badge = '🔐 OG PASS | ' + badge;
+          else if (s.expired) {
+            badge = '🔒 EXPIRED (' + s.refCount + '/15 Refs)';
+            subLine = 'Bring ' + (15 - s.refCount) + ' more refs via ?ref=' + s.owner + ' to unlock +7d!';
+          } else if (s.type === 'custom' && !s.permanent) {
+            badge = '⏳ ' + s.daysLeft + 'd | ' + badge;
+            subLine = 'Host: ' + s.owner.toUpperCase() + ' | Refs: ' + s.refCount + '/15';
+          } else if (s.permanent) {
+            badge = '⭐ VIP | ' + badge;
+          }
+
+          div.innerHTML = '<div><div style="font-weight:bold;font-size:13px;">' + s.name + '</div><div style="font-size:11px;color:#94a3b8;">' + subLine + '</div></div><div class="srv-pill">' + badge + '</div>';
           div.onclick = () => selectAndEnterServer(s);
           box.appendChild(div);
+
+          if (s.type === 'custom' && !s.permanent) {
+            const refBtn = document.createElement('div');
+            refBtn.style.cssText = 'text-align:right;margin:-4px 0 8px 0;';
+            refBtn.innerHTML = '<button onclick="event.stopPropagation();copyMyRefLink(\\'' + s.owner + '\\')" style="background:#059669;border:none;color:#fff;font-size:11px;font-weight:bold;padding:3px 10px;border-radius:8px;cursor:pointer;">🔗 Copy Invite Link (' + s.refCount + '/15 for +7 Days)</button>';
+            box.appendChild(refBtn);
+          }
         });
       }
 
       function selectAndEnterServer(srv) {
         if (srv.expired) {
-          alert('🔒 This 7-Day Free Trial has ended!\\nSend a Flipkart E-Gift Voucher (Card No. + PIN) to @verma_diary_18 on Instagram to unlock it permanently!');
+          const link = window.location.origin + '/?ref=' + encodeURIComponent(srv.owner);
+          alert('🔒 Your 7-Day Free Trial has ended!\\n\\nProgress: ' + srv.refCount + '/15 Referrals.\\nShare your invite link with ' + (15 - srv.refCount) + ' more friends to automatically unlock +7 MORE DAYS:\\n' + link);
           return;
         }
         let pass = '';
@@ -154,9 +179,7 @@ module.exports = function initMultiServers(app, io) {
           pass = prompt('💠 DIAMOND SERVER (OG Hosts Sanctuary)\\nEnter Secret Password:');
           if (!pass) return;
         }
-        if (typeof socket !== 'undefined') {
-          socket.emit('verifyServerAccess', { serverId: srv.id, password: pass });
-        }
+        if (typeof socket !== 'undefined') socket.emit('verifyServerAccess', { serverId: srv.id, password: pass });
       }
 
       window.createTrialServer = function() {
@@ -164,15 +187,20 @@ module.exports = function initMultiServers(app, io) {
         const owner = document.getElementById('newSrvOwner').value.trim();
         const theme = document.getElementById('newSrvTheme').value;
         if (!name || !owner) { alert('Please enter both Server Name and your Username!'); return; }
-        if (typeof socket !== 'undefined') {
-          socket.emit('createCustomServer', { name, owner, theme });
-        }
+        if (typeof socket !== 'undefined') socket.emit('createCustomServer', { name, owner, theme });
       };
 
       function hookServerSocket() {
         if (typeof socket === 'undefined' || window._srvHooked) return;
         window._srvHooked = true;
         socket.emit('requestServerList');
+
+        const pendingRef = localStorage.getItem('sammu_pending_ref');
+        if (pendingRef) {
+          socket.emit('registerReferral', { refOwner: pendingRef, deviceId: devId });
+          localStorage.removeItem('sammu_pending_ref');
+        }
+
         socket.on('serverListUpdate', (list) => { allServers = list; renderServerList(); });
         socket.on('serverAccessGranted', (srv) => {
           window.selectedServerId = srv.id;
@@ -200,6 +228,32 @@ module.exports = function initMultiServers(app, io) {
             socket.emit('serverListUpdate', getPublicServerList());
         });
 
+        socket.on('registerReferral', ({ refOwner, deviceId }) => {
+            if (!refOwner || !deviceId) return;
+            const cleanRef = refOwner.trim().toLowerCase();
+            const srv = Object.values(serversDB).find(s => s.type === 'custom' && s.owner.toLowerCase() === cleanRef);
+            if (!srv) return;
+
+            if (!Array.isArray(srv.referrals)) srv.referrals = [];
+            if (!Array.isArray(srv.allTimeDevices)) srv.allTimeDevices = [];
+            if (srv.allTimeDevices.includes(deviceId)) return;
+
+            srv.allTimeDevices.push(deviceId);
+            srv.referrals.push(deviceId);
+
+            if (srv.referrals.length >= 15) {
+                const baseTime = Math.max(Date.now(), srv.expiresAt || Date.now());
+                srv.expiresAt = baseTime + (7 * 24 * 60 * 60 * 1000);
+                srv.referrals = [];
+                io.emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🎉🔥 **15 REFERRALS REACHED!** **${srv.name}** (Host: **${srv.owner}**) has been automatically extended for **+7 MORE DAYS**! 🚀`
+                });
+            }
+            saveDB();
+            io.emit('serverListUpdate', getPublicServerList());
+        });
+
         socket.on('verifyServerAccess', ({ serverId, password }) => {
             const srv = serversDB[serverId];
             if (!srv) return socket.emit('serverAccessDenied', 'Server not found!');
@@ -210,7 +264,8 @@ module.exports = function initMultiServers(app, io) {
                 return socket.emit('serverAccessDenied', '❌ Wrong Password for Diamond Server!');
             }
             if (srv.type === 'custom' && !srv.permanent && Date.now() > srv.expiresAt) {
-                return socket.emit('serverAccessDenied', '🔒 7-Day Free Trial expired! Send a Flipkart Voucher to unlock.');
+                const refCount = Array.isArray(srv.referrals) ? srv.referrals.length : 0;
+                return socket.emit('serverAccessDenied', `🔒 Trial Expired! (${refCount}/15 referrals). Invite ${15 - refCount} more friends via ?ref=${srv.owner} to unlock +7 days!`);
             }
 
             if (socket.activeServerId && activeCounts[socket.activeServerId]) {
@@ -227,19 +282,14 @@ module.exports = function initMultiServers(app, io) {
             const cleanId = 'custom_' + Date.now();
             const cleanOwner = owner.trim().toLowerCase();
             serversDB[cleanId] = {
-                id: cleanId,
-                name: '✨ ' + name.trim(),
-                owner: cleanOwner,
-                theme: theme || 'cyber',
-                max: 20,
-                type: 'custom',
-                createdAt: Date.now(),
-                expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
-                permanent: false
+                id: cleanId, name: '✨ ' + name.trim(), owner: cleanOwner,
+                theme: theme || 'cyber', max: 20, type: 'custom',
+                createdAt: Date.now(), expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+                permanent: false, referrals: [], allTimeDevices: []
             };
             saveDB();
             io.emit('serverListUpdate', getPublicServerList());
-            socket.emit('serverAccessDenied', '✅ Custom Server "' + name + '" created with 7-Day FREE Trial! Click it in the list to enter.');
+            socket.emit('serverAccessDenied', '✅ Custom Server "' + name + '" created with 7-Day FREE Trial!\nShare your invite link (/?ref=' + cleanOwner + ') with 15 friends to extend +7 more days!');
         });
 
         socket.on('joinRoom', (data) => {
@@ -290,14 +340,12 @@ module.exports = function initMultiServers(app, io) {
                     saveDB();
                     io.emit('serverListUpdate', getPublicServerList());
                     io.emit('message', { username: "Sammu's Bot", text: `💎 **VIP UNLOCKED!** **${found.name}** is now a **PERMANENT SERVER**! 🎉` });
-                } else {
-                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ No custom server found for owner **${ownerTarget}**.` });
                 }
             }
 
             if (clean.toLowerCase().startsWith('/extendserver ')) {
                 const [ownerTarget, daysStr] = clean.slice(14).trim().split(/\s+/);
-                const days = parseInt(daysStr) || 30;
+                const days = parseInt(daysStr) || 7;
                 const found = Object.values(serversDB).find(s => s.owner.toLowerCase() === (ownerTarget || '').toLowerCase() && s.type === 'custom');
                 if (found) {
                     const baseTime = Math.max(Date.now(), found.expiresAt || Date.now());

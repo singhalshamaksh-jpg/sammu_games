@@ -165,11 +165,13 @@ module.exports = function initMultiServers(app, io) {
         }
         return origIoEmit(event, ...args);
     };
-    function getRealIP(socket) {
+       function getRealIP(socket) {
         const fwd = socket.handshake && socket.handshake.headers && socket.handshake.headers['x-forwarded-for'];
-        if (fwd && typeof fwd === 'string') return fwd.split(',').trim();
+        if (fwd && typeof fwd === 'string') return fwd.split(',')[0].trim();
         return (socket.handshake && socket.handshake.address) || null;
     }
+ 
+    
 
     function getBrowserSig(socket, clientBrowserFp) {
         const ua = (socket.handshake && socket.handshake.headers && socket.handshake.headers['user-agent']) || '';

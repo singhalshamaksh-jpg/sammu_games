@@ -4,7 +4,7 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 5e6 });
 const path = require('path');
 const fs = require('fs');
-
+require('./multi_servers')(app, io);
 const MAKEUP_STUDIO_WIDGET = `
 <style>
   #makeupModal { display:none; position:fixed; inset:0; background:rgba(10,10,20,0.9); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(10px); font-family:inherit; }

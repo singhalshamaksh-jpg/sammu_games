@@ -500,25 +500,30 @@ module.exports = function initMultiServers(app, io) {
         last.y = (e.clientY - rect.top) * (c.height / rect.height);
         renderMemeCanvas();
       };
-
-            window.loadCustomMemePhoto = function(e) {
-        const file = (e && e.target && e.target.files) ? e.target.files.at(0) : null;
+      window.loadCustomMemePhoto = function(e) {
+        const file = (e && e.target && e.target.files) ? e.target.files : null;
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          const img = new Image();
-          img.onload = function() {
-            const off = document.createElement('canvas');
-            off.width = 340;
-            off.height = 250;
-            off.getContext('2d').drawImage(img, 0, 0, 340, 250);
-            window._memeCustomImg = off;
-            renderMemeCanvas();
-          };
-          img.src = ev.target.result;
+        const objUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = function() {
+          const off = document.createElement('canvas');
+          off.width = 340;
+          off.height = 250;
+          off.getContext('2d').drawImage(img, 0, 0, 340, 250);
+          window._memeCustomImg = off;
+          URL.revokeObjectURL(objUrl);
+          e.target.value = '';
+          renderMemeCanvas();
         };
-        reader.readAsDataURL(file);
+        img.onerror = function() {
+          URL.revokeObjectURL(objUrl);
+          alert('Could not load this image format. Try a JPG or PNG!');
+        };
+        img.src = objUrl;
       };
+
+            
+    
 
 
       window.renderMemeCanvas = function() {

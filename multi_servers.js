@@ -118,9 +118,18 @@ module.exports = function initMultiServers(app, io) {
             const byB = getSocketServerId(payload.captainB.id);
             if (byB) return byB;
         }
-        if (payload.username && playerServerMap.has(payload.username.toLowerCase())) {
-            return playerServerMap.get(payload.username.toLowerCase());
+                if (payload.username) {
+            const rawU = payload.username.toLowerCase().trim();
+            if (playerServerMap.has(rawU)) return playerServerMap.get(rawU);
+            const strippedU = rawU.replace(/[^a-z0-9_]/g, '');
+            for (const [uname, srvId] of playerServerMap.entries()) {
+                if (uname.replace(/[^a-z0-9_]/g, '') === strippedU && strippedU.length > 0) {
+                    return srvId;
+                }
+            }
         }
+        return null;
+
         if (typeof payload.text === 'string') {
             const lower = payload.text.toLowerCase();
             for (const [uname, srvId] of playerServerMap.entries()) {

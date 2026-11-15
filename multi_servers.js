@@ -450,8 +450,9 @@ module.exports = function initMultiServers(app, io) {
               '</div>' +
               '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
                 '<select id="memeTemplateSelect" onchange="window._memeCustomImg=null;renderMemeCanvas()" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #f59e0b;background:#1e293b;color:#fff;font-size:12px;">' + opts + '</select>' +
-                    '<button type="button" onclick="document.getElementById(\\'memeFileInput\\').click()" style="background:#334155;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;border:1px solid #64748b;">📸 Photo</button>' +
-  '<input id="memeFileInput" type="file" accept="image/*" onchange="loadCustomMemePhoto(event)" style="position:fixed;left:-9999px;opacity:0;">'+
+                                        '<label for="memeFileInput" style="background:#334155;color:#fff;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;border:1px solid #64748b;display:inline-flex;align-items:center;">📸 Photo</label>' +
+                    '<input id="memeFileInput" type="file" accept="image/*" onchange="loadCustomMemePhoto(event)" style="display:none;">' +
+
 
               '</div>' +
               '<input id="memeTopText" oninput="renderMemeCanvas()" placeholder="TOP TEXT..." maxlength="40" style="width:100%;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;margin-bottom:5px;box-sizing:border-box;font-size:12px;">' +

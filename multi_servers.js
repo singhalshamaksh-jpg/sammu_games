@@ -1,4 +1,3 @@
-
 const fs = require('fs');
 const path = require('path');
 
@@ -69,8 +68,6 @@ module.exports = function initMultiServers(app, io) {
         "sarah", "advait", "ruwii", "saeron", "shubhi", "sid"
     ]);
     const MASTER_KEYS = new Set(["#bhaibahencharaontop", "#universalbrother"]);
-
-
     const GLOBAL_EVENTS = new Set(['serverListUpdate']);
     const ROOM_EVENTS = new Set([
         'incomingMusicNote', 'playMemeSfx', 'message', 'syncGame', 'spinnerTick',
@@ -80,10 +77,34 @@ module.exports = function initMultiServers(app, io) {
 
     const origIoEmit = io.emit.bind(io);
     let currentSourceServerId = null;
+    let lastActiveServerId = null;
+    const playerServerMap = new Map();
 
     function getSocketServerId(socketId) {
         const s = io.sockets.sockets.get(socketId);
         return s ? s.activeServerId : null;
+    }
+
+    function resolveTargetServerForMessage(msgObj) {
+        if (currentSourceServerId) return currentSourceServerId;
+        if (msgObj && typeof msgObj === 'object') {
+            if (msgObj.senderId) {
+                const byId = getSocketServerId(msgObj.senderId);
+                if (byId) return byId;
+            }
+            if (msgObj.username && playerServerMap.has(msgObj.username.toLowerCase())) {
+                return playerServerMap.get(msgObj.username.toLowerCase());
+            }
+            if (typeof msgObj.text === 'string') {
+                const lowerText = msgObj.text.toLowerCase();
+                for (const [uname, srvId] of playerServerMap.entries()) {
+                    if (uname.length >= 2 && lowerText.includes(uname)) {
+                        return srvId;
+                    }
+                }
+            }
+        }
+        return lastActiveServerId;
     }
 
     io.emit = function(event, ...args) {
@@ -91,7 +112,7 @@ module.exports = function initMultiServers(app, io) {
             return origIoEmit(event, ...args);
         }
         if (event === 'toggleDidiPromo') {
-            millyPromoOn = Boolean(args[0]);
+            millyPromoOn = Boolean(args);
             saveDB();
             io.to('srv_milly').emit('toggleDidiPromo', millyPromoOn);
             Object.keys(serversDB).forEach(id => {
@@ -99,9 +120,13 @@ module.exports = function initMultiServers(app, io) {
             });
             return true;
         }
-        if (event === 'updatePlayers' && Array.isArray(args[0])) {
-            const allPlayers = args[0];
+        if (event === 'updatePlayers' && Array.isArray(args)) {
+            const allPlayers = args;
             const rooms = io.sockets.adapter.rooms;
+            allPlayers.forEach(p => {
+                const sId = getSocketServerId(p.id);
+                if (sId && p.username) playerServerMap.set(p.username.toLowerCase(), sId);
+            });
             Object.keys(serversDB).forEach(srvId => {
                 const roomSockets = rooms.get(srvId);
                 const roomPlayers = roomSockets ? allPlayers.filter(p => roomSockets.has(p.id)) : [];
@@ -109,8 +134,15 @@ module.exports = function initMultiServers(app, io) {
             });
             return true;
         }
-        if ((event === 'syncGame' || event === 'spinnerTick' || event === 'announceWinner') && args[0] && typeof args[0] === 'object') {
-            const payloadObj = args[0];
+        if (event === 'message' && args && typeof args === 'object') {
+            const targetSrv = resolveTargetServerForMessage(args);
+            if (targetSrv) {
+                return io.to(targetSrv).emit('message', { ...args, _serverId: targetSrv });
+            }
+            return true;
+        }
+        if ((event === 'syncGame' || event === 'spinnerTick' || event === 'announceWinner') && args && typeof args === 'object') {
+            const payloadObj = args;
             let targetSrv = currentSourceServerId;
             if (!targetSrv && payloadObj.captainA && payloadObj.captainA.id) {
                 targetSrv = getSocketServerId(payloadObj.captainA.id);
@@ -118,23 +150,24 @@ module.exports = function initMultiServers(app, io) {
             if (!targetSrv && payloadObj.captainB && payloadObj.captainB.id) {
                 targetSrv = getSocketServerId(payloadObj.captainB.id);
             }
+            if (!targetSrv) targetSrv = lastActiveServerId;
             if (targetSrv) {
                 return io.to(targetSrv).emit(event, { ...payloadObj, _serverId: targetSrv });
             }
             return true;
         }
         if (ROOM_EVENTS.has(event)) {
-            if (currentSourceServerId) {
-                return io.to(currentSourceServerId).emit(event, ...args);
+            const targetSrv = currentSourceServerId || lastActiveServerId;
+            if (targetSrv) {
+                return io.to(targetSrv).emit(event, ...args);
             }
             return true;
         }
         return origIoEmit(event, ...args);
     };
-
     function getRealIP(socket) {
         const fwd = socket.handshake && socket.handshake.headers && socket.handshake.headers['x-forwarded-for'];
-        if (fwd && typeof fwd === 'string') return fwd.split(',')[0].trim();
+        if (fwd && typeof fwd === 'string') return fwd.split(',').trim();
         return (socket.handshake && socket.handshake.address) || null;
     }
 
@@ -148,6 +181,12 @@ module.exports = function initMultiServers(app, io) {
         if (data && data.browserFp) socket.trackedBrowserFp = String(data.browserFp);
         socket.trackedIP = getRealIP(socket);
         socket.trackedBrowser = getBrowserSig(socket, socket.trackedBrowserFp);
+        if (socket.username && socket.activeServerId) {
+            playerServerMap.set(socket.username.toLowerCase(), socket.activeServerId);
+        }
+        if (socket.activeServerId) {
+            lastActiveServerId = socket.activeServerId;
+        }
     }
 
     function verifyOGHostTripleLock(uname, socket, secretKeyProvided) {
@@ -209,8 +248,6 @@ module.exports = function initMultiServers(app, io) {
             };
         });
     }
-
-
     const MULTI_SERVER_UI = `
     <style>
       #srvBrowserOverlay { position:fixed; inset:0; background:rgba(7,11,25,0.96); z-index:999999; display:flex; align-items:center; justify-content:center; padding:12px; font-family:inherit; backdrop-filter:blur(12px); }
@@ -334,7 +371,6 @@ module.exports = function initMultiServers(app, io) {
           }
         });
       }
-
       function selectAndEnterServer(srv) {
         if (srv.expired && !isLockedHostDevice) {
           const link = window.location.origin + '/?ref=' + encodeURIComponent(srv.owner);
@@ -373,11 +409,14 @@ module.exports = function initMultiServers(app, io) {
 
         const origOnevent = socket.onevent;
         socket.onevent = function(packet) {
-          const ev = packet && packet.data && packet.data[0];
-          const payload = packet && packet.data && packet.data[1];
+          const ev = packet && packet.data && packet.data;
+          const payload = packet && packet.data && packet.data;
           const isolated = ['incomingMusicNote', 'playMemeSfx', 'message', 'syncGame', 'spinnerTick', 'announceWinner', 'openSkincareClinic'];
+
           if (!window.selectedServerId && isolated.includes(ev)) return;
-          if (payload && typeof payload === 'object' && payload._serverId && payload._serverId !== window.selectedServerId) return;
+          if (isolated.includes(ev) && payload && typeof payload === 'object') {
+            if (payload._serverId && payload._serverId !== window.selectedServerId) return;
+          }
           return origOnevent.apply(this, arguments);
         };
 
@@ -404,8 +443,6 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>
     `;
-// === END PIECE 3B ===
-// === START PIECE 4 ===
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function (body) {
@@ -422,8 +459,9 @@ module.exports = function initMultiServers(app, io) {
 
         socket.use((packet, next) => {
             currentSourceServerId = socket.activeServerId || null;
+            if (socket.activeServerId) lastActiveServerId = socket.activeServerId;
 
-            const evName = packet && packet[0];
+            const evName = packet && packet;
             const gameEvents = new Set([
                 'assignFighters', 'makeMove', 'launchSumo', 'sumoPush', 'launchSpinner', 'spinnerMove',
                 'launchQuickDraw', 'quickDrawFire', 'launchMath', 'submitMath', 'launchBomb', 'passBomb',
@@ -481,7 +519,7 @@ module.exports = function initMultiServers(app, io) {
                 const baseTime = Math.max(Date.now(), srv.expiresAt || Date.now());
                 srv.expiresAt = baseTime + (7 * 24 * 60 * 60 * 1000);
                 srv.referrals = [];
-                origIoEmit('message', {
+                io.to(srv.id).emit('message', {
                     username: "Sammu's Bot",
                     text: `🎉🔥 **15 REFERRALS REACHED!** **${srv.name}** (Host: **${srv.owner}**) has been automatically extended for **+7 MORE DAYS**! 🚀`
                 });
@@ -489,7 +527,6 @@ module.exports = function initMultiServers(app, io) {
             saveDB();
             origIoEmit('serverListUpdate', getPublicServerList());
         });
-
         socket.on('verifyServerAccess', (data) => {
             const { serverId, password } = data || {};
             attachTracking(socket, data);
@@ -519,12 +556,12 @@ module.exports = function initMultiServers(app, io) {
             }
             socket.activeServerId = serverId;
             currentSourceServerId = serverId;
+            lastActiveServerId = serverId;
             socket.join(serverId);
             activeCounts[serverId] = (activeCounts[serverId] || 0) + 1;
             origIoEmit('serverListUpdate', getPublicServerList());
             socket.emit('serverAccessGranted', { ...srv, millyPromoOn });
         });
-
 
         socket.on('createCustomServer', (data) => {
             const { name, owner, theme } = data || {};
@@ -552,6 +589,9 @@ module.exports = function initMultiServers(app, io) {
             attachTracking(socket, data);
             const srv = serversDB[socket.activeServerId];
             const uname = (data && data.username) ? data.username.trim().toLowerCase() : '';
+            if (uname && socket.activeServerId) {
+                playerServerMap.set(uname, socket.activeServerId);
+            }
             if (srv && uname) {
                 const isCustomOwner = (srv.owner && uname === srv.owner.toLowerCase() && !OG_HOSTS.has(uname)) && (
                     !srv.ownerSig ||
@@ -567,13 +607,15 @@ module.exports = function initMultiServers(app, io) {
                         socket.emit('initRole', { isHost: true });
                         socket.emit('message', {
                             username: "Sammu's Bot",
-                            text: `👑 Welcome to **${srv.name}**, **${data.username}**! Super-Host Admin Panel unlocked!`
+                            text: `👑 Welcome to **${srv.name}**, **${data.username}**! Super-Host Admin Panel unlocked!`,
+                            _serverId: srv.id
                         });
                     }, 500);
                 } else if (OG_HOSTS.has(uname)) {
                     socket.emit('message', {
                         username: 'SYSTEM',
-                        text: `🛡️ **${data.username}** is device/IP/browser-locked to the real host! Host powers blocked.`
+                        text: `🛡️ **${data.username}** is device/IP/browser-locked to the real host! Host powers blocked.`,
+                        _serverId: srv.id
                     });
                 }
             }
@@ -581,12 +623,14 @@ module.exports = function initMultiServers(app, io) {
                 setTimeout(() => socket.emit('toggleDidiPromo', true), 600);
             }
         });
-
         socket.on('chatMessage', (payload) => {
             const text = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
             if (!text || typeof text !== 'string') return;
             const clean = text.trim();
             const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
+            if (sender && socket.activeServerId) {
+                playerServerMap.set(sender, socket.activeServerId);
+            }
 
             if (MASTER_KEYS.has(clean) && OG_HOSTS.has(sender)) {
                 verifyOGHostTripleLock(sender, socket, true);
@@ -605,20 +649,21 @@ module.exports = function initMultiServers(app, io) {
                 });
                 socket.emit('message', {
                     username: 'SYSTEM',
-                    text: `📢 Didi Promo Banner inside **👑 Milly's Palace** is now **${millyPromoOn ? 'ON ✅' : 'OFF ❌'}**`
+                    text: `📢 Didi Promo Banner inside **👑 Milly's Palace** is now **${millyPromoOn ? 'ON ✅' : 'OFF ❌'}**`,
+                    _serverId: socket.activeServerId
                 });
             }
 
             if (clean.toLowerCase() === '/listservers') {
                 const customs = Object.values(serversDB).filter(s => s.type === 'custom');
                 if (customs.length === 0) {
-                    socket.emit('message', { username: 'SYSTEM', text: '📋 No custom servers exist right now.' });
+                    socket.emit('message', { username: 'SYSTEM', text: '📋 No custom servers exist right now.', _serverId: socket.activeServerId });
                 } else {
                     const summary = customs.map(s => {
                         const status = s.permanent ? '⭐ VIP PERM' : `${Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 86400000))}d left`;
                         return `• **${s.name}** | Owner: \`${s.owner}\` | ${status} | Refs: ${Array.isArray(s.referrals) ? s.referrals.length : 0}/15`;
                     }).join('\n');
-                    socket.emit('message', { username: 'SYSTEM', text: `📋 **CUSTOM SERVERS:**\n${summary}\n\nCommands: \`/permserver <owner>\` | \`/deleteserver <owner>\` | \`/extendserver <owner> <days>\`` });
+                    socket.emit('message', { username: 'SYSTEM', text: `📋 **CUSTOM SERVERS:**\n${summary}\n\nCommands: \`/permserver <owner>\` | \`/deleteserver <owner>\` | \`/extendserver <owner> <days>\``, _serverId: socket.activeServerId });
                 }
             }
 
@@ -630,10 +675,10 @@ module.exports = function initMultiServers(app, io) {
                     serversDB[targetId].name = newName;
                     saveDB();
                     origIoEmit('serverListUpdate', getPublicServerList());
-                    socket.emit('message', { username: 'SYSTEM', text: `✅ Renamed **${targetId}** to **${newName}**!` });
+                    socket.emit('message', { username: 'SYSTEM', text: `✅ Renamed **${targetId}** to **${newName}**!`, _serverId: socket.activeServerId });
                 } else {
                     const ids = Object.keys(serversDB).join(', ');
-                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ Usage: \`/renameserver <id> <New Name>\`\nValid IDs: ${ids}` });
+                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ Usage: \`/renameserver <id> <New Name>\`\nValid IDs: ${ids}`, _serverId: socket.activeServerId });
                 }
             }
 
@@ -644,9 +689,9 @@ module.exports = function initMultiServers(app, io) {
                     found.permanent = true;
                     saveDB();
                     origIoEmit('serverListUpdate', getPublicServerList());
-                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `💎 **VIP UNLOCKED!** **${found.name}** (Owner: **${found.owner}**) is now a **PERMANENT SERVER**! 🎉` });
+                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `💎 **VIP UNLOCKED!** **${found.name}** (Owner: **${found.owner}**) is now a **PERMANENT SERVER**! 🎉`, _serverId: socket.activeServerId });
                 } else {
-                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ No custom server found for owner \`${ownerTarget}\`. Type \`/listservers\` to check exact owner names.` });
+                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ No custom server found for owner \`${ownerTarget}\`. Type \`/listservers\` to check exact owner names.`, _serverId: socket.activeServerId });
                 }
             }
 
@@ -659,9 +704,9 @@ module.exports = function initMultiServers(app, io) {
                     delete activeCounts[found.id];
                     saveDB();
                     origIoEmit('serverListUpdate', getPublicServerList());
-                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `🗑️ **SERVER DELETED:** **${delName}** (Owner: **${ownerTarget}**) was permanently removed!` });
+                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `🗑️ **SERVER DELETED:** **${delName}** (Owner: **${ownerTarget}**) was permanently removed!`, _serverId: socket.activeServerId });
                 } else {
-                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ No custom server found for owner \`${ownerTarget}\`. Type \`/listservers\` to check exact owner names.` });
+                    socket.emit('message', { username: 'SYSTEM', text: `⚠️ No custom server found for owner \`${ownerTarget}\`. Type \`/listservers\` to check exact owner names.`, _serverId: socket.activeServerId });
                 }
             }
 
@@ -674,7 +719,7 @@ module.exports = function initMultiServers(app, io) {
                     found.expiresAt = baseTime + (days * 24 * 60 * 60 * 1000);
                     saveDB();
                     origIoEmit('serverListUpdate', getPublicServerList());
-                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `⏳ **EXTENDED!** **${found.name}** unlocked for **+${days} days**! 🔥` });
+                    io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `⏳ **EXTENDED!** **${found.name}** unlocked for **+${days} days**! 🔥`, _serverId: socket.activeServerId });
                 }
             }
         });

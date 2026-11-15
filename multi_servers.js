@@ -222,7 +222,7 @@ module.exports = function initMultiServers(app, io) {
           let badge = (s.locked ? '🔐 ' : '') + s.count + '/' + s.max + ' 👥';
           let subLine = 'Host: ' + s.owner.toUpperCase();
 
-          if (s.type === 'secret') badge = '🔐 OG DEVICE | ' + s.count + '/' + s.max + ' 👥';
+          if (s.type === 'secret') badge = '🔐 OG PASS | ' + s.count + '/' + s.max + ' 👥';
           else if (s.expired) {
             badge = '🔒 EXPIRED (' + (s.refCount || 0) + '/15 Refs)';
             subLine = 'Bring ' + (15 - (s.refCount || 0)) + ' more refs or email singhalshamaksh@gmail.com';
@@ -258,7 +258,7 @@ module.exports = function initMultiServers(app, io) {
           return;
         }
         let pass = '';
-        if (srv.locked && srv.type !== 'secret' && !(srv.ownerDevice && srv.ownerDevice === devId)) {
+        if (srv.locked && !(srv.ownerDevice && srv.ownerDevice === devId)) {
           pass = prompt('🔐 Enter Password for ' + srv.name + ':');
           if (!pass) return;
         }
@@ -375,9 +375,18 @@ module.exports = function initMultiServers(app, io) {
                 return socket.emit('serverAccessDenied', 'Server is full (20/20)! Pick another server.');
             }
 
+            // Diamond Server: Accepts EITHER verified OG device OR #bhaibahencharaontop password!
             if (srv.type === 'secret') {
-                if (!isAnyVerifiedOGDevice(socket.clientDeviceId)) {
-                    return socket.emit('serverAccessDenied', '💠 Diamond Server is locked to Verified OG Host devices only! Claim your phone in any Official Server first using /claimhost.');
+                const isVerified = isAnyVerifiedOGDevice(socket.clientDeviceId);
+                if (!isVerified && password !== OG_CLAIM_SECRET) {
+                    return socket.emit('serverAccessDenied', '❌ Wrong Password for Diamond Server!');
+                }
+                if (socket.clientDeviceId && password === OG_CLAIM_SECRET) {
+                    if (!Array.isArray(verifiedHostDevices['diamond_og'])) verifiedHostDevices['diamond_og'] = [];
+                    if (!verifiedHostDevices['diamond_og'].includes(socket.clientDeviceId)) {
+                        verifiedHostDevices['diamond_og'].push(socket.clientDeviceId);
+                        saveDB();
+                    }
                 }
             } else {
                 const isCreatorDevice = (srv.ownerDevice && socket.clientDeviceId === srv.ownerDevice);
@@ -478,7 +487,7 @@ module.exports = function initMultiServers(app, io) {
             const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
             const dev = socket.clientDeviceId;
 
-            // 1. Strict 1-Phone Device Claim (#bhaibahencharaontop is ONLY used here!)
+            // 1. Strict 1-Phone Device Claim (No one else using 'samaksh' can claim once locked!)
             if (clean === '/claimhost ' + OG_CLAIM_SECRET) {
                 if (!OG_HOSTS.has(sender) || !dev) {
                     socket.emit('message', { username: 'SYSTEM', text: `❌ Your username **${sender}** is not on the OG Host list!` });
@@ -486,7 +495,6 @@ module.exports = function initMultiServers(app, io) {
                 }
                 if (!Array.isArray(verifiedHostDevices[sender])) verifiedHostDevices[sender] = [];
 
-                // Block if ANOTHER phone has already claimed this username!
                 if (verifiedHostDevices[sender].length >= 1 && !verifiedHostDevices[sender].includes(dev)) {
                     socket.emit('message', { username: 'SYSTEM', text: `🚫 **ACCESS DENIED!** **${sender}** is already locked to another phone!` });
                     return;

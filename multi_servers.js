@@ -1487,8 +1487,13 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
-    // === ZORO / YORI AKIYAMA & STRICT SERVER ISOLATION ADD-ON ===
+       // === ZORO / YORI AKIYAMA, ISOLATION & SLOW-NETWORK SMOOTH CHAT ADD-ON ===
     let zoroPromoOn = true;
+
+    // 1. Enable Socket.IO Per-Message Compression (shrinks text & JSON packets by ~70% on slow networks)
+    if (io && io.engine && io.engine.opts) {
+        io.engine.opts.perMessageDeflate = { threshold: 256 };
+    }
 
     const ZORO_ISOLATION_SCRIPT = `
     <script>
@@ -1508,12 +1513,70 @@ module.exports = function initMultiServers(app, io) {
           if (didiBox && didiBox.parentNode) didiBox.parentNode.insertBefore(zBox, didiBox.nextSibling);
           else document.body.prepend(zBox);
         }
-        zBox.style.display = (show && window.selectedServerId === 'srv_zoro') ? 'block' : 'none';
+        if (show && window.selectedServerId === 'srv_zoro') {
+          zBox.style.setProperty('display', 'block', 'important');
+        } else {
+          zBox.style.setProperty('display', 'none', 'important');
+        }
       }
 
-      function bindZoroAndIsolation() {
+      // 2. Auto-Prune Old Chat Messages so mobile browsers never lag or freeze
+      function startChatAntiFreeze() {
+        const chatContainers = Array.from(document.querySelectorAll('#chatBox, #messages, .chat-messages, [id*="chat"]'))
+          .filter(el => el.scrollHeight >= el.clientHeight && el.tagName === 'DIV');
+        const box = chatContainers.at(0);
+        if (!box || box.dataset.antiFreezeAttached) return;
+        box.dataset.antiFreezeAttached = 'true';
+
+        // Hardware GPU acceleration for butter-smooth mobile scrolling
+        box.style.willChange = 'transform';
+        box.style.webkitOverflowScrolling = 'touch';
+
+        const observer = new MutationObserver(() => {
+          // Keep only the latest 65 messages in DOM so low-RAM phones stay super fast
+          while (box.children.length > 65) {
+            box.removeChild(box.firstElementChild);
+          }
+          // Lazy-decode incoming images so chat text renders instantly first
+          const imgs = box.querySelectorAll('img:not([decoding])');
+          imgs.forEach(img => {
+            img.setAttribute('loading', 'lazy');
+            img.setAttribute('decoding', 'async');
+          });
+        });
+        observer.observe(box, { childList: true });
+      }
+
+      // 3. Auto-Compress Large Outgoing Images on Slow Connections
+      function wrapSocketForSlowNet() {
         if (typeof socket === 'undefined' || window._zoroAddonBound) return;
         window._zoroAddonBound = true;
+
+        // Fast auto-reconnect on mobile signal drops
+        if (socket.io && socket.io.opts) {
+          socket.io.opts.reconnectionDelay = 500;
+          socket.io.opts.reconnectionDelayMax = 3000;
+        }
+
+        const origEmit = socket.emit.bind(socket);
+        socket.emit = function(ev, payload, ...rest) {
+          // Compress chatImage / postArenaMeme if larger than 90KB so it doesn't clog slow internet
+          if ((ev === 'chatImage' || ev === 'postArenaMeme') && payload && typeof payload.image === 'string' && payload.image.length > 95000) {
+            const img = new Image();
+            img.onload = () => {
+              const c = document.createElement('canvas');
+              const scale = Math.min(1, 280 / Math.max(img.width, img.height));
+              c.width = Math.round(img.width * scale);
+              c.height = Math.round(img.height * scale);
+              c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+              payload.image = c.toDataURL('image/jpeg', 0.65);
+              origEmit(ev, payload, ...rest);
+            };
+            img.src = payload.image;
+            return socket;
+          }
+          return origEmit(ev, payload, ...rest);
+        };
 
         const prevOnevent = socket.onevent;
         socket.onevent = function(packet) {
@@ -1531,14 +1594,33 @@ module.exports = function initMultiServers(app, io) {
           return prevOnevent.apply(this, arguments);
         };
 
-        socket.on('toggleZoroPromo', (show) => updateZoroBanner(show));
+        // Seamless auto-rejoin into the same server room if her mobile data briefly drops
+        socket.on('connect', () => {
+          if (window.selectedServerId) {
+            origEmit('verifyServerAccess', {
+              serverId: window.selectedServerId,
+              deviceId: localStorage.getItem('sammu_dev_uid') || ''
+            });
+          }
+        });
+
+        socket.on('toggleZoroPromo', (data) => {
+          const isShown = (typeof data === 'object' && data !== null) ? Boolean(data.show) : Boolean(data);
+          updateZoroBanner(isShown);
+        });
         socket.on('serverAccessGranted', (srv) => {
           window.selectedServerId = srv.id;
-          updateZoroBanner(srv.id === 'srv_zoro' && Boolean(srv.zoroPromoOn !== false));
+          updateZoroBanner(srv.id === 'srv_zoro' && Boolean(srv.zoroPromoOn));
+          setTimeout(startChatAntiFreeze, 500);
         });
         socket.on('initRole', () => updateZoroBanner(false));
       }
-      window.addEventListener('DOMContentLoaded', () => { bindZoroAndIsolation(); setTimeout(bindZoroAndIsolation, 700); });
+
+      window.addEventListener('DOMContentLoaded', () => {
+        wrapSocketForSlowNet();
+        startChatAntiFreeze();
+        setTimeout(() => { wrapSocketForSlowNet(); startChatAntiFreeze(); }, 800);
+      });
     })();
     </script>
     `;
@@ -1555,9 +1637,15 @@ module.exports = function initMultiServers(app, io) {
     });
 
     io.on('connection', (socket) => {
+        socket.on('verifyServerAccess', (data) => {
+            if (data && data.serverId === 'srv_zoro') {
+                setTimeout(() => socket.emit('toggleZoroPromo', { show: zoroPromoOn, _serverId: 'srv_zoro' }), 150);
+            }
+        });
+
         socket.on('joinRoom', () => {
-            if (socket.activeServerId === 'srv_zoro' && zoroPromoOn) {
-                setTimeout(() => socket.emit('toggleZoroPromo', true), 650);
+            if (socket.activeServerId === 'srv_zoro') {
+                setTimeout(() => socket.emit('toggleZoroPromo', { show: zoroPromoOn, _serverId: 'srv_zoro' }), 650);
             }
         });
 
@@ -1577,7 +1665,7 @@ module.exports = function initMultiServers(app, io) {
                 }, 200);
             } else if (cmd === '/zoro on' || cmd === '/zoro off') {
                 zoroPromoOn = (cmd === '/zoro on');
-                io.to('srv_zoro').emit('toggleZoroPromo', zoroPromoOn);
+                io.to('srv_zoro').emit('toggleZoroPromo', { show: zoroPromoOn, _serverId: 'srv_zoro' });
                 socket.emit('message', {
                     username: 'SYSTEM',
                     text: `⚔️ Yori Akiyama Banner inside **⚔️ Zoro's Dojo** is now **${zoroPromoOn ? 'ON ✅' : 'OFF ❌'}**`,
@@ -1586,6 +1674,8 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
-    // === END ZORO & ISOLATION ADD-ON ===
+    // === END ZORO, ISOLATION & SLOW-NETWORK ADD-ON ===
+ 
+  
 
 };

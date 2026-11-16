@@ -4094,5 +4094,422 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END REAL HD SVG AVATAR ICON REPLACER v13 ===
+    // === GENDER-ACCURATE CHARACTER PORTRAITS & MILLY REWORK v15 ===
+    const AVATAR_VAULT_V15 = `
+    <style id="v15Css">
+      #v7FloatingAvatarBtn, #avatarVaultModal, #avatarVaultModalV6, #v8VaultModal, #v9Modal, #v10Modal, #v11Modal, #v12Modal, #v14Modal { display: none !important; }
+      @keyframes v15GodPlasma {
+        0%, 100% { border-color: #fde047 !important; box-shadow: 0 0 14px #fde047, 0 0 28px #f59e0b, inset 0 0 10px rgba(253,224,71,0.45) !important; }
+        50% { border-color: #38bdf8 !important; box-shadow: 0 0 18px #38bdf8, 0 0 34px #ec4899, inset 0 0 12px rgba(56,189,248,0.5) !important; }
+      }
+      @keyframes v15MillyEmpress {
+        0%, 100% { border-color: #fb7185 !important; box-shadow: 0 0 14px #f43f5e, 0 0 26px #e879f9, inset 0 0 10px rgba(251,113,133,0.45) !important; }
+        50% { border-color: #fde047 !important; box-shadow: 0 0 18px #f472b6, 0 0 30px #fde047, inset 0 0 12px rgba(253,224,71,0.45) !important; }
+      }
+      @keyframes v15Disco {
+        0% { box-shadow: 0 0 12px #ff0080; border-color: #ff0080 !important; }
+        50% { box-shadow: 0 0 16px #00f0ff; border-color: #00f0ff !important; }
+        100% { box-shadow: 0 0 12px #ff0080; border-color: #ff0080 !important; }
+      }
+
+      .aura-god {
+        background: linear-gradient(120deg, #b45309, #dc2626, #7e22ce, #0284c7, #d97706) !important;
+        background-size: 300% 300% !important;
+        border: 2.5px solid #fde047 !important;
+        animation: v15GodPlasma 1.5s ease-in-out infinite !important;
+        color: #ffffff !important;
+        font-weight: 900 !important;
+        text-shadow: 0 0 8px #fde047 !important;
+      }
+      .aura-god * { color: #ffffff !important; }
+      .aura-empress { border: 2px solid #fb7185 !important; animation: v15MillyEmpress 1.7s ease-in-out infinite !important; }
+      .aura-ice { border: 2px solid #38bdf8 !important; box-shadow: 0 0 14px rgba(56,189,248,0.85) !important; }
+      .aura-fire { border: 2px solid #f97316 !important; box-shadow: 0 0 14px rgba(249,115,22,0.85) !important; }
+      .aura-crimson { border: 2px solid #ef4444 !important; box-shadow: 0 0 14px rgba(239,68,68,0.85) !important; }
+      .aura-toxic { border: 2px solid #4ade80 !important; box-shadow: 0 0 14px rgba(74,222,128,0.85) !important; }
+      .aura-pink { border: 2px solid #f472b6 !important; box-shadow: 0 0 14px rgba(244,114,182,0.85) !important; }
+      .aura-violet { border: 2px solid #a855f7 !important; box-shadow: 0 0 14px rgba(168,85,247,0.85) !important; }
+      .aura-emerald { border: 2px solid #10b981 !important; box-shadow: 0 0 14px rgba(16,185,129,0.85) !important; }
+      .aura-gold { border: 2px solid #facc15 !important; box-shadow: 0 0 14px rgba(250,204,21,0.85) !important; }
+      .aura-disco { border: 2px solid #ff0080 !important; animation: v15Disco 1.8s linear infinite !important; }
+
+      .v15-pill-av {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 26px !important;
+        height: 26px !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+        vertical-align: middle !important;
+        margin-right: 5px !important;
+        flex-shrink: 0 !important;
+        border: 1.5px solid rgba(255,255,255,0.75) !important;
+      }
+      .v15-pill-av svg { width: 100% !important; height: 100% !important; display: block !important; }
+
+      #v15Modal { display:none; position:fixed; inset:0; background:rgba(5,8,20,0.95); z-index:9999999; align-items:center; justify-content:center; padding:10px; }
+      #v15Card { background:linear-gradient(155deg,#0f172a,#1e1b4b); border:2px solid #38bdf8; border-radius:20px; padding:14px; width:100%; max-width:415px; color:#fff; text-align:center; max-height:88vh; overflow-y:auto; }
+      .v15-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:10px 0; }
+      .v15-item { background:rgba(255,255,255,0.08); border:1.5px solid rgba(56,189,248,0.4); border-radius:14px; padding:8px 4px; cursor:pointer; }
+      .v15-item.locked { opacity:0.65; border-color:#64748b; }
+      .v15-art { width:56px; height:56px; margin:0 auto 5px auto; border-radius:50%; overflow:hidden; background:#020617; display:flex; align-items:center; justify-content:center; }
+      .v15-art svg { width:100%; height:100%; display:block; }
+    </style>
+
+    <div id="v15Modal" onclick="if(event.target===this)this.style.display='none'">
+      <div id="v15Card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span style="font-weight:900;font-size:15px;color:#38bdf8;">🎭 CHARACTER PORTRAIT VAULT</span>
+          <button onclick="document.getElementById('v15Modal').style.display='none'" style="width:36px!important;min-width:36px!important;height:32px!important;padding:0!important;background:#ef4444;border:none;color:#fff;border-radius:8px;font-weight:900;cursor:pointer;">✕</button>
+        </div>
+        <div id="v15RefText" style="font-size:11px;color:#fde047;margin:6px 0;font-weight:bold;">🔗 Referrals: 0 | Character Portraits + Matching Chat Aura!</div>
+        <div class="v15-grid" id="v15Grid"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input id="v15CodeInput" placeholder="Enter Host Avatar Code..." style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
+          <button onclick="v15Redeem()" style="width:auto!important;padding:8px 12px!important;background:linear-gradient(90deg,#a855f7,#ec4899);border:none;color:#fff;border-radius:10px;font-weight:bold;font-size:12px;cursor:pointer;">🔓 Unlock</button>
+        </div>
+        <button onclick="v15CopyRef()" style="width:100%!important;margin-top:8px;padding:9px;border:none;border-radius:10px;background:linear-gradient(90deg,#059669,#10b981);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🔗 Copy My Referral Link</button>
+      </div>
+    </div>
+    <script>
+    (function() {
+      function makePortrait(opts) {
+        const bg1 = opts.bg1 || '#1e1b4b';
+        const bg2 = opts.bg2 || '#090d16';
+        const skin = opts.skin || '#fcd3b2';
+        const hair = opts.hair || '#1e293b';
+        const outfit = opts.outfit || '#3b82f6';
+        const eye = opts.eye || '#38bdf8';
+        const isGirl = opts.gender === 'girl';
+        const id = 'g_' + Math.random().toString(36).slice(2, 7);
+
+        let hairBack = '';
+        let hairFront = '';
+        if (isGirl) {
+          // Long flowing feminine hair + twin side locks + soft parted bangs
+          hairBack = '<path d="M18,44 C14,72 18,92 26,98 L74,98 C82,92 86,72 82,44 C82,20 18,20 18,44 Z" fill="' + hair + '"/>';
+          hairFront = '<path d="M27,46 C27,23 73,23 73,46 C66,35 55,34 50,42 C45,34 34,35 27,46 Z" fill="' + hair + '"/>' +
+                      '<path d="M27,44 Q24,66 30,82 L34,82 Q30,62 32,46 Z" fill="' + hair + '"/>' +
+                      '<path d="M73,44 Q76,66 70,82 L66,82 Q70,62 68,46 Z" fill="' + hair + '"/>';
+        } else if (opts.spiky) {
+          hairFront = '<polygon points="26,44 22,26 36,32 42,16 50,28 58,16 64,32 78,26 74,44 62,36 50,40 38,36" fill="' + hair + '"/>';
+        } else {
+          hairFront = '<path d="M28,45 C26,22 74,22 72,45 C65,32 35,32 28,45 Z" fill="' + hair + '"/>';
+        }
+
+        let acc = '';
+        if (opts.acc === 'godCrown') {
+          acc = '<path d="M12,48 Q20,30 30,45 M88,48 Q80,30 70,45" stroke="#fde047" stroke-width="3" fill="none"/>' +
+                '<polygon points="32,22 36,10 44,18 50,6 56,18 64,10 68,22" fill="#fde047" stroke="#fff" stroke-width="1.5"/>';
+        } else if (opts.acc === 'tiara') {
+          acc = '<polygon points="33,26 38,14 44,21 50,11 56,21 62,14 67,26" fill="#fde047" stroke="#f43f5e" stroke-width="1.5"/>' +
+                '<circle cx="50" cy="19" r="2.5" fill="#fb7185"/>';
+        } else if (opts.acc === 'visor') {
+          acc = '<rect x="31" y="45" width="38" height="10" rx="5" fill="' + eye + '" opacity="0.85" stroke="#fff" stroke-width="1.2"/>';
+        } else if (opts.acc === 'catEars') {
+          acc = '<polygon points="27,32 31,13 44,26" fill="' + hair + '" stroke="' + eye + '" stroke-width="1.5"/>' +
+                '<polygon points="73,32 69,13 56,26" fill="' + hair + '" stroke="' + eye + '" stroke-width="1.5"/>';
+        } else if (opts.acc === 'halo') {
+          acc = '<ellipse cx="50" cy="14" rx="18" ry="4.5" fill="none" stroke="#fde047" stroke-width="2.5"/>';
+        } else if (opts.acc === 'bandana') {
+          acc = '<rect x="29" y="34" width="42" height="7" rx="3" fill="' + eye + '"/><path d="M71,36 L84,30 L80,40 Z" fill="' + eye + '"/>';
+        } else if (opts.acc === 'horns') {
+          acc = '<path d="M32,28 Q22,14 34,12 Q36,22 38,26 Z M68,28 Q78,14 66,12 Q64,22 62,26 Z" fill="#ef4444"/>';
+        } else if (opts.acc === 'flowerPin') {
+          acc = '<circle cx="67" cy="31" r="5.5" fill="#fb7185" stroke="#fff" stroke-width="1.2"/><circle cx="67" cy="31" r="2" fill="#fde047"/>';
+        }
+
+        // Feminine eyelashes, blush & sweet smile for girls vs sharper look for boys
+        const eyesAndFace = isGirl
+          ? '<path d="M35,48 L38,46 M65,48 L62,46" stroke="#1e1b4b" stroke-width="2" stroke-linecap="round"/>' +
+            '<circle cx="41" cy="50" r="3.8" fill="' + eye + '"/><circle cx="59" cy="50" r="3.8" fill="' + eye + '"/>' +
+            '<circle cx="42.2" cy="48.8" r="1.4" fill="#fff"/><circle cx="60.2" cy="48.8" r="1.4" fill="#fff"/>' +
+            '<ellipse cx="36" cy="55" rx="3.2" ry="1.8" fill="#fb7185" opacity="0.55"/><ellipse cx="64" cy="55" rx="3.2" ry="1.8" fill="#fb7185" opacity="0.55"/>' +
+            '<path d="M45,59 Q50,63 55,59" stroke="#e11d48" stroke-width="2" fill="none" stroke-linecap="round"/>'
+          : '<circle cx="41" cy="50" r="3.5" fill="' + eye + '"/><circle cx="59" cy="50" r="3.5" fill="' + eye + '"/>' +
+            '<circle cx="42" cy="49" r="1.2" fill="#fff"/><circle cx="60" cy="49" r="1.2" fill="#fff"/>' +
+            (opts.masked
+              ? '<path d="M31,52 L69,52 L65,68 Q50,74 35,68 Z" fill="#0f172a" stroke="' + eye + '" stroke-width="1.5"/>'
+              : '<path d="M43,59 L57,59" stroke="#78350f" stroke-width="2.2" stroke-linecap="round"/>');
+
+        const neckAndOutfit = isGirl
+          ? '<path d="M24,96 C26,75 37,69 50,69 C63,69 74,75 76,96 Z" fill="' + outfit + '" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>' +
+            '<rect x="45" y="61" width="10" height="11" rx="4" fill="' + skin + '"/>' +
+            '<rect x="44" y="65" width="12" height="3" rx="1.5" fill="#fde047"/>'
+          : '<path d="M20,96 C22,74 35,68 50,68 C65,68 78,74 80,96 Z" fill="' + outfit + '" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>' +
+            '<rect x="43" y="61" width="14" height="11" rx="4" fill="' + skin + '"/>';
+
+        return '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+          '<defs><radialGradient id="' + id + '" cx="35%" cy="25%" r="75%"><stop offset="0%" stop-color="' + bg1 + '"/><stop offset="100%" stop-color="' + bg2 + '"/></radialGradient></defs>' +
+          '<circle cx="50" cy="50" r="49" fill="url(#' + id + ')"/>' +
+          hairBack +
+          neckAndOutfit +
+          '<rect x="32" y="28" width="36" height="39" rx="18" fill="' + skin + '"/>' +
+          eyesAndFace +
+          hairFront +
+          acc +
+          '</svg>';
+      }
+      const ITEMS = [
+        { id: 'superhost', emoji: '👑', name: '⚡👑 SAMAKSH GOD-KING 👑⚡', aura: 'aura-god', req: 'code', god: true,
+          svg: makePortrait({ gender: 'boy', bg1: '#f59e0b', bg2: '#1e1b4b', skin: '#fde68a', hair: '#ffffff', outfit: '#b45309', eye: '#38bdf8', spiky: true, acc: 'godCrown' }) },
+
+        { id: 'diamond', emoji: '💎', name: 'Cyber Striker', aura: 'aura-ice', req: 'free',
+          svg: makePortrait({ gender: 'boy', bg1: '#0284c7', bg2: '#090d16', skin: '#fcd3b2', hair: '#38bdf8', outfit: '#0f172a', eye: '#38bdf8', spiky: true, acc: 'visor' }) },
+        { id: 'samurai', emoji: '👹', name: 'Crimson Ronin', aura: 'aura-crimson', req: 'free',
+          svg: makePortrait({ gender: 'boy', bg1: '#dc2626', bg2: '#090d16', skin: '#f5d0a9', hair: '#111827', outfit: '#991b1b', eye: '#facc15', spiky: true, acc: 'bandana' }) },
+        { id: 'phoenix', emoji: '🔥', name: 'Blaze Queen', aura: 'aura-fire', req: 'free',
+          svg: makePortrait({ gender: 'girl', bg1: '#ea580c', bg2: '#1c1917', skin: '#fcd3b2', hair: '#f97316', outfit: '#7c2d12', eye: '#fde047', acc: 'flowerPin' }) },
+        { id: 'ninja', emoji: '🥷', name: 'Shadow Shinobi', aura: 'aura-violet', req: 'free',
+          svg: makePortrait({ gender: 'boy', bg1: '#6d28d9', bg2: '#090d16', skin: '#eab696', hair: '#0f172a', outfit: '#1e1b4b', eye: '#a855f7', masked: true, acc: 'bandana' }) },
+        { id: 'astro', emoji: '🚀', name: 'Starlight Girl', aura: 'aura-ice', req: 'free',
+          svg: makePortrait({ gender: 'girl', bg1: '#2563eb', bg2: '#020617', skin: '#ffe4e6', hair: '#e2e8f0', outfit: '#1d4ed8', eye: '#38bdf8', acc: 'halo' }) },
+
+        { id: 'disco', emoji: '🪩', name: 'Neon DJ Girl (3 Refs)', aura: 'aura-disco', req: 'ref3',
+          svg: makePortrait({ gender: 'girl', bg1: '#ec4899', bg2: '#1e1b4b', skin: '#fcd3b2', hair: '#f472b6', outfit: '#701a75', eye: '#00f0ff', acc: 'visor' }) },
+        { id: 'butterfly', emoji: '🦋', name: 'Butterfly Muse (3 Refs)', aura: 'aura-pink', req: 'ref3',
+          svg: makePortrait({ gender: 'girl', bg1: '#d946ef', bg2: '#2e1065', skin: '#ffe4e6', hair: '#c084fc', outfit: '#86198f', eye: '#f472b6', acc: 'tiara' }) },
+        { id: 'kitsune', emoji: '🦊', name: 'Kitsune Girl (3 Refs)', aura: 'aura-fire', req: 'ref3',
+          svg: makePortrait({ gender: 'girl', bg1: '#f43f5e', bg2: '#1f2937', skin: '#fff1f2', hair: '#ffffff', outfit: '#be123c', eye: '#fb7185', acc: 'catEars' }) },
+
+        { id: 'wolf', emoji: '🐺', name: 'Alpha Wolf (5 Refs)', aura: 'aura-fire', req: 'ref5',
+          svg: makePortrait({ gender: 'boy', bg1: '#b91c1c', bg2: '#090d16', skin: '#e5b899', hair: '#475569', outfit: '#1e293b', eye: '#f97316', spiky: true, acc: 'catEars' }) },
+        { id: 'blossom', emoji: '🌸', name: 'Sakura Princess (5 Refs)', aura: 'aura-pink', req: 'ref5',
+          svg: makePortrait({ gender: 'girl', bg1: '#f472b6', bg2: '#4c0519', skin: '#ffe4e6', hair: '#fbcfe8', outfit: '#9d174d', eye: '#f43f5e', acc: 'flowerPin' }) },
+        { id: 'skull', emoji: '💀', name: 'Toxic Hacker (5 Refs)', aura: 'aura-toxic', req: 'ref5',
+          svg: makePortrait({ gender: 'boy', bg1: '#16a34a', bg2: '#052e16', skin: '#d1fae5', hair: '#4ade80', outfit: '#064e3b', eye: '#4ade80', masked: true, acc: 'visor' }) },
+        { id: 'lion', emoji: '🦁', name: 'Solar Prince (5 Refs)', aura: 'aura-gold', req: 'ref5',
+          svg: makePortrait({ gender: 'boy', bg1: '#d97706', bg2: '#422006', skin: '#f5d0a9', hair: '#facc15', outfit: '#78350f', eye: '#fde047', spiky: true, acc: 'godCrown' }) },
+
+        { id: 'dragon', emoji: '🐉', name: 'Jade Dragon (10 Refs)', aura: 'aura-emerald', req: 'ref10',
+          svg: makePortrait({ gender: 'boy', bg1: '#059669', bg2: '#022c22', skin: '#fcd3b2', hair: '#34d399', outfit: '#065f46', eye: '#6ee7b7', spiky: true, acc: 'horns' }) },
+        { id: 'empress', emoji: '👸', name: 'Celestial Queen (10 Refs)', aura: 'aura-gold', req: 'ref10',
+          svg: makePortrait({ gender: 'girl', bg1: '#9333ea', bg2: '#3b0764', skin: '#fff1f2', hair: '#fde047', outfit: '#581c87', eye: '#38bdf8', acc: 'tiara' }) },
+        { id: 'reaper', emoji: '⚰️', name: 'Abyss Lord (10 Refs)', aura: 'aura-violet', req: 'ref10',
+          svg: makePortrait({ gender: 'boy', bg1: '#4c1d95', bg2: '#090d16', skin: '#e2e8f0', hair: '#94a3b8', outfit: '#020617', eye: '#ef4444', masked: true, acc: 'horns' }) },
+        { id: 'unicorn', emoji: '🦄', name: 'Pastel Angel (10 Refs)', aura: 'aura-pink', req: 'ref10',
+          svg: makePortrait({ gender: 'girl', bg1: '#e879f9', bg2: '#311042', skin: '#ffe4e6', hair: '#f0abfc', outfit: '#86198f', eye: '#ec4899', acc: 'halo' }) },
+
+        { id: 'host_zoro', emoji: '⚔️', name: 'Zoro Swordsman', aura: 'aura-emerald', req: 'code',
+          svg: makePortrait({ gender: 'boy', bg1: '#15803d', bg2: '#052e16', skin: '#f5d0a9', hair: '#4ade80', outfit: '#14532d', eye: '#4ade80', spiky: true, acc: 'bandana' }) },
+        { id: 'host_sarah', emoji: '🦋', name: '🦋 Sarah (Girl)', aura: 'aura-ice', req: 'code',
+          svg: makePortrait({ gender: 'girl', bg1: '#0284c7', bg2: '#1e1b4b', skin: '#ffe4e6', hair: '#7dd3fc', outfit: '#1e3a8a', eye: '#0284c7', acc: 'tiara' }) },
+        { id: 'host_milly', emoji: '💖', name: '💖 MILLY EMPRESS', aura: 'aura-empress', req: 'code',
+          svg: makePortrait({ gender: 'girl', bg1: '#f43f5e', bg2: '#4c0519', skin: '#fff1f2', hair: '#fda4af', outfit: '#be123c', eye: '#e11d48', acc: 'tiara' }) },
+        { id: 'host_heer', emoji: '🌸', name: '🌸 Heer (Girl)', aura: 'aura-pink', req: 'code',
+          svg: makePortrait({ gender: 'girl', bg1: '#ec4899', bg2: '#3b0764', skin: '#ffe4e6', hair: '#f9a8d4', outfit: '#831843', eye: '#db2777', acc: 'flowerPin' }) },
+        { id: 'host_ishika', emoji: '✨', name: '✨ Ishika (Girl)', aura: 'aura-gold', req: 'code',
+          svg: makePortrait({ gender: 'girl', bg1: '#eab308', bg2: '#422006', skin: '#fde68a', hair: '#fef08a', outfit: '#713f12', eye: '#d97706', acc: 'halo' }) },
+        { id: 'host_izzan', emoji: '🔥', name: 'Izzan Inferno', aura: 'aura-fire', req: 'code',
+          svg: makePortrait({ gender: 'boy', bg1: '#dc2626', bg2: '#450a0a', skin: '#eab696', hair: '#ef4444', outfit: '#7f1d1d', eye: '#fde047', spiky: true, acc: 'horns' }) },
+        { id: 'host_sus', emoji: '👀', name: 'Sus Phantom', aura: 'aura-toxic', req: 'code',
+          svg: makePortrait({ gender: 'boy', bg1: '#16a34a', bg2: '#090d16', skin: '#cbd5e1', hair: '#22c55e', outfit: '#020617', eye: '#4ade80', masked: true }) },
+        { id: 'host_ruwii', emoji: '🌺', name: '🌺 Ruwii (Girl)', aura: 'aura-pink', req: 'code',
+          svg: makePortrait({ gender: 'girl', bg1: '#e11d48', bg2: '#4c0519', skin: '#ffe4e6', hair: '#fb7185', outfit: '#881337', eye: '#be123c', acc: 'catEars' }) },
+        { id: 'host_moon', emoji: '🌙', name: '🌙 Moon (Girl)', aura: 'aura-gold', req: 'code',
+          svg: makePortrait({ gender: 'girl', bg1: '#4f46e5', bg2: '#090d16', skin: '#f1f5f9', hair: '#c7d2fe', outfit: '#312e81', eye: '#6366f1', acc: 'halo' }) },
+        { id: 'host_zaira', emoji: '🪐', name: '🪐 Zaira (Girl)', aura: 'aura-violet', req: 'code',
+          svg: makePortrait({ gender: 'girl', bg1: '#7c3aed', bg2: '#0f172a', skin: '#fde2e4', hair: '#c084fc', outfit: '#4c1d95', eye: '#9333ea', acc: 'flowerPin' }) }
+      ];
+      const ALL_AURAS = ['aura-god','aura-empress','aura-ice','aura-fire','aura-crimson','aura-toxic','aura-pink','aura-violet','aura-emerald','aura-gold','aura-disco'];
+      let refs = 0;
+      let unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+      let playerAuraMap = {};
+      let playerPortraitMap = {};
+
+      const getUname = () => (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
+
+      const savedMyAura = localStorage.getItem('sammu_my_aura');
+      const savedMyAvId = localStorage.getItem('sammu_my_av_id');
+      if (savedMyAura && getUname()) playerAuraMap[getUname()] = savedMyAura;
+      if (savedMyAvId && getUname()) {
+        const foundAv = ITEMS.find(x => x.id === savedMyAvId);
+        if (foundAv) playerPortraitMap[getUname()] = foundAv.svg;
+      }
+
+      function canUse(av) {
+        if (av.req === 'free') return true;
+        if (av.req === 'ref3') return refs >= 3;
+        if (av.req === 'ref5') return refs >= 5;
+        if (av.req === 'ref10') return refs >= 10;
+        if (av.req === 'code') return unlocked.includes(av.id);
+        return false;
+      }
+
+      window.v15CopyRef = function() {
+        const link = window.location.origin + '/?ref=' + encodeURIComponent(getUname() || 'player');
+        if (navigator.clipboard) navigator.clipboard.writeText(link);
+        alert('🔗 Referral Link Copied!\\n' + link);
+      };
+
+      window.v15Redeem = function() {
+        const code = (document.getElementById('v15CodeInput').value || '').trim();
+        if (code && typeof socket !== 'undefined') socket.emit('verifyAvatarCodeV6', { code });
+      };
+
+      window.v15Draw = function() {
+        const grid = document.getElementById('v15Grid');
+        const txt = document.getElementById('v15RefText');
+        if (txt) txt.textContent = '🔗 Your Referrals: ' + refs + ' | Character Portraits + Matching Chat Aura!';
+        if (!grid) return;
+        grid.innerHTML = '';
+        ITEMS.forEach(av => {
+          const ok = canUse(av);
+          const isMilly = av.id === 'host_milly';
+          const d = document.createElement('div');
+          d.className = 'v15-item' + (ok ? '' : ' locked');
+          if (av.god) d.style.cssText = 'grid-column:1/-1;background:linear-gradient(135deg,rgba(250,204,21,0.3),rgba(239,68,68,0.25),rgba(56,189,248,0.3));border:2px solid #fde047;padding:9px;';
+          else if (isMilly) d.style.cssText = 'background:linear-gradient(135deg,rgba(244,63,94,0.28),rgba(232,121,249,0.25));border:1.5px solid #fb7185;';
+          d.innerHTML =
+            '<div class="v15-art ' + av.aura + '" style="' + (av.god ? 'width:64px;height:64px;' : '') + '">' + av.svg + '</div>' +
+            '<div style="font-weight:900;font-size:' + (av.god ? '12px;color:#fde047;' : '10px;') + '">' + av.name + '</div>' +
+            '<div style="font-size:10px;color:' + (ok ? '#4ade80' : '#f87171') + ';margin-top:2px;">' + (ok ? '✅ Tap to Equip' : '🔒 Locked') + '</div>';
+          d.onclick = () => {
+            if (!ok) { alert('🔒 Locked! Earn referrals or enter your Host Avatar code below.'); return; }
+            const me = getUname();
+            if (me) {
+              playerAuraMap[me] = av.aura;
+              playerPortraitMap[me] = av.svg;
+            }
+            localStorage.setItem('sammu_my_aura', av.aura);
+            localStorage.setItem('sammu_my_av_id', av.id);
+            localStorage.setItem('sammu_avatar', av.emoji);
+            localStorage.setItem('avatar', av.emoji);
+            window._savedAvatar = av.emoji;
+            if (typeof socket !== 'undefined') {
+              socket.emit('equipAvatarFxV6', { avatar: av.emoji, avatarId: av.id, fx: av.aura, chatFx: av.aura, badge: av.name });
+              socket.emit('joinRoom', { username: me || 'Player', avatar: av.emoji, deviceId: localStorage.getItem('sammu_dev_uid') || '', isReconnect: true });
+            }
+            document.getElementById('v15Modal').style.display = 'none';
+          };
+          grid.appendChild(d);
+        });
+      };
+
+      window.v15Draw();
+
+      setInterval(() => {
+        ['v7FloatingAvatarBtn', 'avatarVaultModal', 'avatarVaultModalV6', 'v8VaultModal', 'v9Modal', 'v10Modal', 'v11Modal', 'v12Modal', 'v14Modal'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+
+        const avBtn = document.getElementById('openAvatarVaultBtn') ||
+          Array.from(document.querySelectorAll('button')).find(b => /avatars/i.test(b.textContent || ''));
+        if (avBtn) {
+          avBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof socket !== 'undefined') socket.emit('getMyAvatarStatsV6', { username: getUname() });
+            window.v15Draw();
+            document.getElementById('v15Modal').style.display = 'flex';
+          };
+        }
+
+        document.querySelectorAll('div, span, b, strong').forEach(el => {
+          if (el.closest('#v15Modal')) return;
+          if (el.children.length > 0) return;
+          const raw = (el.textContent || '').trim();
+          const sender = raw.replace(/\s*(cap\s*[ab]|👑)\s*/gi, '').trim().toLowerCase();
+          if (!sender || sender.length > 25) return;
+
+          const auraClass = playerAuraMap[sender];
+          const portraitSvg = playerPortraitMap[sender];
+          if (!auraClass && !portraitSvg) return;
+
+          const container = el.parentElement;
+          if (container && portraitSvg && !container.dataset.v15PortDone) {
+            const iconSpan = Array.from(container.children).find(c => c !== el && !c.querySelector('button') && (c.textContent || '').trim().length <= 4 && !/cap\s*[ab]/i.test(c.textContent || ''));
+            if (iconSpan) {
+              container.dataset.v15PortDone = 'true';
+              iconSpan.innerHTML = '<span class="v15-pill-av ' + (auraClass || '') + '">' + portraitSvg + '</span>';
+            }
+          }
+
+          if (container && auraClass && container.offsetWidth > 60 && container.offsetWidth < 260 && container.offsetHeight < 65 && /cap\s*[ab]|👑/i.test(container.textContent || '')) {
+            if (!container.classList.contains(auraClass)) {
+              container.classList.remove(...ALL_AURAS);
+              container.classList.add(auraClass);
+            }
+          }
+
+          let headerRow = el.parentElement;
+          while (headerRow && headerRow.parentElement && headerRow.parentElement.children.length <= 2) {
+            if (headerRow.nextElementSibling) break;
+            headerRow = headerRow.parentElement;
+          }
+          if (headerRow && headerRow.nextElementSibling && auraClass) {
+            const bubble = headerRow.nextElementSibling;
+            if (!bubble.classList.contains(auraClass)) {
+              bubble.classList.remove(...ALL_AURAS);
+              bubble.classList.add(auraClass);
+            }
+          }
+        });
+
+        if (typeof socket !== 'undefined' && !window._v15Sock) {
+          window._v15Sock = true;
+          socket.emit('getMyAvatarStatsV6', { username: getUname() });
+
+          socket.on('avatarStatsDataV6', (d) => {
+            if (d && typeof d.refs === 'number') refs = d.refs;
+            if (d && d.avatarMap) {
+              Object.entries(d.avatarMap).forEach(([u, info]) => {
+                const key = u.toLowerCase();
+                if (info && (info.chatFx || info.fx)) playerAuraMap[key] = info.chatFx || info.fx;
+                if (info && info.avatarId) {
+                  const found = ITEMS.find(x => x.id === info.avatarId);
+                  if (found) playerPortraitMap[key] = found.svg;
+                }
+              });
+            }
+            window.v15Draw();
+          });
+
+          socket.on('avatarCodeResultV6', (res) => {
+            if (res && res.ok && res.avatarId) {
+              if (!unlocked.includes(res.avatarId)) {
+                unlocked.push(res.avatarId);
+                localStorage.setItem('sammu_unlocked_avatars', JSON.stringify(unlocked));
+              }
+              alert('🎉 Unlocked: ' + res.name + '!');
+              window.v15Draw();
+            } else {
+              alert('❌ Invalid Avatar Code!');
+            }
+          });
+        }
+      }, 250);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', AVATAR_VAULT_V15 + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        const origSendFile = res.sendFile;
+        res.sendFile = function(filePath) {
+            if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+                try {
+                    let html = fs.readFileSync(filePath, 'utf8');
+                    if (html.includes('</body>')) {
+                        html = html.replace('</body>', AVATAR_VAULT_V15 + '\n</body>');
+                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                        return origSend.call(this, html);
+                    }
+                } catch (e) {}
+            }
+            return origSendFile.apply(this, arguments);
+        };
+        next();
+    });
+    // === END GENDER-ACCURATE CHARACTER PORTRAITS & MILLY REWORK v15 ===
 
 };

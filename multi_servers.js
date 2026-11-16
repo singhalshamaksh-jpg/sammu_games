@@ -1675,8 +1675,7 @@ module.exports = function initMultiServers(app, io) {
         });
     });
     // === END ZORO, ISOLATION & SLOW-NETWORK ADD-ON ===
- 
-      // === STANDALONE PHONK DJ, AURA SCANNER & 25s ANTI-DISCONNECT ADD-ON ===
+     // === PHONK DJ v4 (8 PHONK TRACKS, 8 PADS, BACKGROUND PLAY, DUO AURA & 25s ANTI-DROP) ===
     if (io && io.engine && io.engine.opts) {
         io.engine.opts.pingTimeout = 150000;
         io.engine.opts.pingInterval = 25000;
@@ -1687,58 +1686,90 @@ module.exports = function initMultiServers(app, io) {
 
     const PHONK_DJ_WIDGET = `
     <style>
-      #phonkDjModal { display:none; position:fixed; inset:0; background:rgba(5,5,15,0.93); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(10px); font-family:inherit; padding:10px; }
-      #phonkDjCard { background:linear-gradient(155deg,#120724,#240b36,#0f172a); border:2px solid #c084fc; border-radius:22px; padding:14px; width:100%; max-width:410px; color:#fff; box-shadow:0 0 35px rgba(192,132,252,0.5); text-align:center; }
-      .dj-viz { display:flex; align-items:flex-end; justify-content:center; gap:5px; height:42px; background:rgba(0,0,0,0.45); border-radius:12px; padding:6px 12px; margin:8px 0; border:1px solid rgba(192,132,252,0.3); }
+      #phonkDjModal { display:none; position:fixed; inset:0; background:rgba(5,5,15,0.88); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(8px); font-family:inherit; padding:10px; }
+      #phonkDjCard { background:linear-gradient(155deg,#120724,#240b36,#0f172a); border:2px solid #c084fc; border-radius:22px; padding:14px; width:100%; max-width:415px; color:#fff; box-shadow:0 0 35px rgba(192,132,252,0.5); text-align:center; max-height:92vh; overflow-y:auto; }
+      .dj-viz { display:flex; align-items:flex-end; justify-content:center; gap:5px; height:36px; background:rgba(0,0,0,0.45); border-radius:12px; padding:6px 12px; margin:7px 0; border:1px solid rgba(192,132,252,0.3); }
       .dj-bar { flex:1; background:linear-gradient(to top,#ec4899,#a855f7,#38bdf8); border-radius:4px; height:15%; transition:height 0.08s ease; }
-      .dj-loops { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin:8px 0; }
+      .dj-loops { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:7px 0; }
       .dj-loop-btn { background:#1e1b4b; border:1.5px solid #818cf8; color:#fff; padding:7px 4px; border-radius:10px; font-size:11px; font-weight:bold; cursor:pointer; }
       .dj-loop-btn.active { background:#ec4899; border-color:#fbcfe8; box-shadow:0 0 12px #ec4899; }
-      .dj-pads { display:grid; grid-template-columns:repeat(3, 1fr); gap:7px; margin:8px 0; }
-      .dj-pad { background:linear-gradient(145deg,#3b0764,#581c87); border:1.5px solid #e879f9; color:#fff; padding:11px 4px; border-radius:14px; font-size:12px; font-weight:900; cursor:pointer; user-select:none; transition:transform 0.06s; }
+      .dj-pads { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin:7px 0; }
+      .dj-pad { background:linear-gradient(145deg,#3b0764,#581c87); border:1.5px solid #e879f9; color:#fff; padding:9px 3px; border-radius:12px; font-size:11px; font-weight:900; cursor:pointer; user-select:none; transition:transform 0.06s; }
       .dj-pad:active { transform:scale(0.93); background:#d946ef; }
-      .aura-box { background:rgba(56,189,248,0.12); border:1px solid #38bdf8; border-radius:14px; padding:8px; margin-top:8px; }
+      .aura-box { background:rgba(56,189,248,0.12); border:1.5px solid #38bdf8; border-radius:14px; padding:9px; margin-top:8px; }
+      .aura-modes { display:flex; gap:5px; margin-bottom:6px; }
+      .aura-mode-btn { flex:1; padding:5px; border-radius:8px; border:1px solid #38bdf8; background:#0f172a; color:#fff; font-size:10px; font-weight:bold; cursor:pointer; }
+      .aura-mode-btn.active { background:#38bdf8; color:#090d16; }
+      #phonkMiniBar { display:none; position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:99998; background:linear-gradient(90deg,#3b0764,#be185d); border:1.5px solid #f472b6; border-radius:999px; padding:5px 12px; color:#fff; font-size:11px; font-weight:bold; align-items:center; gap:8px; box-shadow:0 4px 18px rgba(236,72,153,0.5); white-space:nowrap; }
     </style>
+
+    <div id="phonkMiniBar">
+      <span id="miniBarTrack">🎧 Phonk Beat Live</span>
+      <button onclick="document.getElementById('phonkDjModal').style.display='flex'" style="background:#38bdf8;border:none;color:#090d16;border-radius:10px;padding:2px 8px;font-weight:900;font-size:10px;cursor:pointer;">🎛️ Deck</button>
+      <button onclick="stopPhonkLoop()" style="background:#ef4444;border:none;color:#fff;border-radius:10px;padding:2px 8px;font-weight:900;font-size:10px;cursor:pointer;">⏹️ Stop</button>
+    </div>
 
     <div id="phonkDjModal">
       <div id="phonkDjCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:900;font-size:15px;color:#e879f9;">🎧 PHONK DJ & AURA DECK</span>
-          <button onclick="stopPhonkLoop();document.getElementById('phonkDjModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-weight:bold;">✕</button>
+          <span style="font-weight:900;font-size:15px;color:#e879f9;">🎧 PHONK DJ v4 & DUO SCANNER</span>
+          <div style="display:flex;gap:5px;">
+            <button onclick="minimizePhonkDeck()" style="background:#0284c7;border:none;color:#fff;border-radius:8px;padding:4px 9px;cursor:pointer;font-weight:bold;font-size:11px;">💬 Minimize</button>
+            <button onclick="stopPhonkLoop();minimizePhonkDeck()" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;cursor:pointer;font-weight:bold;font-size:11px;">✕</button>
+          </div>
         </div>
-        <div id="djNowPlaying" style="font-size:11px;color:#67e8f9;margin-top:4px;font-weight:bold;">🎛️ Live Room Synth Ready (Everyone in server hears your drops!)</div>
+        <div id="djNowPlaying" style="font-size:11px;color:#67e8f9;margin-top:4px;font-weight:bold;">🎛️ 8 Phonk Beats + 8 Live Pads! Hit Minimize to chat while playing!</div>
         <div class="dj-viz" id="djVisualizer">
           <div class="dj-bar"></div><div class="dj-bar"></div><div class="dj-bar"></div><div class="dj-bar"></div>
           <div class="dj-bar"></div><div class="dj-bar"></div><div class="dj-bar"></div><div class="dj-bar"></div>
           <div class="dj-bar"></div><div class="dj-bar"></div><div class="dj-bar"></div><div class="dj-bar"></div>
         </div>
         <div class="dj-loops">
-          <button class="dj-loop-btn" id="loopDrift" onclick="togglePhonkBeat('drift')">🔥 Drift Phonk</button>
-          <button class="dj-loop-btn" id="loopBrazil" onclick="togglePhonkBeat('brazil')">🇧🇷 Brazilian</button>
-          <button class="dj-loop-btn" id="loopStop" onclick="stopPhonkLoop()">⏹️ Stop Beat</button>
+          <button class="dj-loop-btn" id="loopDrift" onclick="togglePhonkBeat('drift','🔥 Drift Phonk')">🔥 Drift Phonk</button>
+          <button class="dj-loop-btn" id="loopBrazil" onclick="togglePhonkBeat('brazil','🇧🇷 Brazilian Phonk')">🇧🇷 Brazilian Phonk</button>
+          <button class="dj-loop-btn" id="loopMurder" onclick="togglePhonkBeat('murder','👻 Kordhell Murder')">👻 Kordhell Murder</button>
+          <button class="dj-loop-btn" id="loopSigma" onclick="togglePhonkBeat('sigma','🗿 Sigma GigaChad')">🗿 Sigma GigaChad</button>
+          <button class="dj-loop-btn" id="loopMemphis" onclick="togglePhonkBeat('memphis','👹 Dark Memphis')">👹 Dark Memphis</button>
+          <button class="dj-loop-btn" id="loopCyber" onclick="togglePhonkBeat('cyber','🚀 Neon Cyberpunk')">🚀 Neon Cyberpunk</button>
+          <button class="dj-loop-btn" id="loopTokyo" onclick="togglePhonkBeat('tokyo','🏎️ Tokyo Drift')">🏎️ Tokyo Drift</button>
+          <button class="dj-loop-btn" id="loopDemon" onclick="togglePhonkBeat('demon','⚔️ Demon Slayer Phonk')">⚔️ Demon Slayer</button>
         </div>
+        <button onclick="stopPhonkLoop()" style="width:100%;padding:5px;border:1px solid #f87171;border-radius:10px;background:rgba(239,68,68,0.2);color:#fecaca;font-weight:bold;font-size:11px;cursor:pointer;margin-bottom:6px;">⏹️ Stop Active Beat Loop</button>
         <div class="dj-pads">
-          <button class="dj-pad" onclick="triggerDjSound('cowbell1')">🔔 Cowbell Hi</button>
-          <button class="dj-pad" onclick="triggerDjSound('cowbell2')">🔔 Cowbell Lo</button>
+          <button class="dj-pad" onclick="triggerDjSound('cowbell1')">🔔 Bell Hi</button>
+          <button class="dj-pad" onclick="triggerDjSound('cowbell2')">🔔 Bell Lo</button>
           <button class="dj-pad" onclick="triggerDjSound('bass808')">💥 808 DROP</button>
-          <button class="dj-pad" onclick="triggerDjSound('kick')">🥁 Hard Kick</button>
-          <button class="dj-pad" onclick="triggerDjSound('siren')">🚨 Phonk Siren</button>
-          <button class="dj-pad" onclick="triggerDjSound('scratch')">💿 DJ Scratch</button>
+          <button class="dj-pad" onclick="triggerDjSound('kick')">🥁 Kick</button>
+          <button class="dj-pad" onclick="triggerDjSound('siren')">🚨 Siren</button>
+          <button class="dj-pad" onclick="triggerDjSound('scratch')">💿 Scratch</button>
+          <button class="dj-pad" onclick="triggerDjSound('laser')">⚡ Laser</button>
+          <button class="dj-pad" onclick="triggerDjSound('horn')">📯 Horn</button>
         </div>
         <div class="aura-box">
-          <div style="font-size:11px;font-weight:bold;color:#7dd3fc;margin-bottom:5px;">🔮 LIVE AURA & VIBE SCANNER</div>
-          <div style="display:flex;gap:5px;margin-bottom:5px;">
-            <input id="auraP1" placeholder="Player 1 (or You)" style="flex:1;padding:6px;border-radius:8px;border:1px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
-            <input id="auraP2" placeholder="Player 2 (Optional)" style="flex:1;padding:6px;border-radius:8px;border:1px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
+          <div style="font-size:11px;font-weight:bold;color:#7dd3fc;margin-bottom:5px;">🔮 VISUAL DUO & AURA CARD DROPPER</div>
+          <div class="aura-modes">
+            <button class="aura-mode-btn active" id="modeBhai" onclick="setAuraMode('bhai')">🤝 Bhaichara</button>
+            <button class="aura-mode-btn" id="modeRival" onclick="setAuraMode('rival')">⚔️ Rivalry</button>
+            <button class="aura-mode-btn" id="modeVibe" onclick="setAuraMode('vibe')">💖 Vibe Match</button>
           </div>
-          <button onclick="scanAndPostAura()" style="width:100%;padding:7px;border:none;border-radius:10px;background:linear-gradient(90deg,#06b6d4,#8b5cf6);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">⚡ Scan Aura & Drop in Chat!</button>
+          <div style="display:flex;gap:5px;margin-bottom:6px;">
+            <input id="auraP1" placeholder="Player 1 (or You)" style="flex:1;padding:6px;border-radius:8px;border:1px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
+            <input id="auraP2" placeholder="Player 2 (Duo Partner)" style="flex:1;padding:6px;border-radius:8px;border:1px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
+          </div>
+          <button onclick="scanAndDropAuraCard()" style="width:100%;padding:8px;border:none;border-radius:10px;background:linear-gradient(90deg,#ec4899,#8b5cf6,#06b6d4);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🎴 Generate & Drop Aura Card in Chat!</button>
         </div>
       </div>
     </div>
-
     <script>
     (function() {
-      let audioCtx = null, beatTimer = null, beatStep = 0;
+      let audioCtx = null, beatTimer = null, beatStep = 0, activeTrackLabel = null, auraMode = 'bhai';
+
+      window.setAuraMode = function(m) {
+        auraMode = m;
+        document.getElementById('modeBhai').classList.toggle('active', m === 'bhai');
+        document.getElementById('modeRival').classList.toggle('active', m === 'rival');
+        document.getElementById('modeVibe').classList.toggle('active', m === 'vibe');
+      };
 
       function getAudio() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1752,45 +1783,62 @@ module.exports = function initMultiServers(app, io) {
         setTimeout(() => bars.forEach(b => { b.style.height = '15%'; }), 140);
       }
 
+      window.minimizePhonkDeck = function() {
+        document.getElementById('phonkDjModal').style.display = 'none';
+        const bar = document.getElementById('phonkMiniBar');
+        if (bar) {
+          bar.style.display = activeTrackLabel ? 'flex' : 'none';
+          const lbl = document.getElementById('miniBarTrack');
+          if (lbl && activeTrackLabel) lbl.textContent = '🎧 ' + activeTrackLabel;
+        }
+      };
+
       window.playPhonkSynth = function(sound) {
         try {
           const ctx = getAudio(), now = ctx.currentTime;
           bounceVisualizer();
 
-          if (sound === 'cowbell1' || sound === 'cowbell2') {
-            const baseFreq = (sound === 'cowbell1') ? 540 : 405;
+          if (sound === 'cowbell1' || sound === 'cowbell2' || sound === 'cowbell3' || sound === 'cowbell4') {
+            const freqMap = { cowbell1: 540, cowbell2: 405, cowbell3: 640, cowbell4: 480 };
+            const baseFreq = freqMap[sound] || 540;
             [baseFreq, baseFreq * 1.48].forEach(f => {
               const osc = ctx.createOscillator(), gain = ctx.createGain();
               osc.type = 'square'; osc.frequency.setValueAtTime(f, now);
-              gain.gain.setValueAtTime(0.18, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+              gain.gain.setValueAtTime(0.16, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
               osc.connect(gain); gain.connect(ctx.destination);
-              osc.start(now); osc.stop(now + 0.23);
+              osc.start(now); osc.stop(now + 0.22);
             });
           } else if (sound === 'bass808' || sound === 'kick') {
             const osc = ctx.createOscillator(), gain = ctx.createGain();
             osc.type = 'sine';
-            const startF = (sound === 'bass808') ? 130 : 165, endF = (sound === 'bass808') ? 36 : 45, dur = (sound === 'bass808') ? 0.65 : 0.25;
+            const startF = (sound === 'bass808') ? 135 : 165, endF = (sound === 'bass808') ? 35 : 45, dur = (sound === 'bass808') ? 0.62 : 0.24;
             osc.frequency.setValueAtTime(startF, now); osc.frequency.exponentialRampToValueAtTime(endF, now + dur);
             gain.gain.setValueAtTime(0.45, now); gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
             osc.connect(gain); gain.connect(ctx.destination);
             osc.start(now); osc.stop(now + dur + 0.02);
-          } else if (sound === 'siren') {
+          } else if (sound === 'siren' || sound === 'horn') {
             const osc = ctx.createOscillator(), gain = ctx.createGain();
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(600, now);
-            osc.frequency.linearRampToValueAtTime(1150, now + 0.35); osc.frequency.linearRampToValueAtTime(520, now + 0.7);
-            gain.gain.setValueAtTime(0.16, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.72);
+            osc.type = 'sawtooth';
+            if (sound === 'horn') {
+              osc.frequency.setValueAtTime(470, now); osc.frequency.linearRampToValueAtTime(510, now + 0.4);
+            } else {
+              osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(1150, now + 0.35); osc.frequency.linearRampToValueAtTime(520, now + 0.65);
+            }
+            gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.66);
             osc.connect(gain); gain.connect(ctx.destination);
-            osc.start(now); osc.stop(now + 0.74);
-          } else if (sound === 'scratch') {
+            osc.start(now); osc.stop(now + 0.68);
+          } else if (sound === 'scratch' || sound === 'laser') {
             const osc = ctx.createOscillator(), gain = ctx.createGain();
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(900, now);
-            osc.frequency.exponentialRampToValueAtTime(180, now + 0.12); osc.frequency.exponentialRampToValueAtTime(750, now + 0.24);
-            gain.gain.setValueAtTime(0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+            osc.type = (sound === 'laser') ? 'sawtooth' : 'triangle';
+            osc.frequency.setValueAtTime(sound === 'laser' ? 1400 : 900, now);
+            osc.frequency.exponentialRampToValueAtTime(160, now + 0.18);
+            gain.gain.setValueAtTime(0.22, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
             osc.connect(gain); gain.connect(ctx.destination);
-            osc.start(now); osc.stop(now + 0.27);
+            osc.start(now); osc.stop(now + 0.23);
           }
         } catch (e) {}
       };
+
       window.triggerDjSound = function(sound) {
         window.playPhonkSynth(sound);
         if (typeof socket !== 'undefined') socket.emit('phonkDjDrop', { sound });
@@ -1798,29 +1846,93 @@ module.exports = function initMultiServers(app, io) {
 
       window.stopPhonkLoop = function() {
         if (beatTimer) { clearInterval(beatTimer); beatTimer = null; }
+        activeTrackLabel = null;
         document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
+        const bar = document.getElementById('phonkMiniBar');
+        if (bar) bar.style.display = 'none';
       };
 
-      window.togglePhonkBeat = function(style) {
+      window.togglePhonkBeat = function(style, label) {
         window.stopPhonkLoop();
-        const btn = document.getElementById(style === 'drift' ? 'loopDrift' : 'loopBrazil');
+        activeTrackLabel = label || style;
+        const idMap = {
+          drift: 'loopDrift', brazil: 'loopBrazil', murder: 'loopMurder', sigma: 'loopSigma',
+          memphis: 'loopMemphis', cyber: 'loopCyber', tokyo: 'loopTokyo', demon: 'loopDemon'
+        };
+        const btn = document.getElementById(idMap[style]);
         if (btn) btn.classList.add('active');
-        beatStep = 0;
-        const seq = (style === 'drift')
-          ? ['bass808', 'cowbell1', 'cowbell2', 'kick', 'cowbell1', 'cowbell1', 'bass808', 'cowbell2']
-          : ['kick', 'cowbell2', 'kick', 'cowbell1', 'bass808', 'cowbell1', 'cowbell2', 'scratch'];
-        beatTimer = setInterval(() => {
-          window.triggerDjSound(seq.at(beatStep % seq.length));
-          beatStep++;
-        }, style === 'drift' ? 210 : 190);
-      };
+        const np = document.getElementById('djNowPlaying');
+        if (np) np.textContent = '🎶 Playing: ' + activeTrackLabel + ' (Hit Minimize to keep playing!)';
 
-      window.scanAndPostAura = function() {
+        const tracks = {
+          drift:   { tempo: 205, seq: ['bass808', 'cowbell1', 'cowbell2', 'kick', 'cowbell1', 'cowbell1', 'bass808', 'cowbell2'] },
+          brazil:  { tempo: 185, seq: ['kick', 'cowbell2', 'kick', 'cowbell1', 'bass808', 'cowbell1', 'cowbell2', 'scratch'] },
+          murder:  { tempo: 195, seq: ['bass808', 'cowbell3', 'cowbell1', 'cowbell2', 'kick', 'cowbell3', 'cowbell1', 'bass808'] },
+          sigma:   { tempo: 225, seq: ['bass808', 'kick', 'cowbell1', 'cowbell1', 'bass808', 'cowbell2', 'cowbell3', 'kick'] },
+          memphis: { tempo: 215, seq: ['bass808', 'cowbell2', 'scratch', 'kick', 'cowbell1', 'cowbell2', 'bass808', 'siren'] },
+          cyber:   { tempo: 175, seq: ['kick', 'laser', 'cowbell3', 'bass808', 'kick', 'cowbell1', 'laser', 'scratch'] },
+          tokyo:   { tempo: 180, seq: ['cowbell3', 'cowbell3', 'kick', 'cowbell1', 'cowbell4', 'bass808', 'cowbell1', 'scratch'] },
+          demon:   { tempo: 190, seq: ['bass808', 'cowbell4', 'cowbell1', 'cowbell3', 'kick', 'cowbell2', 'cowbell4', 'bass808'] }
+        };
+        const chosen = tracks[style] || tracks.drift;
+        beatStep = 0;
+        beatTimer = setInterval(() => {
+          window.triggerDjSound(chosen.seq.at(beatStep % chosen.seq.length));
+          beatStep++;
+        }, chosen.tempo);
+      };
+      window.scanAndDropAuraCard = function() {
         const myName = window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || 'Player';
-        const p1 = (document.getElementById('auraP1').value || '').trim() || myName;
-        const p2 = (document.getElementById('auraP2').value || '').trim();
+        const p1 = ((document.getElementById('auraP1').value || '').trim() || myName).slice(0, 16);
+        const p2 = (document.getElementById('auraP2').value || '').trim().slice(0, 16);
+
+        const pct = Math.floor(Math.random() * 41) + 60;
+        const tiers = [
+          { score: "+999,999 ∞", rank: "🗿 GIGACHAD PHONK GODS", c1: "#3b0764", c2: "#be185d" },
+          { score: "+88,500 ⚡", rank: "👑 SUPREME ARENA DUO", c1: "#0f172a", c2: "#0284c7" },
+          { score: "+42,069 🔥", rank: "🥷 SHADOW NINJA SQUAD", c1: "#064e3b", c2: "#059669" },
+          { score: "+19,400 ✨", rank: "🎧 CERTIFIED DRIFT VIBES", c1: "#312e81", c2: "#7c3aed" }
+        ];
+        const t = tiers.at(Math.floor(Math.random() * tiers.length));
+        const modeLabels = { bhai: "🤝 BHAICHARA METER", rival: "⚔️ RIVALRY POWER", vibe: "💖 COSMIC VIBE SYNC" };
+
+        const c = document.createElement('canvas');
+        c.width = 320; c.height = 175;
+        const ctx = c.getContext('2d');
+
+        const grad = ctx.createLinearGradient(0, 0, 320, 175);
+        grad.addColorStop(0, t.c1); grad.addColorStop(1, t.c2);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 320, 175);
+
+        ctx.strokeStyle = "#f472b6"; ctx.lineWidth = 4;
+        ctx.strokeRect(4, 4, 312, 167);
+
+        ctx.fillStyle = "#fde047"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(p2 ? modeLabels[auraMode] : "🔮 SOLO PHONK AURA SCAN", 160, 26);
+
+        ctx.fillStyle = "#ffffff"; ctx.font = "900 18px sans-serif";
+        ctx.fillText(p2 ? (p1 + "  ⚡  " + p2) : p1, 160, 56);
+
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.fillRect(35, 72, 250, 18);
+        ctx.fillStyle = "#4ade80";
+        ctx.fillRect(35, 72, Math.round(2.5 * pct), 18);
+        ctx.fillStyle = "#fff"; ctx.font = "bold 11px sans-serif";
+        ctx.fillText(pct + "% SYNCED", 160, 85);
+
+        ctx.fillStyle = "#67e8f9"; ctx.font = "900 16px sans-serif";
+        ctx.fillText("AURA: " + t.score, 160, 118);
+
+        ctx.fillStyle = "#fbcfe8"; ctx.font = "bold 13px sans-serif";
+        ctx.fillText(t.rank, 160, 146);
+
+        const cardImg = c.toDataURL('image/jpeg', 0.82);
         window.triggerDjSound('bass808');
-        if (typeof socket !== 'undefined') socket.emit('scanPhonkAura', { p1, p2 });
+        if (typeof socket !== 'undefined') {
+          socket.emit('dropAuraCard', { image: cardImg, p1, p2, pct, rank: t.rank });
+        }
+        window.minimizePhonkDeck();
       };
 
       function setupPhonkDjAndAntiDrop() {
@@ -1852,7 +1964,6 @@ module.exports = function initMultiServers(app, io) {
             return origEmit(ev, payload, ...rest);
           };
 
-          // Seamless mid-game auto-rejoin on mobile data lag
           socket.on('connect', () => {
             if (window.selectedServerId) {
               origEmit('verifyServerAccess', {
@@ -1903,7 +2014,6 @@ module.exports = function initMultiServers(app, io) {
     });
 
     io.on('connection', (socket) => {
-        // 25-Second Anti-Disconnect Grace Period so slow internet never ruins games
         setImmediate(() => {
             const listeners = socket.listeners('disconnect');
             if (listeners.length > 1) {
@@ -1958,29 +2068,26 @@ module.exports = function initMultiServers(app, io) {
             });
         });
 
-        socket.on('scanPhonkAura', (data) => {
-            if (!socket.activeServerId || !data) return;
-            const p1 = String(data.p1 || socket.username || 'Player').slice(0, 20);
-            const p2 = String(data.p2 || '').trim().slice(0, 20);
-            const tiers = [
-                { score: "+999,999 ∞", rank: "🗿 GIGACHAD PHONK GOD", desc: "Unstoppable main-character energy! Bass shakes the whole lobby!" },
-                { score: "+85,400 ⚡", rank: "👑 SUPREME RIZZ & VIBE", desc: "Pure royalty! Everyone in the server is vibing to your frequency!" },
-                { score: "+42,069 🔥", rank: "🥷 SHADOW NINJA AURA", desc: "Cold, calculated, and undefeated in mini-games!" },
-                { score: "+12,500 ✨", rank: "🎧 CERTIFIED DRIFT DJ", desc: "Smooth reflexes and elite chat presence!" },
-                { score: "-500 💀", rank: "🤡 OHIO CLOWN AURA", desc: "Bro tripped over his own Wi-Fi cable! Needs an 808 revival immediately!" }
-            ];
-            const picked = tiers.at(Math.floor(Math.random() * tiers.length));
-            const title = p2 ? `🔮 **DUO VIBE SCAN:** **${p1}** ❤️ **${p2}**` : `🔮 **SOLO AURA SCAN:** **${p1}**`;
-            const pct = p2 ? `\n💫 **Bhaichara / Vibe Sync:** **${Math.floor(Math.random() * 31) + 70}%**` : '';
-
+        socket.on('dropAuraCard', (data) => {
+            if (!socket.activeServerId || !data || !data.image) return;
+            const caption = data.p2
+                ? `🔮 **${data.p1}** & **${data.p2}** — **${data.pct}%** (${data.rank})`
+                : `🔮 **${data.p1}**'s Phonk Aura — ${data.rank}`;
             io.to(socket.activeServerId).emit('message', {
-                username: "🎧 Phonk Aura Bot",
-                text: `${title}${pct}\n⚡ **Aura Points:** **${picked.score}**\n🏆 **Rank:** ${picked.rank}\n💬 *${picked.desc}*`,
+                senderId: socket.id,
+                username: "🎧 Phonk Aura DJ",
+                avatar: "🔮",
+                text: caption,
+                imageUrl: data.image,
                 _serverId: socket.activeServerId
             });
         });
     });
-    // === END PHONK DJ, AURA SCANNER & 25s ANTI-DISCONNECT ===
+    // === END PHONK DJ v4 ===
 
+          
+       
+              
+            
 
 };

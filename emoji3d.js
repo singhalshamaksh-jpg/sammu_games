@@ -302,5 +302,119 @@ module.exports = function attach3DEmojiPack(app) {
     };
     next();
   });
+  // === DROP-IN CHAT TARGETING & USERNAME PROTECTION OVERRIDE ===
+const E3D_BOTTOM_FIX = `
+<script>
+(function() {
+  function getSafeChatInput() {
+    const all = Array.from(document.querySelectorAll('input[type="text"], input:not([type]), textarea')).filter(el => {
+      if (!el.offsetParent) return false;
+      if (el.closest('#e3dDrawer') || el.closest('#v22Modal')) return false;
+      const hint = ((el.placeholder || '') + ' ' + (el.id || '') + ' ' + (el.name || '')).toLowerCase();
+      if (/user|name|nick|room|code|pass|search/.test(hint)) return false;
+      return true;
+    });
+    return all.find(el => /msg|message|chat|say|type|send/i.test((el.placeholder || '') + ' ' + (el.id || ''))) ||
+           all.find(el => el.getBoundingClientRect().top > window.innerHeight * 0.45) ||
+           null;
+  }
+
+  function fix3DButtonAndCards() {
+    // 1. Remove any misplaced 3D button attached to a username/room input
+    const badBtn = document.getElementById('e3dOpenBtn');
+    const realInput = getSafeChatInput();
+    if (badBtn && realInput && badBtn.parentElement !== realInput.parentElement) {
+      badBtn.remove();
+    }
+    if (realInput && realInput.parentElement && !document.getElementById('e3dOpenBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'e3dOpenBtn';
+      btn.type = 'button';
+      btn.textContent = '😎 3D';
+      btn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const d = document.getElementById('e3dDrawer');
+        if (d) d.style.display = d.style.display === 'block' ? 'none' : 'block';
+      };
+      realInput.parentElement.appendChild(btn);
+    }
+
+    // 2. Override every 3D sticker card click so it sends ONLY to the bottom chat bar
+    document.querySelectorAll('.e3d-card').forEach(card => {
+      if (card.dataset.e3dFixed === '1') return;
+      card.dataset.e3dFixed = '1';
+      const label = (card.textContent || '').trim().toLowerCase();
+      const code = ':3d_' + label + ':';
+
+      card.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const drawer = document.getElementById('e3dDrawer');
+        if (drawer) drawer.style.display = 'none';
+
+        const chatBox = getSafeChatInput();
+        if (chatBox) {
+          const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+          if (setter) setter.call(chatBox, code);
+          else chatBox.value = code;
+
+          chatBox.dispatchEvent(new Event('input', { bubbles: true }));
+          chatBox.dispatchEvent(new Event('change', { bubbles: true }));
+
+          const bar = chatBox.parentElement?.parentElement || chatBox.parentElement;
+          const sendBtn = bar && Array.from(bar.querySelectorAll('button')).find(b =>
+            b.id !== 'e3dOpenBtn' && b.offsetParent !== null &&
+            (/send|➤|▶|🚀|post/i.test((b.textContent || '') + ' ' + (b.id || '') + ' ' + (b.className || '')) || b.type === 'submit')
+          );
+          if (sendBtn) {
+            sendBtn.click();
+            return;
+          }
+          if (chatBox.form) {
+            chatBox.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            return;
+          }
+          chatBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+        }
+      };
+    });
+  }
+
+  setInterval(fix3DButtonAndCards, 600);
+})();
+</script>
+`;
+
+const prevExport = module.exports;
+module.exports = function(app) {
+  if (typeof prevExport === 'function') prevExport(app);
+  app.use((req, res, next) => {
+    const origSend = res.send;
+    res.send = function(body) {
+      if (typeof body === 'string' && body.includes('</body>')) {
+        body = body.replace('</body>', E3D_BOTTOM_FIX + '\n</body>');
+      }
+      return origSend.call(this, body);
+    };
+    const origSendFile = res.sendFile;
+    res.sendFile = function(filePath) {
+      if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+        try {
+          let html = fs.readFileSync(filePath, 'utf8');
+          if (html.includes('</body>')) {
+            html = html.replace('</body>', E3D_BOTTOM_FIX + '\n</body>');
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return origSend.call(this, html);
+          }
+        } catch (e) {}
+      }
+      return origSendFile.apply(this, arguments);
+    };
+    next();
+  });
+};
+// === END DROP-IN CHAT TARGETING OVERRIDE ===
+  
 };
   

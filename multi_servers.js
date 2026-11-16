@@ -1,4 +1,4 @@
-const fs = require('fs');
+ const fs = require('fs');
 const path = require('path');
 
 module.exports = function initMultiServers(app, io) {
@@ -155,21 +155,30 @@ module.exports = function initMultiServers(app, io) {
             Object.keys(serversDB).forEach(srvId => syncArenaPlayers(srvId));
             return true;
         }
-        const payload = args.at(0);
+                const payload = args.at(0);
         const targetSrv = findServerForPayload(payload) || lastActiveServerId;
         if (targetSrv) {
+            const arena = getArena(targetSrv);
+            if (event === 'announceWinner' && payload && typeof payload === 'object') {
+                handleArenaTourneyMatchEnd(targetSrv, payload.winner);
+            }
             if (event === 'syncGame' && payload && typeof payload === 'object') {
-                const arena = getArena(targetSrv);
+                const prevState = arena.gameState;
                 arena.gameState = payload.gameState || 'lobby';
                 arena.scores = payload.scores || arena.scores;
                 if (payload.captainA) arena.captainA = payload.captainA;
                 if (payload.captainB) arena.captainB = payload.captainB;
+
+                if (prevState !== 'lobby' && arena.gameState === 'lobby' && arena.tourney.active && arena.tourney.awaitingResult) {
+                    handleArenaTourneyMatchEnd(targetSrv, '');
+                }
             }
             const stamped = (payload && typeof payload === 'object' && !Array.isArray(payload))
                 ? { ...payload, _serverId: targetSrv }
                 : payload;
             return io.to(targetSrv).emit(event, stamped);
         }
+
         return true;
     };
 
@@ -771,10 +780,36 @@ module.exports = function initMultiServers(app, io) {
         { name: "🏀 Hoop Shootout", ev: "launchHoop" }
     ];
 
+    function finishArenaTournament(serverId) {
+        const arena = getArena(serverId);
+        const t = arena.tourney;
+        t.active = false;
+        if (t.timer) clearTimeout(t.timer);
+
+        const ranking = Object.entries(t.matchScores || {})
+            .sort((a, b) => b - a);
+
+        const first = ranking || null;
+        const second = ranking || null;
+        const third = ranking || null;
+
+        let msg = `🎊 **15-GAME TOURNAMENT FINISHED! (${t.gamesPlayed}/${t.maxGames} Games Played)** 🎊\n`;
+        if (first) msg += `🥇 **1st Place (TROPHY):** **${first}** (${first} Wins)\n`;
+        if (second) msg += `🥈 **2nd Place (SILVER MEDAL):** **${second}** (${second} Wins)\n`;
+        if (third) msg += `🥉 **3rd Place (BRONZE MEDAL):** **${third}** (${third} Wins)`;
+
+        t.currentPair = null;
+        io.to(serverId).emit('message', {
+            username: "Sammu's Bot",
+            text: msg,
+            _serverId: serverId
+        });
+    }
+
     function startArenaTournament(serverId, hostSocket) {
         const arena = getArena(serverId);
         syncArenaPlayers(serverId);
-        const contestants = arena.players.filter(p => p.id !== hostSocket.id).sort(() => Math.random() - 0.5);
+        const contestants = arena.players.filter(p => p.id !== hostSocket.id);
         if (contestants.length < 2) {
             io.to(serverId).emit('message', {
                 username: "Sammu's Bot",
@@ -785,14 +820,20 @@ module.exports = function initMultiServers(app, io) {
         }
         if (arena.tourney.timer) clearTimeout(arena.tourney.timer);
         arena.tourney = {
-            active: true, round: 1, maxGames: 15, gamesPlayed: 0,
-            queue: [...contestants], nextRound: [], eliminated: [],
-            matchScores: {}, currentPair: null, timer: null
+            active: true,
+            round: 1,
+            maxGames: 15,
+            gamesPlayed: 0,
+            hostSocketId: hostSocket.id,
+            matchScores: {},
+            currentPair: null,
+            awaitingResult: false,
+            timer: null
         };
         contestants.forEach(p => { arena.tourney.matchScores[p.username] = 0; });
         io.to(serverId).emit('message', {
             username: "Sammu's Bot",
-            text: `🏆 **ISOLATED TOURNAMENT STARTED IN THIS ARENA!** (${contestants.length} Players | Up to 15 Matches)\n🥇 1st: **Trophy** | 🥈 2nd: **Silver** | 🥉 3rd: **Bronze**`,
+            text: `🏆 **COMPULSORY 15-GAME TOURNAMENT STARTED!** (${contestants.length} Players | All 15 Mini-Games will be played!)\n🥇 1st: **Trophy** | 🥈 2nd: **Silver** | 🥉 3rd: **Bronze**`,
             _serverId: serverId
         });
         advanceArenaTournament(serverId, hostSocket);
@@ -803,60 +844,92 @@ module.exports = function initMultiServers(app, io) {
         const t = arena.tourney;
         if (!t.active) return;
 
-        syncArenaPlayers(serverId);
-        const activeIds = new Set(arena.players.map(p => p.id));
-        t.queue = t.queue.filter(p => activeIds.has(p.id));
-        t.nextRound = t.nextRound.filter(p => activeIds.has(p.id));
+        if (t.gamesPlayed >= t.maxGames) {
+            finishArenaTournament(serverId);
+            return;
+        }
 
-        if (t.queue.length === 1) {
-            const byePlayer = t.queue.pop();
-            t.nextRound.push(byePlayer);
+        const activeHost = (hostSocket && hostSocket.connected)
+            ? hostSocket
+            : io.sockets.sockets.get(t.hostSocketId || arena.hostId);
+
+        syncArenaPlayers(serverId);
+        const contestants = arena.players.filter(p => !p.isHost && (!activeHost || p.id !== activeHost.id));
+
+        if (contestants.length < 2) {
             io.to(serverId).emit('message', {
                 username: "Sammu's Bot",
-                text: `🍀 **${byePlayer.username}** gets a bye to Round ${t.round + 1}!`,
+                text: `⚠️ Tournament ended early because fewer than 2 players remain in this server.`,
                 _serverId: serverId
             });
+            finishArenaTournament(serverId);
+            return;
         }
 
-        if (t.queue.length === 0) {
-            if (t.nextRound.length <= 1 || t.gamesPlayed >= t.maxGames) {
-                t.active = false;
-                const champ = t.nextRound.at(0) ? t.nextRound.at(0).username : (t.currentPair ? t.currentPair.winner : 'Champion');
-                io.to(serverId).emit('message', {
-                    username: "Sammu's Bot",
-                    text: `🎊 **ARENA TOURNAMENT FINISHED!** 🥇 Champion: **${champ}**! 🏆`,
-                    _serverId: serverId
-                });
-                return;
+        contestants.forEach(p => {
+            if (t.matchScores[p.username] === undefined) {
+                t.matchScores[p.username] = 0;
             }
-            t.round++;
-            t.queue = [...t.nextRound].sort(() => Math.random() - 0.5);
-            t.nextRound = [];
-        }
+        });
 
-        const pA = t.queue.shift(), pB = t.queue.shift();
-        if (!pA || !pB) { t.active = false; return; }
+        const shuffled = [...contestants].sort(() => Math.random() - 0.5);
+        const pA = shuffled, pB = shuffled;
 
         t.gamesPlayed++;
-        t.currentPair = { pA, pB, winner: null };
+        t.currentPair = { pA, pB };
+        t.awaitingResult = true;
         arena.captainA = pA;
         arena.captainB = pB;
 
         const chosen = ARENA_TOURNEY_GAMES.at(Math.floor(Math.random() * ARENA_TOURNEY_GAMES.length));
         io.to(serverId).emit('message', {
             username: "Sammu's Bot",
-            text: `🏟️ **TOURNEY MATCH #${t.gamesPlayed}** (Round ${t.round})\n⚔️ 🔴 **${pA.username}** vs 🔵 **${pB.username}**\n🎮 Game: **${chosen.name}**!`,
+            text: `🏟️ **TOURNEY MATCH #${t.gamesPlayed}/${t.maxGames}**\n⚔️ 🔴 **${pA.username}** vs 🔵 **${pB.username}**\n🎮 Game: **${chosen.name}**!`,
             _serverId: serverId
         });
 
-        if (hostSocket && hostSocket.connected) {
-            hostSocket.onevent({ type: 2, nsp: '/', data: ['makeCaptains', { capA: pA.id, capB: pB.id }] });
+        if (activeHost && activeHost.connected) {
+            activeHost.onevent({ type: 2, nsp: '/', data: ['makeCaptains', { capA: pA.id, capB: pB.id }] });
             setTimeout(() => {
-                if (hostSocket.connected) {
-                    hostSocket.onevent({ type: 2, nsp: '/', data: [chosen.ev, { fightA: pA.id, fightB: pB.id }] });
+                if (activeHost.connected && t.active) {
+                    activeHost.onevent({ type: 2, nsp: '/', data: [chosen.ev, { fightA: pA.id, fightB: pB.id }] });
                 }
-            }, 250);
+            }, 300);
         }
+    }
+
+    function handleArenaTourneyMatchEnd(serverId, winnerText) {
+        const arena = getArena(serverId);
+        const t = arena.tourney;
+        if (!t.active || !t.awaitingResult || !t.currentPair) return;
+
+        t.awaitingResult = false;
+        const { pA, pB } = t.currentPair;
+        const cleanWin = (winnerText || '').toLowerCase();
+
+        let winnerObj = pA;
+        if (pB && cleanWin.includes(pB.username.toLowerCase())) {
+            winnerObj = pB;
+        }
+
+        t.matchScores[winnerObj.username] = (t.matchScores[winnerObj.username] || 0) + 1;
+
+        if (t.gamesPlayed >= t.maxGames) {
+            finishArenaTournament(serverId);
+            return;
+        }
+
+        const wins = t.matchScores[winnerObj.username];
+        io.to(serverId).emit('message', {
+            username: "Sammu's Bot",
+            text: `✅ **${winnerObj.username}** won Match #${t.gamesPlayed} (Total Wins: **${wins}**)! Match #${t.gamesPlayed + 1}/15 starts in 4s... ⏳`,
+            _serverId: serverId
+        });
+
+        if (t.timer) clearTimeout(t.timer);
+        t.timer = setTimeout(() => {
+            advanceArenaTournament(serverId, null);
+        }, 4000);
     }
 
     app.use((req, res, next) => {

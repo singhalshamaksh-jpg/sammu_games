@@ -2536,4 +2536,458 @@ module.exports = function initMultiServers(app, io) {
         };
     });
     // === END PREMIUM AVATAR VAULT v5 ===.
+     // === SELF-OVERWRITING HD AVATAR VAULT v6 (PASTE AT VERY END BEFORE };) ===
+    const AVATAR_VAULT_V6_HTML = `
+    <style id="avVaultV6Style">
+      @keyframes discoPulseV6 {
+        0% { box-shadow: 0 0 12px #ff0080, inset 0 0 8px #ff0080; border-color: #ff0080; filter: hue-rotate(0deg); }
+        50% { box-shadow: 0 0 20px #00f0ff, inset 0 0 10px #00f0ff; border-color: #00f0ff; filter: hue-rotate(180deg); }
+        100% { box-shadow: 0 0 12px #ff0080, inset 0 0 8px #ff0080; border-color: #ff0080; filter: hue-rotate(360deg); }
+      }
+      @keyframes diamondShineV6 {
+        0%, 100% { box-shadow: 0 0 14px #38bdf8, 0 0 24px #bae6fd; border-color: #7dd3fc; transform: scale(1); }
+        50% { box-shadow: 0 0 22px #ffffff, 0 0 32px #38bdf8; border-color: #ffffff; transform: scale(1.06); }
+      }
+      @keyframes girlGlamGlowV6 {
+        0%, 100% { box-shadow: 0 0 14px #f472b6, 0 0 24px #e879f9; border-color: #f9a8d4; transform: scale(1); }
+        50% { box-shadow: 0 0 22px #fda4af, 0 0 32px #d946ef; border-color: #ffffff; transform: scale(1.06); }
+      }
+      @keyframes superHostAuraV6 {
+        0% { box-shadow: 0 0 18px #fde047, 0 0 34px #f59e0b, 0 0 50px #ef4444, inset 0 0 12px #fef08a; border-color: #ffffff; transform: scale(1.04); }
+        33% { box-shadow: 0 0 22px #38bdf8, 0 0 40px #a855f7, 0 0 58px #fde047, inset 0 0 14px #bae6fd; border-color: #fde047; transform: scale(1.1); }
+        66% { box-shadow: 0 0 22px #f43f5e, 0 0 40px #fde047, 0 0 58px #38bdf8, inset 0 0 14px #fecdd3; border-color: #38bdf8; transform: scale(1.06); }
+        100% { box-shadow: 0 0 18px #fde047, 0 0 34px #f59e0b, 0 0 50px #ef4444, inset 0 0 12px #fef08a; border-color: #ffffff; transform: scale(1.04); }
+      }
+      @keyframes samakshChatGlowV6 {
+        0% { background-position: 0% 50%; box-shadow: 0 0 18px rgba(250,204,21,0.95), 0 0 34px rgba(245,158,11,0.65), inset 0 0 14px rgba(254,240,138,0.5); border-color: #fde047; }
+        50% { background-position: 100% 50%; box-shadow: 0 0 28px rgba(56,189,248,0.98), 0 0 44px rgba(236,72,153,0.8), inset 0 0 18px rgba(255,255,255,0.55); border-color: #ffffff; }
+        100% { background-position: 0% 50%; box-shadow: 0 0 18px rgba(250,204,21,0.95), 0 0 34px rgba(245,158,11,0.65), inset 0 0 14px rgba(254,240,138,0.5); border-color: #fde047; }
+      }
+
+      .av-fx-disco { animation: discoPulseV6 2.2s linear infinite !important; border: 2px solid #ff0080 !important; border-radius: 50% !important; }
+      .av-fx-diamond { animation: diamondShineV6 2s ease-in-out infinite !important; border: 2px solid #7dd3fc !important; border-radius: 50% !important; }
+      .av-fx-girlglam { animation: girlGlamGlowV6 2s ease-in-out infinite !important; border: 2px solid #f9a8d4 !important; border-radius: 50% !important; }
+      .av-fx-superhost { animation: superHostAuraV6 1.2s ease-in-out infinite !important; border: 3px solid #ffffff !important; border-radius: 50% !important; z-index: 5; }
+      .av-fx-host { box-shadow: 0 0 14px #a855f7 !important; border: 2px solid #c084fc !important; border-radius: 50% !important; }
+
+      .chat-glow-samaksh {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        background: linear-gradient(120deg, rgba(250,204,21,0.38), rgba(239,68,68,0.34), rgba(168,85,247,0.36), rgba(56,189,248,0.38)) !important;
+        background-size: 250% 250% !important;
+        border: 2px solid #fde047 !important;
+        border-radius: 16px !important;
+        padding: 9px 13px !important;
+        margin: 6px 0 !important;
+        animation: samakshChatGlowV6 1.8s ease-in-out infinite !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        text-shadow: 0 0 10px #fde047, 0 0 18px #f59e0b !important;
+      }
+      .chat-glow-samaksh * { color: #ffffff !important; text-shadow: 0 0 8px #fde047, 0 0 16px #38bdf8 !important; }
+      .chat-glow-vip {
+        background: linear-gradient(135deg, rgba(56,189,248,0.16), rgba(168,85,247,0.18)) !important;
+        border: 1px solid #38bdf8 !important;
+        border-radius: 12px !important;
+        padding: 6px 10px !important;
+        margin: 4px 0 !important;
+        box-shadow: 0 0 12px rgba(56,189,248,0.35) !important;
+      }
+
+      #avatarVaultModalV6, #avatarPreviewModalV6 { display:none; position:fixed; inset:0; background:rgba(5,8,20,0.93); z-index:999999; align-items:center; justify-content:center; backdrop-filter:blur(10px); font-family:inherit; padding:12px; }
+      #avatarVaultCardV6, #avatarPreviewCardV6 { background:linear-gradient(155deg,#0f172a,#1e1b4b); border:2px solid #38bdf8; border-radius:22px; padding:16px; width:100%; max-width:440px; color:#fff; text-align:center; box-shadow:0 0 35px rgba(56,189,248,0.45); max-height:90vh; overflow-y:auto; }
+      .av-grid-v6 { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:10px 0; }
+      .av-item-v6 { background:rgba(255,255,255,0.06); border:1.5px solid rgba(56,189,248,0.35); border-radius:14px; padding:8px 5px; cursor:pointer; transition:0.15s; }
+      .av-item-v6:hover { background:rgba(56,189,248,0.18); transform:translateY(-2px); }
+      .av-item-v6.locked { opacity:0.65; border-color:#64748b; }
+      .av-art-circle-v6 { width:52px; height:52px; margin:0 auto 5px auto; display:flex; align-items:center; justify-content:center; border-radius:50%; background:radial-gradient(circle at 30% 30%, #1e293b, #020617); overflow:hidden; }
+      .av-art-circle-v6 img { width:100%; height:100%; display:block; }
+    </style>
+
+    <div id="avatarVaultModalV6">
+      <div id="avatarVaultCardV6">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:15px;color:#38bdf8;">👑 27 HD AVATAR VAULT</span>
+          <button onclick="document.getElementById('avatarVaultModalV6').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕</button>
+        </div>
+        <div id="avRefStatsV6" style="font-size:11px;color:#fde047;margin:6px 0;font-weight:bold;">🔗 Your Referrals: 0 | Unlock HD Avatars at 3, 5 & 10 Refs!</div>
+        <div class="av-grid-v6" id="avVaultGridV6"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input id="avSecretCodeInputV6" placeholder="Enter Host Avatar Code..." style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
+          <button onclick="redeemAvatarCode()" style="background:linear-gradient(90deg,#a855f7,#ec4899);border:none;color:#fff;border-radius:10px;padding:8px 12px;font-weight:bold;font-size:12px;cursor:pointer;">🔓 Unlock</button>
+        </div>
+        <button onclick="copyMyInviteForAvatars()" style="width:100%;margin-top:8px;padding:9px;border:none;border-radius:10px;background:linear-gradient(90deg,#059669,#10b981);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🔗 Copy My Referral Link (3, 5 & 10 Refs)</button>
+      </div>
+    </div>
+
+    <div id="avatarPreviewModalV6" onclick="this.style.display='none'">
+      <div id="avatarPreviewCardV6" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:14px;color:#7dd3fc;">🔍 PLAYER AVATAR PROFILE</span>
+          <button onclick="document.getElementById('avatarPreviewModalV6').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:3px 9px;font-weight:bold;cursor:pointer;">✕</button>
+        </div>
+        <div id="avPreviewCircleV6" style="width:104px;height:104px;margin:14px auto;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#090d16;"></div>
+        <div id="avPreviewNameV6" style="font-size:18px;font-weight:900;color:#fff;">Player</div>
+        <div id="avPreviewBadgeV6" style="font-size:12px;color:#fde047;margin-top:4px;font-weight:bold;">Standard Member</div>
+      </div>
+    </div>
+    <script>
+    (function() {
+      ['avatarVaultModal', 'avatarPreviewModal'].forEach(oldId => {
+        const oldEl = document.getElementById(oldId);
+        if (oldEl) oldEl.remove();
+      });
+
+      function makeSvgUri(innerSvg) {
+        const full = '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' + innerSvg + '</svg>';
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(full);
+      }
+
+      const AVATAR_ART = {
+        diamond: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#082f49"/><polygon points="50,14 82,38 50,86 18,38" fill="#38bdf8" stroke="#fff" stroke-width="2.5"/><polyline points="18,38 50,48 82,38" fill="none" stroke="#e0f2fe" stroke-width="2"/><line x1="50" y1="14" x2="50" y2="86" stroke="#bae6fd" stroke-width="1.8"/>'),
+        samurai: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#1e1b4b"/><path d="M22,55 C22,28 78,28 78,55 L70,76 L30,76 Z" fill="#dc2626" stroke="#facc15" stroke-width="2.5"/><polygon points="50,14 56,30 74,24 60,36 50,32 40,36 26,24 44,30" fill="#facc15"/><rect x="32" y="48" width="36" height="8" rx="3" fill="#090d16"/><circle cx="40" cy="52" r="2.5" fill="#38bdf8"/><circle cx="60" cy="52" r="2.5" fill="#38bdf8"/>'),
+        phoenix: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#450a0a"/><path d="M50,16 C65,30 82,34 76,58 C70,74 56,82 50,86 C44,82 30,74 24,58 C18,34 35,30 50,16 Z" fill="#f97316" stroke="#fde047" stroke-width="2"/><path d="M50,30 C60,42 66,52 50,74 C34,52 40,42 50,30 Z" fill="#facc15"/>'),
+        ninja: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#090d16"/><circle cx="50" cy="52" r="30" fill="#1e293b" stroke="#64748b" stroke-width="2"/><rect x="24" y="42" width="52" height="14" rx="5" fill="#020617"/><polygon points="34,47 45,50 35,52" fill="#ef4444"/><polygon points="66,47 55,50 65,52" fill="#ef4444"/><path d="M74,46 L88,38 L84,50 L90,56 L74,52 Z" fill="#ef4444"/>'),
+        astro: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#0f172a"/><circle cx="50" cy="52" r="32" fill="#e2e8f0" stroke="#38bdf8" stroke-width="3"/><rect x="30" y="38" width="40" height="24" rx="10" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/><path d="M35,43 Q45,40 52,43" stroke="#fff" stroke-width="2.5" fill="none"/>'),
+        disco: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#1e1b4b"/><circle cx="50" cy="52" r="32" fill="#ec4899" stroke="#f0abfc" stroke-width="2"/><path d="M22,52 H78 M26,38 H74 M26,66 H74 M50,20 V84 M35,23 V81 M65,23 V81" stroke="#fff" stroke-width="1.4" opacity="0.8"/><polygon points="50,6 54,16 64,16 56,22 59,31 50,25 41,31 44,22 36,16 46,16" fill="#fde047"/>'),
+        girl_butterfly: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#2e1065"/><path d="M48,50 C25,18 10,35 24,54 C12,68 28,84 48,60 Z" fill="#f472b6" stroke="#fbcfe8" stroke-width="2"/><path d="M52,50 C75,18 90,35 76,54 C88,68 72,84 52,60 Z" fill="#a855f7" stroke="#fbcfe8" stroke-width="2"/><rect x="47" y="30" width="6" height="42" rx="3" fill="#fde047"/>'),
+        kitsune: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#311042"/><polygon points="24,18 38,42 20,52" fill="#f8fafc" stroke="#f43f5e" stroke-width="2"/><polygon points="76,18 62,42 80,52" fill="#f8fafc" stroke="#f43f5e" stroke-width="2"/><polygon points="50,84 22,50 36,34 50,40 64,34 78,50" fill="#ffffff" stroke="#f43f5e" stroke-width="2.5"/><path d="M32,54 L44,58 M68,54 L56,58 M42,68 L50,74 L58,68" stroke="#f43f5e" stroke-width="2.5" fill="none"/>'),
+        ref5: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#450a0a"/><polygon points="24,22 36,44 20,54" fill="#fb923c" stroke="#fde047" stroke-width="2"/><polygon points="76,22 64,44 80,54" fill="#fb923c" stroke="#fde047" stroke-width="2"/><polygon points="50,84 22,52 34,34 50,42 66,34 78,52" fill="#1f2937" stroke="#f97316" stroke-width="2.5"/><polygon points="36,52 44,56 38,60" fill="#facc15"/><polygon points="64,52 56,56 62,60" fill="#facc15"/>'),
+        girl_blossom: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#4c0519"/><g fill="#f472b6" stroke="#fbcfe8" stroke-width="1.5"><ellipse cx="50" cy="26" rx="11" ry="18"/><ellipse cx="50" cy="74" rx="11" ry="18"/><ellipse cx="26" cy="50" rx="18" ry="11"/><ellipse cx="74" cy="50" rx="18" ry="11"/><ellipse cx="33" cy="33" rx="14" ry="14"/><ellipse cx="67" cy="67" rx="14" ry="14"/><ellipse cx="67" cy="33" rx="14" ry="14"/><ellipse cx="33" cy="67" rx="14" ry="14"/></g><circle cx="50" cy="50" r="13" fill="#fde047"/>'),
+        skull: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#052e16"/><path d="M28,48 C28,24 72,24 72,48 C72,60 64,65 62,76 L38,76 C36,65 28,60 28,48 Z" fill="#4ade80" stroke="#bbf7d0" stroke-width="2"/><circle cx="39" cy="48" r="6" fill="#052e16"/><circle cx="61" cy="48" r="6" fill="#052e16"/><line x1="44" y1="68" x2="44" y2="76" stroke="#052e16" stroke-width="2.5"/><line x1="50" y1="68" x2="50" y2="76" stroke="#052e16" stroke-width="2.5"/><line x1="56" y1="68" x2="56" y2="76" stroke="#052e16" stroke-width="2.5"/>'),
+        lion: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#422006"/><circle cx="50" cy="52" r="34" fill="#d97706" stroke="#fde047" stroke-width="2.5"/><polygon points="50,76 30,52 36,34 50,38 64,34 70,52" fill="#fef08a"/><polygon points="45,58 55,58 50,64" fill="#78350f"/><circle cx="41" cy="47" r="3" fill="#090d16"/><circle cx="59" cy="47" r="3" fill="#090d16"/>'),
+        ref10: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#042f2e"/><path d="M25,70 C20,40 40,20 68,26 C55,34 54,44 74,48 C62,58 58,72 42,78 Z" fill="#34d399" stroke="#a7f3d0" stroke-width="2"/><circle cx="54" cy="34" r="3.5" fill="#fef08a"/><polygon points="28,26 42,32 34,40" fill="#fde047"/>'),
+        girl_empress: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#3b0764"/><polygon points="20,68 24,34 38,50 50,24 62,50 76,34 80,68" fill="#fde047" stroke="#fff" stroke-width="2"/><rect x="20" y="68" width="60" height="10" rx="4" fill="#ec4899"/><circle cx="50" cy="52" r="5" fill="#38bdf8"/>'),
+        reaper: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#090d16"/><path d="M26,76 C26,34 74,34 74,76 Z" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/><ellipse cx="50" cy="54" rx="14" ry="18" fill="#020617"/><circle cx="45" cy="52" r="2.5" fill="#38bdf8"/><circle cx="55" cy="52" r="2.5" fill="#38bdf8"/><path d="M20,24 Q65,12 82,36" stroke="#e2e8f0" stroke-width="4" fill="none"/>'),
+        unicorn: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#4a044e"/><polygon points="50,12 44,36 56,36" fill="#fde047" stroke="#fff" stroke-width="1.5"/><path d="M32,74 C28,46 42,32 62,38 C74,42 74,62 60,74 Z" fill="#f8fafc" stroke="#f472b6" stroke-width="2.5"/><circle cx="56" cy="48" r="3" fill="#a855f7"/>'),
+        host_zoro: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#052e16"/><line x1="20" y1="80" x2="80" y2="20" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round"/><line x1="20" y1="20" x2="80" y2="80" stroke="#4ade80" stroke-width="6" stroke-linecap="round"/><line x1="50" y1="14" x2="50" y2="86" stroke="#facc15" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="12" fill="#14532d" stroke="#4ade80" stroke-width="3"/>'),
+        host_sarah: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#1e1b4b"/><path d="M48,50 C22,16 8,36 24,56 C10,70 28,86 48,60 Z" fill="#38bdf8" stroke="#e0f2fe" stroke-width="2"/><path d="M52,50 C78,16 92,36 76,56 C90,70 72,86 52,60 Z" fill="#c084fc" stroke="#f3e8ff" stroke-width="2"/><rect x="47" y="28" width="6" height="44" rx="3" fill="#fde047"/>'),
+        host_milly: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#500724"/><path d="M50,80 C20,60 15,32 35,26 C44,24 50,33 50,33 C50,33 56,24 65,26 C85,32 80,60 50,80 Z" fill="#f43f5e" stroke="#fbcfe8" stroke-width="2.5"/><polygon points="36,22 43,12 50,20 57,12 64,22" fill="#fde047"/>'),
+        host_heer: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#3b0764"/><circle cx="50" cy="50" r="26" fill="none" stroke="#f472b6" stroke-width="4" stroke-dasharray="10 6"/><polygon points="50,22 58,42 78,50 58,58 50,78 42,58 22,50 42,42" fill="#e879f9" stroke="#fff" stroke-width="2"/>'),
+        host_ishika: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#422006"/><polygon points="50,16 58,38 82,38 62,52 70,76 50,62 30,76 38,52 18,38 42,38" fill="#facc15" stroke="#fff" stroke-width="2"/>'),
+        host_izzan: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#450a0a"/><polygon points="50,16 74,56 58,56 66,84 28,46 44,46" fill="#ef4444" stroke="#fde047" stroke-width="2"/>'),
+        host_sus: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#052e16"/><rect x="26" y="34" width="48" height="22" rx="11" fill="#4ade80" stroke="#bbf7d0" stroke-width="2"/><circle cx="38" cy="45" r="5" fill="#090d16"/><circle cx="62" cy="45" r="5" fill="#090d16"/><path d="M36,68 Q50,62 64,68" stroke="#4ade80" stroke-width="3" fill="none"/>'),
+        host_ruwii: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#4c0519"/><g fill="#fb7185" stroke="#ffe4e6" stroke-width="1.5"><circle cx="50" cy="30" r="14"/><circle cx="69" cy="44" r="14"/><circle cx="62" cy="66" r="14"/><circle cx="38" cy="66" r="14"/><circle cx="31" cy="44" r="14"/></g><circle cx="50" cy="50" r="10" fill="#fde047"/>'),
+        host_moon: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#090d16"/><path d="M62,20 A30,30 0 1,0 78,68 A24,24 0 1,1 62,20 Z" fill="#fde047" stroke="#fef9c3" stroke-width="2"/><circle cx="68" cy="34" r="3" fill="#38bdf8"/><circle cx="76" cy="48" r="2.5" fill="#c084fc"/>'),
+        host_zaira: makeSvgUri('<circle cx="50" cy="50" r="48" fill="#0f172a"/><circle cx="50" cy="50" r="20" fill="#a855f7" stroke="#e9d5ff" stroke-width="2"/><ellipse cx="50" cy="50" rx="38" ry="11" transform="rotate(-22 50 50)" fill="none" stroke="#38bdf8" stroke-width="3.5"/>'),
+        superhost: makeSvgUri('<defs><radialGradient id="gHalo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffffff"/><stop offset="45%" stop-color="#fde047"/><stop offset="80%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#090d16"/></radialGradient><linearGradient id="gCrown" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#fde047"/><stop offset="100%" stop-color="#ef4444"/></linearGradient></defs><circle cx="50" cy="50" r="49" fill="url(#gHalo)" stroke="#ffffff" stroke-width="3"/><g stroke="#ffffff" stroke-width="1.5" opacity="0.85"><line x1="50" y1="2" x2="50" y2="98"/><line x1="2" y1="50" x2="98" y2="50"/><line x1="16" y1="16" x2="84" y2="84"/><line x1="84" y1="16" x2="16" y2="84"/></g><circle cx="50" cy="50" r="36" fill="#090d16" stroke="#fde047" stroke-width="2.5"/><path d="M12,48 Q22,30 32,46 Q20,56 12,48 Z M88,48 Q78,30 68,46 Q80,56 88,48 Z" fill="#38bdf8" stroke="#fff" stroke-width="1.5"/><polygon points="22,68 25,30 39,46 50,16 61,46 75,30 78,68" fill="url(#gCrown)" stroke="#ffffff" stroke-width="2.2"/><rect x="22" y="68" width="56" height="10" rx="4" fill="#fde047" stroke="#fff" stroke-width="1.5"/><polygon points="50,42 57,53 50,64 43,53" fill="#38bdf8" stroke="#ffffff" stroke-width="2"/><circle cx="50" cy="13" r="3.5" fill="#ffffff"/>')
+      };
+      const PREMIUM_AVATARS = [
+        { id: 'diamond', img: AVATAR_ART.diamond, name: 'Cyber Diamond', fx: 'av-fx-diamond', req: 'free', badge: '💎 Pure Diamond VIP' },
+        { id: 'samurai', img: AVATAR_ART.samurai, name: 'Neon Samurai', fx: 'av-fx-diamond', req: 'free', badge: '👹 Neon Samurai' },
+        { id: 'phoenix', img: AVATAR_ART.phoenix, name: 'Phoenix Blaze', fx: 'av-fx-disco', req: 'free', badge: '🔥 Eternal Phoenix' },
+        { id: 'ninja', img: AVATAR_ART.ninja, name: 'Void Shinobi', fx: 'av-fx-host', req: 'free', badge: '🥷 Shadow Shinobi' },
+        { id: 'astro', img: AVATAR_ART.astro, name: 'Galaxy Astro', fx: 'av-fx-diamond', req: 'free', badge: '🚀 Cosmic Explorer' },
+        { id: 'disco', img: AVATAR_ART.disco, name: 'Disco Orb (3 Refs)', fx: 'av-fx-disco', req: 'ref3', badge: '🪩 3-Ref Disco Star' },
+        { id: 'girl_butterfly', img: AVATAR_ART.girl_butterfly, name: 'Monarch Queen (3 Refs)', fx: 'av-fx-girlglam', req: 'ref3', badge: '🦋 3-Ref Glam Queen' },
+        { id: 'kitsune', img: AVATAR_ART.kitsune, name: 'Cyber Kitsune (3 Refs)', fx: 'av-fx-girlglam', req: 'ref3', badge: '🦊 3-Ref Spirit Fox' },
+        { id: 'ref5', img: AVATAR_ART.ref5, name: 'Mecha-Wolf (5 Refs)', fx: 'av-fx-disco', req: 'ref5', badge: '🐺 5-Ref Alpha Wolf' },
+        { id: 'girl_blossom', img: AVATAR_ART.girl_blossom, name: 'Sakura Lotus (5 Refs)', fx: 'av-fx-girlglam', req: 'ref5', badge: '🌸 5-Ref Goddess' },
+        { id: 'skull', img: AVATAR_ART.skull, name: 'Toxic Reaper (5 Refs)', fx: 'av-fx-disco', req: 'ref5', badge: '💀 5-Ref Bio-Skull' },
+        { id: 'lion', img: AVATAR_ART.lion, name: 'Golden Lion (5 Refs)', fx: 'av-fx-superhost', req: 'ref5', badge: '🦁 5-Ref King' },
+        { id: 'ref10', img: AVATAR_ART.ref10, name: 'Sky Dragon (10 Refs)', fx: 'av-fx-diamond', req: 'ref10', badge: '🐉 10-Ref Mythic' },
+        { id: 'girl_empress', img: AVATAR_ART.girl_empress, name: 'Tiara Empress (10 Refs)', fx: 'av-fx-girlglam', req: 'ref10', badge: '👸 10-Ref Empress' },
+        { id: 'reaper', img: AVATAR_ART.reaper, name: 'Soul Scythe (10 Refs)', fx: 'av-fx-host', req: 'ref10', badge: '⚰️ 10-Ref Phantom' },
+        { id: 'unicorn', img: AVATAR_ART.unicorn, name: 'Mystic Horn (10 Refs)', fx: 'av-fx-girlglam', req: 'ref10', badge: '🦄 10-Ref Legend' },
+        { id: 'superhost', img: AVATAR_ART.superhost, name: 'SAMAKSH GOD', fx: 'av-fx-superhost', req: 'code', badge: '👑 SUPREME CREATOR & GOD-KING' },
+        { id: 'host_zoro', img: AVATAR_ART.host_zoro, name: 'Zoro 3-Blade', fx: 'av-fx-host', req: 'code', badge: '⚔️ Official Host: Zoro' },
+        { id: 'host_sarah', img: AVATAR_ART.host_sarah, name: 'Sarah Butterfly', fx: 'av-fx-girlglam', req: 'code', badge: '🦋 Official Host: Sarah' },
+        { id: 'host_milly', img: AVATAR_ART.host_milly, name: 'Milly Diva', fx: 'av-fx-girlglam', req: 'code', badge: '💖 Official Host: Milly' },
+        { id: 'host_heer', img: AVATAR_ART.host_heer, name: 'Heer Nova', fx: 'av-fx-girlglam', req: 'code', badge: '🌸 Official Host: Heer' },
+        { id: 'host_ishika', img: AVATAR_ART.host_ishika, name: 'Ishika Star', fx: 'av-fx-girlglam', req: 'code', badge: '✨ Official Host: Ishika' },
+        { id: 'host_izzan', img: AVATAR_ART.host_izzan, name: 'Izzan Inferno', fx: 'av-fx-disco', req: 'code', badge: '🔥 Official Host: Izzan' },
+        { id: 'host_sus', img: AVATAR_ART.host_sus, name: 'Sus Shadow', fx: 'av-fx-host', req: 'code', badge: '👀 Official Host: Sus' },
+        { id: 'host_ruwii', img: AVATAR_ART.host_ruwii, name: 'Ruwii Blossom', fx: 'av-fx-girlglam', req: 'code', badge: '🌺 Official Host: Ruwii' },
+        { id: 'host_moon', img: AVATAR_ART.host_moon, name: 'Moon Eclipse', fx: 'av-fx-host', req: 'code', badge: '🌙 Official Host: Moon' },
+        { id: 'host_zaira', img: AVATAR_ART.host_zaira, name: 'Zaira Orbit', fx: 'av-fx-diamond', req: 'code', badge: '🪐 Official Host: Zaira' }
+      ];
+
+      let myReferralCount = 0;
+      let unlockedCodes = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+      let playerAvatarMap = {};
+
+      function getMyCleanName() {
+        return (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
+      }
+
+      function isAvatarUnlocked(av) {
+        if (av.req === 'free') return true;
+        if (av.req === 'ref3') return myReferralCount >= 3;
+        if (av.req === 'ref5') return myReferralCount >= 5;
+        if (av.req === 'ref10') return myReferralCount >= 10;
+        if (av.req === 'code') return unlockedCodes.includes(av.id);
+        return false;
+      }
+
+      window.copyMyInviteForAvatars = function() {
+        const uname = getMyCleanName() || 'player';
+        const link = window.location.origin + '/?ref=' + encodeURIComponent(uname);
+        if (navigator.clipboard) navigator.clipboard.writeText(link);
+        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 3, 5, or 10 friends to unlock exclusive HD Avatars!');
+      };
+
+      window.redeemAvatarCode = function() {
+        const code = (document.getElementById('avSecretCodeInputV6').value || '').trim();
+        if (!code) return;
+        if (typeof socket !== 'undefined') socket.emit('verifyAvatarCodeV6', { code });
+      };
+
+      window.equipPremiumAvatar = function(av) {
+        if (!isAvatarUnlocked(av)) {
+          if (av.req === 'ref3') alert('🔒 Bring ' + (3 - myReferralCount) + ' more friends via your referral link!');
+          else if (av.req === 'ref5') alert('🔒 Bring ' + (5 - myReferralCount) + ' more friends via your referral link!');
+          else if (av.req === 'ref10') alert('🔒 Bring ' + (10 - myReferralCount) + ' more friends via your referral link!');
+          else alert('🔐 Locked! Enter the secret Host Avatar code below.');
+          return;
+        }
+        localStorage.setItem('sammu_avatar', av.img);
+        localStorage.setItem('avatar', av.img);
+        localStorage.setItem('sammu_avatar_fx', av.fx);
+        window._savedAvatar = av.img;
+        const uname = window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || 'Player';
+        if (typeof socket !== 'undefined') {
+          socket.emit('equipAvatarFxV6', { avatar: av.img, fx: av.fx, badge: av.badge });
+          socket.emit('joinRoom', { username: uname, avatar: av.img, deviceId: localStorage.getItem('sammu_dev_uid') || '', isReconnect: true });
+        }
+        document.getElementById('avatarVaultModalV6').style.display = 'none';
+      };
+
+      window.renderAvatarVault = function() {
+        const grid = document.getElementById('avVaultGridV6');
+        const stats = document.getElementById('avRefStatsV6');
+        if (stats) stats.textContent = '🔗 Referrals: ' + myReferralCount + ' | 27 HD Vector Avatars';
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const ordered = [
+          ...PREMIUM_AVATARS.filter(a => a.id === 'superhost'),
+          ...PREMIUM_AVATARS.filter(a => a.id !== 'superhost')
+        ];
+
+        ordered.forEach(av => {
+          const unlocked = isAvatarUnlocked(av);
+          const isGod = av.id === 'superhost';
+          const card = document.createElement('div');
+          card.className = 'av-item-v6' + (unlocked ? '' : ' locked');
+          if (isGod) {
+            card.style.cssText = 'grid-column: 1 / -1; background: linear-gradient(135deg, rgba(250,204,21,0.28), rgba(239,68,68,0.25), rgba(56,189,248,0.28)); border: 2px solid #fde047; box-shadow: 0 0 22px rgba(250,204,21,0.55); padding: 11px;';
+          }
+          card.innerHTML =
+            '<div class="av-art-circle-v6 ' + av.fx + '" style="' + (isGod ? 'width:68px;height:68px;' : '') + '"><img src="' + av.img + '" alt="' + av.name + '"></div>' +
+            '<div style="font-weight:900;font-size:' + (isGod ? '13px;color:#fde047;text-shadow:0 0 8px #f59e0b;' : '10px;') + '">' + (isGod ? '⚡👑 SAMAKSH MYTHIC GOD-KING 👑⚡' : av.name) + '</div>' +
+            '<div style="font-size:10px;color:' + (unlocked ? '#4ade80' : '#f87171') + ';margin-top:2px;font-weight:bold;">' + (unlocked ? '✅ Tap to Equip' : '🔒 Locked') + '</div>';
+          card.onclick = () => window.equipPremiumAvatar(av);
+          grid.appendChild(card);
+        });
+      };
+
+      window.openAvatarPreview = function(name, avatarHtml, fxClass, badgeText) {
+        const circle = document.getElementById('avPreviewCircleV6');
+        circle.className = fxClass || '';
+        circle.innerHTML = avatarHtml || '🥷';
+        document.getElementById('avPreviewNameV6').textContent = name || 'Player';
+        document.getElementById('avPreviewBadgeV6').textContent = badgeText || '🎮 Arena Player';
+        document.getElementById('avatarPreviewModalV6').style.display = 'flex';
+      };
+      function enhanceChatAndAvatarsV6() {
+        document.querySelectorAll('span, div, p, b, strong, td').forEach(el => {
+          if (el.children.length === 0) {
+            const t = (el.textContent || '').trim();
+            if (t.startsWith('data:image/svg+xml') || t.startsWith('data:image/png') || t.startsWith('data:image/jpeg')) {
+              el.innerHTML = '<img src="' + t + '" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;object-fit:cover;">';
+            }
+          }
+        });
+
+        const allContainers = document.querySelectorAll('#chatBox, #messages, .chat-messages, #chat-container, [id*="chat"], [class*="chat"]');
+        allContainers.forEach(box => {
+          if (box.scrollHeight < 60) return;
+          Array.from(box.children).forEach(msgEl => {
+            if (msgEl.tagName === 'SCRIPT' || msgEl.tagName === 'STYLE' || msgEl.tagName === 'INPUT') return;
+            const rawTxt = (msgEl.textContent || '').toLowerCase().trim();
+            if (!rawTxt || rawTxt.length > 600) return;
+
+            const isSamakshMsg = /\b(samaksh|sammu)\b/.test(rawTxt) &&
+              (rawTxt.includes(':') || rawTxt.startsWith('samaksh') || rawTxt.startsWith('sammu'));
+
+            if (isSamakshMsg && !msgEl.classList.contains('chat-glow-samaksh')) {
+              msgEl.classList.add('chat-glow-samaksh');
+              const innerDiv = msgEl.querySelector('div, p, span');
+              if (innerDiv && innerDiv.textContent.trim().length > 3) {
+                innerDiv.classList.add('chat-glow-samaksh');
+              }
+            }
+          });
+        });
+
+        document.querySelectorAll('img').forEach(el => {
+          if (el.dataset.avEnhancedV6) return;
+          if (el.src && el.src.startsWith('data:image') && el.offsetWidth >= 16 && el.offsetWidth <= 80) {
+            el.dataset.avEnhancedV6 = 'true';
+            el.style.cursor = 'pointer';
+            el.style.borderRadius = '50%';
+            el.style.objectFit = 'cover';
+
+            const parentText = (el.parentElement ? el.parentElement.textContent : '') || '';
+            const matchedUser = Object.keys(playerAvatarMap).find(u => parentText.toLowerCase().includes(u));
+            const info = matchedUser ? playerAvatarMap[matchedUser] : null;
+            if (info && info.fx) el.classList.add(info.fx);
+            else if (parentText.toLowerCase().includes('samaksh') || parentText.toLowerCase().includes('sammu')) {
+              el.classList.add('av-fx-superhost');
+            } else {
+              el.classList.add('av-fx-diamond');
+            }
+
+            el.onclick = function(e) {
+              e.stopPropagation();
+              const html = '<img src="' + el.src + '" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">';
+              window.openAvatarPreview(info ? info.name : 'Arena Player', html, info ? info.fx : el.className, info ? info.badge : '✨ HD Vector Avatar');
+            };
+          }
+        });
+      }
+      setInterval(enhanceChatAndAvatarsV6, 350);
+
+      function forceHookAvatarButtonV6() {
+        let btn = document.getElementById('openAvatarVaultBtn');
+        if (!btn) {
+          const anchor = document.getElementById('openPhonkDjBtn') || document.getElementById('openChefBtn') ||
+            Array.from(document.querySelectorAll('button, a, div[onclick]')).find(el => el.children.length === 0 && /jam|🎹/i.test(el.textContent || ''));
+          if (anchor && anchor.parentNode) {
+            btn = anchor.cloneNode(true);
+            btn.id = 'openAvatarVaultBtn';
+            anchor.parentNode.insertBefore(btn, anchor.nextSibling);
+          }
+        }
+        if (btn && !btn.dataset.v6Bound) {
+          btn.dataset.v6Bound = 'true';
+          btn.removeAttribute('onclick');
+          btn.textContent = '👑 Avatars';
+          btn.onclick = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (typeof socket !== 'undefined') socket.emit('getMyAvatarStatsV6', { username: getMyCleanName() });
+            window.renderAvatarVault();
+            document.getElementById('avatarVaultModalV6').style.display = 'flex';
+          };
+        }
+        if (typeof socket !== 'undefined' && !window._avVaultV6Bound) {
+          window._avVaultV6Bound = true;
+          socket.on('avatarStatsDataV6', (d) => {
+            if (d && typeof d.refs === 'number') myReferralCount = d.refs;
+            if (d && d.avatarMap) playerAvatarMap = d.avatarMap;
+            window.renderAvatarVault();
+            enhanceChatAndAvatarsV6();
+          });
+          socket.on('avatarCodeResultV6', (res) => {
+            if (res && res.ok && res.avatarId) {
+              if (!unlockedCodes.includes(res.avatarId)) {
+                unlockedCodes.push(res.avatarId);
+                localStorage.setItem('sammu_unlocked_avatars', JSON.stringify(unlockedCodes));
+              }
+              alert('🎉 Unlocked: ' + res.name + '!');
+              window.renderAvatarVault();
+            } else {
+              alert('❌ Invalid Avatar Code!');
+            }
+          });
+        }
+      }
+      setInterval(forceHookAvatarButtonV6, 600);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', AVATAR_VAULT_V6_HTML + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        const origSendFile = res.sendFile;
+        res.sendFile = function(filePath) {
+            if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+                try {
+                    let html = fs.readFileSync(filePath, 'utf8');
+                    if (html.includes('</body>')) {
+                        html = html.replace('</body>', AVATAR_VAULT_V6_HTML + '\n</body>');
+                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                        return origSend.call(this, html);
+                    }
+                } catch (e) {}
+            }
+            return origSendFile.apply(this, arguments);
+        };
+        next();
+    });
+
+    const HOST_AVATAR_CODES_V6 = {
+        "#sammuadmin#bhaicharaontop": { id: "superhost", name: "👑 SAMAKSH MYTHIC GOD-KING" },
+        "#zoro#pirateking":          { id: "host_zoro", name: "⚔️ Zoro 3-Blade" },
+        "#sarah#butterfly":          { id: "host_sarah", name: "🦋 Sarah Butterfly" },
+        "#milly#queen":              { id: "host_milly", name: "💖 Milly Diva" },
+        "#heer#bloom":               { id: "host_heer", name: "🌸 Heer Nova" },
+        "#ishika#star":              { id: "host_ishika", name: "✨ Ishika Star" },
+        "#izzan#fire":               { id: "host_izzan", name: "🔥 Izzan Inferno" },
+        "#sus#bunker":               { id: "host_sus", name: "👀 Sus Shadow" },
+        "#ruwii#garden":             { id: "host_ruwii", name: "🌺 Ruwii Blossom" },
+        "#moon#eclipse":             { id: "host_moon", name: "🌙 Moon Eclipse" },
+        "#zaira#orbit":              { id: "host_zaira", name: "🪐 Zaira Orbit" }
+    };
+
+    const globalAvatarMapV6 = {};
+    const userReferralsDBV6 = {};
+
+    io.on('connection', (socket) => {
+        socket.on('registerReferral', ({ refOwner, deviceId }) => {
+            if (!refOwner || !deviceId) return;
+            const cleanRef = refOwner.trim().toLowerCase();
+            if (!userReferralsDBV6[cleanRef]) userReferralsDBV6[cleanRef] = new Set();
+            userReferralsDBV6[cleanRef].add(String(deviceId));
+        });
+
+        socket.on('getMyAvatarStatsV6', (data) => {
+            const uname = ((data && data.username) || socket.username || '').trim().toLowerCase();
+            let refs = userReferralsDBV6[uname] ? userReferralsDBV6[uname].size : 0;
+            if (uname) {
+                const srv = Object.values(serversDB).find(s => s.owner && s.owner.toLowerCase() === uname && Array.isArray(s.allTimeDevices));
+                if (srv && srv.allTimeDevices.length > refs) refs = srv.allTimeDevices.length;
+            }
+            socket.emit('avatarStatsDataV6', { refs, avatarMap: globalAvatarMapV6 });
+        });
+
+        socket.on('verifyAvatarCodeV6', (data) => {
+            const code = ((data && data.code) || '').trim().toLowerCase();
+            const found = HOST_AVATAR_CODES_V6[code];
+            socket.emit('avatarCodeResultV6', found ? { ok: true, avatarId: found.id, name: found.name } : { ok: false });
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
+            if (!raw || typeof raw !== 'string') return;
+            const found = HOST_AVATAR_CODES_V6[raw.trim().toLowerCase()];
+            if (found) {
+                socket.emit('avatarCodeResultV6', { ok: true, avatarId: found.id, name: found.name });
+                socket.emit('message', {
+                    username: 'SYSTEM',
+                    text: `👑 **SECRET UNLOCKED:** **${found.name}** is now unlocked in your **👑 Avatars** Vault!`,
+                    _serverId: socket.activeServerId
+                });
+            }
+        });
+
+        socket.on('equipAvatarFxV6', (data) => {
+            const uname = (socket.username || '').trim().toLowerCase();
+            if (!uname || !data) return;
+            globalAvatarMapV6[uname] = { name: socket.username, fx: data.fx || '', badge: data.badge || '' };
+            if (socket.activeServerId) {
+                io.to(socket.activeServerId).emit('avatarStatsDataV6', { avatarMap: globalAvatarMapV6 });
+            }
+        });
+    });
+    // === END SELF-OVERWRITING HD AVATAR VAULT v6 ===
+
 };

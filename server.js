@@ -3006,8 +3006,7 @@ setInterval(() => {
     }
 }, 33);
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));
+
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));
 

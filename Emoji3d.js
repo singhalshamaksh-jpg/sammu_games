@@ -131,7 +131,7 @@ const EMOJI_3D_HTML = `
     ['star', 'GoldStar', '#facc15', '#854d0e', '<polygon points="50,16 59,38 82,38 63,52 70,76 50,62 30,76 37,52 18,38 41,38" fill="#fef08a" stroke="#fff" stroke-width="2"/>'],
     ['rocket', 'Rocket', '#10b981', '#064e3b', '<path d="M50,16 C64,32 66,54 58,70 L42,70 C34,54 36,32 50,16 Z" fill="#f8fafc"/><circle cx="50" cy="44" r="7" fill="#38bdf8"/><polygon points="42,70 50,86 58,70" fill="#f97316"/>'],
     ['party', 'Party', '#ec4899', '#831843', '<polygon points="50,14 34,36 66,36" fill="#38bdf8"/><circle cx="38" cy="48" r="4.5" fill="#fff"/><circle cx="62" cy="48" r="4.5" fill="#fff"/><path d="M38,62 Q50,74 62,62" stroke="#fde047" stroke-width="4" fill="none"/>'],
-    ['namaste', 'Namaste', '#fb923c', '#7c2d12', '<path d="M48,24 L36,68 L48,68 Z" fill="#fef3c7" stroke="#d97706" stroke-width="2"/><path d="M52,24 L64,68 L52,68 Z" fill="#fde68a" stroke="#d97706" stroke-width="2"/>'],
+          ['namaste', 'Namaste', '#fb923c', '#7c2d12', '<path d="M48,24 L36,68 L48,68 Z" fill="#fef3c7" stroke="#d97706" stroke-width="2"/><path d="M52,24 L64,68 L52,68 Z" fill="#fde68a" stroke="#d97706" stroke-width="2"/>'],
     ['chakra', 'Chakra', '#2563eb', '#090d16', '<circle cx="50" cy="48" r="24" fill="none" stroke="#fde047" stroke-width="5" stroke-dasharray="6 4"/><circle cx="50" cy="48" r="8" fill="#38bdf8"/>'],
     ['trishul', 'Trishul', '#dc2626', '#1e1b4b', '<line x1="50" y1="18" x2="50" y2="82" stroke="#fde047" stroke-width="5"/><path d="M34,26 Q34,44 50,44 Q66,44 66,26" fill="none" stroke="#fde047" stroke-width="4.5"/>'],
     ['lotus', 'Lotus', '#f472b6', '#4c0519', '<ellipse cx="50" cy="44" rx="10" ry="24" fill="#fbcfe8"/><ellipse cx="36" cy="50" rx="9" ry="20" transform="rotate(-28 36 50)" fill="#f9a8d4"/><ellipse cx="64" cy="50" rx="9" ry="20" transform="rotate(28 64 50)" fill="#f9a8d4"/>'],
@@ -194,7 +194,7 @@ const EMOJI_3D_HTML = `
       socket.emit('chatMessage', { text: stickerCode });
     }
   }
-  const grid = document.getElementById('e3dGrid');
+    const grid = document.getElementById('e3dGrid');
   if (grid) {
     const frag = document.createDocumentFragment();
     STICKERS.forEach(st => {
@@ -303,3 +303,4 @@ module.exports = function attach3DEmojiPack(app) {
     next();
   });
 };
+  

@@ -16,7 +16,7 @@ module.exports = function initMultiServers(app, io) {
         srv_sarah:   { id: 'srv_sarah',   name: "🦋 Sarah's Sanctuary", owner: "sarah",   theme: "cyber",   max: 20, type: "official" },
         srv_advait:  { id: 'srv_advait',  name: "⚡ Advait's Citadel",  owner: "advait",  theme: "diamond", max: 20, type: "official" },
         srv_ruwii:   { id: 'srv_ruwii',   name: "🌺 Ruwii's Garden",    owner: "ruwii",   theme: "gold",    max: 20, type: "official" },
-        srv_saeron:  { id: 'srv_saeron',  name: "🪐 Saeron's Orbit",    owner: "saeron",  theme: "cyber",   max: 20, type: "official" },
+        srv_Zaira:  { id: 'srv_zaira',  name: "🪐 zaira's Orbit",    owner: "zaira",  theme: "cyber",   max: 20, type: "official" },
         srv_shubhi:  { id: 'srv_shubhi',  name: "💖 Shubhi's Castle",   owner: "shubhi",  theme: "crimson", max: 20, type: "official" },
         srv_sid:     { id: 'srv_sid',     name: "🦁 Sid's Kingdom",     owner: "sid",     theme: "gold",    max: 20, type: "official" },
         srv_diamond: { 
@@ -62,7 +62,7 @@ module.exports = function initMultiServers(app, io) {
     const activeCounts = {};
     const OG_HOSTS = new Set([
         "sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus",
-        "sarah", "advait", "ruwii", "saeron", "shubhi", "sid"
+        "sarah", "advait", "ruwii", "Zaira", "shubhi", "sid"
     ]);
     const MASTER_KEYS = new Set(["#bhaibahencharaontop", "#universalbrother"]);
     const arenas = new Map();
@@ -2085,7 +2085,337 @@ module.exports = function initMultiServers(app, io) {
     });
     // === END PHONK DJ v4 ===
 
-          
+      // === PREMIUM AVATAR VAULT (REFERRAL-EARNED, GIRLS EGO-BOOST, SUPERHOST & IMPOSTOR PACK) ===
+    const PREMIUM_AVATAR_CSS_HTML = `
+    <style>
+      @keyframes discoPulse {
+        0% { box-shadow: 0 0 12px #ff0080, inset 0 0 8px #ff0080; border-color: #ff0080; filter: hue-rotate(0deg); }
+        50% { box-shadow: 0 0 18px #00f0ff, inset 0 0 10px #00f0ff; border-color: #00f0ff; filter: hue-rotate(180deg); }
+        100% { box-shadow: 0 0 12px #ff0080, inset 0 0 8px #ff0080; border-color: #ff0080; filter: hue-rotate(360deg); }
+      }
+      @keyframes diamondShine {
+        0%, 100% { box-shadow: 0 0 14px #38bdf8, 0 0 24px #bae6fd; border-color: #7dd3fc; transform: scale(1); }
+        50% { box-shadow: 0 0 22px #ffffff, 0 0 32px #38bdf8; border-color: #ffffff; transform: scale(1.06); }
+      }
+      @keyframes girlGlamGlow {
+        0%, 100% { box-shadow: 0 0 14px #f472b6, 0 0 24px #e879f9; border-color: #f9a8d4; transform: scale(1); }
+        50% { box-shadow: 0 0 22px #fda4af, 0 0 32px #d946ef; border-color: #ffffff; transform: scale(1.06); }
+      }
+      @keyframes superHostAura {
+        0%, 100% { box-shadow: 0 0 18px #facc15, 0 0 30px #ef4444; border-color: #fde047; }
+        50% { box-shadow: 0 0 26px #a855f7, 0 0 36px #facc15; border-color: #ffffff; }
+      }
+      .av-fx-disco { animation: discoPulse 2.2s linear infinite !important; border: 2px solid #ff0080 !important; border-radius: 50% !important; padding: 2px !important; }
+      .av-fx-diamond { animation: diamondShine 2s ease-in-out infinite !important; border: 2px solid #7dd3fc !important; border-radius: 50% !important; padding: 2px !important; }
+      .av-fx-girlglam { animation: girlGlamGlow 2s ease-in-out infinite !important; border: 2px solid #f9a8d4 !important; border-radius: 50% !important; padding: 2px !important; }
+      .av-fx-superhost { animation: superHostAura 1.8s ease-in-out infinite !important; border: 2.5px solid #fde047 !important; border-radius: 50% !important; padding: 2px !important; }
+      .av-fx-host { box-shadow: 0 0 12px #a855f7 !important; border: 2px solid #c084fc !important; border-radius: 50% !important; padding: 2px !important; }
+
+      #avatarVaultModal, #avatarPreviewModal { display:none; position:fixed; inset:0; background:rgba(5,8,20,0.92); z-index:999995; align-items:center; justify-content:center; backdrop-filter:blur(10px); font-family:inherit; padding:12px; }
+      #avatarVaultCard, #avatarPreviewCard { background:linear-gradient(155deg,#0f172a,#1e1b4b); border:2px solid #38bdf8; border-radius:22px; padding:16px; width:100%; max-width:415px; color:#fff; text-align:center; box-shadow:0 0 35px rgba(56,189,248,0.45); max-height:90vh; overflow-y:auto; }
+      .av-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin:10px 0; }
+      .av-item { background:rgba(255,255,255,0.06); border:1.5px solid rgba(56,189,248,0.35); border-radius:14px; padding:9px 7px; cursor:pointer; transition:0.15s; }
+      .av-item:hover { background:rgba(56,189,248,0.18); transform:translateY(-2px); }
+      .av-item.locked { opacity:0.68; border-color:#64748b; }
+      .av-emoji-circle { width:46px; height:46px; margin:0 auto 5px auto; display:flex; align-items:center; justify-content:center; font-size:26px; border-radius:50%; background:rgba(0,0,0,0.4); }
+    </style>
+
+    <div id="avatarVaultModal">
+      <div id="avatarVaultCard">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:15px;color:#38bdf8;">👑 PREMIUM AVATAR VAULT</span>
+          <button onclick="document.getElementById('avatarVaultModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕</button>
+        </div>
+        <div id="avRefStats" style="font-size:11px;color:#fde047;margin:6px 0;font-weight:bold;">🔗 Your Referrals: 0 | Invite friends to unlock VIP Avatars!</div>
+        <div class="av-grid" id="avVaultGrid"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input id="avSecretCodeInput" placeholder="Enter Secret Avatar Code..." style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
+          <button onclick="redeemAvatarCode()" style="background:linear-gradient(90deg,#a855f7,#ec4899);border:none;color:#fff;border-radius:10px;padding:8px 12px;font-weight:bold;font-size:12px;cursor:pointer;">🔓 Unlock</button>
+        </div>
+        <button onclick="copyMyInviteForAvatars()" style="width:100%;margin-top:8px;padding:9px;border:none;border-radius:10px;background:linear-gradient(90deg,#059669,#10b981);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🔗 Copy My Referral Link (Unlock at 3, 5 & 10 Refs!)</button>
+      </div>
+    </div>
+
+    <div id="avatarPreviewModal" onclick="this.style.display='none'">
+      <div id="avatarPreviewCard" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:14px;color:#7dd3fc;">🔍 PLAYER AVATAR PROFILE</span>
+          <button onclick="document.getElementById('avatarPreviewModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:3px 9px;font-weight:bold;cursor:pointer;">✕</button>
+        </div>
+        <div id="avPreviewCircle" style="width:96px;height:96px;margin:14px auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:56px;background:rgba(0,0,0,0.5);">🥷</div>
+        <div id="avPreviewName" style="font-size:18px;font-weight:900;color:#fff;">Player</div>
+        <div id="avPreviewBadge" style="font-size:12px;color:#fde047;margin-top:4px;font-weight:bold;">Standard Member</div>
+      </div>
+    </div>
+        <script>
+    (function() {
+      const PREMIUM_AVATARS = [
+        { id: 'diamond', emoji: '💎', name: 'Diamond Starter', fx: 'av-fx-diamond', req: 'free', badge: '💎 Pure Diamond VIP' },
+        { id: 'disco', emoji: '🪩', name: 'Glowing Disco (3 Refs)', fx: 'av-fx-disco', req: 'ref3', badge: '🪩 3-Referral Disco Star' },
+        { id: 'girl_butterfly', emoji: '🦋', name: 'Neon Butterfly Queen (3 Refs)', fx: 'av-fx-girlglam', req: 'ref3', badge: '🦋 3-Referral Glam Queen' },
+        { id: 'ref5', emoji: '🔥', name: 'Inferno Wolf (5 Refs)', fx: 'av-fx-disco', req: 'ref5', badge: '🔥 5-Referral Legend' },
+        { id: 'girl_blossom', emoji: '🌸', name: 'Blossom Goddess (5 Refs)', fx: 'av-fx-girlglam', req: 'ref5', badge: '🌸 5-Referral Goddess' },
+        { id: 'ref10', emoji: '🐉', name: 'Celestial Dragon (10 Refs)', fx: 'av-fx-diamond', req: 'ref10', badge: '🐉 10-Referral Mythic' },
+        { id: 'girl_empress', emoji: '👸', name: 'Royal Diamond Empress (10 Refs)', fx: 'av-fx-girlglam', req: 'ref10', badge: '👸 10-Referral Supreme Empress' },
+        { id: 'host_zoro', emoji: '⚔️', name: 'Zoro Pirate King', fx: 'av-fx-host', req: 'code', badge: '⚔️ Official Host Avatar' },
+        { id: 'host_milly', emoji: '💖', name: 'Milly Royal Diva', fx: 'av-fx-girlglam', req: 'code', badge: '💖 Official Host Avatar' },
+        { id: 'host_moon', emoji: '🌙', name: 'Moon Eclipse', fx: 'av-fx-host', req: 'code', badge: '🌙 Official Host Avatar' },
+        { id: 'host_heer', emoji: '🌺', name: 'Heer Enchantress', fx: 'av-fx-girlglam', req: 'code', badge: '🌺 Official Host Avatar' },
+        { id: 'superhost', emoji: '👑', name: 'SAMAKSH GOD-MODE', fx: 'av-fx-superhost', req: 'code', badge: '👑 SUPREME CREATOR & SUPER-HOST' }
+      ];
+
+      let myReferralCount = 0;
+      let unlockedCodes = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+      let playerAvatarMap = {};
+
+      function getMyCleanName() {
+        return (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
+      }
+
+      // Superhost code ONLY unlocks 'superhost' — referral avatars MUST be earned via referrals!
+      function isAvatarUnlocked(av) {
+        if (av.req === 'free') return true;
+        if (av.req === 'ref3') return myReferralCount >= 3;
+        if (av.req === 'ref5') return myReferralCount >= 5;
+        if (av.req === 'ref10') return myReferralCount >= 10;
+        if (av.req === 'code') return unlockedCodes.includes(av.id);
+        return false;
+      }
+
+      window.copyMyInviteForAvatars = function() {
+        const uname = getMyCleanName() || 'player';
+        const link = window.location.origin + '/?ref=' + encodeURIComponent(uname);
+        if (navigator.clipboard) navigator.clipboard.writeText(link);
+        alert('🔗 Your Referral Link Copied!\\n' + link + '\\n\\nUnlock VIP Avatars:\\n• 3 Friends = 🪩 Disco / 🦋 Butterfly Queen\\n• 5 Friends = 🔥 Wolf / 🌸 Blossom Goddess\\n• 10 Friends = 🐉 Dragon / 👸 Diamond Empress');
+      };
+
+      window.redeemAvatarCode = function() {
+        const code = (document.getElementById('avSecretCodeInput').value || '').trim();
+        if (!code) return;
+        if (typeof socket !== 'undefined') socket.emit('verifyAvatarCode', { code });
+      };
+
+      window.equipPremiumAvatar = function(av) {
+        if (!isAvatarUnlocked(av)) {
+          if (av.req === 'ref3') alert('🔒 Locked! Bring ' + (3 - myReferralCount) + ' more friends via your referral link to unlock!');
+          else if (av.req === 'ref5') alert('🔒 Locked! Bring ' + (5 - myReferralCount) + ' more friends via your referral link to unlock!');
+          else if (av.req === 'ref10') alert('🔒 Locked! Bring ' + (10 - myReferralCount) + ' more friends via your referral link to unlock!');
+          else alert('🔐 Locked! Enter the secret code below to unlock this Host Avatar.');
+          return;
+        }
+        localStorage.setItem('sammu_avatar', av.emoji);
+        localStorage.setItem('avatar', av.emoji);
+        localStorage.setItem('sammu_avatar_fx', av.fx);
+        window._savedAvatar = av.emoji;
+        const uname = window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || 'Player';
+        if (typeof socket !== 'undefined') {
+          socket.emit('equipAvatarFx', { avatar: av.emoji, fx: av.fx, badge: av.badge });
+          socket.emit('joinRoom', { username: uname, avatar: av.emoji, deviceId: localStorage.getItem('sammu_dev_uid') || '', isReconnect: true });
+        }
+        document.getElementById('avatarVaultModal').style.display = 'none';
+      };
+
+      window.renderAvatarVault = function() {
+        const grid = document.getElementById('avVaultGrid');
+        const stats = document.getElementById('avRefStats');
+        if (stats) stats.textContent = '🔗 Your Referrals: ' + myReferralCount + ' (3 = 🪩/🦋 | 5 = 🔥/🌸 | 10 = 🐉/👸)';
+        if (!grid) return;
+        grid.innerHTML = '';
+        PREMIUM_AVATARS.forEach(av => {
+          const unlocked = isAvatarUnlocked(av);
+          const card = document.createElement('div');
+          card.className = 'av-item' + (unlocked ? '' : ' locked');
+          card.innerHTML =
+            '<div class="av-emoji-circle ' + av.fx + '">' + av.emoji + '</div>' +
+            '<div style="font-weight:bold;font-size:11px;">' + av.name + '</div>' +
+            '<div style="font-size:10px;color:' + (unlocked ? '#4ade80' : '#f87171') + ';margin-top:3px;">' + (unlocked ? '✅ Tap to Equip' : '🔒 Locked') + '</div>';
+          card.onclick = () => window.equipPremiumAvatar(av);
+          grid.appendChild(card);
+        });
+      };
+
+      window.openAvatarPreview = function(name, avatarHtml, fxClass, badgeText) {
+        const circle = document.getElementById('avPreviewCircle');
+        circle.className = fxClass || '';
+        circle.innerHTML = avatarHtml || '🥷';
+        document.getElementById('avPreviewName').textContent = name || 'Player';
+        document.getElementById('avPreviewBadge').textContent = badgeText || '🎮 Arena Player';
+        document.getElementById('avatarPreviewModal').style.display = 'flex';
+      };
+
+      function enhanceChatAndPlayerAvatars() {
+        const allAvEmojis = ['🪩','💎','🦋','🔥','🌸','🐉','👸','⚔️','💖','🌙','🌺','👑','🥷','🐱','🐶','🦊','🦁','🤖','👽'];
+        document.querySelectorAll('img, span, div').forEach(el => {
+          if (el.dataset.avEnhanced) return;
+          const txt = (el.textContent || '').trim();
+          const isEmojiAv = el.children.length === 0 && allAvEmojis.includes(txt) && el.offsetWidth >= 18 && el.offsetWidth <= 65;
+          const isImgAv = el.tagName === 'IMG' && el.src && el.src.startsWith('data:image') && el.offsetWidth >= 20 && el.offsetWidth <= 65;
+
+          if (isEmojiAv || isImgAv) {
+            el.dataset.avEnhanced = 'true';
+            el.style.cursor = 'pointer';
+            const parentText = (el.parentElement ? el.parentElement.textContent : '') || '';
+            const matchedUser = Object.keys(playerAvatarMap).find(u => parentText.toLowerCase().includes(u));
+            const info = matchedUser ? playerAvatarMap[matchedUser] : null;
+            if (info && info.fx) el.classList.add(info.fx);
+            else if (txt === '🪩') el.classList.add('av-fx-disco');
+            else if (txt === '💎') el.classList.add('av-fx-diamond');
+            else if (['🦋','🌸','👸','💖','🌺'].includes(txt)) el.classList.add('av-fx-girlglam');
+            else if (txt === '👑') el.classList.add('av-fx-superhost');
+
+            el.onclick = function(e) {
+              e.stopPropagation();
+              const html = isImgAv ? '<img src="' + el.src + '" style="width:90px;height:90px;border-radius:50%;object-fit:cover;">' : txt;
+              window.openAvatarPreview(info ? info.name : 'Arena Player', html, info ? info.fx : el.className, info ? info.badge : '');
+            };
+          }
+        });
+      }
+      setInterval(enhanceChatAndPlayerAvatars, 1200);
+          function initAvatarVaultButton() {
+        if (!document.getElementById('openAvatarVaultBtn')) {
+          const anchor = document.getElementById('openPhonkDjBtn') || document.getElementById('openChefBtn') ||
+            Array.from(document.querySelectorAll('button, a, div[onclick]')).find(el => el.children.length === 0 && /jam|🎹/i.test(el.textContent || ''));
+          if (anchor && anchor.parentNode) {
+            const btn = anchor.cloneNode(true);
+            btn.id = 'openAvatarVaultBtn'; btn.removeAttribute('onclick'); btn.textContent = '👑 Avatars';
+            btn.onclick = (e) => {
+              e.preventDefault(); e.stopPropagation();
+              if (typeof socket !== 'undefined') socket.emit('getMyAvatarStats', { username: getMyCleanName() });
+              window.renderAvatarVault();
+              document.getElementById('avatarVaultModal').style.display = 'flex';
+            };
+            anchor.parentNode.insertBefore(btn, anchor.nextSibling);
+          }
+        }
+
+        if (typeof socket !== 'undefined' && !window._avVaultBound) {
+          window._avVaultBound = true;
+          socket.on('avatarStatsData', (d) => {
+            if (d && typeof d.refs === 'number') myReferralCount = d.refs;
+            if (d && d.avatarMap) playerAvatarMap = d.avatarMap;
+            window.renderAvatarVault();
+          });
+          socket.on('avatarCodeResult', (res) => {
+            if (res && res.ok && res.avatarId) {
+              if (!unlockedCodes.includes(res.avatarId)) {
+                unlockedCodes.push(res.avatarId);
+                localStorage.setItem('sammu_unlocked_avatars', JSON.stringify(unlockedCodes));
+              }
+              alert('🎉 Unlocked: ' + res.name + '!');
+              window.renderAvatarVault();
+            } else {
+              alert('❌ Invalid Avatar Code!');
+            }
+          });
+        }
+      }
+
+      window.addEventListener('DOMContentLoaded', () => { initAvatarVaultButton(); setTimeout(initAvatarVaultButton, 1400); });
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', PREMIUM_AVATAR_CSS_HTML + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    const HOST_AVATAR_CODES = {
+        "#sammuadmin#bhaicharaontop": { id: "superhost", name: "👑 SAMAKSH GOD-MODE" },
+        "#zoro#pirateking":          { id: "host_zoro", name: "⚔️ Zoro Pirate King" },
+        "#milly#queen":              { id: "host_milly", name: "💖 Milly Royal Diva" },
+        "#moon#eclipse":             { id: "host_moon", name: "🌙 Moon Eclipse" },
+        "#heer#bloom":               { id: "host_heer", name: "🌺 Heer Enchantress" }
+    };
+
+    const EXTRA_IMPOSTOR_WORDS = [
+        "NARUTO", "GOKU", "LUFFY", "GOJO", "ITACHI", "ZORO", "PIKACHU", "SUKUNA", "LEVI", "TANJIRO",
+        "MINECRAFT", "BGMI", "VALORANT", "ROBLOX", "FREE FIRE", "GTA", "CHESS", "LUDO", "CRICKET", "FOOTBALL",
+        "BIRYANI", "MOMOS", "PANI PURI", "PIZZA", "BURGER", "SAMOSA", "MAGGI", "CHOCOLATE", "ICE CREAM", "MANGO",
+        "IPHONE", "LAPTOP", "HEADPHONES", "SMARTWATCH", "PLAYSTATION", "CAMERA", "DRONE", "ROCKET", "SATELLITE", "ROBOT",
+        "TAJ MAHAL", "EIFFEL TOWER", "MARS", "MOON", "EVEREST", "OCEAN", "VOLCANO", "PYRAMID", "JUNGLE", "DESERT",
+        "SHAH RUKH KHAN", "VIRAT KOHLI", "MS DHONI", "RONALDO", "MESSI", "IRON MAN", "SPIDERMAN", "BATMAN", "THOR", "JOKER",
+        "SHOLAY", "DANGAL", "BAHUBALI", "PUSHPA", "KGF", "3 IDIOTS", "STREE", "DHOOM", "KRRISH", "AVENGERS"
+    ];
+
+    const globalAvatarMap = {};
+    const userReferralsDB = {};
+
+    io.on('connection', (socket) => {
+        // Track referrals for ANY user (including all 15 official hosts!)
+        socket.on('registerReferral', ({ refOwner, deviceId }) => {
+            if (!refOwner || !deviceId) return;
+            const cleanRef = refOwner.trim().toLowerCase();
+            if (!userReferralsDB[cleanRef]) userReferralsDB[cleanRef] = new Set();
+            userReferralsDB[cleanRef].add(String(deviceId));
+        });
+
+        socket.on('getMyAvatarStats', (data) => {
+            const uname = ((data && data.username) || socket.username || '').trim().toLowerCase();
+            let refs = userReferralsDB[uname] ? userReferralsDB[uname].size : 0;
+            if (uname) {
+                const srv = Object.values(serversDB).find(s => s.owner && s.owner.toLowerCase() === uname && Array.isArray(s.allTimeDevices));
+                if (srv && srv.allTimeDevices.length > refs) refs = srv.allTimeDevices.length;
+            }
+            socket.emit('avatarStatsData', { refs, avatarMap: globalAvatarMap });
+        });
+
+        socket.on('verifyAvatarCode', (data) => {
+            const code = ((data && data.code) || '').trim().toLowerCase();
+            const found = HOST_AVATAR_CODES[code];
+            if (found) {
+                socket.emit('avatarCodeResult', { ok: true, avatarId: found.id, name: found.name });
+            } else {
+                socket.emit('avatarCodeResult', { ok: false });
+            }
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
+            if (!raw || typeof raw !== 'string') return;
+            const code = raw.trim().toLowerCase();
+            const found = HOST_AVATAR_CODES[code];
+            if (found) {
+                socket.emit('avatarCodeResult', { ok: true, avatarId: found.id, name: found.name });
+                socket.emit('message', {
+                    username: 'SYSTEM',
+                    text: `👑 **SECRET UNLOCKED:** **${found.name}** is now unlocked in your **👑 Avatars** Vault!`,
+                    _serverId: socket.activeServerId
+                });
+            }
+        });
+
+        socket.on('equipAvatarFx', (data) => {
+            const uname = (socket.username || '').trim().toLowerCase();
+            if (!uname || !data) return;
+            globalAvatarMap[uname] = { name: socket.username, fx: data.fx || '', badge: data.badge || '' };
+            if (socket.activeServerId) {
+                io.to(socket.activeServerId).emit('avatarStatsData', { avatarMap: globalAvatarMap });
+            }
+        });
+
+        const origSocketEmit = socket.emit.bind(socket);
+        socket.emit = function(ev, payload, ...rest) {
+            if (payload && typeof payload === 'object') {
+                if (typeof payload.impostorWord === 'string') {
+                    payload.impostorWord = EXTRA_IMPOSTOR_WORDS.at(Math.floor(Math.random() * EXTRA_IMPOSTOR_WORDS.length));
+                }
+                if (typeof payload.secretWord === 'string' && ev.toLowerCase().includes('impostor')) {
+                    payload.secretWord = EXTRA_IMPOSTOR_WORDS.at(Math.floor(Math.random() * EXTRA_IMPOSTOR_WORDS.length));
+                }
+            }
+            return origSocketEmit(ev, payload, ...rest);
+        };
+    });
+    // === END PREMIUM AVATAR VAULT & IMPOSTOR PACK ===
+
        
               
             

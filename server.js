@@ -3010,28 +3010,3 @@ setInterval(() => {
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));
 
-// === ONE-PASTE ANTI-DISCONNECT GRACE TIMER ===
-io.on('connection', (socket) => {
-    const origDisconnectListeners = socket.listeners('disconnect').slice();
-    socket.removeAllListeners('disconnect');
-
-    socket.on('disconnect', (...args) => {
-        const lp = Array.isArray(players) ? players.find(p => p.id === socket.id) : null;
-        if (!lp) {
-            origDisconnectListeners.forEach(fn => fn.apply(socket, args));
-            return;
-        }
-        const leftName = lp.username;
-        const leftId = socket.id;
-
-        setTimeout(() => {
-            const reconnected = Array.isArray(players) && players.some(
-                p => p.username && p.username.toLowerCase() === leftName.toLowerCase() && p.id !== leftId
-            );
-            if (!reconnected) {
-                origDisconnectListeners.forEach(fn => fn.apply(socket, args));
-            }
-        }, 15000);
-    });
-});
-// === END ANTI-DISCONNECT GRACE TIMER ===

@@ -3996,5 +3996,103 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END FINAL OP AVATAR VAULT & PER-AVATAR CHAT GLOW v12 ===
+    // === REAL HD SVG AVATAR ICON REPLACER IN LOBBY & CHAT v13 ===
+    const REAL_SVG_ICONS_V13 = `
+    <style id="v13SvgCss">
+      .v13-hd-icon {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+        vertical-align: middle !important;
+        margin-right: 5px !important;
+        flex-shrink: 0 !important;
+        box-shadow: 0 0 8px rgba(255,255,255,0.6) !important;
+      }
+      .v13-hd-icon svg { width: 100% !important; height: 100% !important; display: block !important; }
+    </style>
+    <script>
+    (function() {
+      function s(inner) {
+        return '<span class="v13-hd-icon"><svg xmlns="http://w3.org" viewBox="0 0 100 100">' + inner + '</svg></span>';
+      }
+      const HD_MAP = {
+        '👑': s('<circle cx="50" cy="50" r="49" fill="#f59e0b"/><circle cx="50" cy="50" r="38" fill="#090d16" stroke="#fde047" stroke-width="3"/><path d="M12,48 Q22,30 32,46 Q20,56 12,48 Z M88,48 Q78,30 68,46 Q80,56 88,48 Z" fill="#38bdf8"/><polygon points="22,68 25,30 39,46 50,16 61,46 75,30 78,68" fill="#fde047" stroke="#fff" stroke-width="2"/><rect x="22" y="68" width="56" height="10" rx="4" fill="#f59e0b"/><polygon points="50,42 57,53 50,64 43,53" fill="#38bdf8" stroke="#fff" stroke-width="2"/>'),
+        '💎': s('<circle cx="50" cy="50" r="48" fill="#082f49"/><polygon points="50,14 82,38 50,86 18,38" fill="#38bdf8" stroke="#fff" stroke-width="3"/><polyline points="18,38 50,48 82,38" fill="none" stroke="#e0f2fe" stroke-width="2.5"/>'),
+        '👹': s('<circle cx="50" cy="50" r="48" fill="#1e1b4b"/><path d="M22,55 C22,28 78,28 78,55 L70,76 L30,76 Z" fill="#dc2626" stroke="#facc15" stroke-width="3"/><polygon points="50,14 56,30 74,24 60,36 50,32 40,36 26,24 44,30" fill="#facc15"/>'),
+        '🔥': s('<circle cx="50" cy="50" r="48" fill="#450a0a"/><path d="M50,16 C65,30 82,34 76,58 C70,74 56,82 50,86 C44,82 30,74 24,58 C18,34 35,30 50,16 Z" fill="#f97316" stroke="#fde047" stroke-width="2.5"/><path d="M50,30 C60,42 66,52 50,74 C34,52 40,42 50,30 Z" fill="#facc15"/>'),
+        '🥷': s('<circle cx="50" cy="50" r="48" fill="#090d16"/><circle cx="50" cy="52" r="30" fill="#1e293b"/><rect x="24" y="42" width="52" height="14" rx="5" fill="#020617"/><polygon points="34,47 45,50 35,52" fill="#ef4444"/><polygon points="66,47 55,50 65,52" fill="#ef4444"/>'),
+        '🚀': s('<circle cx="50" cy="50" r="48" fill="#0f172a"/><circle cx="50" cy="52" r="32" fill="#e2e8f0" stroke="#38bdf8" stroke-width="3"/><rect x="30" y="38" width="40" height="24" rx="10" fill="#0284c7"/>'),
+        '🪩': s('<circle cx="50" cy="50" r="48" fill="#1e1b4b"/><circle cx="50" cy="52" r="32" fill="#ec4899" stroke="#f0abfc" stroke-width="2.5"/><path d="M22,52 H78 M50,20 V84" stroke="#fff" stroke-width="2.5"/>'),
+        '🦋': s('<circle cx="50" cy="50" r="48" fill="#2e1065"/><path d="M48,50 C25,18 10,35 24,54 C12,68 28,84 48,60 Z" fill="#f472b6"/><path d="M52,50 C75,18 90,35 76,54 C88,68 72,84 52,60 Z" fill="#a855f7"/>'),
+        '🦊': s('<circle cx="50" cy="50" r="48" fill="#311042"/><polygon points="24,18 38,42 20,52" fill="#fff"/><polygon points="76,18 62,42 80,52" fill="#fff"/><polygon points="50,84 22,50 36,34 50,40 64,34 78,50" fill="#fff" stroke="#f43f5e" stroke-width="3"/>'),
+        '🐺': s('<circle cx="50" cy="50" r="48" fill="#450a0a"/><polygon points="50,84 22,52 34,34 50,42 66,34 78,52" fill="#1f2937" stroke="#f97316" stroke-width="3"/>'),
+        '🌸': s('<circle cx="50" cy="50" r="48" fill="#4c0519"/><g fill="#f472b6"><ellipse cx="50" cy="26" rx="11" ry="18"/><ellipse cx="50" cy="74" rx="11" ry="18"/><ellipse cx="26" cy="50" rx="18" ry="11"/><ellipse cx="74" cy="50" rx="18" ry="11"/></g><circle cx="50" cy="50" r="13" fill="#fde047"/>'),
+        '💀': s('<circle cx="50" cy="50" r="48" fill="#052e16"/><path d="M28,48 C28,24 72,24 72,48 C72,60 64,65 62,76 L38,76 C36,65 28,60 28,48 Z" fill="#4ade80"/><circle cx="39" cy="48" r="6" fill="#052e16"/><circle cx="61" cy="48" r="6" fill="#052e16"/>'),
+        '🦁': s('<circle cx="50" cy="50" r="48" fill="#422006"/><circle cx="50" cy="52" r="34" fill="#d97706" stroke="#fde047" stroke-width="3"/><polygon points="50,76 30,52 36,34 50,38 64,34 70,52" fill="#fef08a"/>'),
+        '🐉': s('<circle cx="50" cy="50" r="48" fill="#042f2e"/><path d="M25,70 C20,40 40,20 68,26 C55,34 54,44 74,48 C62,58 58,72 42,78 Z" fill="#34d399"/>'),
+        '👸': s('<circle cx="50" cy="50" r="48" fill="#3b0764"/><polygon points="20,68 24,34 38,50 50,24 62,50 76,34 80,68" fill="#fde047"/><rect x="20" y="68" width="60" height="10" rx="4" fill="#ec4899"/>'),
+        '⚰️': s('<circle cx="50" cy="50" r="48" fill="#090d16"/><path d="M26,76 C26,34 74,34 74,76 Z" fill="#1e293b"/><path d="M20,24 Q65,12 82,36" stroke="#e2e8f0" stroke-width="4" fill="none"/>'),
+        '🦄': s('<circle cx="50" cy="50" r="48" fill="#4a044e"/><polygon points="50,12 44,36 56,36" fill="#fde047"/><path d="M32,74 C28,46 42,32 62,38 C74,42 74,62 60,74 Z" fill="#f8fafc"/>'),
+        '⚔️': s('<circle cx="50" cy="50" r="48" fill="#052e16"/><line x1="20" y1="80" x2="80" y2="20" stroke="#e2e8f0" stroke-width="7"/><line x1="20" y1="20" x2="80" y2="80" stroke="#4ade80" stroke-width="7"/><line x1="50" y1="14" x2="50" y2="86" stroke="#facc15" stroke-width="6"/>'),
+        '💖': s('<circle cx="50" cy="50" r="48" fill="#500724"/><path d="M50,80 C20,60 15,32 35,26 C44,24 50,33 50,33 C50,33 56,24 65,26 C85,32 80,60 50,80 Z" fill="#f43f5e"/><polygon points="36,22 43,12 50,20 57,12 64,22" fill="#fde047"/>'),
+        '✨': s('<circle cx="50" cy="50" r="48" fill="#422006"/><polygon points="50,16 58,38 82,38 62,52 70,76 50,62 30,76 38,52 18,38 42,38" fill="#facc15"/>'),
+        '👀': s('<circle cx="50" cy="50" r="48" fill="#052e16"/><rect x="26" y="34" width="48" height="22" rx="11" fill="#4ade80"/><circle cx="38" cy="45" r="5" fill="#090d16"/><circle cx="62" cy="45" r="5" fill="#090d16"/>'),
+        '🌺': s('<circle cx="50" cy="50" r="48" fill="#4c0519"/><g fill="#fb7185"><circle cx="50" cy="30" r="14"/><circle cx="69" cy="44" r="14"/><circle cx="62" cy="66" r="14"/><circle cx="38" cy="66" r="14"/><circle cx="31" cy="44" r="14"/></g><circle cx="50" cy="50" r="10" fill="#fde047"/>'),
+        '🌙': s('<circle cx="50" cy="50" r="48" fill="#090d16"/><path d="M62,20 A30,30 0 1,0 78,68 A24,24 0 1,1 62,20 Z" fill="#fde047"/>'),
+        '🪐': s('<circle cx="50" cy="50" r="48" fill="#0f172a"/><circle cx="50" cy="50" r="20" fill="#a855f7"/><ellipse cx="50" cy="50" rx="38" ry="11" transform="rotate(-22 50 50)" fill="none" stroke="#38bdf8" stroke-width="4"/>')
+      };
+
+      const EMOJI_KEYS = Object.keys(HD_MAP);
+
+      // Replace the plain leading emoji in Lobby Player pills & Chat Sender headers with real HD SVG graphics!
+      setInterval(() => {
+        document.querySelectorAll('div, span').forEach(el => {
+          if (el.closest('#v12Modal')) return;
+          if (el.dataset.v13SvgDone) return;
+          // Target standalone avatar emoji elements (like the 24x24 emoji span next to username)
+          if (el.children.length === 0) {
+            const t = (el.textContent || '').trim();
+            if (HD_MAP[t] && el.offsetWidth > 0 && el.offsetWidth < 50 && el.offsetHeight < 50) {
+              // Skip the big reaction buttons bar (fire, laugh, skull, crown, heart)
+              if (el.closest('button')) return;
+              el.dataset.v13SvgDone = 'true';
+              el.innerHTML = HD_MAP[t];
+            }
+          }
+        });
+      }, 250);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', REAL_SVG_ICONS_V13 + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        const origSendFile = res.sendFile;
+        res.sendFile = function(filePath) {
+            if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+                try {
+                    let html = fs.readFileSync(filePath, 'utf8');
+                    if (html.includes('</body>')) {
+                        html = html.replace('</body>', REAL_SVG_ICONS_V13 + '\n</body>');
+                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                        return origSend.call(this, html);
+                    }
+                } catch (e) {}
+            }
+            return origSendFile.apply(this, arguments);
+        };
+        next();
+    });
+    // === END REAL HD SVG AVATAR ICON REPLACER v13 ===
 
 };

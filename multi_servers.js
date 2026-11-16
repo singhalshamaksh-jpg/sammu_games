@@ -2989,5 +2989,173 @@ module.exports = function initMultiServers(app, io) {
         });
     });
     // === END SELF-OVERWRITING HD AVATAR VAULT v6 ===
+    // === MOBILE-FRIENDLY MASTER OVERRIDE v7 (PASTE AT VERY BOTTOM BEFORE };) ===
+    const MASTER_OVERRIDE_V7 = `
+    <style id="v7OverrideCss">
+      @keyframes v7SamakshGlow {
+        0% { background-position: 0% 50%; box-shadow: 0 0 16px #fde047, 0 0 28px #f59e0b, inset 0 0 12px rgba(254,240,138,0.4); border-color: #fde047; }
+        50% { background-position: 100% 50%; box-shadow: 0 0 24px #38bdf8, 0 0 38px #ec4899, inset 0 0 16px rgba(255,255,255,0.5); border-color: #ffffff; }
+        100% { background-position: 0% 50%; box-shadow: 0 0 16px #fde047, 0 0 28px #f59e0b, inset 0 0 12px rgba(254,240,138,0.4); border-color: #fde047; }
+      }
+      .v7-samaksh-bubble {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        background: linear-gradient(120deg, rgba(250,204,21,0.38), rgba(239,68,68,0.34), rgba(168,85,247,0.36), rgba(56,189,248,0.38)) !important;
+        background-size: 250% 250% !important;
+        border: 2px solid #fde047 !important;
+        border-radius: 15px !important;
+        padding: 8px 12px !important;
+        margin: 6px 0 !important;
+        animation: v7SamakshGlow 1.8s ease-in-out infinite !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        text-shadow: 0 0 8px #fde047, 0 0 16px #f59e0b !important;
+      }
+      .v7-samaksh-bubble * {
+        color: #ffffff !important;
+        text-shadow: 0 0 8px #fde047, 0 0 14px #38bdf8 !important;
+      }
+      #v7FloatingAvatarBtn {
+        position: fixed !important;
+        bottom: 76px !important;
+        right: 12px !important;
+        z-index: 999998 !important;
+        background: linear-gradient(135deg, #f59e0b, #ec4899, #38bdf8) !important;
+        color: #ffffff !important;
+        border: 2px solid #fde047 !important;
+        border-radius: 999px !important;
+        padding: 9px 15px !important;
+        font-weight: 900 !important;
+        font-size: 13px !important;
+        box-shadow: 0 0 20px rgba(250,204,21,0.85) !important;
+        cursor: pointer !important;
+      }
+    </style>
+    <script>
+    (function() {
+      // 1. Wipe any old broken avatar buttons so we have ONE clean button
+      document.querySelectorAll('#openAvatarVaultBtn, #v7FloatingAvatarBtn').forEach(b => b.remove());
+
+      window.openAvatarVaultGUI = function() {
+        const myName = (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
+        if (typeof socket !== 'undefined') socket.emit('getMyAvatarStatsV6', { username: myName });
+        if (typeof window.renderAvatarVault === 'function') window.renderAvatarVault();
+        const modal = document.getElementById('avatarVaultModalV6') || document.getElementById('avatarVaultModal');
+        if (modal) modal.style.display = 'flex';
+        else alert('⚠️ Please paste Piece 1 above this block so the Avatar Vault modal exists!');
+      };
+
+      // 2. Guaranteed Floating Button on Screen
+      function ensureV7Button() {
+        if (!document.body || document.getElementById('v7FloatingAvatarBtn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'v7FloatingAvatarBtn';
+        btn.textContent = '👑 Avatars';
+        btn.onclick = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.openAvatarVaultGUI();
+        };
+        document.body.appendChild(btn);
+      }
+
+      // 3. Glow EVERY chat message from Samaksh or Sammu (text, emojis, links, everything)
+      function applyV7SamakshGlow() {
+        ensureV7Button();
+        const boxes = document.querySelectorAll('#chatBox, #messages, .chat-messages, #chat-container, [id*="chat"], [class*="chat"]');
+        boxes.forEach(box => {
+          if (box.scrollHeight < 40) return;
+          Array.from(box.children).forEach(row => {
+            if (row.dataset.v7Checked) return;
+            if (['SCRIPT', 'STYLE', 'INPUT', 'TEXTAREA', 'BUTTON'].includes(row.tagName)) return;
+            const txt = (row.textContent || '').toLowerCase().trim();
+            if (!txt || txt.length > 900) return;
+
+            const firstLine = txt.split('\\n').trim();
+            const boldEl = row.querySelector('b, strong, [class*="name"], [class*="user"]');
+            const boldTxt = boldEl ? (boldEl.textContent || '').toLowerCase() : '';
+
+            const isSamaksh =
+              firstLine.startsWith('samaksh') ||
+              firstLine.startsWith('sammu') ||
+              /\\b(samaksh|sammu)\\s*:/.test(txt) ||
+              /\\b(samaksh|sammu)\\b/.test(boldTxt);
+
+            if (isSamaksh) {
+              row.dataset.v7Checked = 'true';
+              row.classList.add('v7-samaksh-bubble');
+              const inner = row.querySelector('div, p');
+              if (inner && inner.textContent.trim().length > 0) inner.classList.add('v7-samaksh-bubble');
+            }
+          });
+        });
+      }
+
+      // 4. Hook directly into incoming socket messages for instant zero-lag glow
+      function bindV7Socket() {
+        if (typeof socket === 'undefined' || window._v7SocketBound) return;
+        window._v7SocketBound = true;
+
+        const prevOnevent = socket.onevent;
+        socket.onevent = function(packet) {
+          const res = prevOnevent.apply(this, arguments);
+          const ev = packet && packet.data && packet.data;
+          const payload = packet && packet.data && packet.data;
+          if (ev === 'message' && payload && typeof payload === 'object') {
+            const u = (payload.username || '').toLowerCase().trim();
+            if (u === 'samaksh' || u === 'sammu') {
+              setTimeout(applyV7SamakshGlow, 30);
+              setTimeout(applyV7SamakshGlow, 150);
+            }
+          }
+          return res;
+        };
+
+        const origEmit = socket.emit.bind(socket);
+        socket.emit = function(ev, payload, ...rest) {
+          if (ev === 'chatMessage') {
+            const txt = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
+            if (typeof txt === 'string' && txt.trim().toLowerCase() === '!avatars') {
+              window.openAvatarVaultGUI();
+              return socket;
+            }
+          }
+          return origEmit(ev, payload, ...rest);
+        };
+      }
+
+      setInterval(() => { applyV7SamakshGlow(); bindV7Socket(); }, 400);
+      window.addEventListener('DOMContentLoaded', () => { ensureV7Button(); bindV7Socket(); });
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', MASTER_OVERRIDE_V7 + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        const origSendFile = res.sendFile;
+        res.sendFile = function(filePath) {
+            if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+                try {
+                    let html = fs.readFileSync(filePath, 'utf8');
+                    if (html.includes('</body>')) {
+                        html = html.replace('</body>', MASTER_OVERRIDE_V7 + '\n</body>');
+                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                        return origSend.call(this, html);
+                    }
+                } catch (e) {}
+            }
+            return origSendFile.apply(this, arguments);
+        };
+        next();
+    });
+    // === END MOBILE-FRIENDLY MASTER OVERRIDE v7 ===
 
 };

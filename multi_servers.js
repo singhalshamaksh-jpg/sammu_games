@@ -5615,5 +5615,122 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END COMPLETE UNIFIED AVATAR VAULT v22 ===
+    // === YOUTHFUL 16YO ANCIENT KSHATRIYA WARRIOR (KRISHNA BHAIYA VIBE) v25 ===
+    const KSHATRIYA_KRISHNA_V25 = `
+    <script>
+    (function() {
+      const KSHATRIYA_SVG = '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+        '<defs>' +
+          '<radialGradient id="kkBg25" cx="50%" cy="38%" r="68%">' +
+            '<stop offset="0%" stop-color="#f59e0b"/>' +
+            '<stop offset="48%" stop-color="#1e3a8a"/>' +
+            '<stop offset="100%" stop-color="#090d16"/>' +
+          '</radialGradient>' +
+          '<linearGradient id="kkArmor25" x1="0" y1="0" x2="1" y2="1">' +
+            '<stop offset="0%" stop-color="#fde047"/>' +
+            '<stop offset="50%" stop-color="#d97706"/>' +
+            '<stop offset="100%" stop-color="#92400e"/>' +
+          '</linearGradient>' +
+        '</defs>' +
+        '<circle cx="50" cy="50" r="49" fill="url(#kkBg25)"/>' +
+        /* Radiant Sudarshana Chakra Halo Behind Head */
+        '<circle cx="50" cy="44" r="33" fill="none" stroke="#fde047" stroke-width="1.8" stroke-dasharray="4 3"/>' +
+        /* Crossed Ancient Kshatriya Bow & Golden Arrow Behind Shoulders */
+        '<path d="M18,22 Q10,50 18,78" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round"/>' +
+        '<line x1="18" y1="22" x2="18" y2="78" stroke="#ffffff" stroke-width="1" opacity="0.8"/>' +
+        '<line x1="82" y1="20" x2="66" y2="75" stroke="#fde047" stroke-width="2.5" stroke-linecap="round"/>' +
+        '<polygon points="83,17 77,23 84,24" fill="#ffffff"/>' +
+        /* Wavy Youthful Jet-Black Kshatriya Hair */
+        '<path d="M26,44 C22,60 25,73 30,79 L70,79 C75,73 78,60 74,44 Z" fill="#090d16"/>' +
+        /* Royal Golden Kshatriya Kavacha Armor + Pitambara Shoulder Drape */
+        '<path d="M18,97 C21,73 35,67 50,67 C65,67 79,73 82,97 Z" fill="url(#kkArmor25)" stroke="#ffffff" stroke-width="1.5"/>' +
+        '<path d="M24,72 L50,88 L76,72" fill="none" stroke="#dc2626" stroke-width="3.5" stroke-linecap="round"/>' +
+        '<polygon points="50,72 55,78 50,84 45,78" fill="#38bdf8" stroke="#ffffff" stroke-width="1.4"/>' +
+        /* Youthful 16yo Sky-Azure Warrior Face (Neela Megha Shyama) */
+        '<rect x="44" y="60" width="12" height="10" rx="4" fill="#60a5fa"/>' +
+        '<path d="M33,31 C33,26 67,26 67,31 L67,49 C67,61 58,67 50,67 C42,67 33,61 33,49 Z" fill="#60a5fa" stroke="#bae6fd" stroke-width="1.3"/>' +
+        /* Golden Kundala Earrings */
+        '<circle cx="31" cy="53" r="2.8" fill="#fde047"/><circle cx="69" cy="53" r="2.8" fill="#fde047"/>' +
+        /* Sharp Youthful Hair Bangs & Crimson-Gold Kshatriya Headband */
+        '<path d="M31,37 C37,29 45,33 50,36 C55,33 63,29 69,37 C66,24 34,24 31,37 Z" fill="#090d16"/>' +
+        '<rect x="32" y="31" width="36" height="5" rx="2.5" fill="#dc2626" stroke="#fde047" stroke-width="1.3"/>' +
+        /* Peacock Feather (Mor Pankh) Tucked into Warrior Band */
+        '<ellipse cx="64" cy="17" rx="5.5" ry="8" transform="rotate(24 64 17)" fill="#10b981" stroke="#fde047" stroke-width="1.4"/>' +
+        '<ellipse cx="64" cy="17" rx="2.8" ry="4" transform="rotate(24 64 17)" fill="#1d4ed8"/>' +
+        '<circle cx="64" cy="17" r="1.4" fill="#fde047"/>' +
+        /* Crisp White & Crimson Tilak */
+        '<path d="M47.5,37 L47.5,44 Q50,46 52.5,44 L52.5,37" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>' +
+        '<line x1="50" y1="38" x2="50" y2="44" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>' +
+        /* Determined Youthful Warrior Eyebrows, Eyes & Confident Half-Smile */
+        '<path d="M36,46 L44,47.5 M64,46 L56,47.5" stroke="#090d16" stroke-width="1.8" stroke-linecap="round"/>' +
+        '<ellipse cx="41" cy="50.5" rx="3.4" ry="2.3" fill="#ffffff"/><circle cx="41" cy="50.5" r="1.6" fill="#0f172a"/>' +
+        '<ellipse cx="59" cy="50.5" rx="3.4" ry="2.3" fill="#ffffff"/><circle cx="59" cy="50.5" r="1.6" fill="#0f172a"/>' +
+        '<path d="M44,58 Q50,62 56,57.5" stroke="#1e3a8a" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      '</svg>';
+
+      function applyKshatriyaAvatar() {
+        const grid = document.getElementById('v22Grid');
+        if (grid && grid.firstElementChild) {
+          const art = grid.firstElementChild.querySelector('.v22-art');
+          if (art && !art.dataset.v25Kk) {
+            art.dataset.v25Kk = 'true';
+            art.innerHTML = KSHATRIYA_SVG;
+          }
+        }
+
+        document.querySelectorAll('div, span, b, strong').forEach(el => {
+          if (el.closest('#v22Modal') || el.closest('#v22ZoomModal')) return;
+          if (el.children.length > 0) return;
+          const txt = (el.textContent || '').trim().toLowerCase();
+          if (txt !== 'samaksh' && txt !== 'sammu') return;
+
+          const pill = el.parentElement;
+          if (!pill) return;
+
+          const bubble = pill.querySelector('.v22-av-bubble');
+          if (bubble && !bubble.dataset.v25Done) {
+            bubble.dataset.v25Done = 'true';
+            bubble.innerHTML = KSHATRIYA_SVG;
+            bubble.onclick = function(ev) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              if (typeof window.v22OpenZoom === 'function') {
+                window.v22OpenZoom('SAMAKSH', KSHATRIYA_SVG, 'v22-aura-samaksh', '🏹🪷 Kshatriya Warrior Edition');
+              }
+            };
+          }
+        });
+      }
+
+      setInterval(applyKshatriyaAvatar, 550);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', KSHATRIYA_KRISHNA_V25 + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        const origSendFile = res.sendFile;
+        res.sendFile = function(filePath) {
+            if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+                try {
+                    let html = fs.readFileSync(filePath, 'utf8');
+                    if (html.includes('</body>')) {
+                        html = html.replace('</body>', KSHATRIYA_KRISHNA_V25 + '\n</body>');
+                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                        return origSend.call(this, html);
+                    }
+                } catch (e) {}
+            }
+            return origSendFile.apply(this, arguments);
+        };
+        next();
+    });
+    // === END YOUTHFUL 16YO ANCIENT KSHATRIYA WARRIOR v25 ===
 
 };

@@ -1308,4 +1308,184 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+     // ================= 🕵️ WORD IMPOSTER ARENA (#25 - SINGLE BLOCK) =================
+    const IMPOSTER_WORDS = [
+        "PIZZA", "MINECRAFT", "CRICKET", "NARUTO", "IPHONE", "GHOST", "DIAMOND",
+        "BIRYANI", "ZOMBIE", "PIANO", "ASTRONAUT", "SHARK", "CHOCOLATE", "VAMPIRE",
+        "SUPERHERO", "VOLCANO", "DRAGON", "SUBMARINE", "HOSPITAL", "YOUTUBE"
+    ];
+    const imposterGameByServer = new Map();
+
+    const WORD_IMPOSTER_WIDGET = `
+    <div id="imposterModal" style="display:none;position:fixed;inset:0;background:rgba(7,11,25,0.94);z-index:999997;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(10px);">
+      <div style="background:linear-gradient(155deg,#1e1b4b,#311042);border:2px solid #f43f5e;border-radius:22px;padding:16px;width:100%;max-width:390px;color:#fff;text-align:center;box-shadow:0 0 35px rgba(244,63,94,0.45);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:15px;color:#fda4af;">🕵️ WORD IMPOSTER ARENA</span>
+          <button onclick="document.getElementById('imposterModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">Hide</button>
+        </div>
+        <div id="impSecretRoleBox" style="background:rgba(244,63,94,0.2);border:1.5px solid #fb7185;border-radius:14px;padding:10px;margin:10px 0;font-size:15px;font-weight:900;color:#fde047;">Waiting for word...</div>
+        <div style="font-size:12px;color:#cbd5e1;margin-bottom:8px;">1️⃣ Type a <b>1-word clue</b> in chat.<br>2️⃣ Tap who you vote as the <b>IMPOSTER</b>:</div>
+        <div id="impVoteGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"></div>
+        <div id="impVoteStatus" style="font-size:12px;color:#38bdf8;font-weight:bold;"></div>
+      </div>
+    </div>
+    <script>
+    (function() {
+      function injectImposterBtn() {
+        const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /hoop shootout|target sniper/i.test(b.textContent || ''));
+        if (targetBtn && targetBtn.parentElement && !document.getElementById('btnLaunchImposter')) {
+          const btn = targetBtn.cloneNode(true);
+          btn.id = 'btnLaunchImposter';
+          btn.removeAttribute('onclick');
+          btn.textContent = '25. 🕵️ Word Imposter';
+          btn.onclick = () => { if (typeof socket !== 'undefined') socket.emit('startWordImposter'); };
+          targetBtn.parentElement.appendChild(btn);
+        }
+        const memeBtn = Array.from(document.querySelectorAll('button')).find(b => b.dataset && b.dataset.memeUpgraded);
+        if (memeBtn && memeBtn.parentElement && !document.getElementById('reopenImpBtn')) {
+          const rBtn = memeBtn.cloneNode(true);
+          rBtn.id = 'reopenImpBtn';
+          rBtn.style.display = 'none';
+          rBtn.textContent = '🕵️ Vote';
+          rBtn.onclick = () => { document.getElementById('imposterModal').style.display = 'flex'; };
+          memeBtn.parentElement.insertBefore(rBtn, memeBtn.nextSibling);
+        }
+      }
+      setInterval(injectImposterBtn, 1200);
+
+      function bindImposterSockets() {
+        if (typeof socket === 'undefined' || window._impBound) return;
+        window._impBound = true;
+
+        socket.on('imposterRoundStart', (data) => {
+          if (data._serverId && data._serverId !== window.selectedServerId) return;
+          document.getElementById('imposterModal').style.display = 'flex';
+          const rBtn = document.getElementById('reopenImpBtn');
+          if (rBtn) rBtn.style.display = 'inline-block';
+
+          const roleBox = document.getElementById('impSecretRoleBox');
+          if (data.isImposter) {
+            roleBox.innerHTML = '😈 YOU ARE THE IMPOSTER!<br><span style="font-size:12px;color:#fda4af;">You have NO word! Read clues & blend in!</span>';
+          } else {
+            roleBox.innerHTML = '😇 CREWMATE SECRET WORD:<br><span style="font-size:20px;color:#4ade80;">' + data.word + '</span>';
+          }
+
+          const grid = document.getElementById('impVoteGrid');
+          grid.innerHTML = '';
+          document.getElementById('impVoteStatus').textContent = 'Cast your vote when ready!';
+          data.players.forEach(p => {
+            const vBtn = document.createElement('button');
+            vBtn.style.cssText = 'background:#1e293b;border:1.5px solid #38bdf8;color:#fff;padding:8px;border-radius:12px;font-weight:bold;font-size:12px;cursor:pointer;';
+            vBtn.textContent = '🗳️ ' + p.username;
+            vBtn.onclick = () => {
+              socket.emit('castImposterVote', p.id);
+              document.getElementById('impVoteStatus').textContent = '✅ Voted for ' + p.username + '! Waiting for others...';
+              Array.from(grid.children).forEach(c => c.disabled = true);
+            };
+            grid.appendChild(vBtn);
+          });
+        });
+
+        socket.on('imposterRoundEnd', (data) => {
+          if (data._serverId && data._serverId !== window.selectedServerId) return;
+          document.getElementById('imposterModal').style.display = 'none';
+          const rBtn = document.getElementById('reopenImpBtn');
+          if (rBtn) rBtn.style.display = 'none';
+        });
+      }
+      setInterval(bindImposterSockets, 800);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function (body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', WORD_IMPOSTER_WIDGET + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    function launchServerWordImposter(serverId) {
+        syncArenaPlayers(serverId);
+        const arena = getArena(serverId);
+        if (arena.players.length < 3) {
+            io.to(serverId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚠️ Need at least **3 players in this server** to play **🕵️ Word Imposter**!`,
+                _serverId: serverId
+            });
+            return;
+        }
+        const secretWord = IMPOSTER_WORDS[Math.floor(Math.random() * IMPOSTER_WORDS.length)];
+        const imposter = arena.players[Math.floor(Math.random() * arena.players.length)];
+        imposterGameByServer.set(serverId, {
+            word: secretWord,
+            imposterId: imposter.id,
+            imposterName: imposter.username,
+            votes: new Map(),
+            totalPlayers: arena.players.length
+        });
+
+        const playerList = arena.players.map(p => ({ id: p.id, username: p.username }));
+        arena.players.forEach(p => {
+            io.to(p.id).emit('imposterRoundStart', {
+                isImposter: p.id === imposter.id,
+                word: p.id === imposter.id ? null : secretWord,
+                players: playerList,
+                _serverId: serverId
+            });
+        });
+
+        io.to(serverId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🕵️ **WORD IMPOSTER STARTED!** Everyone got a secret word EXCEPT **1 IMPOSTER**! Drop a 1-word clue in chat and vote in the popup! 👀`,
+            _serverId: serverId
+        });
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const text = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
+            if (typeof text === 'string' && text.trim().toLowerCase() === '!imposter' && socket.activeServerId) {
+                launchServerWordImposter(socket.activeServerId);
+            }
+        });
+
+        socket.on('startWordImposter', () => {
+            if (socket.activeServerId) launchServerWordImposter(socket.activeServerId);
+        });
+
+        socket.on('castImposterVote', (targetId) => {
+            const srvId = socket.activeServerId;
+            if (!srvId || !imposterGameByServer.has(srvId)) return;
+            const state = imposterGameByServer.get(srvId);
+            state.votes.set(socket.id, targetId);
+
+            if (state.votes.size >= state.totalPlayers) {
+                imposterGameByServer.delete(srvId);
+                const tally = {};
+                for (const votedId of state.votes.values()) tally[votedId] = (tally[votedId] || 0) + 1;
+
+                let topId = null, maxVotes = -1;
+                for (const [id, count] of Object.entries(tally)) {
+                    if (count > maxVotes) { maxVotes = count; topId = id; }
+                }
+
+                const caught = (topId === state.imposterId);
+                io.to(srvId).emit('imposterRoundEnd', { _serverId: srvId });
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: caught
+                        ? `🎉 **CREWMATES WIN!** You caught the Imposter **${state.imposterName}**! Secret Word was **${state.word}**! 🏆`
+                        : `😈 **IMPOSTER WINS!** **${state.imposterName}** fooled everyone! Secret Word was **${state.word}**! 💀`,
+                    _serverId: srvId
+                });
+            }
+        });
+    });
+
 };

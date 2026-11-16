@@ -415,6 +415,132 @@ module.exports = function(app) {
   });
 };
 // === END DROP-IN CHAT TARGETING OVERRIDE ===
-  
+  // === FOOLPROOF REAL-CHAT-BOX LOCK & 3D STICKER FIX ===
+const E3D_FOOLPROOF_FIX = `
+<script>
+(function() {
+  window._realChatBox = null;
+  window._realSendBtn = null;
+
+  // 1. Learn which input is your REAL chat box the moment you focus/type in it (ignoring username/room boxes)
+  document.addEventListener('focusin', function(e) {
+    const el = e.target;
+    if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) return;
+    if (el.closest('#e3dDrawer') || el.closest('#v22Modal')) return;
+    const hint = ((el.placeholder || '') + ' ' + (el.id || '') + ' ' + (el.name || '')).toLowerCase();
+    if (/user|name|nick|room|code|pass|search|email/.test(hint)) return;
+    window._realChatBox = el;
+
+    // Find the Send button right next to this exact chat box
+    const wrap = el.parentElement?.parentElement || el.parentElement;
+    if (wrap) {
+      const btn = Array.from(wrap.querySelectorAll('button')).find(b =>
+        b.id !== 'e3dOpenBtn' && !b.textContent.includes('3D')
+      );
+      if (btn) window._realSendBtn = btn;
+    }
+  }, true);
+
+  // 2. Also record the exact button you click when sending a normal message
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('button');
+    if (!btn || btn.id === 'e3dOpenBtn' || btn.closest('#e3dDrawer') || btn.closest('#v22Modal')) return;
+    const wrap = btn.parentElement?.parentElement || btn.parentElement;
+    const inp = wrap && wrap.querySelector('input[type="text"], input:not([type]), textarea');
+    if (inp) {
+      const hint = ((inp.placeholder || '') + ' ' + (inp.id || '') + ' ' + (inp.name || '')).toLowerCase();
+      if (!/user|name|nick|room|code|pass|search/.test(hint)) {
+        window._realChatBox = inp;
+        window._realSendBtn = btn;
+      }
+    }
+  }, true);
+
+  // 3. Rebind every 3D sticker card to send ONLY through _realChatBox + _realSendBtn
+  function bindFoolproof3DCards() {
+    document.querySelectorAll('.e3d-card').forEach(card => {
+      if (card.dataset.fpBound === '1') return;
+      card.dataset.fpBound = '1';
+
+      // Extract the exact sticker code from the label
+      const label = (card.querySelector('span')?.textContent || card.textContent || '').trim();
+      const code = ':3d_' + label.toLowerCase() + ':';
+
+      card.onclick = function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const drawer = document.getElementById('e3dDrawer');
+        if (drawer) drawer.style.display = 'none';
+
+        // Find the bottom-most non-username input if user hasn't typed yet
+        let box = window._realChatBox;
+        if (!box || !document.body.contains(box)) {
+          const candidates = Array.from(document.querySelectorAll('input[type="text"], input:not([type]), textarea')).filter(el => {
+            if (!el.offsetParent || el.closest('#e3dDrawer') || el.closest('#v22Modal')) return false;
+            const h = ((el.placeholder || '') + ' ' + (el.id || '') + ' ' + (el.name || '')).toLowerCase();
+            return !/user|name|nick|room|code|pass|search/.test(h);
+          });
+          // Pick the one closest to the bottom of the screen
+          candidates.sort((a, b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
+          box = candidates[0] || null;
+        }
+
+        if (!box) {
+          alert('Tap the chat message box once first, then pick a 3D emoji!');
+          return;
+        }
+
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+        if (setter) setter.call(box, code);
+        else box.value = code;
+        box.dispatchEvent(new Event('input', { bubbles: true }));
+
+        if (window._realSendBtn && document.body.contains(window._realSendBtn)) {
+          window._realSendBtn.click();
+        } else {
+          const wrap = box.parentElement?.parentElement || box.parentElement;
+          const btn = wrap && Array.from(wrap.querySelectorAll('button')).find(b => b.id !== 'e3dOpenBtn' && !b.textContent.includes('3D'));
+          if (btn) btn.click();
+          else box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+        }
+      };
+    });
+  }
+
+  setInterval(bindFoolproof3DCards, 500);
+})();
+</script>
+`;
+
+const prevModExport = module.exports;
+module.exports = function(app) {
+  if (typeof prevModExport === 'function') prevModExport(app);
+  app.use((req, res, next) => {
+    const origSend = res.send;
+    res.send = function(body) {
+      if (typeof body === 'string' && body.includes('</body>')) {
+        body = body.replace('</body>', E3D_FOOLPROOF_FIX + '\n</body>');
+      }
+      return origSend.call(this, body);
+    };
+    const origSendFile = res.sendFile;
+    res.sendFile = function(filePath) {
+      if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+        try {
+          let html = fs.readFileSync(filePath, 'utf8');
+          if (html.includes('</body>')) {
+            html = html.replace('</body>', E3D_FOOLPROOF_FIX + '\n</body>');
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return origSend.call(this, html);
+          }
+        } catch (e) {}
+      }
+      return origSendFile.apply(this, arguments);
+    };
+    next();
+  });
+};
+// === END FOOLPROOF REAL-CHAT-BOX LOCK ===
+
 };
   

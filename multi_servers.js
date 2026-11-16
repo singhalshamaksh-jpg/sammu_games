@@ -1487,5 +1487,105 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // === ZORO / YORI AKIYAMA & STRICT SERVER ISOLATION ADD-ON ===
+    let zoroPromoOn = true;
+
+    const ZORO_ISOLATION_SCRIPT = `
+    <script>
+    (function() {
+      function updateZoroBanner(show) {
+        let zBox = document.getElementById('zoroPromoBox');
+        if (!zBox) {
+          zBox = document.createElement('div');
+          zBox.id = 'zoroPromoBox';
+          zBox.style.cssText = 'display:none;background:linear-gradient(90deg,#14532d,#166534);border:2px solid #4ade80;border-radius:14px;padding:10px 14px;margin:8px auto;max-width:360px;text-align:center;color:#fff;box-shadow:0 0 20px rgba(74,222,128,0.35);position:relative;z-index:50;';
+          zBox.innerHTML =
+            '<div style="font-size:11px;color:#bbf7d0;font-weight:bold;">⚔️ ZORO\\'S DOJO FEATURED CREATOR</div>' +
+            '<div style="font-size:15px;font-weight:900;margin:2px 0;">✨ Yori Akiyama ✨</div>' +
+            '<a href="https://youtube.com" target="_blank" rel="noopener noreferrer" ' +
+            'style="display:inline-block;margin-top:4px;background:#ef4444;color:#fff;text-decoration:none;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:bold;">▶️ Subscribe on YouTube</a>';
+          const didiBox = document.getElementById('didiPromoBox');
+          if (didiBox && didiBox.parentNode) didiBox.parentNode.insertBefore(zBox, didiBox.nextSibling);
+          else document.body.prepend(zBox);
+        }
+        zBox.style.display = (show && window.selectedServerId === 'srv_zoro') ? 'block' : 'none';
+      }
+
+      function bindZoroAndIsolation() {
+        if (typeof socket === 'undefined' || window._zoroAddonBound) return;
+        window._zoroAddonBound = true;
+
+        const prevOnevent = socket.onevent;
+        socket.onevent = function(packet) {
+          const ev = packet && packet.data && packet.data.at(0);
+          const payload = packet && packet.data && packet.data.at(1);
+          const strictEvents = [
+            'incomingMusicNote', 'playMemeSfx', 'incomingReaction', 'incomingGift',
+            'message', 'syncGame', 'spinnerTick', 'announceWinner',
+            'openSkincareClinic', 'closeSkincareClinic', 'updateMVP', 'updateGallery'
+          ];
+          if (!window.selectedServerId && strictEvents.includes(ev)) return;
+          if (strictEvents.includes(ev) && payload && typeof payload === 'object') {
+            if (payload._serverId && payload._serverId !== window.selectedServerId) return;
+          }
+          return prevOnevent.apply(this, arguments);
+        };
+
+        socket.on('toggleZoroPromo', (show) => updateZoroBanner(show));
+        socket.on('serverAccessGranted', (srv) => {
+          window.selectedServerId = srv.id;
+          updateZoroBanner(srv.id === 'srv_zoro' && Boolean(srv.zoroPromoOn !== false));
+        });
+        socket.on('initRole', () => updateZoroBanner(false));
+      }
+      window.addEventListener('DOMContentLoaded', () => { bindZoroAndIsolation(); setTimeout(bindZoroAndIsolation, 700); });
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', ZORO_ISOLATION_SCRIPT + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    io.on('connection', (socket) => {
+        socket.on('joinRoom', () => {
+            if (socket.activeServerId === 'srv_zoro' && zoroPromoOn) {
+                setTimeout(() => socket.emit('toggleZoroPromo', true), 650);
+            }
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
+            if (!raw || typeof raw !== 'string' || !socket.activeServerId) return;
+            const cmd = raw.trim().toLowerCase();
+            const srvId = socket.activeServerId;
+
+            if (cmd === '!zoro') {
+                setTimeout(() => {
+                    io.to(srvId).emit('message', {
+                        username: "⚔️ Zoro",
+                        text: `🔥 Subscribe to **Yori Akiyama** on YouTube! 👉 https://youtube.com ❤️`,
+                        _serverId: srvId
+                    });
+                }, 200);
+            } else if (cmd === '/zoro on' || cmd === '/zoro off') {
+                zoroPromoOn = (cmd === '/zoro on');
+                io.to('srv_zoro').emit('toggleZoroPromo', zoroPromoOn);
+                socket.emit('message', {
+                    username: 'SYSTEM',
+                    text: `⚔️ Yori Akiyama Banner inside **⚔️ Zoro's Dojo** is now **${zoroPromoOn ? 'ON ✅' : 'OFF ❌'}**`,
+                    _serverId: srvId
+                });
+            }
+        });
+    });
+    // === END ZORO & ISOLATION ADD-ON ===
 
 };

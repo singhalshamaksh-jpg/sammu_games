@@ -3680,5 +3680,321 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END GUARANTEED WORKING AVATAR VAULT v9 ===
+    // === FINAL OP AVATAR VAULT & PER-AVATAR CHAT GLOW v12 ===
+    const AVATAR_VAULT_V12 = `
+    <style id="v12Css">
+      #v7FloatingAvatarBtn, #avatarVaultModal, #avatarVaultModalV6, #v8VaultModal, #v9Modal, #v10Modal, #v11Modal { display: none !important; }
+      @keyframes v12GodPlasma {
+        0% {
+          background-position: 0% 50%;
+          border-color: #fde047 !important;
+          box-shadow: 0 0 14px #fde047, 0 0 28px #f59e0b, 0 0 42px #ef4444, inset 0 0 12px rgba(253,224,71,0.5) !important;
+        }
+        50% {
+          background-position: 100% 50%;
+          border-color: #38bdf8 !important;
+          box-shadow: 0 0 18px #38bdf8, 0 0 34px #ec4899, 0 0 48px #fde047, inset 0 0 14px rgba(56,189,248,0.55) !important;
+        }
+        100% {
+          background-position: 0% 50%;
+          border-color: #fde047 !important;
+          box-shadow: 0 0 14px #fde047, 0 0 28px #f59e0b, 0 0 42px #ef4444, inset 0 0 12px rgba(253,224,71,0.5) !important;
+        }
+      }
+      @keyframes v12Disco {
+        0% { box-shadow: 0 0 12px #ff0080; border-color: #ff0080 !important; }
+        50% { box-shadow: 0 0 16px #00f0ff; border-color: #00f0ff !important; }
+        100% { box-shadow: 0 0 12px #ff0080; border-color: #ff0080 !important; }
+      }
+
+      /* Overpowered God-King Aura (Lobby Pill + Chat Bubble + Avatar Ring) */
+      .aura-god {
+        background: linear-gradient(120deg, #b45309, #dc2626, #7e22ce, #0284c7, #d97706) !important;
+        background-size: 300% 300% !important;
+        border: 2.5px solid #fde047 !important;
+        animation: v12GodPlasma 1.6s ease-in-out infinite !important;
+        color: #ffffff !important;
+        font-weight: 900 !important;
+        text-shadow: 0 0 8px #fde047, 0 0 16px #000000 !important;
+      }
+      .aura-god * { color: #ffffff !important; text-shadow: 0 0 6px #fde047 !important; }
+
+      /* Distinct Per-Avatar Auras for Other Players */
+      .aura-ice { border: 2px solid #38bdf8 !important; box-shadow: 0 0 14px rgba(56,189,248,0.85), inset 0 0 8px rgba(56,189,248,0.3) !important; }
+      .aura-fire { border: 2px solid #f97316 !important; box-shadow: 0 0 14px rgba(249,115,22,0.85), inset 0 0 8px rgba(250,204,21,0.3) !important; }
+      .aura-crimson { border: 2px solid #ef4444 !important; box-shadow: 0 0 14px rgba(239,68,68,0.85), inset 0 0 8px rgba(239,68,68,0.3) !important; }
+      .aura-toxic { border: 2px solid #4ade80 !important; box-shadow: 0 0 14px rgba(74,222,128,0.85), inset 0 0 8px rgba(74,222,128,0.3) !important; }
+      .aura-pink { border: 2px solid #f472b6 !important; box-shadow: 0 0 14px rgba(244,114,182,0.85), inset 0 0 8px rgba(232,121,249,0.3) !important; }
+      .aura-violet { border: 2px solid #a855f7 !important; box-shadow: 0 0 14px rgba(168,85,247,0.85), inset 0 0 8px rgba(192,132,252,0.3) !important; }
+      .aura-emerald { border: 2px solid #10b981 !important; box-shadow: 0 0 14px rgba(16,185,129,0.85), inset 0 0 8px rgba(52,211,153,0.3) !important; }
+      .aura-gold { border: 2px solid #facc15 !important; box-shadow: 0 0 14px rgba(250,204,21,0.85), inset 0 0 8px rgba(253,224,71,0.3) !important; }
+      .aura-disco { border: 2px solid #ff0080 !important; animation: v12Disco 1.8s linear infinite !important; }
+
+      #v12Modal { display:none; position:fixed; inset:0; background:rgba(5,8,20,0.95); z-index:9999999; align-items:center; justify-content:center; padding:10px; }
+      #v12Card { background:linear-gradient(155deg,#0f172a,#1e1b4b); border:2px solid #38bdf8; border-radius:20px; padding:14px; width:100%; max-width:410px; color:#fff; text-align:center; max-height:88vh; overflow-y:auto; }
+      .v12-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:10px 0; }
+      .v12-item { background:rgba(255,255,255,0.08); border:1.5px solid rgba(56,189,248,0.4); border-radius:12px; padding:7px 4px; cursor:pointer; }
+      .v12-item.locked { opacity:0.65; border-color:#64748b; }
+      .v12-art { width:50px; height:50px; margin:0 auto 4px auto; border-radius:50%; overflow:hidden; background:#020617; display:flex; align-items:center; justify-content:center; }
+      .v12-art svg { width:100%; height:100%; display:block; }
+    </style>
+
+    <div id="v12Modal" onclick="if(event.target===this)this.style.display='none'">
+      <div id="v12Card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span style="font-weight:900;font-size:15px;color:#38bdf8;">👑 27 HD AVATAR VAULT</span>
+          <button onclick="document.getElementById('v12Modal').style.display='none'" style="width:36px!important;min-width:36px!important;height:32px!important;padding:0!important;background:#ef4444;border:none;color:#fff;border-radius:8px;font-weight:900;cursor:pointer;">✕</button>
+        </div>
+        <div id="v12RefText" style="font-size:11px;color:#fde047;margin:6px 0;font-weight:bold;">🔗 Referrals: 0 | Your Chat & Lobby Pill Glow With Your Chosen Aura!</div>
+        <div class="v12-grid" id="v12Grid"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input id="v12CodeInput" placeholder="Enter Host Avatar Code..." style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
+          <button onclick="v12Redeem()" style="width:auto!important;padding:8px 12px!important;background:linear-gradient(90deg,#a855f7,#ec4899);border:none;color:#fff;border-radius:10px;font-weight:bold;font-size:12px;cursor:pointer;">🔓 Unlock</button>
+        </div>
+        <button onclick="v12CopyRef()" style="width:100%!important;margin-top:8px;padding:9px;border:none;border-radius:10px;background:linear-gradient(90deg,#059669,#10b981);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🔗 Copy My Referral Link</button>
+      </div>
+    </div>
+    <script>
+    (function() {
+      function svgTag(inner) {
+        return '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' + inner + '</svg>';
+      }
+      const A = {
+        god: svgTag('<circle cx="50" cy="50" r="49" fill="#f59e0b"/><circle cx="50" cy="50" r="38" fill="#090d16" stroke="#fde047" stroke-width="2.5"/><path d="M12,48 Q22,30 32,46 Q20,56 12,48 Z M88,48 Q78,30 68,46 Q80,56 88,48 Z" fill="#38bdf8"/><polygon points="22,68 25,30 39,46 50,16 61,46 75,30 78,68" fill="#fde047" stroke="#fff" stroke-width="2"/><rect x="22" y="68" width="56" height="10" rx="4" fill="#f59e0b"/><polygon points="50,42 57,53 50,64 43,53" fill="#38bdf8" stroke="#fff" stroke-width="2"/>'),
+        diamond: svgTag('<circle cx="50" cy="50" r="48" fill="#082f49"/><polygon points="50,14 82,38 50,86 18,38" fill="#38bdf8" stroke="#fff" stroke-width="2.5"/><polyline points="18,38 50,48 82,38" fill="none" stroke="#e0f2fe" stroke-width="2"/>'),
+        samurai: svgTag('<circle cx="50" cy="50" r="48" fill="#1e1b4b"/><path d="M22,55 C22,28 78,28 78,55 L70,76 L30,76 Z" fill="#dc2626" stroke="#facc15" stroke-width="2.5"/><polygon points="50,14 56,30 74,24 60,36 50,32 40,36 26,24 44,30" fill="#facc15"/><rect x="32" y="48" width="36" height="8" rx="3" fill="#090d16"/>'),
+        phoenix: svgTag('<circle cx="50" cy="50" r="48" fill="#450a0a"/><path d="M50,16 C65,30 82,34 76,58 C70,74 56,82 50,86 C44,82 30,74 24,58 C18,34 35,30 50,16 Z" fill="#f97316" stroke="#fde047" stroke-width="2"/><path d="M50,30 C60,42 66,52 50,74 C34,52 40,42 50,30 Z" fill="#facc15"/>'),
+        ninja: svgTag('<circle cx="50" cy="50" r="48" fill="#090d16"/><circle cx="50" cy="52" r="30" fill="#1e293b"/><rect x="24" y="42" width="52" height="14" rx="5" fill="#020617"/><polygon points="34,47 45,50 35,52" fill="#ef4444"/><polygon points="66,47 55,50 65,52" fill="#ef4444"/>'),
+        astro: svgTag('<circle cx="50" cy="50" r="48" fill="#0f172a"/><circle cx="50" cy="52" r="32" fill="#e2e8f0" stroke="#38bdf8" stroke-width="3"/><rect x="30" y="38" width="40" height="24" rx="10" fill="#0284c7"/>'),
+        disco: svgTag('<circle cx="50" cy="50" r="48" fill="#1e1b4b"/><circle cx="50" cy="52" r="32" fill="#ec4899" stroke="#f0abfc" stroke-width="2"/><path d="M22,52 H78 M50,20 V84 M26,38 H74 M26,66 H74" stroke="#fff" stroke-width="1.6"/>'),
+        butterfly: svgTag('<circle cx="50" cy="50" r="48" fill="#2e1065"/><path d="M48,50 C25,18 10,35 24,54 C12,68 28,84 48,60 Z" fill="#f472b6"/><path d="M52,50 C75,18 90,35 76,54 C88,68 72,84 52,60 Z" fill="#a855f7"/>'),
+        kitsune: svgTag('<circle cx="50" cy="50" r="48" fill="#311042"/><polygon points="24,18 38,42 20,52" fill="#fff"/><polygon points="76,18 62,42 80,52" fill="#fff"/><polygon points="50,84 22,50 36,34 50,40 64,34 78,50" fill="#fff" stroke="#f43f5e" stroke-width="2.5"/>'),
+        wolf: svgTag('<circle cx="50" cy="50" r="48" fill="#450a0a"/><polygon points="50,84 22,52 34,34 50,42 66,34 78,52" fill="#1f2937" stroke="#f97316" stroke-width="2.5"/>'),
+        blossom: svgTag('<circle cx="50" cy="50" r="48" fill="#4c0519"/><g fill="#f472b6"><ellipse cx="50" cy="26" rx="11" ry="18"/><ellipse cx="50" cy="74" rx="11" ry="18"/><ellipse cx="26" cy="50" rx="18" ry="11"/><ellipse cx="74" cy="50" rx="18" ry="11"/></g><circle cx="50" cy="50" r="13" fill="#fde047"/>'),
+        skull: svgTag('<circle cx="50" cy="50" r="48" fill="#052e16"/><path d="M28,48 C28,24 72,24 72,48 C72,60 64,65 62,76 L38,76 C36,65 28,60 28,48 Z" fill="#4ade80"/><circle cx="39" cy="48" r="6" fill="#052e16"/><circle cx="61" cy="48" r="6" fill="#052e16"/>'),
+        lion: svgTag('<circle cx="50" cy="50" r="48" fill="#422006"/><circle cx="50" cy="52" r="34" fill="#d97706" stroke="#fde047" stroke-width="2.5"/><polygon points="50,76 30,52 36,34 50,38 64,34 70,52" fill="#fef08a"/>'),
+        dragon: svgTag('<circle cx="50" cy="50" r="48" fill="#042f2e"/><path d="M25,70 C20,40 40,20 68,26 C55,34 54,44 74,48 C62,58 58,72 42,78 Z" fill="#34d399"/>'),
+        empress: svgTag('<circle cx="50" cy="50" r="48" fill="#3b0764"/><polygon points="20,68 24,34 38,50 50,24 62,50 76,34 80,68" fill="#fde047"/><rect x="20" y="68" width="60" height="10" rx="4" fill="#ec4899"/>'),
+        reaper: svgTag('<circle cx="50" cy="50" r="48" fill="#090d16"/><path d="M26,76 C26,34 74,34 74,76 Z" fill="#1e293b"/><path d="M20,24 Q65,12 82,36" stroke="#e2e8f0" stroke-width="4" fill="none"/>'),
+        unicorn: svgTag('<circle cx="50" cy="50" r="48" fill="#4a044e"/><polygon points="50,12 44,36 56,36" fill="#fde047"/><path d="M32,74 C28,46 42,32 62,38 C74,42 74,62 60,74 Z" fill="#f8fafc"/>'),
+        zoro: svgTag('<circle cx="50" cy="50" r="48" fill="#052e16"/><line x1="20" y1="80" x2="80" y2="20" stroke="#e2e8f0" stroke-width="6"/><line x1="20" y1="20" x2="80" y2="80" stroke="#4ade80" stroke-width="6"/><line x1="50" y1="14" x2="50" y2="86" stroke="#facc15" stroke-width="5"/>'),
+        sarah: svgTag('<circle cx="50" cy="50" r="48" fill="#1e1b4b"/><path d="M48,50 C22,16 8,36 24,56 C10,70 28,86 48,60 Z" fill="#38bdf8"/><path d="M52,50 C78,16 92,36 76,56 C90,70 72,86 52,60 Z" fill="#c084fc"/>'),
+        milly: svgTag('<circle cx="50" cy="50" r="48" fill="#500724"/><path d="M50,80 C20,60 15,32 35,26 C44,24 50,33 50,33 C50,33 56,24 65,26 C85,32 80,60 50,80 Z" fill="#f43f5e"/><polygon points="36,22 43,12 50,20 57,12 64,22" fill="#fde047"/>'),
+        heer: svgTag('<circle cx="50" cy="50" r="48" fill="#3b0764"/><polygon points="50,22 58,42 78,50 58,58 50,78 42,58 22,50 42,42" fill="#e879f9"/>'),
+        ishika: svgTag('<circle cx="50" cy="50" r="48" fill="#422006"/><polygon points="50,16 58,38 82,38 62,52 70,76 50,62 30,76 38,52 18,38 42,38" fill="#facc15"/>'),
+        izzan: svgTag('<circle cx="50" cy="50" r="48" fill="#450a0a"/><polygon points="50,16 74,56 58,56 66,84 28,46 44,46" fill="#ef4444"/>'),
+        sus: svgTag('<circle cx="50" cy="50" r="48" fill="#052e16"/><rect x="26" y="34" width="48" height="22" rx="11" fill="#4ade80"/><circle cx="38" cy="45" r="5" fill="#090d16"/><circle cx="62" cy="45" r="5" fill="#090d16"/>'),
+        ruwii: svgTag('<circle cx="50" cy="50" r="48" fill="#4c0519"/><g fill="#fb7185"><circle cx="50" cy="30" r="14"/><circle cx="69" cy="44" r="14"/><circle cx="62" cy="66" r="14"/><circle cx="38" cy="66" r="14"/><circle cx="31" cy="44" r="14"/></g><circle cx="50" cy="50" r="10" fill="#fde047"/>'),
+        moon: svgTag('<circle cx="50" cy="50" r="48" fill="#090d16"/><path d="M62,20 A30,30 0 1,0 78,68 A24,24 0 1,1 62,20 Z" fill="#fde047"/>'),
+        zaira: svgTag('<circle cx="50" cy="50" r="48" fill="#0f172a"/><circle cx="50" cy="50" r="20" fill="#a855f7"/><ellipse cx="50" cy="50" rx="38" ry="11" transform="rotate(-22 50 50)" fill="none" stroke="#38bdf8" stroke-width="3.5"/>')
+      };
+      const ITEMS = [
+        { id: 'superhost', svg: A.god, emoji: '👑', name: '⚡👑 SAMAKSH GOD-KING 👑⚡', aura: 'aura-god', req: 'code', god: true },
+        { id: 'diamond', svg: A.diamond, emoji: '💎', name: 'Cyber Diamond', aura: 'aura-ice', req: 'free' },
+        { id: 'samurai', svg: A.samurai, emoji: '👹', name: 'Neon Samurai', aura: 'aura-crimson', req: 'free' },
+        { id: 'phoenix', svg: A.phoenix, emoji: '🔥', name: 'Phoenix Blaze', aura: 'aura-fire', req: 'free' },
+        { id: 'ninja', svg: A.ninja, emoji: '🥷', name: 'Void Shinobi', aura: 'aura-violet', req: 'free' },
+        { id: 'astro', svg: A.astro, emoji: '🚀', name: 'Galaxy Astro', aura: 'aura-ice', req: 'free' },
+        { id: 'disco', svg: A.disco, emoji: '🪩', name: 'Disco Orb (3 Refs)', aura: 'aura-disco', req: 'ref3' },
+        { id: 'butterfly', svg: A.butterfly, emoji: '🦋', name: 'Monarch Queen (3 Refs)', aura: 'aura-pink', req: 'ref3' },
+        { id: 'kitsune', svg: A.kitsune, emoji: '🦊', name: 'Cyber Kitsune (3 Refs)', aura: 'aura-fire', req: 'ref3' },
+        { id: 'wolf', svg: A.wolf, emoji: '🐺', name: 'Mecha-Wolf (5 Refs)', aura: 'aura-fire', req: 'ref5' },
+        { id: 'blossom', svg: A.blossom, emoji: '🌸', name: 'Sakura Lotus (5 Refs)', aura: 'aura-pink', req: 'ref5' },
+        { id: 'skull', svg: A.skull, emoji: '💀', name: 'Toxic Reaper (5 Refs)', aura: 'aura-toxic', req: 'ref5' },
+        { id: 'lion', svg: A.lion, emoji: '🦁', name: 'Golden Lion (5 Refs)', aura: 'aura-gold', req: 'ref5' },
+        { id: 'dragon', svg: A.dragon, emoji: '🐉', name: 'Sky Dragon (10 Refs)', aura: 'aura-emerald', req: 'ref10' },
+        { id: 'empress', svg: A.empress, emoji: '👸', name: 'Tiara Empress (10 Refs)', aura: 'aura-gold', req: 'ref10' },
+        { id: 'reaper', svg: A.reaper, emoji: '⚰️', name: 'Soul Scythe (10 Refs)', aura: 'aura-violet', req: 'ref10' },
+        { id: 'unicorn', svg: A.unicorn, emoji: '🦄', name: 'Mystic Horn (10 Refs)', aura: 'aura-pink', req: 'ref10' },
+        { id: 'host_zoro', svg: A.zoro, emoji: '⚔️', name: 'Zoro 3-Blade', aura: 'aura-emerald', req: 'code' },
+        { id: 'host_sarah', svg: A.sarah, emoji: '🦋', name: 'Sarah Butterfly', aura: 'aura-ice', req: 'code' },
+        { id: 'host_milly', svg: A.milly, emoji: '💖', name: 'Milly Diva', aura: 'aura-crimson', req: 'code' },
+        { id: 'host_heer', svg: A.heer, emoji: '🌸', name: 'Heer Nova', aura: 'aura-pink', req: 'code' },
+        { id: 'host_ishika', svg: A.ishika, emoji: '✨', name: 'Ishika Star', aura: 'aura-gold', req: 'code' },
+        { id: 'host_izzan', svg: A.izzan, emoji: '🔥', name: 'Izzan Inferno', aura: 'aura-fire', req: 'code' },
+        { id: 'host_sus', svg: A.sus, emoji: '👀', name: 'Sus Shadow', aura: 'aura-toxic', req: 'code' },
+        { id: 'host_ruwii', svg: A.ruwii, emoji: '🌺', name: 'Ruwii Blossom', aura: 'aura-pink', req: 'code' },
+        { id: 'host_moon', svg: A.moon, emoji: '🌙', name: 'Moon Eclipse', aura: 'aura-gold', req: 'code' },
+        { id: 'host_zaira', svg: A.zaira, emoji: '🪐', name: 'Zaira Orbit', aura: 'aura-violet', req: 'code' }
+      ];
+
+      const ALL_AURAS = ['aura-god','aura-ice','aura-fire','aura-crimson','aura-toxic','aura-pink','aura-violet','aura-emerald','aura-gold','aura-disco'];
+      let refs = 0;
+      let unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+      let playerAuraMap = {};
+
+      const getUname = () => (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
+
+      const savedMyAura = localStorage.getItem('sammu_my_aura');
+      if (savedMyAura && getUname()) playerAuraMap[getUname()] = savedMyAura;
+
+      function canUse(av) {
+        if (av.req === 'free') return true;
+        if (av.req === 'ref3') return refs >= 3;
+        if (av.req === 'ref5') return refs >= 5;
+        if (av.req === 'ref10') return refs >= 10;
+        if (av.req === 'code') return unlocked.includes(av.id);
+        return false;
+      }
+
+      window.v12CopyRef = function() {
+        const link = window.location.origin + '/?ref=' + encodeURIComponent(getUname() || 'player');
+        if (navigator.clipboard) navigator.clipboard.writeText(link);
+        alert('🔗 Referral Link Copied!\\n' + link);
+      };
+
+      window.v12Redeem = function() {
+        const code = (document.getElementById('v12CodeInput').value || '').trim();
+        if (code && typeof socket !== 'undefined') socket.emit('verifyAvatarCodeV6', { code });
+      };
+
+      window.v12Draw = function() {
+        const grid = document.getElementById('v12Grid');
+        const txt = document.getElementById('v12RefText');
+        if (txt) txt.textContent = '🔗 Your Referrals: ' + refs + ' | Your Chat & Lobby Pill Glow With Your Chosen Aura!';
+        if (!grid) return;
+        grid.innerHTML = '';
+        ITEMS.forEach(av => {
+          const ok = canUse(av);
+          const d = document.createElement('div');
+          d.className = 'v12-item' + (ok ? '' : ' locked');
+          if (av.god) d.style.cssText = 'grid-column:1/-1;background:linear-gradient(135deg,rgba(250,204,21,0.3),rgba(239,68,68,0.25),rgba(56,189,248,0.3));border:2px solid #fde047;padding:9px;';
+          d.innerHTML =
+            '<div class="v12-art ' + av.aura + '" style="' + (av.god ? 'width:62px;height:62px;' : '') + '">' + av.svg + '</div>' +
+            '<div style="font-weight:900;font-size:' + (av.god ? '12px;color:#fde047;' : '10px;') + '">' + av.name + '</div>' +
+            '<div style="font-size:10px;color:' + (ok ? '#4ade80' : '#f87171') + ';margin-top:2px;">' + (ok ? '✅ Tap to Equip' : '🔒 Locked') + '</div>';
+          d.onclick = () => {
+            if (!ok) { alert('🔒 Locked! Earn referrals or enter your Host Avatar code below.'); return; }
+            const me = getUname();
+            if (me) playerAuraMap[me] = av.aura;
+            localStorage.setItem('sammu_my_aura', av.aura);
+            localStorage.setItem('sammu_avatar', av.emoji);
+            localStorage.setItem('avatar', av.emoji);
+            window._savedAvatar = av.emoji;
+            if (typeof socket !== 'undefined') {
+              socket.emit('equipAvatarFxV6', { avatar: av.emoji, fx: av.aura, chatFx: av.aura, badge: av.name });
+              socket.emit('joinRoom', { username: me || 'Player', avatar: av.emoji, deviceId: localStorage.getItem('sammu_dev_uid') || '', isReconnect: true });
+            }
+            document.getElementById('v12Modal').style.display = 'none';
+          };
+          grid.appendChild(d);
+        });
+      };
+      window.v12Draw();
+
+      function syncV12Auras() {
+        ['v7FloatingAvatarBtn', 'avatarVaultModal', 'avatarVaultModalV6', 'v8VaultModal', 'v9Modal', 'v10Modal', 'v11Modal'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+
+        const avBtn = document.getElementById('openAvatarVaultBtn') ||
+          Array.from(document.querySelectorAll('button')).find(b => /avatars/i.test(b.textContent || ''));
+        if (avBtn) {
+          avBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof socket !== 'undefined') socket.emit('getMyAvatarStatsV6', { username: getUname() });
+            window.v12Draw();
+            document.getElementById('v12Modal').style.display = 'flex';
+          };
+        }
+
+        // Apply EACH player's own equipped aura to their chat bubble AND lobby pill
+        document.querySelectorAll('div, span, b, strong').forEach(el => {
+          if (el.closest('#v12Modal')) return;
+          if (el.children.length > 0) return;
+          const raw = (el.textContent || '').trim();
+          const sender = raw.replace(/\s*(cap\s*[ab]|👑)\s*/gi, '').trim().toLowerCase();
+          if (!sender || sender.length > 25) return;
+
+          const auraClass = playerAuraMap[sender];
+          if (!auraClass) return;
+
+          // 1. Glow Lobby Player Pill if this element is inside Lobby Players
+          const pill = el.parentElement;
+          if (pill && pill.offsetWidth > 60 && pill.offsetWidth < 260 && pill.offsetHeight < 65 && /cap\s*[ab]|👑/i.test(pill.textContent || '')) {
+            if (!pill.classList.contains(auraClass)) {
+              pill.classList.remove(...ALL_AURAS);
+              pill.classList.add(auraClass);
+            }
+          }
+
+          // 2. Glow Chat Bubble directly BELOW the sender's username row
+          let headerRow = el.parentElement;
+          while (headerRow && headerRow.parentElement && headerRow.parentElement.children.length <= 2) {
+            if (headerRow.nextElementSibling) break;
+            headerRow = headerRow.parentElement;
+          }
+          if (headerRow && headerRow.nextElementSibling) {
+            const bubble = headerRow.nextElementSibling;
+            if (!bubble.classList.contains(auraClass)) {
+              bubble.classList.remove(...ALL_AURAS);
+              bubble.classList.add(auraClass);
+            }
+          }
+        });
+
+        if (typeof socket !== 'undefined' && !window._v12Sock) {
+          window._v12Sock = true;
+          socket.emit('getMyAvatarStatsV6', { username: getUname() });
+
+          socket.on('avatarStatsDataV6', (d) => {
+            if (d && typeof d.refs === 'number') refs = d.refs;
+            if (d && d.avatarMap) {
+              Object.entries(d.avatarMap).forEach(([u, info]) => {
+                if (info && (info.chatFx || info.fx)) {
+                  playerAuraMap[u.toLowerCase()] = info.chatFx || info.fx;
+                }
+              });
+            }
+            window.v12Draw();
+          });
+
+          socket.on('avatarCodeResultV6', (res) => {
+            if (res && res.ok && res.avatarId) {
+              if (!unlocked.includes(res.avatarId)) {
+                unlocked.push(res.avatarId);
+                localStorage.setItem('sammu_unlocked_avatars', JSON.stringify(unlocked));
+              }
+              alert('🎉 Unlocked: ' + res.name + '!');
+              window.v12Draw();
+            } else {
+              alert('❌ Invalid Avatar Code!');
+            }
+          });
+        }
+      }
+      setInterval(syncV12Auras, 250);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', AVATAR_VAULT_V12 + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        const origSendFile = res.sendFile;
+        res.sendFile = function(filePath) {
+            if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+                try {
+                    let html = fs.readFileSync(filePath, 'utf8');
+                    if (html.includes('</body>')) {
+                        html = html.replace('</body>', AVATAR_VAULT_V12 + '\n</body>');
+                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                        return origSend.call(this, html);
+                    }
+                } catch (e) {}
+            }
+            return origSendFile.apply(this, arguments);
+        };
+        next();
+    });
+    // === END FINAL OP AVATAR VAULT & PER-AVATAR CHAT GLOW v12 ===
 
 };

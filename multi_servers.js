@@ -6052,6 +6052,6 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END KSHATRIYA KRISHNA LOCK + RAINBOW DIAMOND + 56 3D EMOJI PACKS v27 ===
-    require('./emoji3d')(app);
+    
 
 };

@@ -1736,6 +1736,18 @@
                 socket.emit('joinRoom', { username: myUsername, avatar: myAvatar, deviceId: myDeviceId, isReconnect: true });
             }
         });
-    </script>
+    </script> 
+    <script>
+fetch('/avatar_widget').then(r => r.text()).then(html => {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  document.body.appendChild(div);
+  div.querySelectorAll('script').forEach(s => {
+    const ns = document.createElement('script');
+    ns.textContent = s.textContent;
+    document.body.appendChild(ns);
+  });
+});
+    </script>    
 </body>
 </html>

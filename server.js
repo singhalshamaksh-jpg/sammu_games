@@ -3049,7 +3049,7 @@ setInterval(() => {
 }, 33);
 const initServerAds = require('./ads');
 initServerAds(app, io);
-
+require('./avatarArmory')(app, io, { OG_HOSTS, verifyOGHostTripleLock });
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));

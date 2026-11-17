@@ -2371,6 +2371,7 @@ module.exports = function initMultiServers(app, io) {
       // === V14 COMPLETE ARMORY & ECONOMY - PIECE 6 ===
       const db = (s, seed, bg) => 'https://dicebear.com' + s + '/svg?seed=' + encodeURIComponent(seed) + '&backgroundColor=' + bg;
 
+
       const V14_ITEMS = [
         { id: 'superhost',         pin: '👑', name: '🪷👑 SAMAKSH 👑🪷',     ring: 'v14-ring-samaksh', req: 'code', featured: true, img: SAMAKSH_3D_URI },
         { id: 'host_milly',        pin: '👸', name: '👸💖 Princess Milly',   ring: 'v14-ring-empress', req: 'code', featured: true, img: db('lorelei', 'PrincessMillyRoyal', 'f43f5e,fbcfe8') },
@@ -2691,6 +2692,99 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END V14.6 INLINE ANIME PORTRAIT RENDERER ===
+    // === V14.7 AUTO-USERNAME DETECTOR & EQUIP FIX ===
+    const V14_EQUIP_FIX = `
+    <script>
+    (function() {
+      // 1. Capture username from joinRoom or any input field automatically
+      function detectActiveUsername() {
+        const stored = window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || localStorage.getItem('playerName') || '';
+        if (stored && stored.trim()) return stored.trim().toLowerCase();
+        const inp = document.querySelector('input[placeholder*="name" i], input[id*="name" i], input[id*="user" i]');
+        if (inp && inp.value && inp.value.trim()) return inp.value.trim().toLowerCase();
+        return '';
+      }
+
+      // Hook socket.emit to always remember the exact username used in joinRoom or chatMessage
+      setInterval(() => {
+        if (typeof socket !== 'undefined' && !window._v14NameHooked) {
+          window._v14NameHooked = true;
+          const origEmit = socket.emit.bind(socket);
+          socket.emit = function(ev, payload) {
+            if (payload && typeof payload === 'object' && payload.username) {
+              window._savedUname = payload.username.trim();
+              localStorage.setItem('sammu_username', window._savedUname);
+            }
+            return origEmit.apply(this, arguments);
+          };
+
+          // Auto-re-equip saved avatar after reconnecting
+          const savedAv = localStorage.getItem('sammu_equipped_av');
+          if (savedAv) {
+            try {
+              const parsed = JSON.parse(savedAv);
+              const u = detectActiveUsername();
+              if (u && parsed.avatarId) {
+                setTimeout(() => origEmit('equipAvatarFxV6', { ...parsed, username: u }), 1000);
+              }
+            } catch (e) {}
+          }
+        }
+      }, 500);
+
+      // 2. Make clicking ANY card in the Armory reliably equip & broadcast
+      document.addEventListener('click', function(e) {
+        const card = e.target.closest('#stGrid .st-item');
+        if (!card || card.classList.contains('locked')) return;
+        const u = detectActiveUsername();
+        if (!u) {
+          alert('⚠️ Please enter your username and join the lobby first!');
+          return;
+        }
+        const titleEl = card.querySelector('div:nth-child(2)');
+        const badgeName = titleEl ? titleEl.textContent.trim() : '👑 VIP Hero';
+        const artDiv = card.querySelector('.st-art');
+        const ringCls = artDiv ? Array.from(artDiv.classList).find(c => c.startsWith('v14-ring-')) || 'v14-ring-gold' : 'v14-ring-gold';
+
+        // Find matching ID from name
+        let avId = 'diamond';
+        if (badgeName.includes('SAMAKSH')) avId = 'superhost';
+        else if (badgeName.includes('Milly')) avId = 'host_milly';
+        else if (badgeName.includes('Sus')) avId = 'host_sus';
+        else if (badgeName.includes('Zoro')) avId = 'host_zoro';
+        else if (badgeName.includes('Moon')) avId = 'host_moon';
+        else if (badgeName.includes('Ishika')) avId = 'host_ishika';
+        else if (badgeName.includes('Sid')) avId = 'host_sid';
+        else if (badgeName.includes('Ruwii')) avId = 'host_ruwii';
+        else if (badgeName.includes('Zaira')) avId = 'host_zaira';
+        else if (badgeName.includes('Sarah')) avId = 'host_sarah';
+        else if (badgeName.includes('Shubhi')) avId = 'host_shubhi';
+        else if (badgeName.includes('Heer')) avId = 'host_heer';
+        else if (badgeName.includes('Izzan')) avId = 'host_izzan';
+        else if (badgeName.includes('Advait')) avId = 'host_advait';
+        else if (badgeName.includes('Ronin')) avId = 'samurai';
+        else if (badgeName.includes('Valkyrie')) avId = 'phoenix';
+        else if (badgeName.includes('Shinobi')) avId = 'ninja';
+
+        const eqData = { username: u, avatarId: avId, fx: ringCls, badge: badgeName };
+        localStorage.setItem('sammu_equipped_av', JSON.stringify(eqData));
+        if (typeof socket !== 'undefined') socket.emit('equipAvatarFxV6', eqData);
+      }, true);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', V14_EQUIP_FIX + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === END V14.7 AUTO-USERNAME DETECTOR & EQUIP FIX ===
 
 };
                 

@@ -14,7 +14,7 @@ module.exports = function initServerAds(app, io) {
         title: "Want Your YouTube Promoted Here?",
         desc: "Give a shoutout to Milly Didi or Yori Akiyama & get a FREE 7-day banner! Email: singhalshamaksh@gmail.com",
         btnText: "📩 Apply for Collab",
-        url: "mailto:singhalshamaksh@://gmail.com",
+        url: "mailto:singhalshamaksh@gmail.com",
         color: "#facc15"
     };
 

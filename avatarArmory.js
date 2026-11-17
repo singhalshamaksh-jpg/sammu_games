@@ -103,15 +103,34 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: '★ Big Bang Erasure', cd: 4, mult: 6.0, type: 'dmg', sig: true, desc: 'SIGNATURE: Collapses timeline' }
             ]
         },
-        // === PIECE 3: ISHIKA, ZORO, SUS, SID, SHUBHI, SARAH, HEER, IZZAN, ZAIRA, ADVAIT, RUWII & SAMAKSH ===
-        host_ishika: {
-            id: 'host_ishika', name: '☀️✨ Empress Ishika', tier: 'OG Host', pool: 'code', code: '#ishikagold',
-            fixedLevel: 500, baseHp: 50000, baseAtk: 5100, color: '#facc15', icon: '☀️',
+        host_milly: {
+            id: 'host_milly', name: '👸💖 Princess Milly', tier: 'OG Empress', pool: 'code', code: '#millyqueen',
+            fixedLevel: 750, baseHp: 85000, baseAtk: 8800, color: '#f472b6', icon: '💖',
             skills: [
-                { name: 'Sunbeam Lance',          cd: 0, mult: 1.25, type: 'dmg',    desc: 'Piercing golden solar ray' },
-                { name: 'Solar Flare Wave',       cd: 2, mult: 2.5,  type: 'dmg',    desc: 'Blinding starburst explosion' },
-                { name: 'Golden Dawn Aura',       cd: 3, mult: 0.50, type: 'heal',   desc: 'Restores +50% Max HP' },
-                { name: 'Solar Eclipse Judgment', cd: 4, mult: 4.4,  type: 'dmg',    desc: 'Signature: Twin-sun annihilation' }
+                { name: 'Empress Heart Beam',     cd: 0, mult: 1.4,  type: 'dmg',    desc: 'Royal crystal strike' },
+                { name: 'Rose Sovereign Waltz',   cd: 2, mult: 2.8,  type: 'dmg',    desc: 'Petal storm barrage' },
+                { name: 'Imperial Blessing',      cd: 3, mult: 0.65, type: 'heal',   desc: 'Restores +65% Max HP' },
+                { name: '★ Crown Dominion',       cd: 4, mult: 5.2,  type: 'dmg', sig: true, desc: 'SIGNATURE: Empress judgment' }
+            ]
+        },
+        host_ishika: {
+            id: 'host_ishika', name: '☀️✨ Empress Ishika', tier: 'OG Solar', pool: 'code', code: '#ishikagold',
+            fixedLevel: 750, baseHp: 82000, baseAtk: 9000, color: '#facc15', icon: '☀️',
+            skills: [
+                { name: 'Sunbeam Lance',          cd: 0, mult: 1.4,  type: 'dmg',    desc: 'Piercing golden solar ray' },
+                { name: 'Solar Flare Wave',       cd: 2, mult: 2.8,  type: 'dmg',    desc: 'Blinding starburst explosion' },
+                { name: 'Golden Dawn Aura',       cd: 3, mult: 0.60, type: 'heal',   desc: 'Restores +60% Max HP' },
+                { name: '★ Solar Eclipse',        cd: 4, mult: 5.3,  type: 'dmg', sig: true, desc: 'SIGNATURE: Twin-sun annihilation' }
+            ]
+        },
+        host_moon: {
+            id: 'host_moon', name: '🩺🌙 Dr. Moon (Medic)', tier: 'OG Host', pool: 'code', code: '#moongalaxy',
+            fixedLevel: 500, baseHp: 50000, baseAtk: 5000, regenPct: 0.12, color: '#a855f7', icon: '🌙',
+            skills: [
+                { name: 'Lunar Scalpel',          cd: 0, mult: 1.2,  type: 'lifesteal', desc: 'Drains 20% DMG as HP' },
+                { name: 'Eclipse Surge',          cd: 2, mult: 2.4,  type: 'dmg',       desc: 'Moonlight shockwave' },
+                { name: 'Miracle Sanctuary',      cd: 3, mult: 0.60, type: 'heal',      desc: 'Restores +60% Max HP' },
+                { name: '★ Celestial Diagnosis',  cd: 4, mult: 4.3,  type: 'dmg', sig: true, desc: 'SIGNATURE: Full moon beam' }
             ]
         },
         host_zoro: {
@@ -121,7 +140,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Oni Giri',               cd: 0, mult: 1.25, type: 'dmg',    desc: '3-Sword Demon Slash' },
                 { name: '1080 Pound Phoenix',     cd: 2, mult: 2.5,  type: 'dmg',    desc: 'Flying dragon wind cannon' },
                 { name: 'Armament Haki',          cd: 3, mult: 0,    type: 'shield', desc: 'Blocks 85% next incoming hit' },
-                { name: 'Asura Nine-Blades',      cd: 4, mult: 4.5,  type: 'dmg',    desc: 'Signature: 9-Sword Demon God' }
+                { name: '★ Asura Nine-Blades',    cd: 4, mult: 4.5,  type: 'dmg', sig: true, desc: 'SIGNATURE: 9-Sword Demon God' }
             ]
         },
         host_sus: {
@@ -131,7 +150,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Emerald Charm',          cd: 0, mult: 1.2,  type: 'dmg',    desc: 'Enchanted fairy blade strike' },
                 { name: 'Rose Petal Storm',       cd: 2, mult: 2.45, type: 'dmg',    desc: 'Razor emerald leaf vortex' },
                 { name: 'Fairy Sanctuary',        cd: 3, mult: 0.52, type: 'heal',   desc: 'Restores +52% Max HP' },
-                { name: 'Queen Sovereign',        cd: 4, mult: 4.3,  type: 'dmg',    desc: 'Signature: Royal emerald burst' }
+                { name: '★ Queen Sovereign',      cd: 4, mult: 4.3,  type: 'dmg', sig: true, desc: 'SIGNATURE: Royal emerald burst' }
             ]
         },
         host_sid: {
@@ -141,7 +160,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Thunder Clap',           cd: 0, mult: 1.25, type: 'dmg',    desc: 'High-voltage lightning strike' },
                 { name: 'Volt Rush',              cd: 2, mult: 2.5,  type: 'dmg',    desc: 'Supersonic thunder dash' },
                 { name: 'Static Armor',           cd: 3, mult: 0,    type: 'shield', desc: 'Blocks 80% next hit' },
-                { name: 'Thunder God Wrath',      cd: 4, mult: 4.4,  type: 'dmg',    desc: 'Signature: Sky-splitting bolt' }
+                { name: '★ Thunder God Wrath',    cd: 4, mult: 4.4,  type: 'dmg', sig: true, desc: 'SIGNATURE: Sky-splitting bolt' }
             ]
         },
         host_shubhi: {
@@ -151,7 +170,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Petal Slice',            cd: 0, mult: 1.2,  type: 'dmg',    desc: 'Sharp cherry blossom slash' },
                 { name: 'Crimson Bloom',          cd: 2, mult: 2.4,  type: 'dmg',    desc: 'Exploding floral wave' },
                 { name: 'Spring Renewal',         cd: 3, mult: 0.55, type: 'heal',   desc: 'Restores +55% Max HP' },
-                { name: 'Sakura Blossom Storm',   cd: 4, mult: 4.3,  type: 'dmg',    desc: 'Signature: Thousand petal storm' }
+                { name: '★ Sakura Blossom Storm', cd: 4, mult: 4.3,  type: 'dmg', sig: true, desc: 'SIGNATURE: Thousand petal storm' }
             ]
         },
         host_sarah: {
@@ -161,7 +180,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Sky Feather',            cd: 0, mult: 1.2,  type: 'dmg',    desc: 'Crystal wing projectile' },
                 { name: 'Monarch Cyclone',        cd: 2, mult: 2.45, type: 'dmg',    desc: 'Twisting astral wind' },
                 { name: 'Wind Barrier',           cd: 3, mult: 0,    type: 'shield', desc: 'Blocks 80% next hit' },
-                { name: 'Valkyrie Skyfall',       cd: 4, mult: 4.35, type: 'dmg',    desc: 'Signature: Celestial dive bomb' }
+                { name: '★ Valkyrie Skyfall',     cd: 4, mult: 4.35, type: 'dmg', sig: true, desc: 'SIGNATURE: Celestial dive bomb' }
             ]
         },
         host_heer: {
@@ -171,7 +190,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Star Shard',             cd: 0, mult: 1.2,  type: 'dmg',    desc: 'Shooting star strike' },
                 { name: 'Nebula Pulse',           cd: 2, mult: 2.45, type: 'dmg',    desc: 'Cosmic shockwave' },
                 { name: 'Star Blessing',          cd: 3, mult: 0.52, type: 'heal',   desc: 'Restores +52% Max HP' },
-                { name: 'Starlight Supernova',    cd: 4, mult: 4.35, type: 'dmg',    desc: 'Signature: Collapsing star beam' }
+                { name: '★ Starlight Supernova',  cd: 4, mult: 4.35, type: 'dmg', sig: true, desc: 'SIGNATURE: Collapsing star beam' }
             ]
         },
         host_izzan: {
@@ -181,7 +200,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Magma Claw',             cd: 0, mult: 1.25, type: 'dmg',    desc: 'Molten dragon slash' },
                 { name: 'Hellfire Roar',          cd: 2, mult: 2.5,  type: 'dmg',    desc: 'Scorching flame wave' },
                 { name: 'Phoenix Rebirth',        cd: 3, mult: 0.48, type: 'heal',   desc: 'Restores +48% Max HP' },
-                { name: 'Dragon Breath Inferno',  cd: 4, mult: 4.5,  type: 'dmg',    desc: 'Signature: Apocalyptic fire beam' }
+                { name: '★ Dragon Breath Inferno',cd: 4, mult: 4.5,  type: 'dmg', sig: true, desc: 'SIGNATURE: Apocalyptic fire beam' }
             ]
         },
         host_zaira: {
@@ -191,7 +210,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Meteor Toss',            cd: 0, mult: 1.2,  type: 'dmg',    desc: 'Hurls orbital asteroid' },
                 { name: 'Saturn Ring Slash',      cd: 2, mult: 2.45, type: 'dmg',    desc: 'Razor planetary ring' },
                 { name: 'Void Shield',            cd: 3, mult: 0,    type: 'shield', desc: 'Blocks 80% next hit' },
-                { name: 'Orbital Gravity Crush',  cd: 4, mult: 4.4,  type: 'dmg',    desc: 'Signature: Black hole slam' }
+                { name: '★ Orbital Gravity Crush',cd: 4, mult: 4.4,  type: 'dmg', sig: true, desc: 'SIGNATURE: Black hole slam' }
             ]
         },
         host_advait: {
@@ -201,7 +220,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Titan Punch',            cd: 0, mult: 1.2,  type: 'dmg',    desc: 'Heavy shockwave fist' },
                 { name: 'Megavolt Slam',          cd: 2, mult: 2.45, type: 'dmg',    desc: 'Electrified ground smash' },
                 { name: 'Iron Bastion',           cd: 3, mult: 0,    type: 'shield', desc: 'Blocks 85% next hit' },
-                { name: 'Titan Overdrive',        cd: 4, mult: 4.35, type: 'dmg',    desc: 'Signature: Colossal lightning surge' }
+                { name: '★ Titan Overdrive',      cd: 4, mult: 4.35, type: 'dmg', sig: true, desc: 'SIGNATURE: Colossal lightning surge' }
             ]
         },
         host_ruwii: {
@@ -211,21 +230,20 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 { name: 'Foxfire Orb',            cd: 0, mult: 1.2,  type: 'dmg',    desc: 'Spirit flame projectile' },
                 { name: 'Mystic Tail Whip',       cd: 2, mult: 2.45, type: 'dmg',    desc: 'Nine-tail energy strike' },
                 { name: 'Spirit Mend',            cd: 3, mult: 0.52, type: 'heal',   desc: 'Restores +52% Max HP' },
-                { name: 'Nine-Tail Illusion',     cd: 4, mult: 4.4,  type: 'dmg',    desc: 'Signature: Phantom foxfire storm' }
+                { name: '★ Nine-Tail Illusion',   cd: 4, mult: 4.4,  type: 'dmg', sig: true, desc: 'SIGNATURE: Phantom foxfire storm' }
             ]
         },
         superhost: {
-            id: 'superhost', name: '🦚👑 SAMAKSH (GOD OP++)', tier: 'CREATOR GOD ∞', pool: 'code', code: '#sammuop',
+            id: 'superhost', name: '🦚👑 SAMAKSH (GOD OP++)', tier: 'SUPREME ∞', pool: 'code', code: '#sammuop',
             infinite: true, baseHp: 999999999, baseAtk: 999999999, fixedLevel: '∞', color: '#fde047', icon: '🦚',
             skills: [
                 { name: 'Divine Bansuri Wave',    cd: 0, mult: 9999, type: 'dmg',    desc: '∞ 1-Shot Cosmic Resonance' },
                 { name: 'Vaikuntha Immunity',     cd: 0, mult: 0,    type: 'shield', desc: '∞ 100% Absolute Invincibility' },
                 { name: 'Creator Miracle',        cd: 0, mult: 1.0,  type: 'heal',   desc: '∞ Full Cosmic Restoration' },
-                { name: 'Sudarshan Annihilation', cd: 0, mult: 9999, type: 'dmg',    desc: 'Signature: ∞ 3D Chakra Obliteration' }
+                { name: '★ Sudarshan Oblivion',   cd: 0, mult: 9999, type: 'dmg', sig: true, desc: 'SIGNATURE: ∞ 3D Chakra Erasure' }
             ]
         }
     };
-    // === PIECE 4: ACCESSORIES, STATS CALCULATOR & GACHA ENGINE ===
     const RPG_ACCESSORIES = [
         { id: 'w_iron',   slot: 'weapon', name: '⚔️ Iron Katana',       cost: 150,  atkBonus: 120, hpBonus: 0 },
         { id: 'w_flame',  slot: 'weapon', name: '🔥 Flame Saber',       cost: 450,  atkBonus: 350, hpBonus: 150 },
@@ -276,9 +294,19 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         }
         return pool.at(0);
     }
-
     const livePvpBattles = new Map();
     io.on('connection', (socket) => {
+        socket.on('disconnect', () => {
+            for (const [bId, duel] of livePvpBattles.entries()) {
+                if (duel.p1.socketId === socket.id || duel.p2.socketId === socket.id) {
+                    livePvpBattles.delete(bId);
+                    const survivorId = duel.p1.socketId === socket.id ? duel.p2.socketId : duel.p1.socketId;
+                    const winnerName = duel.p1.socketId === socket.id ? duel.p2.username : duel.p1.username;
+                    io.to(survivorId).emit('rpgPvpEnd', { duel, winner: winnerName + ' (Opponent Left)' });
+                }
+            }
+        });
+
         socket.on('verifyAvatarCodeV6', ({ code }) => {
             const match = SECRET_CODES[(code || '').trim().toLowerCase()];
             if (match) {
@@ -329,6 +357,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
             }
             socket.emit('rpgRoomPlayersList', list);
         });
+
         socket.on('rpgChallengePlayer', ({ targetSocketId }) => {
             const targetSock = io.sockets.sockets.get(targetSocketId);
             if (!targetSock || !socket.username) return socket.emit('rpgToast', '⚠️ Player is offline!');
@@ -348,13 +377,13 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                     socketId: socket.id, username: socket.username,
                     fighter: s1.fighter, lvl: s1.lvl, infinite: s1.infinite,
                     hp: s1.infinite ? 999999999 : s1.maxHp, maxHp: s1.infinite ? 999999999 : s1.maxHp,
-                    atk: s1.infinite ? 999999999 : s1.atk, shield: 0, cds: new Array(0, 0, 0, 0)
+                    atk: s1.infinite ? 999999999 : s1.atk, shield: 0, cds:
                 },
                 p2: {
                     socketId: targetSock.id, username: targetSock.username,
                     fighter: s2.fighter, lvl: s2.lvl, infinite: s2.infinite,
                     hp: s2.infinite ? 999999999 : s2.maxHp, maxHp: s2.infinite ? 999999999 : s2.maxHp,
-                    atk: s2.infinite ? 999999999 : s2.atk, shield: 0, cds: new Array(0, 0, 0, 0)
+                    atk: s2.infinite ? 999999999 : s2.atk, shield: 0, cds:
                 },
                 log: `⚔️ ${socket.username} (${s1.fighter.name}) vs ${targetSock.username} (${s2.fighter.name})! ${socket.username}'s turn!`
             };
@@ -370,6 +399,16 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                     _serverId: socket.activeServerId
                 });
             }
+        });
+        socket.on('rpgPvpForfeit', ({ battleId }) => {
+            const duel = livePvpBattles.get(battleId);
+            if (!duel) return;
+            livePvpBattles.delete(battleId);
+            const isP1 = (duel.p1.socketId === socket.id);
+            const winnerName = isP1 ? duel.p2.username : duel.p1.username;
+            const oppSockId = isP1 ? duel.p2.socketId : duel.p1.socketId;
+            io.to(oppSockId).emit('rpgPvpEnd', { duel, winner: winnerName + ' (Opponent Retreated)' });
+            socket.emit('rpgPvpLeft');
         });
 
         socket.on('rpgPvpUseSkill', ({ battleId, skillIdx }) => {
@@ -450,6 +489,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
             io.to(duel.p1.socketId).emit('rpgPvpUpdate', duel);
             io.to(duel.p2.socketId).emit('rpgPvpUpdate', duel);
         });
+
         socket.on('rpgOpenBundle', (uname) => {
             const p = getPlayerRpg(uname);
             if (!p) return;
@@ -475,7 +515,6 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 });
             }
         });
-
         socket.on('rpgRedeemHostCode', ({ username, code }) => {
             const p = getPlayerRpg(username);
             if (!p || !code) return;
@@ -527,17 +566,9 @@ module.exports = function initAvatarArmory(app, io, helpers) {
             socket.emit('rpgToast', `🏆 Grind Victory! +${xpGain} XP & +${goldGain} Gold!`);
         });
     });
+
     const COMBINED_UI = `
     <style>
-      @keyframes sudarshanSpin3D {
-        0%   { transform: perspective(220px) rotateX(56deg) rotateY(-14deg) rotateZ(0deg); }
-        50%  { transform: perspective(220px) rotateX(50deg) rotateY(14deg) rotateZ(180deg); }
-        100% { transform: perspective(220px) rotateX(56deg) rotateY(-14deg) rotateZ(360deg); }
-      }
-      @keyframes chakraFirePulse {
-        0%, 100% { filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 14px #f97316); }
-        50%      { filter: drop-shadow(0 0 12px #38bdf8) drop-shadow(0 0 22px #fde047); }
-      }
       @keyframes divineAuraRing {
         0%, 100% { box-shadow: 0 0 12px #fde047, 0 0 24px #f97316; border-color: #fde047; }
         50%      { box-shadow: 0 0 18px #38bdf8, 0 0 32px #fde047; border-color: #38bdf8; }
@@ -551,13 +582,14 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         50%      { box-shadow: 0 0 20px #ea580c, 0 0 30px #fde047; border-color: #f59e0b; }
       }
 
-      .sudarshan-3d-disc { transform-origin: 50px 44px; animation: sudarshanSpin3D 5s linear infinite, chakraFirePulse 2.2s ease-in-out infinite; }
       .v14-ring-samaksh { border: 2.5px solid #fde047 !important; animation: divineAuraRing 2.2s infinite !important; }
       .v14-ring-empress { border: 2.5px solid #fbcfe8 !important; animation: empressAuraRing 2.2s infinite !important; }
       .v14-ring-solar   { border: 2.5px solid #fef08a !important; animation: solarAuraRing 2.2s infinite !important; }
       .v14-ring-violet  { border: 2px solid #c084fc !important; box-shadow: 0 0 10px #9333ea !important; }
       .v14-ring-emerald { border: 2px solid #4ade80 !important; box-shadow: 0 0 10px #10b981 !important; }
       .v14-ring-gold    { border: 2px solid #fde047 !important; box-shadow: 0 0 9px #eab308 !important; }
+      .v14-ring-ice     { border: 2px solid #38bdf8 !important; box-shadow: 0 0 9px #0284c7 !important; }
+      .v14-ring-fire    { border: 2px solid #fb923c !important; box-shadow: 0 0 9px #ea580c !important; }
 
       .v14-chat-samaksh { background: linear-gradient(125deg, rgba(253,224,71,0.32), rgba(249,115,22,0.24), rgba(56,189,248,0.28)) !important; border: 2px solid #fde047 !important; border-radius: 15px !important; box-shadow: 0 0 18px rgba(253,224,71,0.35) !important; color: #fff !important; font-weight: 800 !important; }
       .v14-chat-empress { background: linear-gradient(135deg, rgba(244,114,182,0.35), rgba(251,207,232,0.24), rgba(253,224,71,0.22)) !important; border: 2px solid #fbcfe8 !important; border-radius: 15px !important; color: #fff !important; font-weight: 800 !important; }
@@ -618,158 +650,222 @@ module.exports = function initAvatarArmory(app, io, helpers) {
 
     <script>
     (function() {
-      // === PIECE 10: ULTRA PRO MAX SVG PORTRAITS (MILLY, ISHIKA, MOON, ZORO, SUS) ===
-      const MILLY_EMPRESS_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<defs>' +
-            '<radialGradient id="mlBg" cx="50%" cy="30%" r="74%"><stop offset="0%" stop-color="#fdf2f8"/><stop offset="35%" stop-color="#f472b6"/><stop offset="70%" stop-color="#9d174d"/><stop offset="100%" stop-color="#19041f"/></radialGradient>' +
-            '<linearGradient id="mlDress" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fbcfe8"/><stop offset="45%" stop-color="#ec4899"/><stop offset="100%" stop-color="#701a75"/></linearGradient>' +
-            '<linearGradient id="mlTiara" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#fef9c3"/><stop offset="50%" stop-color="#facc15"/><stop offset="100%" stop-color="#f472b6"/></linearGradient>' +
-          '</defs>' +
-          '<circle cx="50" cy="50" r="49" fill="url(#mlBg)"/>' +
-          '<circle cx="50" cy="46" r="44" fill="none" stroke="#fbcfe8" stroke-width="2.2" stroke-dasharray="5 3"/>' +
-          '<path d="M14,42 C8,72 14,95 23,99 L77,99 C86,95 92,72 86,42 C86,15 14,15 14,42 Z" fill="#4a0e4e"/>' +
-          '<path d="M14,99 C18,72 32,65 50,65 C68,65 82,72 86,99 Z" fill="url(#mlDress)" stroke="#fdf2f8" stroke-width="1.6"/>' +
-          '<polygon points="50,71 56,78 50,86 44,78" fill="#38bdf8" stroke="#fff" stroke-width="1.4"/>' +
-          '<path d="M33,32 C33,25 67,25 67,32 L66,49 C65,59 56,65 50,66.5 C44,65 35,59 34,49 Z" fill="#ffe4e6"/>' +
-          '<ellipse cx="41" cy="50" rx="4.4" ry="3.9" fill="#fff"/><circle cx="41" cy="50" r="2.7" fill="#db2777"/><circle cx="42.3" cy="48.7" r="1.3" fill="#fff"/>' +
-          '<ellipse cx="59" cy="50" rx="4.4" ry="3.9" fill="#fff"/><circle cx="59" cy="50" r="2.7" fill="#db2777"/><circle cx="60.3" cy="48.7" r="1.3" fill="#fff"/>' +
-          '<path d="M45,58.5 Q50,62.5 55,58.5" stroke="#be185d" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-          '<path d="M25,45 C25,19 75,19 75,45 C67,33 56,33 50,41 C44,33 33,33 25,45 Z" fill="#6b21a8"/>' +
-          '<polygon points="29,24 35,10 42,18 50,4 58,18 65,10 71,24" fill="url(#mlTiara)" stroke="#fff" stroke-width="1.3"/>' +
-          '<circle cx="50" cy="14" r="2.6" fill="#f43f5e"/>' +
-        '</svg>'
-      );
+      const HERO_SPECS = {
+        superhost:      { bg: ['#fef08a','#ea580c','#3b0764','#02040a'], skin: ['#e0f2fe','#0284c7','#1e3a8a'], hair: '#090d16', armor: ['#fef9c3','#eab308','#78350f'], eye: '#38bdf8', crown: 'divine', aura: '#fde047', motif: 'chakra' },
+        host_milly:     { bg: ['#fdf2f8','#f472b6','#9d174d','#19041f'], skin: ['#fff1f2','#fecdd3','#fda4af'], hair: '#581c87', armor: ['#fbcfe8','#ec4899','#701a75'], eye: '#db2777', crown: 'tiara',  aura: '#f472b6', motif: 'hearts' },
+        host_ishika:    { bg: ['#fef9c3','#f59e0b','#9a3412','#1c0a00'], skin: ['#ffedd5','#fed7aa','#fdba74'], hair: '#451a03', armor: ['#fef08a','#eab308','#854d0e'], eye: '#d97706', crown: 'tiara',  aura: '#facc15', motif: 'sun' },
+        host_moon:      { bg: ['#e0e7ff','#7c3aed','#312e81','#090d16'], skin: ['#ffedd5','#fed7aa','#fdba74'], hair: '#1e1b4b', armor: ['#ffffff','#e2e8f0','#94a3b8'], eye: '#7c3aed', crown: 'none',   aura: '#38bdf8', motif: 'moon' },
+        host_zoro:      { bg: ['#dcfce7','#16a34a','#052e16','#020617'], skin: ['#fed7aa','#fdba74','#fb923c'], hair: '#15803d', armor: ['#166534','#14532d','#052e16'], eye: '#22c55e', crown: 'band',   aura: '#4ade80', motif: 'swords' },
+        host_sus:       { bg: ['#d1fae5','#10b981','#064e3b','#022c22'], skin: ['#fff1f2','#ffe4e6','#fecdd3'], hair: '#047857', armor: ['#34d399','#059669','#064e3b'], eye: '#10b981', crown: 'tiara',  aura: '#6ee7b7', motif: 'wings' },
+        host_sid:       { bg: ['#fef08a','#eab308','#1e3a8a','#090d16'], skin: ['#ffedd5','#fed7aa','#fdba74'], hair: '#0f172a', armor: ['#3b82f6','#1d4ed8','#1e3a8a'], eye: '#facc15', crown: 'helm',   aura: '#fde047', motif: 'bolts' },
+        host_shubhi:    { bg: ['#fce7f3','#f472b6','#831843','#1f0512'], skin: ['#fff1f2','#ffe4e6','#fecdd3'], hair: '#4a0e4e', armor: ['#f9a8d4','#db2777','#831843'], eye: '#ec4899', crown: 'tiara',  aura: '#f472b6', motif: 'petals' },
+        host_sarah:     { bg: ['#e0f2fe','#38bdf8','#0c4a6e','#082f49'], skin: ['#fff1f2','#ffe4e6','#fecdd3'], hair: '#1e293b', armor: ['#7dd3fc','#0284c7','#0c4a6e'], eye: '#0ea5e9', crown: 'tiara',  aura: '#38bdf8', motif: 'wings' },
+        host_heer:      { bg: ['#ffe4e6','#fb7185','#881337','#1f040d'], skin: ['#fff1f2','#ffe4e6','#fecdd3'], hair: '#3b0764', armor: ['#fda4af','#e11d48','#881337'], eye: '#f43f5e', crown: 'tiara',  aura: '#fda4af', motif: 'stars' },
+        host_izzan:     { bg: ['#ffedd5','#f97316','#7f1d1d','#180404'], skin: ['#fed7aa','#fdba74','#fb923c'], hair: '#18181b', armor: ['#f87171','#dc2626','#7f1d1d'], eye: '#ef4444', crown: 'helm',   aura: '#fb923c', motif: 'flames' },
+        host_zaira:     { bg: ['#e0e7ff','#818cf8','#1e1b4b','#050814'], skin: ['#ffedd5','#fed7aa','#fdba74'], hair: '#090d16', armor: ['#a5b4fc','#4f46e5','#1e1b4b'], eye: '#818cf8', crown: 'tiara',  aura: '#c084fc', motif: 'orbit' },
+        host_advait:    { bg: ['#dbeafe','#3b82f6','#172554','#060b19'], skin: ['#fed7aa','#fdba74','#fb923c'], hair: '#0f172a', armor: ['#60a5fa','#1e40af','#172554'], eye: '#38bdf8', crown: 'helm',   aura: '#60a5fa', motif: 'bolts' },
+        host_ruwii:     { bg: ['#fef3c7','#fb923c','#7c2d12','#1c0a00'], skin: ['#fff1f2','#ffe4e6','#fecdd3'], hair: '#451a03', armor: ['#fdba74','#ea580c','#7c2d12'], eye: '#f59e0b', crown: 'ears',   aura: '#fbbf24', motif: 'flames' },
+        gunner:         { bg: ['#e0f2fe','#0284c7','#0f172a','#020617'], skin: ['#cbd5e1','#64748b','#334155'], hair: '#0284c7', armor: ['#38bdf8','#0369a1','#0f172a'], eye: '#38bdf8', crown: 'visor',  aura: '#38bdf8', motif: 'tech' },
+        swordsman:      { bg: ['#f1f5f9','#64748b','#1e293b','#090d16'], skin: ['#ffedd5','#fed7aa','#fdba74'], hair: '#1e293b', armor: ['#94a3b8','#475569','#0f172a'], eye: '#cbd5e1', crown: 'band',   aura: '#94a3b8', motif: 'swords' },
+        fire_mage:      { bg: ['#ffedd5','#f97316','#7c2d12','#1c0a00'], skin: ['#ffedd5','#fed7aa','#fdba74'], hair: '#9a3412', armor: ['#fb923c','#ea580c','#7c2d12'], eye: '#f97316', crown: 'none',   aura: '#fb923c', motif: 'flames' },
+        water_bender:   { bg: ['#e0f2fe','#38bdf8','#0369a1','#082f49'], skin: ['#ffedd5','#fed7aa','#fdba74'], hair: '#0c4a6e', armor: ['#7dd3fc','#0284c7','#075985'], eye: '#38bdf8', crown: 'none',   aura: '#7dd3fc', motif: 'orbit' },
+        lightning_lord: { bg: ['#fef9c3','#eab308','#713f12','#090d16'], skin: ['#ffedd5','#fed7aa','#fdba74'], hair: '#fef08a', armor: ['#facc15','#ca8a04','#713f12'], eye: '#fde047', crown: 'helm',   aura: '#fde047', motif: 'bolts' },
+        rubber_hero:    { bg: ['#ffe4e6','#fb7185','#881337','#19040c'], skin: ['#fed7aa','#fdba74','#fb923c'], hair: '#090d16', armor: ['#fb7185','#e11d48','#881337'], eye: '#fb7185', crown: 'hat',    aura: '#fda4af', motif: 'stars' },
+        spacetime_god:  { bg: ['#f3e8ff','#a855f7','#3b0764','#05020d'], skin: ['#e0e7ff','#a5b4fc','#6366f1'], hair: '#f8fafc', armor: ['#c084fc','#7e22ce','#3b0764'], eye: '#e879f9', crown: 'divine', aura: '#c084fc', motif: 'orbit' }
+      };
 
-      const ISHIKA_SUN_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<defs>' +
-            '<radialGradient id="isBg" cx="50%" cy="32%" r="74%"><stop offset="0%" stop-color="#fef9c3"/><stop offset="38%" stop-color="#f59e0b"/><stop offset="75%" stop-color="#9a3412"/><stop offset="100%" stop-color="#1c0a00"/></radialGradient>' +
-            '<linearGradient id="isGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#eab308"/><stop offset="100%" stop-color="#854d0e"/></linearGradient>' +
-          '</defs>' +
-          '<circle cx="50" cy="50" r="49" fill="url(#isBg)"/>' +
-          '<circle cx="50" cy="46" r="43" fill="none" stroke="#fef08a" stroke-width="2.5" stroke-dasharray="6 3"/>' +
-          '<polygon points="50,2 53,10 47,10" fill="#fef08a"/><polygon points="18,14 24,20 19,23" fill="#fef08a"/><polygon points="82,14 76,20 81,23" fill="#fef08a"/>' +
-          '<path d="M15,43 C9,72 15,95 24,99 L76,99 C85,95 91,72 85,43 C85,16 15,16 15,43 Z" fill="#451a03"/>' +
-          '<path d="M15,99 C19,72 33,65 50,65 C67,65 81,72 85,99 Z" fill="url(#isGold)" stroke="#fef9c3" stroke-width="1.6"/>' +
-          '<polygon points="50,71 56,78 50,86 44,78" fill="#f97316" stroke="#fff" stroke-width="1.3"/>' +
-          '<path d="M33,32 C33,25 67,25 67,32 L66,49 C65,59 56,65 50,66.5 C44,65 35,59 34,49 Z" fill="#ffedd5"/>' +
-          '<ellipse cx="41" cy="50" rx="4.3" ry="3.8" fill="#fff"/><circle cx="41" cy="50" r="2.6" fill="#d97706"/><circle cx="42.2" cy="48.8" r="1.2" fill="#fff"/>' +
-          '<ellipse cx="59" cy="50" rx="4.3" ry="3.8" fill="#fff"/><circle cx="59" cy="50" r="2.6" fill="#d97706"/><circle cx="60.2" cy="48.8" r="1.2" fill="#fff"/>' +
-          '<path d="M45,58.5 Q50,62.5 55,58.5" stroke="#b45309" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-          '<path d="M26,45 C26,20 74,20 74,45 C66,33 56,33 50,41 C44,33 34,33 26,45 Z" fill="#78350f"/>' +
-          '<polygon points="31,24 38,11 45,19 50,6 55,19 62,11 69,24" fill="url(#isGold)" stroke="#fff" stroke-width="1.3"/>' +
-        '</svg>'
-      );
+      const generatedPngs = {};
+      const imgCache = {};
+      function paintRealisticPortrait(id) {
+        if (generatedPngs[id]) return generatedPngs[id];
+        const s = HERO_SPECS[id] || HERO_SPECS.gunner;
+        const c = document.createElement('canvas');
+        c.width = 256; c.height = 256;
+        const ctx = c.getContext('2d');
 
-      const MOON_MEDIC_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<defs>' +
-            '<radialGradient id="mnBg" cx="50%" cy="30%" r="72%"><stop offset="0%" stop-color="#e0e7ff"/><stop offset="40%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#090d16"/></radialGradient>' +
-            '<linearGradient id="mnCoat" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient>' +
-          '</defs>' +
-          '<circle cx="50" cy="50" r="49" fill="url(#mnBg)"/>' +
-          '<path d="M68,14 A28,28 0 1,0 84,54 A22,22 0 1,1 68,14 Z" fill="#fde047" opacity="0.88"/>' +
-          '<rect x="15" y="18" width="12" height="4" rx="1.5" fill="#4ade80"/><rect x="19" y="14" width="4" height="12" rx="1.5" fill="#4ade80"/>' +
-          '<path d="M18,44 C12,72 17,95 25,99 L75,99 C83,95 88,72 82,44 C82,17 18,17 18,44 Z" fill="#1e1b4b"/>' +
-          '<path d="M16,99 C20,73 33,66 50,66 C67,66 80,73 84,99 Z" fill="url(#mnCoat)" stroke="#38bdf8" stroke-width="1.5"/>' +
-          '<path d="M36,68 Q36,86 50,86 Q64,86 64,68" fill="none" stroke="#0284c7" stroke-width="2.5"/>' +
-          '<circle cx="50" cy="88" r="4" fill="#38bdf8" stroke="#fff" stroke-width="1.2"/>' +
-          '<path d="M33,32 C33,25 67,25 67,32 L66,49 C65,59 56,65 50,66.5 C44,65 35,59 34,49 Z" fill="#ffedd5"/>' +
-          '<ellipse cx="41" cy="50" rx="4.2" ry="3.6" fill="#fff"/><circle cx="41" cy="50" r="2.5" fill="#7c3aed"/><circle cx="42.2" cy="48.8" r="1.2" fill="#fff"/>' +
-          '<ellipse cx="59" cy="50" rx="4.2" ry="3.6" fill="#fff"/><circle cx="59" cy="50" r="2.5" fill="#7c3aed"/><circle cx="60.2" cy="48.8" r="1.2" fill="#fff"/>' +
-          '<path d="M45,58.5 Q50,62 55,58.5" stroke="#be185d" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-          '<path d="M26,45 C26,20 74,20 74,45 C66,33 56,33 50,41 C44,33 34,33 26,45 Z" fill="#312e81"/>' +
-        '</svg>'
-      );
+        const bgGrad = ctx.createRadialGradient(128, 86, 12, 128, 128, 128);
+        bgGrad.addColorStop(0, s.bg[0]);
+        bgGrad.addColorStop(0.35, s.bg[1]);
+        bgGrad.addColorStop(0.75, s.bg[2]);
+        bgGrad.addColorStop(1, s.bg[3]);
+        ctx.fillStyle = bgGrad;
+        ctx.beginPath(); ctx.arc(128, 128, 126, 0, Math.PI * 2); ctx.fill();
 
-      const ZORO_SWORD_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<circle cx="50" cy="50" r="49" fill="#052e16"/>' +
-          '<line x1="8" y1="60" x2="92" y2="96" stroke="#f8fafc" stroke-width="4" stroke-linecap="round"/>' +
-          '<line x1="92" y1="60" x2="8" y2="96" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>' +
-          '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="#14532d" stroke="#4ade80" stroke-width="1.5"/>' +
-          '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#fcd3b2"/>' +
-          '<polygon points="24,44 19,21 34,28 41,11 50,24 59,11 66,28 81,21 76,44 63,34 50,39 37,34" fill="#16a34a"/>' +
-          '<rect x="30" y="30" width="40" height="5" rx="2" fill="#052e16" stroke="#4ade80" stroke-width="1.2"/>' +
-          '<ellipse cx="41" cy="50" rx="4" ry="3.3" fill="#fff"/><circle cx="41" cy="50" r="2.2" fill="#15803d"/><line x1="38" y1="44" x2="43" y2="56" stroke="#991b1b" stroke-width="1.8"/>' +
-          '<ellipse cx="59" cy="50" rx="4" ry="3.3" fill="#fff"/><circle cx="59" cy="50" r="2.2" fill="#15803d"/>' +
-          '<path d="M44,59 Q50,62 56,58" stroke="#7f1d1d" stroke-width="2" fill="none"/>' +
-        '</svg>'
-      );
+        ctx.save();
+        ctx.translate(128, 114);
+        ctx.strokeStyle = s.aura;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.75;
+        ctx.beginPath(); ctx.arc(0, 0, 102, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([10, 6]);
+        ctx.beginPath(); ctx.arc(0, 0, 90, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
 
-      const SUS_FAIRY_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<circle cx="50" cy="50" r="49" fill="#064e3b"/>' +
-          '<path d="M8,40 Q20,14 38,42 Q18,54 8,40 Z M92,40 Q80,14 62,42 Q82,54 92,40 Z" fill="#a7f3d0" opacity="0.8" stroke="#fde047" stroke-width="1.2"/>' +
-          '<path d="M15,44 C9,72 14,94 23,99 L77,99 C86,94 91,72 85,44 C85,17 15,17 15,44 Z" fill="#059669"/>' +
-          '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="#047857" stroke="#fde047" stroke-width="1.5"/>' +
-          '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#fff1f2"/>' +
-          '<ellipse cx="41" cy="50" rx="4.2" ry="3.8" fill="#fff"/><circle cx="41" cy="50" r="2.6" fill="#059669"/><circle cx="42.2" cy="48.8" r="1.2" fill="#fff"/>' +
-          '<ellipse cx="59" cy="50" rx="4.2" ry="3.8" fill="#fff"/><circle cx="59" cy="50" r="2.6" fill="#059669"/><circle cx="60.2" cy="48.8" r="1.2" fill="#fff"/>' +
-          '<path d="M45,58.5 Q50,63 55,58.5" stroke="#e11d48" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-          '<polygon points="31,24 37,10 44,19 50,5 56,19 63,10 69,24" fill="#fde047" stroke="#fff" stroke-width="1.3"/>' +
-        '</svg>'
-      );
-      // === PIECE 11: CUSTOM SVG PORTRAITS FOR SID, SHUBHI, SARAH, HEER, IZZAN, ZAIRA, ADVAIT, RUWII ===
-      function makeHostPortrait(bg1, bg2, hair, armor, accent, crownType) {
-        return 'data:image/svg+xml;utf8,' + encodeURIComponent(
-          '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-            '<defs><radialGradient id="hg" cx="50%" cy="32%" r="72%"><stop offset="0%" stop-color="' + bg1 + '"/><stop offset="100%" stop-color="' + bg2 + '"/></radialGradient></defs>' +
-            '<circle cx="50" cy="50" r="49" fill="url(#hg)"/>' +
-            '<circle cx="50" cy="46" r="43" fill="none" stroke="' + accent + '" stroke-width="2.2" stroke-dasharray="5 3"/>' +
-            '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="' + armor + '" stroke="' + accent + '" stroke-width="1.5"/>' +
-            '<polygon points="50,71 56,78 50,86 44,78" fill="' + accent + '" stroke="#fff" stroke-width="1.2"/>' +
-            '<path d="M33,32 C33,25 67,25 67,32 L66,49 C65,59 56,65 50,66.5 C44,65 35,59 34,49 Z" fill="#ffedd5"/>' +
-            '<path d="M26,44 C25,21 75,21 74,44 C66,33 56,33 50,40 C44,33 34,33 26,44 Z" fill="' + hair + '"/>' +
-            (crownType === 'tiara'
-              ? '<polygon points="31,24 38,11 45,19 50,6 55,19 62,11 69,24" fill="' + accent + '" stroke="#fff" stroke-width="1.2"/>'
-              : '<polygon points="34,25 42,13 50,21 58,13 66,25" fill="' + accent + '" stroke="#fff" stroke-width="1.2"/>') +
-            '<ellipse cx="41" cy="50" rx="4.2" ry="3.5" fill="#fff"/><circle cx="41" cy="50" r="2.4" fill="' + bg2 + '"/><circle cx="42" cy="49" r="1.1" fill="#fff"/>' +
-            '<ellipse cx="59" cy="50" rx="4.2" ry="3.5" fill="#fff"/><circle cx="59" cy="50" r="2.4" fill="' + bg2 + '"/><circle cx="60" cy="49" r="1.1" fill="#fff"/>' +
-            '<path d="M45,58.5 Q50,62 55,58.5" stroke="#7f1d1d" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-          '</svg>'
-        );
+        if (s.motif === 'chakra' || s.motif === 'sun' || s.motif === 'orbit') {
+          for (let i = 0; i < 16; i++) {
+            const ang = (i * Math.PI) / 8;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(ang) * 90, Math.sin(ang) * 90);
+            ctx.lineTo(Math.cos(ang) * 112, Math.sin(ang) * 112);
+            ctx.stroke();
+          }
+        } else if (s.motif === 'swords') {
+          ctx.lineWidth = 7; ctx.strokeStyle = '#f8fafc';
+          ctx.beginPath(); ctx.moveTo(-95, -75); ctx.lineTo(95, 95); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(95, -75); ctx.lineTo(-95, 95); ctx.stroke();
+        } else if (s.motif === 'wings') {
+          ctx.fillStyle = s.aura; ctx.globalAlpha = 0.45;
+          ctx.beginPath(); ctx.moveTo(-20, 10); ctx.quadraticCurveTo(-125, -65, -105, 35); ctx.quadraticCurveTo(-55, 45, -20, 10); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(20, 10); ctx.quadraticCurveTo(125, -65, 105, 35); ctx.quadraticCurveTo(55, 45, 20, 10); ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.fillStyle = s.hair;
+        ctx.beginPath();
+        ctx.moveTo(48, 110);
+        ctx.bezierCurveTo(32, 185, 44, 240, 64, 254);
+        ctx.lineTo(192, 254);
+        ctx.bezierCurveTo(212, 240, 224, 185, 208, 110);
+        ctx.bezierCurveTo(208, 42, 48, 42, 48, 110);
+        ctx.fill();
+
+        const armGrad = ctx.createLinearGradient(50, 165, 206, 256);
+        armGrad.addColorStop(0, s.armor[0]);
+        armGrad.addColorStop(0.5, s.armor[1]);
+        armGrad.addColorStop(1, s.armor[2]);
+        ctx.fillStyle = armGrad;
+        ctx.beginPath();
+        ctx.moveTo(36, 256);
+        ctx.bezierCurveTo(46, 185, 84, 168, 128, 168);
+        ctx.bezierCurveTo(172, 168, 210, 185, 220, 256);
+        ctx.fill();
+        ctx.strokeStyle = s.aura; ctx.lineWidth = 3.5; ctx.stroke();
+
+        const gemGrad = ctx.createRadialGradient(128, 204, 2, 128, 206, 18);
+        gemGrad.addColorStop(0, '#ffffff');
+        gemGrad.addColorStop(0.4, s.aura);
+        gemGrad.addColorStop(1, s.armor[2]);
+        ctx.fillStyle = gemGrad;
+        ctx.beginPath();
+        ctx.moveTo(128, 186); ctx.lineTo(143, 205); ctx.lineTo(128, 224); ctx.lineTo(113, 205);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+
+        ctx.fillStyle = s.skin[2];
+        ctx.fillRect(112, 152, 32, 26);
+
+        const faceGrad = ctx.createRadialGradient(116, 114, 8, 128, 124, 56);
+        faceGrad.addColorStop(0, s.skin[0]);
+        faceGrad.addColorStop(0.65, s.skin[1]);
+        faceGrad.addColorStop(1, s.skin[2]);
+        ctx.fillStyle = faceGrad;
+        ctx.beginPath();
+        ctx.moveTo(84, 86);
+        ctx.bezierCurveTo(84, 66, 172, 66, 172, 86);
+        ctx.lineTo(169, 130);
+        ctx.bezierCurveTo(166, 156, 144, 170, 128, 173);
+        ctx.bezierCurveTo(112, 170, 90, 156, 87, 130);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.18)';
+        ctx.beginPath(); ctx.ellipse(101, 138, 11, 6, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(155, 138, 11, 6, 0, 0, Math.PI * 2); ctx.fill();
+
+        function drawEye(cx, cy) {
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.ellipse(cx, cy, 12, 9.5, 0, 0, Math.PI * 2); ctx.fill();
+          const iris = ctx.createRadialGradient(cx, cy + 2, 1, cx, cy, 8);
+          iris.addColorStop(0, '#090d16');
+          iris.addColorStop(0.55, s.eye);
+          iris.addColorStop(1, s.aura);
+          ctx.fillStyle = iris;
+          ctx.beginPath(); ctx.arc(cx, cy, 7.2, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#090d16'; ctx.lineWidth = 3.2;
+          ctx.beginPath(); ctx.arc(cx, cy + 1, 12.5, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(cx - 3, cy - 3, 2.8, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx + 3, cy + 2.5, 1.4, 0, Math.PI * 2); ctx.fill();
+        }
+        drawEye(105, 126);
+        drawEye(151, 126);
+
+        if (id === 'superhost') {
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(123, 92); ctx.lineTo(123, 111); ctx.quadraticCurveTo(128, 115, 133, 111); ctx.lineTo(133, 92); ctx.stroke();
+          ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.moveTo(128, 94); ctx.lineTo(128, 110); ctx.stroke();
+        }
+
+        ctx.strokeStyle = '#9f1239'; ctx.lineWidth = 2.8; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(117, 153); ctx.quadraticCurveTo(128, 161, 139, 153); ctx.stroke();
+
+        ctx.fillStyle = s.hair;
+        ctx.beginPath();
+        ctx.moveTo(68, 116);
+        ctx.bezierCurveTo(66, 52, 190, 52, 188, 116);
+        ctx.quadraticCurveTo(166, 86, 148, 106);
+        ctx.quadraticCurveTo(128, 82, 108, 106);
+        ctx.quadraticCurveTo(90, 86, 68, 116);
+        ctx.fill();
+
+        ctx.fillStyle = s.aura; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+        if (s.crown === 'tiara' || s.crown === 'divine') {
+          ctx.beginPath();
+          ctx.moveTo(82, 66); ctx.lineTo(96, 36); ctx.lineTo(112, 54);
+          ctx.lineTo(128, 22); ctx.lineTo(144, 54); ctx.lineTo(160, 36); ctx.lineTo(174, 66);
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+        if (id === 'superhost') {
+          ctx.save(); ctx.translate(168, 32); ctx.rotate(0.35);
+          ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.ellipse(0, 0, 14, 20, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#1d4ed8'; ctx.beginPath(); ctx.ellipse(0, 2, 8, 12, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 3, 4, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+        if (s.crown === 'ears') {
+          ctx.fillStyle = '#ea580c';
+          ctx.beginPath(); ctx.moveTo(76, 74); ctx.lineTo(66, 26); ctx.lineTo(104, 58); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(180, 74); ctx.lineTo(190, 26); ctx.lineTo(152, 58); ctx.fill();
+        }
+
+        for (let i = 0; i < 14; i++) {
+          const px = 30 + ((i * 53) % 196);
+          const py = 26 + ((i * 79) % 204);
+          ctx.fillStyle = i % 2 === 0 ? '#ffffff' : s.aura;
+          ctx.beginPath(); ctx.arc(px, py, (i % 3) + 1.5, 0, Math.PI * 2); ctx.fill();
+        }
+
+        const pngUrl = c.toDataURL('image/png');
+        generatedPngs[id] = pngUrl;
+        const im = new Image(); im.src = pngUrl; imgCache[id] = im;
+        return pngUrl;
       }
 
-      const SID_THUNDER_URI  = makeHostPortrait('#fde047', '#1e3a8a', '#0f172a', '#1d4ed8', '#facc15', 'helm');
-      const SHUBHI_ROSE_URI  = makeHostPortrait('#fbcfe8', '#831843', '#4a0e4e', '#db2777', '#f472b6', 'tiara');
-      const SARAH_VALK_URI   = makeHostPortrait('#bae6fd', '#0c4a6e', '#1e293b', '#0284c7', '#38bdf8', 'tiara');
-      const HEER_STAR_URI    = makeHostPortrait('#fecdd3', '#881337', '#3b0764', '#e11d48', '#fda4af', 'tiara');
-      const IZZAN_DRAGON_URI = makeHostPortrait('#fed7aa', '#7f1d1d', '#18181b', '#dc2626', '#fb923c', 'helm');
-      const ZAIRA_NOVA_URI   = makeHostPortrait('#c7d2fe', '#1e1b4b', '#090d16', '#4f46e5', '#818cf8', 'tiara');
-      const ADVAIT_TITAN_URI = makeHostPortrait('#93c5fd', '#172554', '#0f172a', '#1e40af', '#60a5fa', 'helm');
-      const RUWII_FOX_URI    = makeHostPortrait('#fde68a', '#7c2d12', '#451a03', '#ea580c', '#fbbf24', 'tiara');
-      // === PIECE 12: COMPLETE AVATAR ROSTER & 2.5D BATTLE STAGE RENDERER ===
-      function dbUrl(s, seed, bg) { return 'https://dicebear.com' + s + '/svg?seed=' + encodeURIComponent(seed) + '&backgroundColor=' + bg; }
-
+      Object.keys(HERO_SPECS).forEach(paintRealisticPortrait);
       const AVATAR_ITEMS = [
-        { id: 'superhost',      name: '🦚👑 SAMAKSH (GOD OP++)',    ring: 'v14-ring-samaksh', req: 'code', featured: true, img: KRISHNA_URI },
-        { id: 'host_milly',     name: '👸💖 Princess Milly',        ring: 'v14-ring-empress', req: 'code', featured: true, img: MILLY_EMPRESS_URI },
-        { id: 'host_ishika',    name: '☀️✨ Empress Ishika',        ring: 'v14-ring-gold',    req: 'code', featured: true, img: ISHIKA_SUN_URI },
-        { id: 'host_moon',      name: '🩺🌙 Dr. Moon (Medic)',      ring: 'v14-ring-violet',  req: 'code', img: MOON_MEDIC_URI },
-        { id: 'host_zoro',      name: '⚔️🐉 Zoro 3-Sword',          ring: 'v14-ring-emerald', req: 'code', img: ZORO_SWORD_URI },
-        { id: 'host_sus',       name: '👸💚 Princess Sus',          ring: 'v14-ring-emerald', req: 'code', img: SUS_FAIRY_URI },
-        { id: 'host_sid',       name: '😎⚡ Sid Thunder',           ring: 'v14-ring-gold',    req: 'code', img: SID_THUNDER_URI },
-        { id: 'host_shubhi',    name: '🌷 Shubhi Sakura',           ring: 'v14-ring-empress', req: 'code', img: SHUBHI_ROSE_URI },
-        { id: 'host_sarah',     name: '🦋 Sarah Valkyrie',          ring: 'v14-ring-ice',     req: 'code', img: SARAH_VALK_URI },
-        { id: 'host_heer',      name: '🌸 Heer Starlight',          ring: 'v14-ring-empress', req: 'code', img: HEER_STAR_URI },
-        { id: 'host_izzan',     name: '🔥 Izzan Dragon',            ring: 'v14-ring-fire',    req: 'code', img: IZZAN_DRAGON_URI },
-        { id: 'host_zaira',     name: '🪐 Zaira Nova',              ring: 'v14-ring-violet',  req: 'code', img: ZAIRA_NOVA_URI },
-        { id: 'host_advait',    name: '⚡ Advait Titan',            ring: 'v14-ring-ice',     req: 'code', img: ADVAIT_TITAN_URI },
-        { id: 'host_ruwii',     name: '🌺 Ruwii Kitsune',           ring: 'v14-ring-gold',    req: 'code', img: RUWII_FOX_URI },
-        // Normal Gacha Classes
-        { id: 'gunner',         name: '🔫 Cyber Gunner',            ring: 'v14-ring-ice',     req: 'free', img: dbUrl('bottts-neutral','CyberGunner01','0284c7') },
-        { id: 'swordsman',      name: '⚔️ Blade Swordsman',         ring: 'v14-ring-gold',    req: 'free', img: dbUrl('adventurer','BladeSwordsman02','475569') },
-        { id: 'fire_mage',      name: '🔥 Inferno Pyromancer',      ring: 'v14-ring-fire',    req: 'free', img: dbUrl('adventurer','InfernoMage03','ea580c') },
-        { id: 'water_bender',   name: '🌊 Tidal Hydromancer',       ring: 'v14-ring-ice',     req: 'free', img: dbUrl('lorelei','TidalWater04','0284c7') },
-        { id: 'lightning_lord', name: '⚡ Raijin Storm Lord',       ring: 'v14-ring-gold',    req: 'free', img: dbUrl('adventurer','RaijinBolt05','eab308') },
-        { id: 'rubber_hero',    name: '🥊 Gear Rubber Champion',    ring: 'v14-ring-fire',    req: 'free', img: dbUrl('adventurer','GearRubber06','e11d48') },
-        { id: 'spacetime_god',  name: '🌌 Chronos Space-Time',      ring: 'v14-ring-violet',  req: 'free', img: dbUrl('lorelei','ChronosVoid07','6d28d9') }
+        { id: 'superhost',      name: '🦚👑 SAMAKSH (GOD OP++)',    ring: 'v14-ring-samaksh', req: 'code', featured: true, img: paintRealisticPortrait('superhost') },
+        { id: 'host_milly',     name: '👸💖 Princess Milly',        ring: 'v14-ring-empress', req: 'code', featured: true, img: paintRealisticPortrait('host_milly') },
+        { id: 'host_ishika',    name: '☀️✨ Empress Ishika',        ring: 'v14-ring-solar',   req: 'code', featured: true, img: paintRealisticPortrait('host_ishika') },
+        { id: 'host_moon',      name: '🩺🌙 Dr. Moon (Medic)',      ring: 'v14-ring-violet',  req: 'code', img: paintRealisticPortrait('host_moon') },
+        { id: 'host_zoro',      name: '⚔️🐉 Zoro 3-Sword',          ring: 'v14-ring-emerald', req: 'code', img: paintRealisticPortrait('host_zoro') },
+        { id: 'host_sus',       name: '👸💚 Princess Sus',          ring: 'v14-ring-emerald', req: 'code', img: paintRealisticPortrait('host_sus') },
+        { id: 'host_sid',       name: '😎⚡ Sid Thunder',           ring: 'v14-ring-gold',    req: 'code', img: paintRealisticPortrait('host_sid') },
+        { id: 'host_shubhi',    name: '🌷 Shubhi Sakura',           ring: 'v14-ring-empress', req: 'code', img: paintRealisticPortrait('host_shubhi') },
+        { id: 'host_sarah',     name: '🦋 Sarah Valkyrie',          ring: 'v14-ring-ice',     req: 'code', img: paintRealisticPortrait('host_sarah') },
+        { id: 'host_heer',      name: '🌸 Heer Starlight',          ring: 'v14-ring-empress', req: 'code', img: paintRealisticPortrait('host_heer') },
+        { id: 'host_izzan',     name: '🔥 Izzan Dragon',            ring: 'v14-ring-fire',    req: 'code', img: paintRealisticPortrait('host_izzan') },
+        { id: 'host_zaira',     name: '🪐 Zaira Nova',              ring: 'v14-ring-violet',  req: 'code', img: paintRealisticPortrait('host_zaira') },
+        { id: 'host_advait',    name: '⚡ Advait Titan',            ring: 'v14-ring-ice',     req: 'code', img: paintRealisticPortrait('host_advait') },
+        { id: 'host_ruwii',     name: '🌺 Ruwii Kitsune',           ring: 'v14-ring-gold',    req: 'code', img: paintRealisticPortrait('host_ruwii') },
+        { id: 'gunner',         name: '🔫 Cyber Gunner',            ring: 'v14-ring-ice',     req: 'free', img: paintRealisticPortrait('gunner') },
+        { id: 'swordsman',      name: '⚔️ Blade Swordsman',         ring: 'v14-ring-gold',    req: 'free', img: paintRealisticPortrait('swordsman') },
+        { id: 'fire_mage',      name: '🔥 Inferno Pyromancer',      ring: 'v14-ring-fire',    req: 'free', img: paintRealisticPortrait('fire_mage') },
+        { id: 'water_bender',   name: '🌊 Tidal Hydromancer',       ring: 'v14-ring-ice',     req: 'free', img: paintRealisticPortrait('water_bender') },
+        { id: 'lightning_lord', name: '⚡ Raijin Storm Lord',       ring: 'v14-ring-gold',    req: 'free', img: paintRealisticPortrait('lightning_lord') },
+        { id: 'rubber_hero',    name: '🥊 Gear Rubber Champion',    ring: 'v14-ring-fire',    req: 'free', img: paintRealisticPortrait('rubber_hero') },
+        { id: 'spacetime_god',  name: '🌌 Chronos Space-Time',      ring: 'v14-ring-violet',  req: 'free', img: paintRealisticPortrait('spacetime_god') }
       ];
-
-      const imgCache = {};
-      AVATAR_ITEMS.forEach(item => { const im = new Image(); im.src = item.img; imgCache[item.id] = im; });
 
       const playersMap = {};
       let rpgData = null, curTab = 'pvp', grindState = null, livePvp = null, roomOpponents = [], animId = null;
@@ -796,7 +892,6 @@ module.exports = function initAvatarArmory(app, io, helpers) {
             ctx.beginPath(); ctx.moveTo(i * 50, 115); ctx.lineTo((i - 4) * 95 + 200, 175); ctx.stroke();
           }
 
-          // Left Pedestal & Avatar
           const ly = 90 + Math.sin(t) * 4;
           ctx.fillStyle = 'rgba(253, 224, 71, 0.28)';
           ctx.beginPath(); ctx.ellipse(90, 145, 44, 11, 0, 0, Math.PI * 2); ctx.fill();
@@ -809,7 +904,6 @@ module.exports = function initAvatarArmory(app, io, helpers) {
           if (lImg && lImg.complete) ctx.drawImage(lImg, 61, ly - 29, 58, 58);
           ctx.restore();
 
-          // Right Pedestal & Opponent/Boss
           const ry = 90 + Math.cos(t * 1.1) * 4;
           ctx.fillStyle = 'rgba(244, 63, 94, 0.3)';
           ctx.beginPath(); ctx.ellipse(310, 145, 44, 11, 0, 0, Math.PI * 2); ctx.fill();
@@ -836,7 +930,6 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         }
         draw();
       }
-      // === PIECE 13: USER IDENTITY HELPER, ARMORY VAULT & STATS CALCULATOR ===
       function getMe() {
         const s = window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '';
         if (s && s.trim()) return s.trim().toLowerCase();
@@ -885,12 +978,21 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         const atk = Math.round(f.baseAtk * (1 + (lvl - 1) * 0.18)) + (w ? w.atkBonus : 0) + (r ? r.atkBonus : 0);
         return { lvl, hp: maxHp, maxHp, atk };
       }
-      // === PIECE 14: TAB SWITCHER & GRIND COMBAT ENGINE ===
+
       window.switchRpgTab = function(t, btn) {
         curTab = t;
         document.querySelectorAll('.rpg-tab').forEach(b => b.classList.remove('active'));
         if (btn) btn.classList.add('active');
         if (t === 'pvp' && typeof socket !== 'undefined') socket.emit('rpgGetRoomPlayers');
+        renderRpgBody();
+      };
+
+      window.leavePvpToLobby = function() {
+        if (livePvp && !livePvp.finished && typeof socket !== 'undefined') {
+          socket.emit('rpgPvpForfeit', { battleId: livePvp.id });
+        }
+        livePvp = null;
+        if (typeof socket !== 'undefined') socket.emit('rpgGetRoomPlayers');
         renderRpgBody();
       };
 
@@ -955,8 +1057,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         b.log += ' | Enemy hit for ' + ed + '!';
         renderRpgBody();
       };
-      // === PART 1 OF 3: LIVE PVP & GRIND MODE UI RENDERER ===
-      function renderRpgBody() {
+      window.renderRpgBody = function() {
         const body = document.getElementById('rpgBody'), top = document.getElementById('rpgTopStats');
         if (!body || !rpgData) return;
         const p = rpgData.profile, f = rpgData.fighters[p.activeChar] || rpgData.fighters.gunner, st = calcStats(f, p);
@@ -973,6 +1074,10 @@ module.exports = function initAvatarArmory(app, io, helpers) {
             const oppPct = oppObj.infinite ? 100 : Math.max(0, Math.round((oppObj.hp / oppObj.maxHp) * 100));
 
             body.innerHTML =
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+                '<button onclick="window.leavePvpToLobby()" style="padding:4px 9px;border:1px solid #f43f5e;border-radius:7px;background:#1e293b;color:#fda4af;font-size:10px;font-weight:900;cursor:pointer;">⬅️ Back to PvP Lobby</button>' +
+                '<span style="font-size:10px;color:#94a3b8;">Battle ID: ' + livePvp.id.slice(-4) + '</span>' +
+              '</div>' +
               '<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:900;">' +
                 '<span style="color:#4ade80;">' + meObj.username + ' (❤️ ' + myHpTxt + ')</span>' +
                 '<span style="color:#f87171;">' + oppObj.username + ' (❤️ ' + oppHpTxt + ')</span>' +
@@ -981,29 +1086,29 @@ module.exports = function initAvatarArmory(app, io, helpers) {
               '<canvas id="rpgStageCanvas" width="400" height="175"></canvas>' +
               '<div style="font-size:11px;color:#fde047;text-align:center;font-weight:bold;margin:4px 0;">' + livePvp.log + '</div>' +
               (livePvp.finished
-                ? '<button onclick="livePvp=null;renderRpgBody()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#10b981;color:#fff;font-weight:900;cursor:pointer;">🏆 Back to PvP Lobby</button>'
+                ? '<button onclick="window.leavePvpToLobby()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#10b981;color:#fff;font-weight:900;cursor:pointer;">🏆 Return to PvP Lobby</button>'
                 : '<div style="text-align:center;font-size:11px;font-weight:900;color:' + (isMyTurn ? '#4ade80' : '#94a3b8') + ';margin-bottom:4px;">' + (isMyTurn ? '🔥 YOUR TURN! Pick a Skill:' : '⏳ Waiting for ' + oppObj.username + '...') + '</div>' +
-                  '<div class="rpg-skill-grid">' + meObj.fighter.skills.map((s, i) => '<button class="rpg-skill-btn" ' + (!isMyTurn || meObj.cds[i] > 0 ? 'disabled' : '') + ' onclick="socket.emit(\\'rpgPvpUseSkill\\',{battleId:\\'' + livePvp.id + '\\',skillIdx:' + i + '})">' + (i + 1) + '. ' + s.name + (meObj.cds[i] > 0 ? ' (' + meObj.cds[i] + 't)' : '') + '<br><span style="font-size:9px;color:#94a3b8;">' + s.desc + '</span></button>').join('') + '</div>');
+                  '<div class="rpg-skill-grid">' + meObj.fighter.skills.map((s, i) => '<button class="rpg-skill-btn' + (s.sig ? ' sig' : '') + '" ' + (!isMyTurn || meObj.cds[i] > 0 ? 'disabled' : '') + ' onclick="socket.emit(\'rpgPvpUseSkill\',{battleId:\'' + livePvp.id + '\',skillIdx:' + i + '})">' + (i + 1) + '. ' + s.name + (meObj.cds[i] > 0 ? ' (' + meObj.cds[i] + 't)' : '') + '<br><span style="font-size:9px;color:#94a3b8;">' + s.desc + '</span></button>').join('') + '</div>');
             setTimeout(() => startStageCanvas(meObj.fighter.id, oppObj.fighter.id, oppObj.fighter.icon), 25);
           } else {
             body.innerHTML =
               '<div style="text-align:center;margin-bottom:8px;">' +
                 '<div style="font-size:12px;font-weight:900;color:#38bdf8;">⚔️ CHALLENGE AN ONLINE PLAYER TO AVATAR PVP</div>' +
                 '<div style="font-size:10px;color:#cbd5e1;">Your Stats: ❤️ <b>' + st.maxHp + '</b> | ⚔️ <b>' + st.atk + '</b></div>' +
-                '<button onclick="socket.emit(\\'rpgGetRoomPlayers\\')" style="margin-top:5px;padding:4px 10px;border:1px solid #38bdf8;border-radius:8px;background:#0f172a;color:#38bdf8;font-size:10px;font-weight:bold;cursor:pointer;">🔄 Refresh Online Players</button>' +
+                '<button onclick="socket.emit(\'rpgGetRoomPlayers\')" style="margin-top:5px;padding:4px 10px;border:1px solid #38bdf8;border-radius:8px;background:#0f172a;color:#38bdf8;font-size:10px;font-weight:bold;cursor:pointer;">🔄 Refresh Online Players</button>' +
               '</div>' +
               (roomOpponents.length === 0
                 ? '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:14px;">No other players in this server yet! Invite friends or grind levels in <b>🐺 Grind Lvl</b>!</div>'
                 : roomOpponents.map(op =>
                     '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);border:1px solid #f43f5e;border-radius:10px;padding:8px;margin-bottom:6px;">' +
                       '<div><div style="font-weight:900;font-size:12px;">' + op.username + '</div><div style="font-size:10px;color:#fde047;">' + op.fighterName + ' (Lvl ' + op.lvl + ')</div></div>' +
-                      '<button onclick="socket.emit(\\'rpgChallengePlayer\\',{targetSocketId:\\'' + op.id + '\\'})" style="padding:6px 12px;border:none;border-radius:9px;background:linear-gradient(90deg,#ef4444,#ec4899);color:#fff;font-weight:900;font-size:11px;cursor:pointer;">⚔️ Fight!</button>' +
+                      '<button onclick="socket.emit(\'rpgChallengePlayer\',{targetSocketId:\'' + op.id + '\'})" style="padding:6px 12px;border:none;border-radius:9px;background:linear-gradient(90deg,#ef4444,#ec4899);color:#fff;font-weight:900;font-size:11px;cursor:pointer;">⚔️ Fight!</button>' +
                     '</div>'
                   ).join(''));
           }
         } else if (curTab === 'grind') {
           if (!grindState) {
-            body.innerHTML = '<div style="text-align:center;padding:10px;"><div style="font-weight:900;font-size:14px;">' + f.name + ' (' + f.tier + ')</div><div style="font-size:11px;color:#4ade80;margin:4px 0;">❤️ HP: ' + st.maxHp + ' | ⚔️ ATK: ' + st.atk + '</div><div style="display:flex;gap:8px;margin-top:8px;"><button onclick="startGrindBattle(\\'mob\\')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#0284c7;color:#fff;font-weight:900;cursor:pointer;">🐺 Grind Mob (+70 XP)</button><button onclick="startGrindBattle(\\'boss\\')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:#fff;font-weight:900;cursor:pointer;">👹 Raid Boss (+210 XP)</button></div></div>';
+            body.innerHTML = '<div style="text-align:center;padding:10px;"><div style="font-weight:900;font-size:14px;">' + f.name + ' (' + f.tier + ')</div><div style="font-size:11px;color:#4ade80;margin:4px 0;">❤️ HP: ' + st.maxHp + ' | ⚔️ ATK: ' + st.atk + '</div><div style="display:flex;gap:8px;margin-top:8px;"><button onclick="startGrindBattle(\'mob\')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#0284c7;color:#fff;font-weight:900;cursor:pointer;">🐺 Grind Mob (+70 XP)</button><button onclick="startGrindBattle(\'boss\')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:#fff;font-weight:900;cursor:pointer;">👹 Raid Boss (+210 XP)</button></div></div>';
           } else {
             const ePct = Math.max(0, Math.round((grindState.eHp / grindState.eMax) * 100));
             const pPct = grindState.pHp === '∞' ? 100 : Math.max(0, Math.round((grindState.pHp / grindState.pMax) * 100));
@@ -1014,11 +1119,10 @@ module.exports = function initAvatarArmory(app, io, helpers) {
               '<div style="font-size:11px;color:#fde047;text-align:center;font-weight:bold;">' + grindState.log + '</div>' +
               ((grindState.eHp <= 0 || (grindState.pHp !== '∞' && grindState.pHp <= 0))
                 ? '<button onclick="grindState=null;renderRpgBody()" style="width:100%;padding:10px;margin-top:6px;border:none;border-radius:10px;background:#10b981;color:#fff;font-weight:900;cursor:pointer;">🏆 Collect XP & Gold</button>'
-                : '<div class="rpg-skill-grid">' + grindState.fighter.skills.map((s, i) => '<button class="rpg-skill-btn" ' + (grindState.cds[i] > 0 ? 'disabled' : '') + ' onclick="useGrindSkill(' + i + ')">' + (i + 1) + '. ' + s.name + (grindState.cds[i] > 0 ? ' (' + grindState.cds[i] + 't)' : '') + '<br><span style="font-size:9px;color:#94a3b8;">' + s.desc + '</span></button>').join('') + '</div>');
+                : '<div class="rpg-skill-grid">' + grindState.fighter.skills.map((s, i) => '<button class="rpg-skill-btn' + (s.sig ? ' sig' : '') + '" ' + (grindState.cds[i] > 0 ? 'disabled' : '') + ' onclick="useGrindSkill(' + i + ')">' + (i + 1) + '. ' + s.name + (grindState.cds[i] > 0 ? ' (' + grindState.cds[i] + 't)' : '') + '<br><span style="font-size:9px;color:#94a3b8;">' + s.desc + '</span></button>').join('') + '</div>');
             setTimeout(() => startStageCanvas(grindState.fighter.id, null, grindState.eIcon), 25);
           }
         }
-        // === PART 2 OF 3: GACHA, CLASSES, GEAR SHOP & CHAT AVATAR STAMPER ===
         else if (curTab === 'gacha') {
           body.innerHTML =
             '<div style="text-align:center;padding:8px;">' +
@@ -1030,17 +1134,17 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 '🟡 <b>Legendary (10%):</b> Raijin Storm Lord, Gear Rubber Champion<br>' +
                 '🟣 <b>Mythic (4%):</b> Chronos Space-Time' +
               '</div>' +
-              '<button onclick="socket.emit(\\'rpgOpenBundle\\',\\'' + getMe() + '\\')" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#f59e0b,#ec4899);color:#fff;font-weight:900;cursor:pointer;">🎲 Roll Avatar Gacha (🪙 10 MVP)</button>' +
+              '<button onclick="socket.emit(\'rpgOpenBundle\',\'' + getMe() + '\')" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#f59e0b,#ec4899);color:#fff;font-weight:900;cursor:pointer;">🎲 Roll Avatar Gacha (🪙 10 MVP)</button>' +
               '<div style="display:flex;gap:5px;margin-top:8px;">' +
                 '<input id="rpgHostCodeInp" placeholder="Enter Host Code (#sammuop, #millyqueen, #ishikagold)..." style="flex:1;padding:6px;border-radius:8px;border:1px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">' +
-                '<button onclick="socket.emit(\\'rpgRedeemHostCode\\',{username:\\'' + getMe() + '\\',code:document.getElementById(\\'rpgHostCodeInp\\').value})" style="padding:6px 10px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:bold;">Unlock</button>' +
+                '<button onclick="socket.emit(\'rpgRedeemHostCode\',{username:\'' + getMe() + '\',code:document.getElementById(\'rpgHostCodeInp\').value})" style="padding:6px 10px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:bold;">Unlock</button>' +
               '</div>' +
             '</div>';
         } else if (curTab === 'heroes') {
           body.innerHTML = Object.keys(p.owned).map(id => {
             const hf = rpgData.fighters[id]; if (!hf) return '';
             const hst = calcStats(hf, p);
-            return '<div onclick="socket.emit(\\'rpgSelectFighter\\',{username:\\'' + getMe() + '\\',fighterId:\\'' + id + '\\'})" style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);border:1.5px solid ' + hf.color + ';border-radius:10px;padding:7px;margin-bottom:5px;cursor:pointer;">' +
+            return '<div onclick="socket.emit(\'rpgSelectFighter\',{username:\'' + getMe() + '\',fighterId:\'' + id + '\'})" style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);border:1.5px solid ' + hf.color + ';border-radius:10px;padding:7px;margin-bottom:5px;cursor:pointer;">' +
               '<div><b>' + hf.name + '</b> <span style="font-size:10px;color:' + hf.color + ';">[' + hf.tier + ' • Lvl ' + hst.lvl + ']</span><div style="font-size:10px;color:#94a3b8;">❤️ ' + hst.maxHp + ' HP | ⚔️ ' + hst.atk + ' ATK</div></div>' +
               '<span style="font-weight:900;font-size:11px;">' + (p.activeChar === id ? '✅ Equipped' : 'Equip') + '</span>' +
             '</div>';
@@ -1049,11 +1153,11 @@ module.exports = function initAvatarArmory(app, io, helpers) {
           body.innerHTML = (rpgData.accessories || []).map(a =>
             '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);border:1px solid #38bdf8;border-radius:10px;padding:7px;margin-bottom:5px;">' +
               '<div><b>' + a.name + '</b><div style="font-size:10px;color:#4ade80;">+' + a.atkBonus + ' ATK | +' + a.hpBonus + ' HP</div></div>' +
-              '<button onclick="socket.emit(\\'rpgBuyAccessory\\',{username:\\'' + getMe() + '\\',accId:\\'' + a.id + '\\'})" style="padding:5px 10px;border:none;border-radius:7px;background:#f59e0b;color:#090d16;font-weight:900;cursor:pointer;">💰 ' + a.cost + '</button>' +
+              '<button onclick="socket.emit(\'rpgBuyAccessory\',{username:\'' + getMe() + '\',accId:\'' + a.id + '\'})" style="padding:5px 10px;border:none;border-radius:7px;background:#f59e0b;color:#090d16;font-weight:900;cursor:pointer;">💰 ' + a.cost + '</button>' +
             '</div>'
           ).join('');
         }
-      }
+      };
 
       function renderChatAvatars() {
         const nodes = document.querySelectorAll('#chatBox b, #chatBox strong, #messages b, #messages strong, .msg-user');
@@ -1079,6 +1183,8 @@ module.exports = function initAvatarArmory(app, io, helpers) {
             msgBox.style.marginBottom = '6px';
             if (av.id === 'superhost') msgBox.classList.add('v14-chat-samaksh');
             else if (av.id === 'host_milly') msgBox.classList.add('v14-chat-empress');
+            else if (av.id === 'host_ishika') msgBox.classList.add('v14-chat-solar');
+            else msgBox.classList.add('v14-chat-host');
           }
 
           if (row.dataset.v14Stamp === av.id) return;
@@ -1096,7 +1202,6 @@ module.exports = function initAvatarArmory(app, io, helpers) {
           }
         });
       }
-      // === PART 3 OF 3: FLOATING HUD, SOCKET LISTENERS & EXPRESS INJECTOR ===
       window.openRpgModalNow = function() {
         const u = getMe();
         if (typeof socket !== 'undefined') {
@@ -1113,7 +1218,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         bar.id = 'sammuFloatingArmoryBar';
         bar.style.cssText = 'position:fixed;top:10px;right:10px;z-index:99999999;display:flex;gap:6px;';
         bar.innerHTML =
-          '<button onclick="window.stDrawVault();document.getElementById(\\'stVaultModal\\').style.display=\\'flex\\'" style="background:linear-gradient(90deg,#7c3aed,#ec4899);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.6);cursor:pointer;">👑 Avatars</button>' +
+          '<button onclick="window.stDrawVault();document.getElementById(\'stVaultModal\').style.display=\'flex\'" style="background:linear-gradient(90deg,#7c3aed,#ec4899);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.6);cursor:pointer;">👑 Avatars</button>' +
           '<button onclick="window.openRpgModalNow()" style="background:linear-gradient(90deg,#f59e0b,#dc2626);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.6);cursor:pointer;">⚔️ Avatar PvP</button>';
         document.body.appendChild(bar);
       }
@@ -1156,6 +1261,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
             renderRpgBody();
           });
           socket.on('rpgPvpUpdate', (duel) => { livePvp = duel; renderRpgBody(); });
+          socket.on('rpgPvpLeft', () => { livePvp = null; socket.emit('rpgGetRoomPlayers'); renderRpgBody(); });
           socket.on('rpgPvpEnd', ({ duel, winner }) => {
             livePvp = { ...duel, finished: true, log: '🏆 ' + winner.toUpperCase() + ' WON THE AVATAR PVP DUEL!' };
             renderRpgBody();
@@ -1167,30 +1273,5 @@ module.exports = function initAvatarArmory(app, io, helpers) {
     </script>
     `;
 
-        // Fix Samaksh's Krishna portrait, SVG namespaces, DiceBear URLs, and pass UI to server.js
-    const KRISHNA_FIXED = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<defs><radialGradient id="uBg" cx="50%" cy="35%" r="72%"><stop offset="0%" stop-color="#fef08a"/><stop offset="28%" stop-color="#ea580c"/><stop offset="65%" stop-color="#3b0764"/><stop offset="100%" stop-color="#02040a"/></radialGradient><radialGradient id="uSkin" cx="40%" cy="28%" r="68%"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="45%" stop-color="#0284c7"/><stop offset="100%" stop-color="#172554"/></radialGradient><linearGradient id="uGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fef9c3"/><stop offset="45%" stop-color="#facc15"/><stop offset="100%" stop-color="#78350f"/></linearGradient></defs>' +
-          '<circle cx="50" cy="50" r="49" fill="url(#uBg)"/>' +
-          '<g class="sudarshan-3d-disc"><circle cx="50" cy="44" r="42" fill="none" stroke="#f97316" stroke-width="2.2"/><circle cx="50" cy="44" r="38" fill="none" stroke="url(#uGold)" stroke-width="4.2"/><circle cx="50" cy="44" r="32" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="4 2"/><polygon points="50,-1 54,8 46,8" fill="#fef08a"/><polygon points="50,89 54,80 46,80" fill="#fef08a"/><polygon points="5,44 14,40 14,48" fill="#fef08a"/><polygon points="95,44 86,40 86,48" fill="#fef08a"/></g>' +
-          '<path d="M12,99 C15,72 31,64 50,64 C69,64 85,72 88,99 Z" fill="url(#uGold)" stroke="#fef08a" stroke-width="1.6"/>' +
-          '<polygon points="50,72 56,79 50,87 44,79" fill="#ef4444" stroke="#fef08a" stroke-width="1.4"/>' +
-          '<path d="M33,31 C33,24 67,24 67,31 L66,48 C65,58 56,65 50,66.8 C44,65 35,58 34,48 Z" fill="url(#uSkin)" stroke="#bae6fd" stroke-width="1.2"/>' +
-          '<path d="M26,43 C24,25 36,19 50,19 C64,19 76,25 74,43 C65,33 56,34 50,39 C44,34 35,33 26,43 Z" fill="#090d16"/>' +
-          '<path d="M64,22 Q71,9 68,3" stroke="#fde047" stroke-width="2" fill="none"/><ellipse cx="68" cy="9" rx="7.5" ry="10" fill="#10b981" stroke="#fde047" stroke-width="1.5"/><ellipse cx="68" cy="9" rx="4.2" ry="5.8" fill="#1d4ed8"/><circle cx="68" cy="9" r="2.1" fill="#fef08a"/>' +
-          '<polygon points="33,23 38,10 44,18 50,4 56,18 62,10 67,23" fill="url(#uGold)" stroke="#fff" stroke-width="1.2"/>' +
-          '<path d="M47.8,35 L47.8,42.5 Q50,44.5 52.2,42.5 L52.2,35" fill="none" stroke="#fff" stroke-width="1.9"/><line x1="50" y1="36" x2="50" y2="42.5" stroke="#ef4444" stroke-width="1.6"/>' +
-          '<ellipse cx="41" cy="50" rx="4.4" ry="3.3" fill="#fff"/><circle cx="41" cy="50" r="2.4" fill="#0284c7"/><ellipse cx="59" cy="50" rx="4.4" ry="3.3" fill="#fff"/><circle cx="59" cy="50" r="2.4" fill="#0284c7"/>' +
-          '<path d="M44.5,58.5 Q50,62.5 55.5,58.5" stroke="#1e3a8a" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-          '<line x1="16" y1="85" x2="84" y2="73" stroke="url(#uGold)" stroke-width="4.2" stroke-linecap="round"/>' +
-        '</svg>'
-    
-        );
-
-    app.locals.AVATAR_RPG_UI = COMBINED_UI
-        .replace('img: KRISHNA_URI', 'img: "' + KRISHNA_FIXED + '"')
-        .replace(/http:\/\/w3\.org/g, 'http://w3.org')
-        .replace(/https:\/\/dicebear\.com/g, 'https://dicebear.com');
+    app.locals.AVATAR_RPG_UI = COMBINED_UI;
 };
-
-        

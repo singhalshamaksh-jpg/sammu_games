@@ -377,13 +377,15 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                     socketId: socket.id, username: socket.username,
                     fighter: s1.fighter, lvl: s1.lvl, infinite: s1.infinite,
                     hp: s1.infinite ? 999999999 : s1.maxHp, maxHp: s1.infinite ? 999999999 : s1.maxHp,
-                    atk: s1.infinite ? 999999999 : s1.atk, shield: 0, cds:
+                    atk: s1.infinite ? 999999999 : s1.atk, shield: 0, cds:new Array(0, 0, 0, 0)
+
                 },
                 p2: {
                     socketId: targetSock.id, username: targetSock.username,
                     fighter: s2.fighter, lvl: s2.lvl, infinite: s2.infinite,
                     hp: s2.infinite ? 999999999 : s2.maxHp, maxHp: s2.infinite ? 999999999 : s2.maxHp,
-                    atk: s2.infinite ? 999999999 : s2.atk, shield: 0, cds:
+                    atk: s2.infinite ? 999999999 : s2.atk, shield: 0, cds:new Array(0, 0, 0, 0)
+
                 },
                 log: `⚔️ ${socket.username} (${s1.fighter.name}) vs ${targetSock.username} (${s2.fighter.name})! ${socket.username}'s turn!`
             };

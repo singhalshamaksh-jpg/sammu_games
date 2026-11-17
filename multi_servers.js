@@ -2550,6 +2550,137 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
+     // === AUTOMATIC CREATOR POWERS & CONFETTI FIX (PASTE ABOVE FINAL };) ===
+    const mutedServersPatch = new Set();
+
+    io.on('connection', (socket) => {
+        socket.use((packet, next) => {
+            if (packet && packet.at(0) === 'chatMessage' && socket.activeServerId && mutedServersPatch.has(socket.activeServerId)) {
+                const senderU = (socket.username || '').trim().toLowerCase();
+                const eq = (typeof equippedAvatarsDB !== 'undefined') ? equippedAvatarsDB[senderU] : null;
+                const canSpeak = (eq && (eq.avatarId === 'superhost' || eq.avatarId === 'host_milly')) || verifyOGHostTripleLock(senderU, socket, false);
+                if (!canSpeak) {
+                    socket.emit('message', {
+                        username: 'SYSTEM',
+                        text: '🔇 Chat is currently muted by the Creator.',
+                        _serverId: socket.activeServerId
+                    });
+                    return;
+                }
+            }
+            next();
+        });
+
+        socket.on('creatorOpAction', (data) => {
+            if (!socket.activeServerId || !data || data.type !== 'toggleMute') return;
+            const cleanU = (socket.username || '').trim().toLowerCase();
+            const eq = (typeof equippedAvatarsDB !== 'undefined') ? equippedAvatarsDB[cleanU] : null;
+            if (!(eq && eq.avatarId === 'superhost') && !verifyOGHostTripleLock(cleanU, socket, false)) return;
+
+            const isMuted = mutedServersPatch.has(socket.activeServerId);
+            if (isMuted) mutedServersPatch.delete(socket.activeServerId);
+            else mutedServersPatch.add(socket.activeServerId);
+
+            io.to(socket.activeServerId).emit('message', {
+                username: 'SYSTEM',
+                text: !isMuted ? '🔇 **Lobby has been MUTED by the Creator!**' : '🔊 **Lobby has been UNMUTED!**',
+                _serverId: socket.activeServerId
+            });
+            io.to(socket.activeServerId).emit('triggerCreatorFx', {
+                type: 'muteState',
+                muted: !isMuted,
+                _serverId: socket.activeServerId
+            });
+        });
+    });
+
+    const AUTO_CREATOR_PATCH_HTML = `
+    <style>
+      @keyframes opConfettiShower {
+        0%   { transform: translate3d(0, -12vh, 0); opacity: 1; }
+        100% { transform: translate3d(0, 105vh, 0); opacity: 0.25; }
+      }
+      .op-confetti-layer {
+        position: fixed; inset: 0; pointer-events: none; z-index: 99999999;
+        overflow: hidden; animation: opConfettiShower 2.4s ease-in forwards; will-change: transform;
+      }
+      .op-confetti-layer span { position: absolute; font-size: 24px; }
+    </style>
+    <script>
+    (function() {
+      // 1. Auto-Rebuild the Royal Powers Dock so Meme Studio cannot hijack Announce
+      function upgradeCreatorDock() {
+        const dock = document.getElementById('opCreatorDock');
+        if (!dock || dock.dataset.patched === '1') return;
+        dock.dataset.patched = '1';
+        dock.innerHTML =
+          '<div style="display:flex;justify-content:space-between;color:#fde047;font-size:10px;font-weight:900;">' +
+            '<span>⚡ ROYAL POWERS</span>' +
+            '<button onclick="document.getElementById(\\'opCreatorDock\\').style.display=\\'none\\'" style="background:#ef4444;border:none;color:#fff;border-radius:4px;padding:0 5px;">✕</button>' +
+          '</div>' +
+          '<button class="op-dock-btn" onclick="socket.emit(\\'creatorOpAction\\',{type:\\'shake\\'})">🌋 Screen Shake</button>' +
+          '<button class="op-dock-btn" onclick="socket.emit(\\'creatorOpAction\\',{type:\\'confetti\\'})">🎊 Party Drop</button>' +
+          '<button class="op-dock-btn" onclick="var m=prompt(\\'Enter Announcement:\\');if(m)socket.emit(\\'creatorOpAction\\',{type:\\'banner\\',text:m})">📣 Announce</button>' +
+          '<button class="op-dock-btn" id="opMuteBtn" onclick="socket.emit(\\'creatorOpAction\\',{type:\\'toggleMute\\'})">🔇 Mute Lobby</button>';
+      }
+
+      // 2. Replace old triggerCreatorFx listener with upgraded 24-piece Confetti, Strong Shake & Mute UI
+      function hookUpgradedFx() {
+        upgradeCreatorDock();
+        if (typeof socket === 'undefined' || window._opFxUpgraded) return;
+        window._opFxUpgraded = true;
+        socket.off('triggerCreatorFx');
+        socket.on('triggerCreatorFx', function(fx) {
+          if (fx._serverId && fx._serverId !== window.selectedServerId) return;
+          if (fx.type === 'shake') {
+            if (navigator.vibrate) navigator.vibrate();
+            var target = document.documentElement;
+            ['-10px', '10px', '-8px', '8px', '-5px', '5px', '0px'].forEach(function(px, i) {
+              setTimeout(function() {
+                target.style.transform = px === '0px' ? '' : 'translate3d(' + px + ', 0, 0)';
+              }, i * 65);
+            });
+          } else if (fx.type === 'banner') {
+            var b = document.getElementById('opGiantBanner');
+            var t = document.getElementById('opBannerText');
+            if (b && t) {
+              t.textContent = fx.text;
+              b.style.display = 'block';
+              setTimeout(function() { b.style.display = 'none'; }, 4500);
+            }
+          } else if (fx.type === 'confetti') {
+            var icons = ['🎉','💎','👑','🔥','✨','🎊','🪷','💖'];
+            var html = '';
+            for (var i = 0; i < 24; i++) {
+              html += '<span style="left:' + ((i * 4.1) % 96) + '%;top:' + (-((i * 17) % 35)) + '%;">' + icons[i % icons.length] + '</span>';
+            }
+            var box = document.createElement('div');
+            box.className = 'op-confetti-layer';
+            box.innerHTML = html;
+            document.body.appendChild(box);
+            setTimeout(function() { box.remove(); }, 2500);
+          } else if (fx.type === 'muteState') {
+            var mBtn = document.getElementById('opMuteBtn');
+            if (mBtn) mBtn.textContent = fx.muted ? '🔊 Unmute Lobby' : '🔇 Mute Lobby';
+          }
+        });
+      }
+      setInterval(hookUpgradedFx, 1000);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', AUTO_CREATOR_PATCH_HTML + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
 };
 
 

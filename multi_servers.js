@@ -2083,678 +2083,337 @@ module.exports = function initMultiServers(app, io) {
             });
         });
     });
-    // === END PHONK DJ v4 ===
-      // === STUDIO ILLUSTRATED AVATARS + RAINBOW HOST AURA ===
+    // === END phonk======  //       
+      // === LITE-OP CREATOR AVATARS (PART 1: SERVER) ===
+    const AVATAR_SECRET_CODES = {
+        '#sammuop':    { avatarId: 'superhost',   name: '🪷👑 SAMAKSH (CREATOR)' },
+        '#millyqueen': { avatarId: 'host_milly',  name: '💖 Milly Empress' },
+        '#sidbolt':    { avatarId: 'host_sid',    name: '⚡ Sid Thunder' },
+        '#shubhirose': { avatarId: 'host_shubhi', name: '🌷 Shubhi Blossom' },
+        '#zorosword':  { avatarId: 'host_zoro',   name: '⚔️ Zoro Dojo' },
+        '#sarahfly':   { avatarId: 'host_sarah',  name: '🦋 Sarah Cyber' }
+    };
+
+    const equippedAvatarsDB = {};
+
+    io.on('connection', (socket) => {
+        socket.on('verifyAvatarCodeV6', ({ code }) => {
+            const match = AVATAR_SECRET_CODES[(code || '').trim().toLowerCase()];
+            if (match) {
+                socket.isCodeVerified = match.avatarId;
+                socket.emit('avatarCodeResultV6', { ok: true, avatarId: match.avatarId, name: match.name });
+            } else {
+                socket.emit('avatarCodeResultV6', { ok: false });
+            }
+        });
+
+        socket.on('equipAvatarFxV6', (data) => {
+            if (!data || !data.username) return;
+            const cleanU = data.username.trim().toLowerCase();
+            const isCreator = (data.avatarId === 'superhost') && (verifyOGHostTripleLock(cleanU, socket, false) || socket.isCodeVerified === 'superhost');
+            const isMilly = (data.avatarId === 'host_milly') && (verifyOGHostTripleLock(cleanU, socket, false) || socket.isCodeVerified === 'host_milly');
+            if ((data.avatarId === 'superhost' && !isCreator) || (data.avatarId === 'host_milly' && !isMilly)) return;
+
+            equippedAvatarsDB[cleanU] = { avatarId: data.avatarId, fx: data.fx, badge: data.badge, isCreator, isMilly };
+            if (socket.activeServerId) {
+                io.to(socket.activeServerId).emit('avatarStatsDataV6', { avatarMap: equippedAvatarsDB });
+            }
+        });
+
+        socket.on('getMyAvatarStatsV6', () => {
+            socket.emit('avatarStatsDataV6', { avatarMap: equippedAvatarsDB });
+        });
+
+        socket.on('creatorOpAction', (data) => {
+            if (!socket.activeServerId || !data || !data.type) return;
+            const cleanU = (socket.username || '').trim().toLowerCase();
+            const eq = equippedAvatarsDB[cleanU];
+            if (!(eq && eq.isCreator) && !verifyOGHostTripleLock(cleanU, socket, false)) return;
+
+            io.to(socket.activeServerId).emit('triggerCreatorFx', {
+                type: data.type,
+                text: data.text || '',
+                _serverId: socket.activeServerId
+            });
+        });
+    });
+     // === LITE-OP CREATOR AVATARS (PART 2: HTML & CSS) ===
     const STUDIO_AVATAR_OVERRIDE = `
     <style id="studioAvCss">
-      #v7FloatingAvatarBtn, #avatarVaultModal, #avatarVaultModalV6, #v8VaultModal,
-      #v9Modal, #v10Modal, #v11Modal, #v12Modal, #v14Modal, #v15Modal, #v16Modal, #v17Modal, #v20Modal, #v22Modal, #v22ZoomModal {
-        display: none !important;
+      @keyframes opSpinRing { to { transform: rotate(360deg); } }
+      @keyframes opShake {
+        0%, 100% { transform: translate3d(0,0,0); }
+        25% { transform: translate3d(-6px,4px,0); }
+        50% { transform: translate3d(6px,-4px,0); }
+        75% { transform: translate3d(-4px,-2px,0); }
       }
+      .op-screen-shake { animation: opShake 0.35s ease-in-out 2; }
+      .st-spin-chakra { transform-origin: 50px 46px; animation: opSpinRing 12s linear infinite; will-change: transform; }
 
-      @keyframes stRainbowPrism {
-        0%   { border-color: #ff0055 !important; box-shadow: 0 0 10px #ffffff, 0 0 18px #ff0055 !important; }
-        25%  { border-color: #fde047 !important; box-shadow: 0 0 12px #ffffff, 0 0 20px #fde047 !important; }
-        50%  { border-color: #00f0ff !important; box-shadow: 0 0 12px #ffffff, 0 0 20px #00f0ff !important; }
-        75%  { border-color: #c084fc !important; box-shadow: 0 0 10px #ffffff, 0 0 18px #c084fc !important; }
-        100% { border-color: #ff0055 !important; box-shadow: 0 0 10px #ffffff, 0 0 18px #ff0055 !important; }
+      .st-aura-samaksh { border: 2.5px solid #fde047 !important; outline: 2px solid #ff0055; }
+      .st-chat-rainbow {
+        background: linear-gradient(120deg, rgba(255,0,85,0.35), rgba(253,224,71,0.28), rgba(0,240,255,0.35)) !important;
+        border: 2px solid #fde047 !important; border-radius: 12px !important;
+        color: #fff !important; font-weight: 800 !important;
       }
+      .st-aura-empress { border: 2.5px solid #fff !important; outline: 2px solid #f472b6; }
+      .st-chat-milly {
+        background: linear-gradient(135deg, rgba(244,114,182,0.35), rgba(232,121,249,0.3)) !important;
+        border: 2px solid #fbcfe8 !important; border-radius: 12px !important;
+        color: #fff !important; font-weight: 800 !important;
+      }
+      .op-tag-creator, .op-tag-empress {
+        display: inline-block; font-size: 9px; font-weight: 900; padding: 1px 5px;
+        border-radius: 5px; margin-left: 4px; color: #fff; vertical-align: middle;
+      }
+      .op-tag-creator { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+      .op-tag-empress { background: linear-gradient(90deg, #ec4899, #f43f5e); }
 
-      @keyframes stRainbowChat {
-        0%   { border-color: #ff0055 !important; box-shadow: 0 0 12px rgba(255,0,85,0.75) !important; }
-        33%  { border-color: #fde047 !important; box-shadow: 0 0 14px rgba(253,224,71,0.75) !important; }
-        66%  { border-color: #00f0ff !important; box-shadow: 0 0 14px rgba(0,240,255,0.75) !important; }
-        100% { border-color: #ff0055 !important; box-shadow: 0 0 12px rgba(255,0,85,0.75) !important; }
-      }
-
-      @keyframes stMillyGlitter {
-        0%, 100% { border-color: #ffffff !important; box-shadow: 0 0 12px #ffffff, 0 0 22px #f472b6 !important; }
-        50%      { border-color: #ffe4e6 !important; box-shadow: 0 0 16px #ffffff, 0 0 28px #e879f9 !important; }
-      }
-
-      @keyframes stChakraSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      @keyframes stFeatherSway { 0%, 100% { transform: rotate(20deg); } 50% { transform: rotate(28deg); } }
-      @keyframes stTwinkle { 0%, 100% { opacity: 0.3; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.2); } }
-
-      .st-spin-chakra { transform-origin: 50px 44px; animation: stChakraSpin 14s linear infinite; will-change: transform; }
-      .st-sway-feather { transform-origin: 62px 27px; animation: stFeatherSway 2.8s ease-in-out infinite; will-change: transform; }
-      .st-sparkle { transform-box: fill-box; transform-origin: center; animation: stTwinkle 1.8s ease-in-out infinite; }
-      body .st-aura-samaksh, div.st-aura-samaksh, span.st-aura-samaksh {
-        border: 2.5px solid #ffffff !important; animation: stRainbowPrism 2.2s linear infinite !important;
-      }
-      body .st-chat-rainbow, div.st-chat-rainbow, p.st-chat-rainbow, span.st-chat-rainbow {
-        background: linear-gradient(135deg, rgba(255,0,85,0.32), rgba(253,224,71,0.26), rgba(0,240,255,0.32), rgba(168,85,247,0.32)) !important;
-        border: 2px solid #ffffff !important; border-radius: 14px !important;
-        animation: stRainbowChat 2.4s linear infinite !important; color: #ffffff !important;
-        font-weight: 800 !important; text-shadow: 0 1px 4px #000000 !important;
-      }
-      .st-chat-rainbow * { color: #ffffff !important; }
-
-      body .st-aura-empress, div.st-aura-empress, span.st-aura-empress {
-        border: 2.5px solid #ffffff !important; animation: stMillyGlitter 1.8s ease-in-out infinite !important;
-      }
-      body .st-chat-milly, div.st-chat-milly {
-        background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(244,114,182,0.28), rgba(232,121,249,0.22)) !important;
-        border: 2px solid #ffffff !important; border-radius: 14px !important;
-        animation: stMillyGlitter 1.8s ease-in-out infinite !important; color: #ffffff !important; font-weight: 700 !important;
-      }
-
-      .st-aura-sid     { border: 2px solid #38bdf8 !important; box-shadow: 0 0 10px #38bdf8 !important; }
-      .st-aura-shubhi  { border: 2px solid #f472b6 !important; box-shadow: 0 0 10px #f472b6 !important; }
-      .st-aura-ice     { border: 2px solid #38bdf8 !important; box-shadow: 0 0 10px #38bdf8 !important; }
-      .st-aura-fire    { border: 2px solid #f97316 !important; box-shadow: 0 0 10px #f97316 !important; }
-      .st-aura-crimson { border: 2px solid #ef4444 !important; box-shadow: 0 0 10px #ef4444 !important; }
-      .st-aura-toxic   { border: 2px solid #4ade80 !important; box-shadow: 0 0 10px #4ade80 !important; }
-      .st-aura-pink    { border: 2px solid #f472b6 !important; box-shadow: 0 0 10px #f472b6 !important; }
-      .st-aura-violet  { border: 2px solid #a855f7 !important; box-shadow: 0 0 10px #a855f7 !important; }
-      .st-aura-emerald { border: 2px solid #10b981 !important; box-shadow: 0 0 10px #10b981 !important; }
-      .st-aura-gold    { border: 2px solid #facc15 !important; box-shadow: 0 0 10px #facc15 !important; }
-      .st-aura-disco   { border: 2px solid #ff0080 !important; box-shadow: 0 0 10px #00f0ff !important; }
+      .st-aura-ice { border: 2px solid #38bdf8 !important; }
+      .st-aura-fire { border: 2px solid #f97316 !important; }
+      .st-aura-pink { border: 2px solid #f472b6 !important; }
+      .st-aura-emerald { border: 2px solid #10b981 !important; }
+      .st-aura-violet { border: 2px solid #a855f7 !important; }
 
       .st-live-bubble {
-        display: inline-flex !important; align-items: center !important; justify-content: center !important;
-        width: 35px !important; height: 35px !important; border-radius: 50% !important;
-        overflow: hidden !important; vertical-align: middle !important; margin-right: 6px !important;
-        flex-shrink: 0 !important; cursor: pointer !important; background: #090d16 !important;
+        display: inline-flex !important; width: 34px !important; height: 34px !important;
+        border-radius: 50% !important; overflow: hidden !important; vertical-align: middle !important;
+        margin-right: 5px !important; background: #050814 !important; flex-shrink: 0 !important;
       }
       .st-live-bubble svg { width: 100% !important; height: 100% !important; display: block !important; }
 
-      #stVaultModal, #stZoomModal {
-        display: none; position: fixed; inset: 0; background: rgba(5,8,20,0.94);
-        z-index: 999999999; align-items: center; justify-content: center; padding: 12px;
+      #opCreatorDock {
+        display: none; position: fixed; bottom: 68px; right: 10px; z-index: 999998;
+        background: #0f172a; border: 2px solid #fde047; border-radius: 14px;
+        padding: 8px; flex-direction: column; gap: 5px; width: 155px;
       }
-      #stVaultCard, #stZoomCard {
-        background: linear-gradient(155deg,#0f172a,#1e1b4b); border: 2px solid #38bdf8;
-        border-radius: 20px; padding: 14px; width: 100%; max-width: 415px;
-        color: #fff; text-align: center; max-height: 88vh; overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+      .op-dock-btn {
+        background: #2563eb; border: 1px solid #38bdf8; color: #fff;
+        font-weight: 800; font-size: 11px; padding: 6px; border-radius: 8px;
       }
-      #stZoomCard {
-        max-width: 300px; padding: 20px; transition: transform 0.12s ease-out;
-        transform-style: preserve-3d; touch-action: none;
+      #opGiantBanner {
+        display: none; position: fixed; top: 18%; left: 50%; transform: translateX(-50%);
+        z-index: 9999999; background: #090d16; border: 2.5px solid #fde047;
+        padding: 12px; border-radius: 14px; text-align: center; width: 85%; max-width: 340px; color: #fff;
       }
-      .st-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
-      .st-item { background: rgba(255,255,255,0.08); border: 1.5px solid rgba(56,189,248,0.4); border-radius: 14px; padding: 8px 4px; cursor: pointer; }
-      .st-item.locked { opacity: 0.65; border-color: #64748b; }
-      .st-art { width: 62px; height: 62px; margin: 0 auto 5px auto; border-radius: 50%; overflow: hidden; background: #020617; display: flex; align-items: center; justify-content: center; }
-      .st-art svg { width: 100%; height: 100%; display: block; }
-      #stZoomRing { width: 146px; height: 146px; margin: 12px auto; border-radius: 50%; overflow: hidden; background: #020617; display: flex; align-items: center; justify-content: center; }
-      #stZoomRing svg { width: 100%; height: 100%; display: block; }
+      #stVaultModal {
+        display: none; position: fixed; inset: 0; background: rgba(5,8,20,0.92);
+        z-index: 999999999; align-items: center; justify-content: center; padding: 10px;
+      }
+      #stVaultCard {
+        background: #0f172a; border: 2px solid #38bdf8; border-radius: 16px;
+        padding: 12px; width: 100%; max-width: 380px; color: #fff; text-align: center; max-height: 85vh; overflow-y: auto;
+      }
+      .st-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
+      .st-item { background: rgba(255,255,255,0.07); border: 1px solid #38bdf8; border-radius: 10px; padding: 6px 3px; }
+      .st-item.locked { opacity: 0.55; border-color: #64748b; }
+      .st-art { width: 54px; height: 54px; margin: 0 auto 4px auto; border-radius: 50%; overflow: hidden; background: #020617; }
     </style>
+
+    <div id="opGiantBanner">
+      <div style="font-size:10px;color:#fde047;font-weight:900;">⚡ CREATOR BROADCAST ⚡</div>
+      <div id="opBannerText" style="font-size:16px;font-weight:900;margin-top:3px;"></div>
+    </div>
+
+    <div id="opCreatorDock">
+      <div style="display:flex;justify-content:space-between;color:#fde047;font-size:10px;font-weight:900;">
+        <span>⚡ GOD MODE</span>
+        <button onclick="document.getElementById('opCreatorDock').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:4px;padding:0 5px;">✕</button>
+      </div>
+      <button class="op-dock-btn" onclick="sendOpFx('shake')">🌋 Screen Shake</button>
+      <button class="op-dock-btn" onclick="sendOpFx('confetti')">🎊 Party Drop</button>
+      <button class="op-dock-btn" onclick="sendOpBanner()">📢 Big Banner</button>
+    </div>
 
     <div id="stVaultModal" onclick="if(event.target===this)this.style.display='none'">
       <div id="stVaultCard">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span style="font-weight:900;font-size:15px;color:#38bdf8;">✨ ILLUSTRATED AVATAR VAULT</span>
-          <button onclick="document.getElementById('stVaultModal').style.display='none'" style="width:36px!important;min-width:36px!important;height:32px!important;padding:0!important;background:#ef4444;border:none;color:#fff;border-radius:8px;font-weight:900;cursor:pointer;">✕</button>
-        </div>
-        <div id="stRefText" style="font-size:11px;color:#fde047;margin:6px 0;font-weight:bold;">🔗 Referrals: 0 | Tap Any Player's Avatar Bubble to Zoom!</div>
-        <div class="st-grid" id="stGrid"></div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <input id="stCodeInput" placeholder="Enter Host Avatar Code..." style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
-          <button onclick="stRedeemCode()" style="width:auto!important;padding:8px 12px!important;background:linear-gradient(90deg,#a855f7,#ec4899);border:none;color:#fff;border-radius:10px;font-weight:bold;font-size:12px;cursor:pointer;">🔓 Unlock</button>
-        </div>
-        <button onclick="stCopyRef()" style="width:100%!important;margin-top:8px;padding:9px;border:none;border-radius:10px;background:linear-gradient(90deg,#059669,#10b981);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🔗 Copy My Referral Link</button>
-      </div>
-    </div>
-
-    <div id="stZoomModal" onclick="this.style.display='none'">
-      <div id="stZoomCard" onclick="event.stopPropagation()">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:900;font-size:13px;color:#7dd3fc;">🔍 3D HOLO CARD (Drag to Tilt!)</span>
-          <button onclick="document.getElementById('stZoomModal').style.display='none'" style="width:32px!important;min-width:32px!important;height:28px!important;padding:0!important;background:#ef4444;border:none;color:#fff;border-radius:8px;font-weight:900;cursor:pointer;">✕</button>
+          <span style="font-weight:900;font-size:14px;color:#38bdf8;">✨ NEON AVATAR VAULT</span>
+          <button onclick="document.getElementById('stVaultModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:3px 9px;font-weight:900;">✕</button>
         </div>
-        <div id="stZoomRing"></div>
-        <div id="stZoomUser" style="font-size:18px;font-weight:900;color:#fff;margin-top:4px;">Player</div>
-        <div id="stZoomTitle" style="font-size:12px;color:#fde047;margin-top:3px;font-weight:bold;">Illustrated Character</div>
-        <button id="stHypeBtn" style="width:100%!important;margin-top:11px;padding:9px;border:none;border-radius:12px;background:linear-gradient(90deg,#f59e0b,#ec4899);color:#fff;font-weight:900;font-size:13px;cursor:pointer;">🔥 Hype Avatar in Chat!</button>
+        <div class="st-grid" id="stGrid"></div>
+        <div style="display:flex;gap:5px;margin-top:6px;">
+          <input id="stCodeInput" placeholder="Code (#sammuop)..." style="flex:1;padding:7px;border-radius:8px;border:1px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
+          <button onclick="stRedeemCode()" style="padding:7px 10px;background:#a855f7;border:none;color:#fff;border-radius:8px;font-weight:bold;font-size:12px;">🔓 Unlock</button>
+        </div>
       </div>
     </div>
     <script>
     (function() {
-      const KSHATRIYA_ST_SVG = '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-        '<defs>' +
-          '<radialGradient id="kkBgSt" cx="50%" cy="35%" r="72%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="42%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#040712"/></radialGradient>' +
-          '<radialGradient id="kkSkinSt" cx="42%" cy="32%" r="68%"><stop offset="0%" stop-color="#bae6fd"/><stop offset="50%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1e40af"/></radialGradient>' +
-          '<linearGradient id="kkGoldSt" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fef9c3"/><stop offset="30%" stop-color="#facc15"/><stop offset="68%" stop-color="#d97706"/><stop offset="100%" stop-color="#78350f"/></linearGradient>' +
-          '<linearGradient id="kkHairSt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#334155"/><stop offset="45%" stop-color="#0f172a"/><stop offset="100%" stop-color="#020617"/></linearGradient>' +
-        '</defs>' +
-        '<circle cx="50" cy="50" r="49" fill="url(#kkBgSt)"/>' +
-        '<g class="st-spin-chakra">' +
-          '<circle cx="50" cy="44" r="37" fill="rgba(253,224,71,0.10)" stroke="#fde047" stroke-width="1.8" stroke-dasharray="5 3"/>' +
-          '<circle cx="50" cy="44" r="30" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3 4"/>' +
-          '<polygon points="50,5 52,10 48,10" fill="#fde047"/><polygon points="50,83 52,78 48,78" fill="#fde047"/>' +
-          '<polygon points="11,44 16,42 16,46" fill="#fde047"/><polygon points="89,44 84,42 84,46" fill="#fde047"/>' +
-        '</g>' +
-        '<path d="M15,19 Q6,50 15,81" fill="none" stroke="url(#kkGoldSt)" stroke-width="3.2" stroke-linecap="round"/>' +
-        '<line x1="15" y1="19" x2="15" y2="81" stroke="#ffffff" stroke-width="0.9" opacity="0.85"/>' +
-        '<line x1="85" y1="17" x2="66" y2="76" stroke="url(#kkGoldSt)" stroke-width="3.2" stroke-linecap="round"/>' +
-        '<polygon points="86,14 77,21 86,24" fill="#ffffff"/>' +
-        '<path d="M24,42 C18,62 22,76 29,84 L71,84 C78,76 82,62 76,42 Z" fill="url(#kkHairSt)"/>' +
-        '<path d="M15,98 C18,74 33,67 50,67 C67,67 82,74 85,98 Z" fill="url(#kkGoldSt)" stroke="#ffffff" stroke-width="1.4"/>' +
-        '<path d="M14,84 Q23,70 34,76 L28,92 Z" fill="url(#kkGoldSt)" stroke="#fef08a" stroke-width="1.2"/>' +
-        '<path d="M86,84 Q77,70 66,76 L72,92 Z" fill="url(#kkGoldSt)" stroke="#fef08a" stroke-width="1.2"/>' +
-        '<path d="M25,73 L50,91 L75,73" fill="none" stroke="#dc2626" stroke-width="4" stroke-linecap="round"/>' +
-        '<path d="M28,75 L50,93 L72,75" fill="none" stroke="#fef08a" stroke-width="1.4" stroke-dasharray="2 3"/>' +
-        '<polygon points="50,71 56,78.5 50,86 44,78.5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5"/>' +
-        '<path d="M44,59 L44,69 Q50,72 56,69 L56,59 Z" fill="#1d4ed8"/>' +
-        '<path d="M33,31 C33,24 67,24 67,31 L66,48 C65,58 56,65 50,66.5 C44,65 35,58 34,48 Z" fill="url(#kkSkinSt)" stroke="#bae6fd" stroke-width="1.3"/>' +
-        '<path d="M49.5,49 L48.5,54.5 L50.8,55" fill="none" stroke="#1e3a8a" stroke-width="1.2" stroke-linecap="round"/>' +
-        '<circle cx="31.5" cy="52" r="3.2" fill="url(#kkGoldSt)" stroke="#fff" stroke-width="0.8"/><circle cx="68.5" cy="52" r="3.2" fill="url(#kkGoldSt)" stroke="#fff" stroke-width="0.8"/>' +
-        '<path d="M29,40 L33,24 L41,32 L50,21 L59,32 L67,24 L71,40 C65,33 56,34 50,38 C44,34 35,33 29,40 Z" fill="url(#kkHairSt)"/>' +
-        '<path d="M36,28 Q50,22 64,28" fill="none" stroke="#60a5fa" stroke-width="1.4" opacity="0.85"/>' +
-        '<rect x="31" y="30.5" width="38" height="5.5" rx="2.7" fill="#dc2626" stroke="url(#kkGoldSt)" stroke-width="1.5"/>' +
-        '<circle cx="50" cy="33.2" r="2.2" fill="#fde047"/>' +
-        '<g class="st-sway-feather">' +
-          '<ellipse cx="64" cy="15" rx="6.2" ry="9" fill="#10b981" stroke="#fde047" stroke-width="1.5"/>' +
-          '<ellipse cx="64" cy="15" rx="3.4" ry="4.8" fill="#1d4ed8"/>' +
-          '<circle cx="64" cy="15" r="1.7" fill="#fef08a"/>' +
-        '</g>' +
-        '<path d="M47.8,37 L47.8,43.5 Q50,45.5 52.2,43.5 L52.2,37" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>' +
-        '<line x1="50" y1="38" x2="50" y2="43.5" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>' +
-        '<path d="M35.5,45.5 L44.5,47.5 M64.5,45.5 L55.5,47.5" stroke="#020617" stroke-width="2" stroke-linecap="round"/>' +
-        '<ellipse cx="41" cy="50.5" rx="3.9" ry="2.8" fill="#ffffff"/>' +
-        '<circle cx="41" cy="50.5" r="2.1" fill="#0284c7"/><circle cx="41" cy="50.5" r="1" fill="#090d16"/>' +
-        '<circle cx="42" cy="49.5" r="0.9" fill="#ffffff"/>' +
-        '<ellipse cx="59" cy="50.5" rx="3.9" ry="2.8" fill="#ffffff"/>' +
-        '<circle cx="59" cy="50.5" r="2.1" fill="#0284c7"/><circle cx="59" cy="50.5" r="1" fill="#090d16"/>' +
-        '<circle cx="60" cy="49.5" r="0.9" fill="#ffffff"/>' +
-        '<path d="M44.5,58.5 Q50,62 56,57.5" stroke="#1e3a8a" stroke-width="2.1" fill="none" stroke-linecap="round"/>' +
-        '<polygon class="st-sparkle" points="14,15 16,19 20,21 16,23 14,27 12,23 8,21 12,19" fill="#ffffff"/>' +
-        '<polygon class="st-sparkle" points="86,15 88,19 92,21 88,23 86,27 84,23 80,21 84,19" fill="#bae6fd"/>' +
-      '</svg>';
-                                                    
-      let svgCounter = 0;
-      function makeStudioPortrait(opts) {
-        svgCounter++;
-        const bg1 = opts.bg1 || '#1e1b4b';
-        const bg2 = opts.bg2 || '#060914';
-        const skinLight = opts.skinLight || '#fff1eb';
-        const skinMid = opts.skin || '#fcd3b2';
-        const skinDark = opts.skinDark || '#d49470';
-        const hairLight = opts.hairLight || '#94a3b8';
-        const hair = opts.hair || '#1e293b';
-        const outfitLight = opts.outfitLight || '#60a5fa';
-        const outfit = opts.outfit || '#1d4ed8';
-        const accent = opts.accent || '#fde047';
-        const eye = opts.eye || '#38bdf8';
-        const isGirl = opts.gender === 'girl';
-        const id = 'stArt_' + svgCounter;
-
-        let backLayer = '<circle cx="50" cy="47" r="38" fill="none" stroke="' + eye + '" stroke-width="1.2" opacity="0.35" stroke-dasharray="6 4"/>';
-        if (opts.backProp === 'swords') {
-          backLayer += '<line x1="18" y1="20" x2="82" y2="82" stroke="#e2e8f0" stroke-width="4" stroke-linecap="round"/>' +
-                       '<line x1="82" y1="20" x2="18" y2="82" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>' +
-                       '<line x1="50" y1="12" x2="50" y2="88" stroke="#fde047" stroke-width="3.5" stroke-linecap="round"/>';
-        } else if (opts.backProp === 'lightning') {
-          backLayer += '<polyline points="18,22 26,38 16,44 25,62" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>' +
-                       '<polyline points="82,22 74,38 84,44 75,62" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round"/>';
-        } else if (opts.backProp === 'wings') {
-          backLayer += '<path d="M12,48 Q22,24 38,44 Q24,58 12,48 Z M88,48 Q78,24 62,44 Q76,58 88,48 Z" fill="' + eye + '" opacity="0.65" stroke="#fff" stroke-width="1.2"/>';
-        }
-
-        let hairBack = '';
-        let hairFront = '';
-        if (isGirl) {
-          hairBack = '<path d="M16,44 C11,72 15,93 24,99 L76,99 C85,93 89,72 84,44 C84,18 16,18 16,44 Z" fill="url(#' + id + '_h)"/>';
-          hairFront = '<path d="M26,46 C26,21 74,21 74,46 C67,33 56,33 50,42 C44,33 33,33 26,46 Z" fill="url(#' + id + '_h)"/>' +
-                      '<path d="M26,43 Q22,68 29,86 L34,86 Q29,63 31,45 Z" fill="url(#' + id + '_h)"/>' +
-                      '<path d="M74,43 Q78,68 71,86 L66,86 Q71,63 69,45 Z" fill="url(#' + id + '_h)"/>' +
-                      '<path d="M33,30 Q50,23 67,30" fill="none" stroke="#ffffff" stroke-width="2.2" opacity="0.5" stroke-linecap="round"/>';
-        } else if (opts.spiky) {
-          hairFront = '<polygon points="24,45 19,24 34,30 41,13 50,26 59,13 66,30 81,24 76,45 63,35 50,40 37,35" fill="url(#' + id + '_h)"/>' +
-                      '<polyline points="34,28 41,17 50,28 59,17 66,28" fill="none" stroke="#ffffff" stroke-width="1.4" opacity="0.5"/>';
-        } else {
-          hairFront = '<path d="M26,45 C24,20 76,20 74,45 C65,30 35,30 26,45 Z" fill="url(#' + id + '_h)"/>' +
-                      '<path d="M34,27 Q50,21 66,27" fill="none" stroke="#ffffff" stroke-width="1.8" opacity="0.45" stroke-linecap="round"/>';
-        }
-
-        let acc = '';
-        if (opts.acc === 'thunderVisor') {
-          acc = '<rect x="30" y="44" width="40" height="10.5" rx="5" fill="#0ea5e9" stroke="#fde047" stroke-width="1.6"/>' +
-                '<line x1="34" y1="47" x2="64" y2="47" stroke="#ffffff" stroke-width="1.5" opacity="0.8"/>' +
-                '<polygon points="48,9 56,21 49,21 54,30 43,19 50,19" fill="#fde047" stroke="#fff" stroke-width="0.9"/>';
-        } else if (opts.acc === 'tiara') {
-          acc = '<polygon points="31,26 37,12 44,21 50,8 56,21 63,12 69,26" fill="#fde047" stroke="#ffffff" stroke-width="1.5"/>' +
-                '<polygon points="50,14 53,19 50,24 47,19" fill="#f43f5e" stroke="#fff" stroke-width="0.8"/>' +
-                '<circle cx="39" cy="21" r="2" fill="#38bdf8"/><circle cx="61" cy="21" r="2" fill="#38bdf8"/>';
-        } else if (opts.acc === 'visor') {
-          acc = '<rect x="30" y="45" width="40" height="10.5" rx="5" fill="' + eye + '" opacity="0.9" stroke="#ffffff" stroke-width="1.5"/>' +
-                '<line x1="35" y1="48" x2="62" y2="48" stroke="#ffffff" stroke-width="1.6" opacity="0.85"/>';
-        } else if (opts.acc === 'catEars') {
-          acc = '<polygon points="25,32 30,10 44,26" fill="url(#' + id + '_h)" stroke="' + eye + '" stroke-width="1.6"/>' +
-                '<polygon points="75,32 70,10 56,26" fill="url(#' + id + '_h)" stroke="' + eye + '" stroke-width="1.6"/>';
-        } else if (opts.acc === 'halo') {
-          acc = '<ellipse cx="50" cy="12" rx="20" ry="5" fill="none" stroke="#fde047" stroke-width="3"/>' +
-                '<ellipse cx="50" cy="12" rx="20" ry="5" fill="none" stroke="#ffffff" stroke-width="1.1" opacity="0.85"/>';
-        } else if (opts.acc === 'bandana') {
-          acc = '<rect x="28" y="33.5" width="44" height="7.5" rx="3.5" fill="' + eye + '" stroke="#fff" stroke-width="1.1"/>' +
-                '<path d="M72,36 L87,28 L82,41 Z" fill="' + eye + '"/>';
-        } else if (opts.acc === 'horns') {
-          acc = '<path d="M30,28 Q19,11 34,9 Q36,21 38,26 Z M70,28 Q81,11 66,9 Q64,21 62,26 Z" fill="#ef4444" stroke="#fde047" stroke-width="1.3"/>';
-        } else if (opts.acc === 'flowerPin') {
-          acc = '<circle cx="68" cy="30" r="6.5" fill="#fb7185" stroke="#ffffff" stroke-width="1.5"/><circle cx="68" cy="30" r="2.5" fill="#fde047"/>';
-        }
-        const faceShape = isGirl
-          ? '<path d="M33,31 C33,24 67,24 67,31 L66,49 C65,59 56,65.5 50,66.5 C44,65.5 35,59 34,49 Z" fill="url(#' + id + '_s)"/>'
-          : '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.8 C43,65 34,58 33,48 Z" fill="url(#' + id + '_s)"/>';
-
-        const eyesAndFace = isGirl
-          ? '<path d="M34.5,47.5 L38.5,45 M65.5,47.5 L61.5,45" stroke="#1e1b4b" stroke-width="2.2" stroke-linecap="round"/>' +
-            '<ellipse cx="41" cy="50.5" rx="4.1" ry="4.3" fill="#ffffff"/>' +
-            '<circle cx="41" cy="50.8" r="2.9" fill="' + eye + '"/><circle cx="41" cy="50.8" r="1.4" fill="#090d16"/>' +
-            '<circle cx="42.2" cy="49.2" r="1.3" fill="#ffffff"/>' +
-            '<ellipse cx="59" cy="50.5" rx="4.1" ry="4.3" fill="#ffffff"/>' +
-            '<circle cx="59" cy="50.8" r="2.9" fill="' + eye + '"/><circle cx="59" cy="50.8" r="1.4" fill="#090d16"/>' +
-            '<circle cx="60.2" cy="49.2" r="1.3" fill="#ffffff"/>' +
-            '<circle cx="50" cy="54.8" r="0.9" fill="' + skinDark + '"/>' +
-            '<ellipse cx="35.5" cy="56" rx="3.6" ry="1.8" fill="#fb7185" opacity="0.6"/><ellipse cx="64.5" cy="56" rx="3.6" ry="1.8" fill="#fb7185" opacity="0.6"/>' +
-            '<path d="M45,60 Q50,64 55,60" stroke="#e11d48" stroke-width="2.1" fill="none" stroke-linecap="round"/>'
-          : '<path d="M35.5,46 L44,47.5 M64.5,46 L56,47.5" stroke="#090d16" stroke-width="1.9" stroke-linecap="round"/>' +
-            '<ellipse cx="41" cy="50.5" rx="3.9" ry="3.3" fill="#ffffff"/>' +
-            '<circle cx="41" cy="50.5" r="2.3" fill="' + eye + '"/><circle cx="41" cy="50.5" r="1.1" fill="#090d16"/>' +
-            '<circle cx="42" cy="49.3" r="1" fill="#ffffff"/>' +
-            '<ellipse cx="59" cy="50.5" rx="3.9" ry="3.3" fill="#ffffff"/>' +
-            '<circle cx="59" cy="50.5" r="2.3" fill="' + eye + '"/><circle cx="59" cy="50.5" r="1.1" fill="#090d16"/>' +
-            '<circle cx="60" cy="49.3" r="1" fill="#ffffff"/>' +
-            '<path d="M49.5,49.5 L48.8,54.5 L50.8,55" fill="none" stroke="' + skinDark + '" stroke-width="1.2" stroke-linecap="round"/>' +
-            (opts.masked
-              ? '<path d="M30,52 L70,52 L66,69 Q50,75 34,69 Z" fill="#0f172a" stroke="' + eye + '" stroke-width="1.6"/>' +
-                '<line x1="36" y1="58" x2="64" y2="58" stroke="' + eye + '" stroke-width="1.1" opacity="0.7"/>'
-              : '<path d="M44,59.5 Q50,63.5 56,59" stroke="#78350f" stroke-width="2.2" fill="none" stroke-linecap="round"/>');
-
-        const neckAndOutfit = isGirl
-          ? '<path d="M22,98 C24,75 36,68 50,68 C64,68 76,75 78,98 Z" fill="url(#' + id + '_o)" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>' +
-            '<path d="M35,72 L50,86 L65,72" fill="none" stroke="' + accent + '" stroke-width="2.2"/>' +
-            '<path d="M45,60 L45,70 Q50,72 55,70 L55,60 Z" fill="' + skinDark + '"/>' +
-            '<rect x="44" y="65" width="12" height="3.2" rx="1.6" fill="' + accent + '"/>'
-          : '<path d="M18,98 C20,74 34,67 50,67 C66,67 80,74 82,98 Z" fill="url(#' + id + '_o)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>' +
-            '<path d="M32,71 L50,88 L68,71" fill="none" stroke="' + accent + '" stroke-width="2.5"/>' +
-            '<path d="M43,60 L43,70 Q50,72 57,70 L57,60 Z" fill="' + skinDark + '"/>';
-
-        const sparkles = opts.glitter
-          ? '<polygon class="st-sparkle" points="18,22 20,26 24,28 20,30 18,34 16,30 12,28 16,26" fill="#ffffff"/>' +
-            '<polygon class="st-sparkle" points="82,20 84,24 88,26 84,28 82,32 80,28 76,26 80,24" fill="#fde047"/>'
-          : '';
-
+      function buildLiteAvatar(c1, c2, hair, neon, crown, spin) {
         return '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<defs>' +
-            '<radialGradient id="' + id + '_bg" cx="35%" cy="25%" r="75%"><stop offset="0%" stop-color="' + bg1 + '"/><stop offset="100%" stop-color="' + bg2 + '"/></radialGradient>' +
-            '<radialGradient id="' + id + '_s" cx="40%" cy="32%" r="68%"><stop offset="0%" stop-color="' + skinLight + '"/><stop offset="55%" stop-color="' + skinMid + '"/><stop offset="100%" stop-color="' + skinDark + '"/></radialGradient>' +
-            '<linearGradient id="' + id + '_h" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + hairLight + '"/><stop offset="100%" stop-color="' + hair + '"/></linearGradient>' +
-            '<linearGradient id="' + id + '_o" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="' + outfitLight + '"/><stop offset="100%" stop-color="' + outfit + '"/></linearGradient>' +
-          '</defs>' +
-          '<circle cx="50" cy="50" r="49" fill="url(#' + id + '_bg)"/>' +
-          backLayer +
-          hairBack + neckAndOutfit + faceShape +
-          eyesAndFace + hairFront + acc + sparkles +
-          '</svg>';
+          '<circle cx="50" cy="50" r="49" fill="' + c1 + '"/>' +
+          '<circle cx="50" cy="46" r="41" fill="none" stroke="' + neon + '" stroke-width="2" stroke-dasharray="9 5"' + (spin ? ' class="st-spin-chakra"' : '') + '/>' +
+          '<path d="M18,98 C20,72 34,65 50,65 C66,65 80,72 82,98 Z" fill="' + c2 + '" stroke="' + neon + '" stroke-width="2"/>' +
+          '<path d="M33,32 C33,23 67,23 67,32 L65,50 C64,59 56,65 50,66 C44,65 36,59 35,50 Z" fill="#fed7aa"/>' +
+          '<circle cx="41" cy="49" r="3.5" fill="#090d16"/><circle cx="41" cy="49" r="2" fill="' + neon + '"/><circle cx="42" cy="48" r="0.9" fill="#fff"/>' +
+          '<circle cx="59" cy="49" r="3.5" fill="#090d16"/><circle cx="59" cy="49" r="2" fill="' + neon + '"/><circle cx="60" cy="48" r="0.9" fill="#fff"/>' +
+          '<path d="M44,58 Q50,62 56,57" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+          '<polygon points="24,44 20,22 34,29 42,12 50,25 58,12 66,29 80,22 76,44 63,34 50,39 37,34" fill="' + hair + '" stroke="' + neon + '" stroke-width="1.2"/>' +
+          (crown ? '<polygon points="34,23 39,10 45,18 50,6 55,18 61,10 66,23" fill="#fde047" stroke="#fff" stroke-width="1.2"/>' : '') +
+        '</svg>';
       }
-      const MILLY_EMPRESS_ST_SVG = makeStudioPortrait({
-        gender: 'girl', bg1: '#f43f5e', bg2: '#4c0519',
-        skinLight: '#ffffff', skin: '#fff1f2', skinDark: '#fecdd3',
-        hairLight: '#ffe4e6', hair: '#fb7185',
-        outfitLight: '#fb7185', outfit: '#be123c',
-        accent: '#fde047', eye: '#e11d48', acc: 'tiara', backProp: 'wings', glitter: true
-      });
 
       const ITEMS = [
-        { id: 'superhost', emoji: '🪷', name: '🪷👑 SAMAKSH 👑🪷', aura: 'st-aura-samaksh', req: 'code', featured: true, svg: KSHATRIYA_ST_SVG },
-
-        { id: 'diamond', emoji: '💎', name: 'Cyber Striker', aura: 'st-aura-ice', req: 'free',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#0284c7', bg2: '#090d16', hairLight: '#7dd3fc', hair: '#0284c7', outfitLight: '#38bdf8', outfit: '#0f172a', accent: '#38bdf8', eye: '#38bdf8', spiky: true, acc: 'visor' }) },
-        { id: 'samurai', emoji: '👹', name: 'Crimson Ronin', aura: 'st-aura-crimson', req: 'free',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#dc2626', bg2: '#090d16', hairLight: '#475569', hair: '#0f172a', outfitLight: '#ef4444', outfit: '#7f1d1d', accent: '#facc15', eye: '#facc15', spiky: true, acc: 'bandana', backProp: 'swords' }) },
-        { id: 'phoenix', emoji: '🔥', name: 'Blaze Queen', aura: 'st-aura-fire', req: 'free',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#ea580c', bg2: '#1c1917', hairLight: '#fdba74', hair: '#ea580c', outfitLight: '#f97316', outfit: '#7c2d12', accent: '#fde047', eye: '#fde047', acc: 'flowerPin', backProp: 'wings' }) },
-        { id: 'ninja', emoji: '🥷', name: 'Shadow Shinobi', aura: 'st-aura-violet', req: 'free',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#6d28d9', bg2: '#090d16', hairLight: '#334155', hair: '#090d16', outfitLight: '#7c3aed', outfit: '#1e1b4b', accent: '#c084fc', eye: '#c084fc', masked: true, acc: 'bandana' }) },
-        { id: 'astro', emoji: '🚀', name: 'Starlight Girl', aura: 'st-aura-ice', req: 'free',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#2563eb', bg2: '#020617', hairLight: '#ffffff', hair: '#cbd5e1', outfitLight: '#60a5fa', outfit: '#1d4ed8', accent: '#38bdf8', eye: '#38bdf8', acc: 'halo' }) },
-
-        { id: 'disco', emoji: '🪩', name: 'Neon DJ (3 Refs)', aura: 'st-aura-disco', req: 'ref3',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#ec4899', bg2: '#1e1b4b', hairLight: '#fbcfe8', hair: '#ec4899', outfitLight: '#e879f9', outfit: '#701a75', accent: '#00f0ff', eye: '#00f0ff', acc: 'visor' }) },
-        { id: 'butterfly', emoji: '🦋', name: 'Butterfly Muse (3 Refs)', aura: 'st-aura-pink', req: 'ref3',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#d946ef', bg2: '#2e1065', hairLight: '#e9d5ff', hair: '#a855f7', outfitLight: '#d946ef', outfit: '#86198f', accent: '#fde047', eye: '#f472b6', acc: 'tiara', backProp: 'wings' }) },
-        { id: 'kitsune', emoji: '🦊', name: 'Kitsune Girl (3 Refs)', aura: 'st-aura-fire', req: 'ref3',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#f43f5e', bg2: '#1f2937', hairLight: '#ffffff', hair: '#e2e8f0', outfitLight: '#fb7185', outfit: '#be123c', accent: '#fde047', eye: '#fb7185', acc: 'catEars' }) },
-
-        { id: 'wolf', emoji: '🐺', name: 'Alpha Wolf (5 Refs)', aura: 'st-aura-fire', req: 'ref5',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#b91c1c', bg2: '#090d16', hairLight: '#94a3b8', hair: '#334155', outfitLight: '#475569', outfit: '#0f172a', accent: '#f97316', eye: '#f97316', spiky: true, acc: 'catEars' }) },
-        { id: 'blossom', emoji: '🌸', name: 'Sakura Princess (5 Refs)', aura: 'st-aura-pink', req: 'ref5',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#f472b6', bg2: '#4c0519', hairLight: '#ffe4e6', hair: '#f472b6', outfitLight: '#f472b6', outfit: '#9d174d', accent: '#fde047', eye: '#f43f5e', acc: 'flowerPin', glitter: true }) },
-        { id: 'skull', emoji: '💀', name: 'Toxic Hacker (5 Refs)', aura: 'st-aura-toxic', req: 'ref5',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#16a34a', bg2: '#052e16', hairLight: '#86efac', hair: '#16a34a', outfitLight: '#22c55e', outfit: '#064e3b', accent: '#4ade80', eye: '#4ade80', masked: true, acc: 'visor' }) },
-        { id: 'lion', emoji: '🦁', name: 'Solar Prince (5 Refs)', aura: 'st-aura-gold', req: 'ref5',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#d97706', bg2: '#422006', hairLight: '#fef08a', hair: '#eab308', outfitLight: '#f59e0b', outfit: '#78350f', accent: '#ffffff', eye: '#fde047', spiky: true, acc: 'halo' }) },
-
-        { id: 'dragon', emoji: '🐉', name: 'Jade Dragon (10 Refs)', aura: 'st-aura-emerald', req: 'ref10',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#059669', bg2: '#022c22', hairLight: '#6ee7b7', hair: '#059669', outfitLight: '#10b981', outfit: '#064e3b', accent: '#fde047', eye: '#6ee7b7', spiky: true, acc: 'horns' }) },
-        { id: 'empress', emoji: '👸', name: 'Celestial Queen (10 Refs)', aura: 'st-aura-gold', req: 'ref10',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#9333ea', bg2: '#3b0764', hairLight: '#fef08a', hair: '#eab308', outfitLight: '#a855f7', outfit: '#581c87', accent: '#fde047', eye: '#38bdf8', acc: 'tiara', glitter: true }) },
-        { id: 'reaper', emoji: '⚰️', name: 'Abyss Lord (10 Refs)', aura: 'st-aura-violet', req: 'ref10',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#4c1d95', bg2: '#090d16', hairLight: '#cbd5e1', hair: '#475569', outfitLight: '#334155', outfit: '#020617', accent: '#ef4444', eye: '#ef4444', masked: true, acc: 'horns' }) },
-        { id: 'unicorn', emoji: '🦄', name: 'Pastel Angel (10 Refs)', aura: 'st-aura-pink', req: 'ref10',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#e879f9', bg2: '#311042', hairLight: '#fae8ff', hair: '#d946ef', outfitLight: '#e879f9', outfit: '#86198f', accent: '#fde047', eye: '#ec4899', acc: 'halo', backProp: 'wings', glitter: true }) },
-
-        { id: 'host_shubhi', emoji: '🌷', name: '🌷 Shubhi', aura: 'st-aura-shubhi', req: 'code',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#f472b6', bg2: '#3b0764', hairLight: '#fae8ff', hair: '#e879f9', outfitLight: '#f472b6', outfit: '#be185d', accent: '#fde047', eye: '#ec4899', acc: 'flowerPin', glitter: true }) },
-        { id: 'host_sid', emoji: '⚡', name: '⚡ Sid', aura: 'st-aura-sid', req: 'code',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#2563eb', bg2: '#090d16', hairLight: '#7dd3fc', hair: '#0284c7', outfitLight: '#3b82f6', outfit: '#1e3a8a', accent: '#fde047', eye: '#fde047', spiky: true, acc: 'thunderVisor', backProp: 'lightning' }) },
-        { id: 'host_zoro', emoji: '⚔️', name: 'Zoro', aura: 'st-aura-emerald', req: 'code',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#15803d', bg2: '#052e16', hairLight: '#86efac', hair: '#16a34a', outfitLight: '#22c55e', outfit: '#14532d', accent: '#fde047', eye: '#4ade80', spiky: true, acc: 'bandana', backProp: 'swords' }) },
-        { id: 'host_sarah', emoji: '🦋', name: 'Sarah', aura: 'st-aura-ice', req: 'code',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#0284c7', bg2: '#1e1b4b', hairLight: '#bae6fd', hair: '#38bdf8', outfitLight: '#38bdf8', outfit: '#1e3a8a', accent: '#fde047', eye: '#0284c7', acc: 'tiara', backProp: 'wings' }) },
-        { id: 'host_milly', emoji: '💖', name: '💖 Milly Empress', aura: 'st-aura-empress', req: 'code', svg: MILLY_EMPRESS_ST_SVG },
-        { id: 'host_heer', emoji: '🌸', name: 'Heer', aura: 'st-aura-pink', req: 'code',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#ec4899', bg2: '#3b0764', hairLight: '#fbcfe8', hair: '#f472b6', outfitLight: '#f472b6', outfit: '#831843', accent: '#fde047', eye: '#db2777', acc: 'flowerPin' }) },
-        { id: 'host_ishika', emoji: '✨', name: 'Ishika', aura: 'st-aura-gold', req: 'code',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#eab308', bg2: '#422006', hairLight: '#fef9c3', hair: '#facc15', outfitLight: '#facc15', outfit: '#713f12', accent: '#ffffff', eye: '#d97706', acc: 'halo', glitter: true }) },
-        { id: 'host_izzan', emoji: '🔥', name: 'Izzan', aura: 'st-aura-fire', req: 'code',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#dc2626', bg2: '#450a0a', hairLight: '#fca5a5', hair: '#dc2626', outfitLight: '#ef4444', outfit: '#7f1d1d', accent: '#fde047', eye: '#fde047', spiky: true, acc: 'horns' }) },
-        { id: 'host_sus', emoji: '👀', name: 'Sus', aura: 'st-aura-toxic', req: 'code',
-          svg: makeStudioPortrait({ gender: 'boy', bg1: '#16a34a', bg2: '#090d16', hairLight: '#86efac', hair: '#15803d', outfitLight: '#1e293b', outfit: '#020617', accent: '#4ade80', eye: '#4ade80', masked: true }) },
-        { id: 'host_ruwii', emoji: '🌺', name: 'Ruwii', aura: 'st-aura-pink', req: 'code',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#e11d48', bg2: '#4c0519', hairLight: '#fecdd3', hair: '#f43f5e', outfitLight: '#fb7185', outfit: '#881337', accent: '#fde047', eye: '#be123c', acc: 'catEars' }) },
-        { id: 'host_moon', emoji: '🌙', name: 'Moon', aura: 'st-aura-gold', req: 'code',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#4f46e5', bg2: '#090d16', hairLight: '#e0e7ff', hair: '#818cf8', outfitLight: '#6366f1', outfit: '#312e81', accent: '#fde047', eye: '#6366f1', acc: 'halo' }) },
-        { id: 'host_zaira', emoji: '🪐', name: 'Zaira', aura: 'st-aura-violet', req: 'code',
-          svg: makeStudioPortrait({ gender: 'girl', bg1: '#7c3aed', bg2: '#0f172a', hairLight: '#e9d5ff', hair: '#a855f7', outfitLight: '#9333ea', outfit: '#4c1d95', accent: '#38bdf8', eye: '#9333ea', acc: 'flowerPin' }) }
+        { id: 'superhost',   emoji: '🪷', name: '🪷👑 SAMAKSH',     aura: 'st-aura-samaksh', req: 'code', svg: buildLiteAvatar('#1e3a8a','#0f172a','#020617','#fde047',true,true) },
+        { id: 'host_milly',  emoji: '💖', name: '💖 Milly Queen',  aura: 'st-aura-empress', req: 'code', svg: buildLiteAvatar('#9d174d','#4c0519','#fbcfe8','#f472b6',true,true) },
+        { id: 'diamond',     emoji: '💎', name: 'Cyber Striker',   aura: 'st-aura-ice',     req: 'free', svg: buildLiteAvatar('#0369a1','#090d16','#38bdf8','#00f0ff',false,false) },
+        { id: 'phoenix',     emoji: '🔥', name: 'Blaze Assassin',  aura: 'st-aura-fire',    req: 'free', svg: buildLiteAvatar('#9a3412','#1c1917','#fb923c','#f97316',false,false) },
+        { id: 'ninja',       emoji: '🥷', name: 'Shadow Shinobi',  aura: 'st-aura-violet',  req: 'free', svg: buildLiteAvatar('#4c1d95','#090d16','#1e1b4b','#c084fc',false,false) },
+        { id: 'host_sid',    emoji: '⚡', name: '⚡ Sid Thunder',  aura: 'st-aura-ice',     req: 'code', svg: buildLiteAvatar('#1e40af','#090d16','#0284c7','#fde047',false,false) },
+        { id: 'host_shubhi', emoji: '🌷', name: '🌷 Shubhi',       aura: 'st-aura-pink',    req: 'code', svg: buildLiteAvatar('#831843','#3b0764','#f472b6','#fbcfe8',true,false) },
+        { id: 'host_zoro',   emoji: '⚔️', name: '⚔️ Zoro Dojo',    aura: 'st-aura-emerald', req: 'code', svg: buildLiteAvatar('#14532d','#052e16','#22c55e','#4ade80',false,false) },
+        { id: 'host_sarah',  emoji: '🦋', name: '🦋 Sarah',        aura: 'st-aura-ice',     req: 'code', svg: buildLiteAvatar('#075985','#1e1b4b','#7dd3fc','#38bdf8',true,false) }
       ];
-      let refs = 0;
-      let unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
-      let playerAuraMap = {};
-      let playerPortraitMap = {};
-      let playerBadgeMap = {};
 
+      let unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+      let playerAuraMap = {}, playerPortraitMap = {}, playerAvatarIdMap = {};
       const getUname = () => (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
 
-      function hydrateLocalPlayer() {
-        const me = getUname();
-        if (!me) return;
-        if (me === 'samaksh' || me === 'sammu') {
-          playerAuraMap[me] = 'st-aura-samaksh';
-          playerPortraitMap[me] = KSHATRIYA_ST_SVG;
-          playerBadgeMap[me] = '🪷👑 SAMAKSH 👑🪷';
-        } else if (me === 'milly') {
-          playerAuraMap[me] = 'st-aura-empress';
-          playerPortraitMap[me] = MILLY_EMPRESS_ST_SVG;
-          playerBadgeMap[me] = '💖 Milly Empress';
-        }
-        const savedMyAvId = localStorage.getItem('sammu_my_av_id');
-        if (savedMyAvId) {
-          const foundAv = ITEMS.find(x => x.id === savedMyAvId);
-          if (foundAv) {
-            playerAuraMap[me] = foundAv.aura;
-            playerPortraitMap[me] = foundAv.svg;
-            playerBadgeMap[me] = foundAv.name;
-          }
-        }
-      }
-      hydrateLocalPlayer();
-
-      function canUse(av) {
-        if (av.req === 'free') return true;
-        if (av.req === 'ref3') return refs >= 3;
-        if (av.req === 'ref5') return refs >= 5;
-        if (av.req === 'ref10') return refs >= 10;
-        if (av.req === 'code') return unlocked.includes(av.id);
-        return false;
-      }
-
-      window.stCopyRef = function() {
-        const link = window.location.origin + '/?ref=' + encodeURIComponent(getUname() || 'player');
-        if (navigator.clipboard) navigator.clipboard.writeText(link);
-        alert('🔗 Referral Link Copied!\\n' + link);
+      window.sendOpFx = (type) => { if (typeof socket !== 'undefined') socket.emit('creatorOpAction', { type }); };
+      window.sendOpBanner = () => {
+        const msg = prompt('Enter Broadcast Text:');
+        if (msg && typeof socket !== 'undefined') socket.emit('creatorOpAction', { type: 'banner', text: msg });
       };
-
-      window.stRedeemCode = function() {
+      window.stRedeemCode = () => {
         const code = (document.getElementById('stCodeInput').value || '').trim();
-        if (code && typeof socket !== 'undefined') {
-          socket.emit('verifyAvatarCodeV6', { username: getUname(), code });
-        }
+        if (code && typeof socket !== 'undefined') socket.emit('verifyAvatarCodeV6', { code });
       };
 
-      const zCard = document.getElementById('stZoomCard');
-      if (zCard) {
-        const handleTilt = (clientX, clientY) => {
-          const r = zCard.getBoundingClientRect();
-          const dx = (clientX - (r.left + r.width / 2)) / (r.width / 2);
-          const dy = (clientY - (r.top + r.height / 2)) / (r.height / 2);
-          zCard.style.transform = 'perspective(500px) rotateY(' + (dx * 14).toFixed(1) + 'deg) rotateX(' + (-dy * 14).toFixed(1) + 'deg)';
-        };
-        zCard.addEventListener('touchmove', (e) => {
-          if (e.touches && e.touches.length) handleTilt(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: true });
-        zCard.addEventListener('mousemove', (e) => handleTilt(e.clientX, e.clientY));
-        zCard.addEventListener('touchend', () => { zCard.style.transform = 'none'; });
-        zCard.addEventListener('mouseleave', () => { zCard.style.transform = 'none'; });
-      }
-
-      window.stOpenZoom = function(displayName, svgHtml, auraCls, titleText) {
-        const ring = document.getElementById('stZoomRing');
-        if (zCard) zCard.style.transform = 'none';
-        ring.className = auraCls || '';
-        ring.innerHTML = svgHtml || '';
-        document.getElementById('stZoomUser').textContent = displayName || 'Player';
-        document.getElementById('stZoomTitle').textContent = titleText || 'Illustrated Character';
-
-        const hypeBtn = document.getElementById('stHypeBtn');
-        if (hypeBtn) {
-          hypeBtn.onclick = function() {
-            document.getElementById('stZoomModal').style.display = 'none';
-            if (typeof socket !== 'undefined') {
-              const me = window._savedUname || localStorage.getItem('sammu_username') || 'Someone';
-              socket.emit('chatMessage', {
-                username: me,
-                text: '🔥✨ ' + me + ' hyped ' + (displayName || 'this') + '\\'s Avatar! (' + (titleText || 'Character') + ')'
-              });
-            }
-          };
-        }
-        document.getElementById('stZoomModal').style.display = 'flex';
-      };
-
-      window.stDrawVault = function() {
+      window.stDrawVault = () => {
         const grid = document.getElementById('stGrid');
-        const txt = document.getElementById('stRefText');
-        if (txt) txt.textContent = '🔗 Referrals: ' + refs + ' | Tap Any Player Avatar Bubble to Zoom!';
         if (!grid) return;
         grid.innerHTML = '';
-
         ITEMS.forEach(av => {
-          const ok = canUse(av);
+          const ok = av.req === 'free' || unlocked.includes(av.id);
           const d = document.createElement('div');
           d.className = 'st-item' + (ok ? '' : ' locked');
-
-          if (av.featured) {
-            d.style.cssText = 'grid-column:1/-1;background:linear-gradient(135deg,rgba(29,78,216,0.38),rgba(250,204,21,0.32));border:2px solid #fde047;padding:9px;';
-          } else if (av.id === 'host_shubhi') {
-            d.style.cssText = 'background:linear-gradient(135deg,rgba(244,114,182,0.28),rgba(253,224,71,0.22));border:1.5px solid #f472b6;';
-          } else if (av.id === 'host_milly') {
-            d.style.cssText = 'background:linear-gradient(135deg,rgba(244,63,94,0.28),rgba(232,121,249,0.25));border:1.5px solid #fb7185;';
-          } else if (av.id === 'host_sid') {
-            d.style.cssText = 'background:linear-gradient(135deg,rgba(37,99,235,0.28),rgba(56,189,248,0.25));border:1.5px solid #38bdf8;';
-          }
-
           d.innerHTML =
-            '<div class="st-art ' + av.aura + '" style="' + (av.featured ? 'width:72px;height:72px;' : '') + '">' + av.svg + '</div>' +
-            '<div style="font-weight:900;font-size:' + (av.featured ? '13px;color:#fde047;' : '10px;') + '">' + av.name + '</div>' +
-            '<div style="font-size:10px;color:' + (ok ? '#4ade80' : '#f87171') + ';margin-top:2px;">' + (ok ? '✅ Tap to Equip' : '🔒 Locked') + '</div>';
-
+            '<div class="st-art ' + av.aura + '">' + av.svg + '</div>' +
+            '<div style="font-weight:900;font-size:10px;">' + av.name + '</div>' +
+            '<div style="font-size:9px;color:' + (ok ? '#4ade80' : '#f87171') + ';">' + (ok ? '✅ Equip' : '🔒 Code') + '</div>';
           d.onclick = () => {
-            if (!ok) {
-              alert('🔒 Locked! Earn referrals or enter your Host Avatar code below.');
-              return;
-            }
+            if (!ok) { alert('🔒 Enter secret code below!'); return; }
             const me = getUname();
-            if (me) {
-              playerAuraMap[me] = av.aura;
-              playerPortraitMap[me] = av.svg;
-              playerBadgeMap[me] = av.name;
-            }
-            localStorage.setItem('sammu_my_aura', av.aura);
-            localStorage.setItem('sammu_my_av_id', av.id);
-            localStorage.setItem('sammu_avatar', av.emoji);
-            localStorage.setItem('avatar', av.emoji);
-            window._savedAvatar = av.emoji;
-
+            playerAuraMap[me] = av.aura; playerPortraitMap[me] = av.svg; playerAvatarIdMap[me] = av.id;
+            if (av.id === 'superhost') document.getElementById('opCreatorDock').style.display = 'flex';
             if (typeof socket !== 'undefined') {
-              socket.emit('equipAvatarFxV6', {
-                username: me,
-                avatar: av.emoji,
-                avatarId: av.id,
-                fx: av.aura,
-                badge: av.name
-              });
-              socket.emit('joinRoom', {
-                username: me || 'Player',
-                avatar: av.emoji,
-                deviceId: localStorage.getItem('sammu_dev_uid') || '',
-                isReconnect: true
-              });
+              socket.emit('equipAvatarFxV6', { username: me, avatar: av.emoji, avatarId: av.id, fx: av.aura, badge: av.name });
             }
             document.getElementById('stVaultModal').style.display = 'none';
-            renderStudioBubbles(true);
+            renderStudioBubbles();
           };
           grid.appendChild(d);
         });
       };
-      document.addEventListener('click', function(e) {
-        const bubble = e.target.closest('.st-live-bubble, .v22-av-bubble');
-        if (bubble) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          const sender = bubble.getAttribute('data-zoom-sender') || '';
-          const displayName = bubble.getAttribute('data-zoom-user') || sender || 'Player';
-          const svgHtml = bubble.innerHTML;
-          const auraCls = playerAuraMap[sender] || '';
-          const titleText = playerBadgeMap[sender] || 'Illustrated Character';
-          window.stOpenZoom(displayName, svgHtml, auraCls, titleText);
-          return;
-        }
-
+      document.addEventListener('click', (e) => {
         const btn = e.target.closest('button, a, div[onclick]');
-        if (!btn) return;
-        if (btn.id === 'openAvatarVaultBtn' || /avatars/i.test((btn.textContent || '').trim())) {
+        if (btn && (btn.id === 'openAvatarVaultBtn' || /avatars/i.test((btn.textContent || '').trim()))) {
           if (btn.closest('#stVaultModal')) return;
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          hydrateLocalPlayer();
-          if (typeof socket !== 'undefined') socket.emit('getMyAvatarStatsV6', { username: getUname() });
+          e.preventDefault(); e.stopPropagation();
           window.stDrawVault();
           document.getElementById('stVaultModal').style.display = 'flex';
         }
       }, true);
 
-      function renderStudioBubbles(forceRefresh) {
-        hydrateLocalPlayer();
-
-        document.querySelectorAll('div, span, b, strong').forEach(el => {
-          if (el.closest('#stVaultModal') || el.closest('#stZoomModal')) return;
-          if (el.children.length > 0) return;
-
+      function renderStudioBubbles() {
+        const nodes = document.querySelectorAll('#chatBox b, #chatBox strong, #chatBox span, #messages b, #messages span, .player-item span');
+        const list = nodes.length ? nodes : document.querySelectorAll('b, strong, span');
+        list.forEach(el => {
+          if (el.children.length > 0 || el.closest('#stVaultModal') || el.closest('#opCreatorDock')) return;
           const raw = (el.textContent || '').trim();
-          const sender = raw.replace(/\s*(cap\s*[ab]|👑|creator)\s*/gi, '').trim().toLowerCase();
-          if (!sender || sender.length > 25) return;
+          const sender = raw.replace(/\s*(cap\s*[ab]|👑|creator|\[⚡ creator\]|\[👑 empress\])\s*/gi, '').trim().toLowerCase();
+          if (!sender || sender.length > 22) return;
 
-          let auraClass = playerAuraMap[sender];
-          let portraitSvg = playerPortraitMap[sender];
+          const avId = playerAvatarIdMap[sender];
+          if (!avId) return;
 
-          if ((sender === 'samaksh' || sender === 'sammu') && !portraitSvg) {
-            auraClass = 'st-aura-samaksh';
-            portraitSvg = KSHATRIYA_ST_SVG;
-          } else if (sender === 'milly' && !portraitSvg) {
-            auraClass = 'st-aura-empress';
-            portraitSvg = MILLY_EMPRESS_ST_SVG;
+          if ((avId === 'superhost' || avId === 'host_milly') && !el.dataset.opTagged) {
+            el.dataset.opTagged = '1';
+            const tag = document.createElement('span');
+            tag.className = (avId === 'superhost') ? 'op-tag-creator' : 'op-tag-empress';
+            tag.textContent = (avId === 'superhost') ? '⚡ CREATOR' : '👑 EMPRESS';
+            el.appendChild(tag);
+
+            let row = el.parentElement;
+            if (row && row.nextElementSibling && !row.nextElementSibling.querySelector('input, button')) {
+              row.nextElementSibling.classList.add(avId === 'host_milly' ? 'st-chat-milly' : 'st-chat-rainbow');
+            }
           }
 
           const container = el.parentElement;
-          if (!container) return;
-
-          if (container.offsetWidth > 60 && container.offsetWidth < 300 && container.offsetHeight < 70 && /cap\s*[ab]|👑|creator/i.test(container.textContent || '')) {
-            if (auraClass === 'st-aura-samaksh' || auraClass === 'st-aura-empress') {
-              container.classList.add(auraClass);
-            }
-          }
-
-          if (sender === 'samaksh' || sender === 'sammu' || sender === 'milly') {
-            const chatGlowCls = (sender === 'milly') ? 'st-chat-milly' : 'st-chat-rainbow';
-            let headerRow = el.parentElement;
-            while (headerRow && headerRow.parentElement && headerRow.parentElement.children.length <= 2) {
-              if (headerRow.nextElementSibling) break;
-              headerRow = headerRow.parentElement;
-            }
-            if (headerRow && headerRow.nextElementSibling && !headerRow.nextElementSibling.querySelector('input, button')) {
-              headerRow.nextElementSibling.classList.add(chatGlowCls);
-            }
-          }
-
-          if (!portraitSvg) return;
-
-          const stamp = sender + ':' + (auraClass || '');
-          if (!forceRefresh && container.dataset.stCleanStamp === stamp) return;
-
+          if (!container || container.dataset.stStamp === avId) return;
           const iconSpan = Array.from(container.children).find(c =>
-            c !== el && !c.querySelector('button') &&
-            ((c.textContent || '').trim().length <= 4 || c.querySelector('.st-live-bubble, .v22-av-bubble')) &&
-            !/cap\s*[ab]|creator/i.test(c.textContent || '')
+            c !== el && !c.querySelector('button') && ((c.textContent || '').trim().length <= 4 || c.querySelector('.st-live-bubble'))
           );
-
           if (iconSpan) {
-            container.dataset.stCleanStamp = stamp;
-            iconSpan.innerHTML = '<span class="st-live-bubble ' + (auraClass || '') + '" data-zoom-user="' + raw.replace(/"/g, '&quot;') + '" data-zoom-sender="' + sender + '">' + portraitSvg + '</span>';
+            container.dataset.stStamp = avId;
+            iconSpan.innerHTML = '<span class="st-live-bubble ' + (playerAuraMap[sender] || '') + '">' + playerPortraitMap[sender] + '</span>';
           }
         });
       }
 
-      function bindStudioSocket() {
-        if (typeof socket === 'undefined' || window._stStudioSock) return;
-        window._stStudioSock = true;
+      let renderQueued = false;
+      const obs = new MutationObserver(() => {
+        if (!renderQueued) {
+          renderQueued = true;
+          requestAnimationFrame(() => { renderStudioBubbles(); renderQueued = false; });
+        }
+      });
+      window.addEventListener('DOMContentLoaded', () => obs.observe(document.body, { childList: true, subtree: true }));
 
-        socket.emit('getMyAvatarStatsV6', { username: getUname() });
+      setInterval(() => {
+        if (typeof socket !== 'undefined' && !window._stSockReady) {
+          window._stSockReady = true;
+          socket.emit('getMyAvatarStatsV6');
 
-        socket.on('avatarStatsDataV6', (d) => {
-          if (d && typeof d.refs === 'number') refs = d.refs;
-          if (d && d.avatarMap) {
-            Object.entries(d.avatarMap).forEach(([u, info]) => {
-              const key = u.toLowerCase();
-              if (info && info.avatarId) {
+          socket.on('avatarStatsDataV6', (d) => {
+            if (d && d.avatarMap) {
+              Object.entries(d.avatarMap).forEach(([u, info]) => {
                 const found = ITEMS.find(x => x.id === info.avatarId);
                 if (found) {
-                  playerAuraMap[key] = found.aura;
-                  playerPortraitMap[key] = found.svg;
-                  playerBadgeMap[key] = found.name;
+                  playerAuraMap[u] = found.aura; playerPortraitMap[u] = found.svg; playerAvatarIdMap[u] = found.id;
                 }
-              }
-            });
-          }
-          window.stDrawVault();
-          renderStudioBubbles(true);
-        });
-
-        socket.on('avatarCodeResultV6', (res) => {
-          if (res && res.ok && res.avatarId) {
-            if (!unlocked.includes(res.avatarId)) {
-              unlocked.push(res.avatarId);
-              localStorage.setItem('sammu_unlocked_avatars', JSON.stringify(unlocked));
+              });
+              renderStudioBubbles();
             }
-            alert('🎉 Unlocked: ' + res.name + '!');
-            window.stDrawVault();
-          } else {
-            alert('❌ Invalid Avatar Code!');
-          }
-        });
-      }
+          });
 
-      window.stDrawVault();
-      renderStudioBubbles(true);
-      setInterval(() => {
-        bindStudioSocket();
-        renderStudioBubbles(false);
-      }, 650);
+          socket.on('avatarCodeResultV6', (res) => {
+            if (res && res.ok && res.avatarId) {
+              if (!unlocked.includes(res.avatarId)) {
+                unlocked.push(res.avatarId);
+                localStorage.setItem('sammu_unlocked_avatars', JSON.stringify(unlocked));
+              }
+              if (res.avatarId === 'superhost') document.getElementById('opCreatorDock').style.display = 'flex';
+              alert('🎉 Unlocked: ' + res.name + '!');
+              window.stDrawVault();
+            } else {
+              alert('❌ Invalid Secret Code!');
+            }
+          });
+
+          socket.on('triggerCreatorFx', (fx) => {
+            if (fx._serverId && fx._serverId !== window.selectedServerId) return;
+            if (fx.type === 'shake') {
+              document.body.classList.remove('op-screen-shake');
+              void document.body.offsetWidth;
+              document.body.classList.add('op-screen-shake');
+            } else if (fx.type === 'banner') {
+              const b = document.getElementById('opGiantBanner');
+              document.getElementById('opBannerText').textContent = fx.text;
+              b.style.display = 'block';
+              setTimeout(() => { b.style.display = 'none'; }, 4500);
+            } else if (fx.type === 'confetti') {
+              const box = document.createElement('div');
+              box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999999;display:flex;justify-content:space-around;font-size:26px;padding-top:20px;';
+              box.innerHTML = '<span>🎉</span><span>💎</span><span>👑</span><span>🔥</span><span>✨</span>';
+              document.body.appendChild(box);
+              setTimeout(() => box.remove(), 2000);
+            }
+          });
+        }
+      }, 1500);
     })();
     </script>
     `;
@@ -2763,33 +2422,7 @@ module.exports = function initMultiServers(app, io) {
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>')) {
-                body = body.replace('</body>', STUDIO_AVATAR_OVERRIDE + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        const origSendFile = res.sendFile;
-        res.sendFile = function(filePath) {
-            if (typeof filePath === 'string' && filePath.endsWith('.html')) {
-                try {
-                    let html = fs.readFileSync(filePath, 'utf8');
-                    if (html.includes('</body>')) {
-                        html = html.replace('</body>', STUDIO_AVATAR_OVERRIDE + '\n</body>');
-                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                        return origSend.call(this, html);
-                    }
-                } catch (e) {}
-            }
-            return origSendFile.apply(this, arguments);
-        };
-        next();
-    });
-    // === END STUDIO ILLUSTRATED AVATARS + RAINBOW HOST AURA ===
-       // === AVATAR BUTTON INJECTOR ===
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>')) {
-                body = body.replace('</body>', `<script>
+                body = body.replace('</body>', STUDIO_AVATAR_OVERRIDE + `\n<script>
                 setInterval(() => {
                   if (document.getElementById('openAvatarVaultBtn')) return;
                   const anchor = document.getElementById('openPhonkDjBtn') || document.getElementById('openChefBtn') ||
@@ -2801,14 +2434,14 @@ module.exports = function initMultiServers(app, io) {
                     btn.textContent = '👑 Avatars';
                     anchor.parentNode.insertBefore(btn, anchor.nextSibling);
                   }
-                }, 800);
+                }, 1500);
                 </script>\n</body>`);
             }
             return origSend.call(this, body);
         };
         next();
     });
-            
-   
+};
+                 
 
 };

@@ -2580,6 +2580,117 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END V8 ULTRA AVATAR ENGINE ===
+     // === V8.5 TRUE 3D HOLOGRAPHIC FOIL & TOUCH-TILT UPGRADE ===
+    const V8_3D_HOLO_ADDON = `
+    <style>
+      @keyframes holoFoilSweep {
+        0%   { background-position: 0% 50%; filter: hue-rotate(0deg); }
+        50%  { background-position: 100% 50%; filter: hue-rotate(180deg); }
+        100% { background-position: 0% 50%; filter: hue-rotate(360deg); }
+      }
+      @keyframes float3D {
+        0%, 100% { transform: translateZ(18px) translateY(0px); }
+        50%      { transform: translateZ(26px) translateY(-3px); }
+      }
+
+      /* 3D Perspective Stage */
+      .st-item, #stZoomCard {
+        transform-style: preserve-3d !important;
+        perspective: 700px !important;
+        transition: transform 0.12s ease-out, box-shadow 0.2s ease !important;
+        position: relative !important;
+        overflow: hidden !important;
+      }
+
+      /* 3D Pop-Out Avatar Depth */
+      .st-art, #stZoomRing {
+        transform-style: preserve-3d !important;
+        box-shadow: 0 10px 22px rgba(0,0,0,0.75), inset 0 0 14px rgba(255,255,255,0.35) !important;
+      }
+      .st-art svg, #stZoomRing svg {
+        animation: float3D 3s ease-in-out infinite !important;
+      }
+
+      /* Prismatic Holographic Foil Overlay (Pokemon / Yu-Gi-Oh Secret Rare Effect) */
+      .st-art::after, #stZoomRing::after, .v8-bubble::after {
+        content: "";
+        position: absolute;
+        inset: -20%;
+        pointer-events: none;
+        z-index: 4;
+        background: linear-gradient(
+          115deg,
+          transparent 20%,
+          rgba(255, 0, 128, 0.38) 36%,
+          rgba(0, 240, 255, 0.45) 48%,
+          rgba(253, 224, 71, 0.42) 60%,
+          transparent 78%
+        );
+        background-size: 220% 220%;
+        mix-blend-mode: color-dodge;
+        animation: holoFoilSweep 3.4s ease-in-out infinite;
+      }
+
+      /* 3D Glossy Glass Dome Reflection */
+      .st-art::before, #stZoomRing::before, .v8-bubble::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 5;
+        background: radial-gradient(circle at 30% 22%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.08) 38%, rgba(0,0,0,0.55) 100%);
+      }
+    </style>
+    <script>
+    (function() {
+      // Interactive 3D Finger-Tilt & Gyroscope Parallax on Vault Cards & Showcase Modal
+      function bind3DTilt(el, maxTilt) {
+        if (!el || el.dataset.tilt3d) return;
+        el.dataset.tilt3d = '1';
+
+        const handleMove = (clientX, clientY) => {
+          const r = el.getBoundingClientRect();
+          const nx = ((clientX - r.left) / r.width) - 0.5;
+          const ny = ((clientY - r.top) / r.height) - 0.5;
+          const rx = (-ny * maxTilt).toFixed(1);
+          const ry = (nx * maxTilt).toFixed(1);
+          el.style.transform = 'perspective(650px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale3d(1.03,1.03,1.03)';
+        };
+
+        const resetTilt = () => {
+          el.style.transform = 'perspective(650px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+        };
+
+        el.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
+        el.addEventListener('touchmove', e => {
+          if (e.touches && e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+        el.addEventListener('mouseleave', resetTilt);
+        el.addEventListener('touchend', resetTilt);
+      }
+
+      setInterval(() => {
+        document.querySelectorAll('.st-item').forEach(card => bind3DTilt(card, 18));
+        const zoomCard = document.getElementById('stZoomCard');
+        if (zoomCard) bind3DTilt(zoomCard, 22);
+      }, 900);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', V8_3D_HOLO_ADDON + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === END V8.5 3D HOLOGRAPHIC UPGRADE ===
+
 };
             
 

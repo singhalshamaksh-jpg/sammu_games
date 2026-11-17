@@ -3049,12 +3049,29 @@ setInterval(() => {
 }, 33);
 const initServerAds = require('./ads');
 initServerAds(app, io);
+
+// Injects Avatar & RPG UI at the front of Express before index.html is sent
+app._router.stack.unshift({
+    name: 'avatarRpgInjector',
+    handle: (req, res, next) => {
+        const origSend = res.send.bind(res);
+        res.send = (body) => {
+            if (typeof body === 'string' && body.includes('</body>') && app.locals.AVATAR_RPG_UI) {
+                body = body.replace('</body>', app.locals.AVATAR_RPG_UI + '\n</body>');
+            }
+            return origSend(body);
+        };
+        next();
+    },
+    keys: [],
+    regexp: /^\/?(?=\/|$)/i,
+    route: undefined
+});
+
 require('./avatarArmory')(app, io, {
     OG_HOSTS: new Set(["sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus", "sarah", "advait", "ruwii", "zaira", "shubhi", "sid"]),
     verifyOGHostTripleLock: () => true
 });
 
-
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));
-

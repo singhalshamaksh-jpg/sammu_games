@@ -2084,7 +2084,7 @@ module.exports = function initMultiServers(app, io) {
         });
     });
     // === END phonk======  //       
-      require('./avatarArmory')(app, io, { OG_HOSTS, verifyOGHostTripleLock });
+      
 };
  
                 

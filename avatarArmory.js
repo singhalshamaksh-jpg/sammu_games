@@ -489,6 +489,18 @@ module.exports = function initAvatarArmory(app, io, helpers) {
           body.innerHTML = (rpgData.accessories || []).map(a => '<div style="display:flex;justify-content:space-between;background:rgba(255,255,255,0.06);border:1px solid #38bdf8;border-radius:10px;padding:7px;margin-bottom:5px;"><div><b>' + a.name + '</b> (+' + a.atkBonus + ' ATK / +' + a.hpBonus + ' HP)</div><button onclick="socket.emit(\\'rpgBuyAccessory\\',{username:\\'' + getMe() + '\\',accId:\\'' + a.id + '\\'})" style="padding:4px 9px;border:none;border-radius:7px;background:#f59e0b;color:#090d16;font-weight:900;">💰 ' + a.cost + '</button></div>').join('');
         }
       }
+      // Guaranteed Floating Launcher Pill + !rpg / !avatars chat trigger
+      function ensureFloatingArmoryBar() {
+        if (document.getElementById('sammuFloatingArmoryBar')) return;
+        const bar = document.createElement('div');
+        bar.id = 'sammuFloatingArmoryBar';
+        bar.style.cssText = 'position:fixed;bottom:64px;left:10px;z-index:999997;display:flex;gap:6px;';
+        bar.innerHTML =
+          '<button onclick="window.stDrawVault();document.getElementById(\\'stVaultModal\\').style.display=\\'flex\\'" style="background:linear-gradient(90deg,#7c3aed,#ec4899);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.5);cursor:pointer;">👑 Avatars</button>' +
+          '<button onclick="const u=getMe();if(u&&typeof socket!==\\'undefined\\')socket.emit(\\'rpgGetState\\',u);document.getElementById(\\'rpgArenaModal\\').style.display=\\'flex\\'" style="background:linear-gradient(90deg,#f59e0b,#dc2626);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.5);cursor:pointer;">⚔️ RPG</button>';
+        document.body.appendChild(bar);
+      }
+      setTimeout(ensureFloatingArmoryBar, 1200);
 
       setInterval(() => {
         if (!document.getElementById('openAvatarVaultBtn')) {

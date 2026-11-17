@@ -2631,5 +2631,66 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END V14 COMPLETE ARMORY & ECONOMY ===
+     // === V14.6 INLINE ANIME PORTRAIT RENDERER (ZERO EMOJIS, ZERO BROKEN IMGS) ===
+    const V14_INLINE_ANIME_FIX = `
+    <script>
+    (function() {
+      let n = 0;
+      function animePortrait(bg1, bg2, hair, eye, isGirl, acc) {
+        n++;
+        const id = 'ap_' + n;
+        const backHair = isGirl ? '<path d="M16,44 C10,72 15,94 24,99 L76,99 C85,94 90,72 84,44 C84,18 16,18 16,44 Z" fill="' + hair + '"/>' : '';
+        const frontHair = isGirl
+          ? '<path d="M25,46 C25,20 75,20 75,46 C67,33 56,33 50,42 C44,33 33,33 25,46 Z" fill="' + hair + '"/>'
+          : '<polygon points="23,45 18,21 34,29 41,11 50,25 59,11 66,29 82,21 77,45 63,34 50,40 37,34" fill="' + hair + '"/>';
+        return '<svg viewBox="0 0 100 100" style="width:100%;height:100%;display:block;">' +
+          '<defs><radialGradient id="' + id + '" cx="40%" cy="25%" r="75%"><stop offset="0%" stop-color="' + bg1 + '"/><stop offset="100%" stop-color="' + bg2 + '"/></radialGradient></defs>' +
+          '<circle cx="50" cy="50" r="50" fill="url(#' + id + ')"/>' +
+          backHair +
+          '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="' + bg1 + '" stroke="#fff" stroke-width="1.2"/>' +
+          '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#ffe4e6"/>' +
+          '<ellipse cx="41" cy="50" rx="4.2" ry="3.6" fill="#fff"/><circle cx="41" cy="50" r="2.4" fill="' + eye + '"/><circle cx="42.2" cy="48.8" r="1.1" fill="#fff"/>' +
+          '<ellipse cx="59" cy="50" rx="4.2" ry="3.6" fill="#fff"/><circle cx="59" cy="50" r="2.4" fill="' + eye + '"/><circle cx="60.2" cy="48.8" r="1.1" fill="#fff"/>' +
+          '<path d="M45,58.5 Q50,62.5 55,58.5" stroke="#be123c" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+          frontHair + acc +
+        '</svg>';
+      }
+
+      const CHAR_ART = {
+        'SAMAKSH':        animePortrait('#f59e0b', '#311042', '#0f172a', '#0284c7', false, '<polygon points="32,21 37,9 44,17 50,3 56,17 63,9 68,21" fill="#fde047" stroke="#fff" stroke-width="1.2"/>'),
+        'Princess Milly': animePortrait('#f43f5e', '#500724', '#fb7185', '#e11d48', true,  '<polygon points="31,24 37,10 44,19 50,5 56,19 63,10 69,24" fill="#fde047" stroke="#fff" stroke-width="1.2"/>'),
+        'Princess Sus':   animePortrait('#10b981', '#022c22', '#34d399', '#059669', true,  '<polygon points="31,24 37,10 44,19 50,5 56,19 63,10 69,24" fill="#fde047" stroke="#fff" stroke-width="1.2"/>'),
+        'Zoro 3-Sword':   animePortrait('#16a34a', '#052e16', '#22c55e', '#15803d', false, '<line x1="8" y1="62" x2="92" y2="96" stroke="#fff" stroke-width="3.5"/><line x1="92" y1="62" x2="8" y2="96" stroke="#4ade80" stroke-width="3.5"/>'),
+        'Dr. Moon':       animePortrait('#7c3aed', '#1e1b4b', '#c084fc', '#9333ea', true,  '<path d="M36,67 C34,82 42,88 50,88 C58,88 66,82 64,67" fill="none" stroke="#e2e8f0" stroke-width="3"/><circle cx="64" cy="90" r="4.5" fill="#38bdf8" stroke="#fff"/>'),
+        'Sid Thunder':    animePortrait('#eab308', '#1e3a8a', '#facc15', '#0284c7', false, '<rect x="29" y="46" width="19" height="8" fill="#090d16" stroke="#fde047"/><rect x="52" y="46" width="19" height="8" fill="#090d16" stroke="#fde047"/>')
+      };
+
+      setInterval(() => {
+        document.querySelectorAll('#stGrid .st-item').forEach(card => {
+          const art = card.querySelector('.st-art');
+          const img = art && art.querySelector('img');
+          if (img && (!img.complete || img.naturalWidth === 0)) {
+            const txt = card.textContent || '';
+            const key = Object.keys(CHAR_ART).find(k => txt.includes(k));
+            art.innerHTML = key ? CHAR_ART[key] : animePortrait('#0284c7', '#0f172a', '#38bdf8', '#0284c7', false, '');
+          }
+        });
+      }, 500);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', V14_INLINE_ANIME_FIX + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === END V14.6 INLINE ANIME PORTRAIT RENDERER ===
+
 };
                 

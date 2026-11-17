@@ -3047,8 +3047,7 @@ setInterval(() => {
         io.emit('syncGame', gameData);
     }
 }, 33);
-const initServerAds = require('./ads');
-initServerAds(app, io);
+
 
 // Injects Avatar & RPG UI at the front of Express before index.html is sent
 const initServerAds = require('./ads');

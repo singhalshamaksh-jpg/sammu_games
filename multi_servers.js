@@ -2084,14 +2084,17 @@ module.exports = function initMultiServers(app, io) {
         });
     });
     // === END phonk======  //       
-      // === LITE-OP CREATOR AVATARS (PART 1: SERVER) ===
+       // === ROYAL AVATAR VAULT & POWERS (PIECE 1: SERVER) ===
     const AVATAR_SECRET_CODES = {
-        '#sammuop':    { avatarId: 'superhost',   name: '🪷👑 SAMAKSH (CREATOR)' },
+        '#sammuop':    { avatarId: 'superhost',   name: '🪷👑 SAMAKSH 👑🪷' },
         '#millyqueen': { avatarId: 'host_milly',  name: '💖 Milly Empress' },
         '#sidbolt':    { avatarId: 'host_sid',    name: '⚡ Sid Thunder' },
         '#shubhirose': { avatarId: 'host_shubhi', name: '🌷 Shubhi Blossom' },
         '#zorosword':  { avatarId: 'host_zoro',   name: '⚔️ Zoro Dojo' },
-        '#sarahfly':   { avatarId: 'host_sarah',  name: '🦋 Sarah Cyber' }
+        '#sarahfly':   { avatarId: 'host_sarah',  name: '🦋 Sarah Cyber' },
+        '#heerstar':   { avatarId: 'host_heer',   name: '🌸 Heer Star' },
+        '#ishikagold': { avatarId: 'host_ishika', name: '✨ Ishika Gold' },
+        '#izzanfire':  { avatarId: 'host_izzan',  name: '🔥 Izzan Fire' }
     };
 
     const equippedAvatarsDB = {};
@@ -2114,7 +2117,7 @@ module.exports = function initMultiServers(app, io) {
             const isMilly = (data.avatarId === 'host_milly') && (verifyOGHostTripleLock(cleanU, socket, false) || socket.isCodeVerified === 'host_milly');
             if ((data.avatarId === 'superhost' && !isCreator) || (data.avatarId === 'host_milly' && !isMilly)) return;
 
-            equippedAvatarsDB[cleanU] = { avatarId: data.avatarId, fx: data.fx, badge: data.badge, isCreator, isMilly };
+            equippedAvatarsDB[cleanU] = { avatarId: data.avatarId, fx: data.fx, badge: data.badge };
             if (socket.activeServerId) {
                 io.to(socket.activeServerId).emit('avatarStatsDataV6', { avatarMap: equippedAvatarsDB });
             }
@@ -2128,7 +2131,7 @@ module.exports = function initMultiServers(app, io) {
             if (!socket.activeServerId || !data || !data.type) return;
             const cleanU = (socket.username || '').trim().toLowerCase();
             const eq = equippedAvatarsDB[cleanU];
-            if (!(eq && eq.isCreator) && !verifyOGHostTripleLock(cleanU, socket, false)) return;
+            if (!(eq && eq.avatarId === 'superhost') && !verifyOGHostTripleLock(cleanU, socket, false)) return;
 
             io.to(socket.activeServerId).emit('triggerCreatorFx', {
                 type: data.type,
@@ -2137,55 +2140,45 @@ module.exports = function initMultiServers(app, io) {
             });
         });
     });
-     // === LITE-OP CREATOR AVATARS (PART 2: HTML & CSS) ===
+    // === ROYAL AVATAR VAULT & POWERS (PIECE 2: CSS & HTML) ===
     const STUDIO_AVATAR_OVERRIDE = `
     <style id="studioAvCss">
-      @keyframes opSpinRing { to { transform: rotate(360deg); } }
-      @keyframes opShake {
-        0%, 100% { transform: translate3d(0,0,0); }
-        25% { transform: translate3d(-6px,4px,0); }
-        50% { transform: translate3d(6px,-4px,0); }
-        75% { transform: translate3d(-4px,-2px,0); }
-      }
-      .op-screen-shake { animation: opShake 0.35s ease-in-out 2; }
-      .st-spin-chakra { transform-origin: 50px 46px; animation: opSpinRing 12s linear infinite; will-change: transform; }
+      @keyframes opSpin { to { transform: rotate(360deg); } }
+      @keyframes opSway { 0%, 100% { transform: rotate(18deg); } 50% { transform: rotate(28deg); } }
+      @keyframes opPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+      .st-spin-chakra { transform-origin: 50px 44px; animation: opSpin 11s linear infinite; will-change: transform; }
+      .st-sway-feather { transform-origin: 62px 27px; animation: opSway 2.6s ease-in-out infinite; will-change: transform; }
+      .st-sparkle { animation: opPulse 1.6s ease-in-out infinite; }
 
       .st-aura-samaksh { border: 2.5px solid #fde047 !important; outline: 2px solid #ff0055; }
       .st-chat-rainbow {
-        background: linear-gradient(120deg, rgba(255,0,85,0.35), rgba(253,224,71,0.28), rgba(0,240,255,0.35)) !important;
-        border: 2px solid #fde047 !important; border-radius: 12px !important;
-        color: #fff !important; font-weight: 800 !important;
+        background: linear-gradient(120deg, rgba(255,0,85,0.34), rgba(253,224,71,0.26), rgba(0,240,255,0.34)) !important;
+        border: 2px solid #fde047 !important; border-radius: 13px !important; color: #fff !important; font-weight: 800 !important;
       }
       .st-aura-empress { border: 2.5px solid #fff !important; outline: 2px solid #f472b6; }
       .st-chat-milly {
-        background: linear-gradient(135deg, rgba(244,114,182,0.35), rgba(232,121,249,0.3)) !important;
-        border: 2px solid #fbcfe8 !important; border-radius: 12px !important;
-        color: #fff !important; font-weight: 800 !important;
+        background: linear-gradient(135deg, rgba(244,114,182,0.34), rgba(232,121,249,0.28)) !important;
+        border: 2px solid #fbcfe8 !important; border-radius: 13px !important; color: #fff !important; font-weight: 800 !important;
       }
-      .op-tag-creator, .op-tag-empress {
-        display: inline-block; font-size: 9px; font-weight: 900; padding: 1px 5px;
-        border-radius: 5px; margin-left: 4px; color: #fff; vertical-align: middle;
-      }
-      .op-tag-creator { background: linear-gradient(90deg, #f59e0b, #ef4444); }
-      .op-tag-empress { background: linear-gradient(90deg, #ec4899, #f43f5e); }
-
       .st-aura-ice { border: 2px solid #38bdf8 !important; }
       .st-aura-fire { border: 2px solid #f97316 !important; }
       .st-aura-pink { border: 2px solid #f472b6 !important; }
       .st-aura-emerald { border: 2px solid #10b981 !important; }
+      .st-aura-gold { border: 2px solid #facc15 !important; }
       .st-aura-violet { border: 2px solid #a855f7 !important; }
 
       .st-live-bubble {
-        display: inline-flex !important; width: 34px !important; height: 34px !important;
+        display: inline-flex !important; width: 38px !important; height: 38px !important;
         border-radius: 50% !important; overflow: hidden !important; vertical-align: middle !important;
-        margin-right: 5px !important; background: #050814 !important; flex-shrink: 0 !important;
+        margin-right: 6px !important; background: #040712 !important; flex-shrink: 0 !important; cursor: pointer !important;
       }
       .st-live-bubble svg { width: 100% !important; height: 100% !important; display: block !important; }
 
       #opCreatorDock {
         display: none; position: fixed; bottom: 68px; right: 10px; z-index: 999998;
         background: #0f172a; border: 2px solid #fde047; border-radius: 14px;
-        padding: 8px; flex-direction: column; gap: 5px; width: 155px;
+        padding: 8px; flex-direction: column; gap: 5px; width: 150px;
       }
       .op-dock-btn {
         background: #2563eb; border: 1px solid #38bdf8; color: #fff;
@@ -2196,18 +2189,24 @@ module.exports = function initMultiServers(app, io) {
         z-index: 9999999; background: #090d16; border: 2.5px solid #fde047;
         padding: 12px; border-radius: 14px; text-align: center; width: 85%; max-width: 340px; color: #fff;
       }
-      #stVaultModal {
-        display: none; position: fixed; inset: 0; background: rgba(5,8,20,0.92);
+      #stVaultModal, #stZoomModal {
+        display: none; position: fixed; inset: 0; background: rgba(4,7,18,0.94);
         z-index: 999999999; align-items: center; justify-content: center; padding: 10px;
       }
       #stVaultCard {
-        background: #0f172a; border: 2px solid #38bdf8; border-radius: 16px;
-        padding: 12px; width: 100%; max-width: 380px; color: #fff; text-align: center; max-height: 85vh; overflow-y: auto;
+        background: linear-gradient(160deg,#0f172a,#1e1b4b); border: 2px solid #38bdf8;
+        border-radius: 18px; padding: 12px; width: 100%; max-width: 400px; color: #fff; text-align: center; max-height: 88vh; overflow-y: auto;
       }
-      .st-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
-      .st-item { background: rgba(255,255,255,0.07); border: 1px solid #38bdf8; border-radius: 10px; padding: 6px 3px; }
-      .st-item.locked { opacity: 0.55; border-color: #64748b; }
-      .st-art { width: 54px; height: 54px; margin: 0 auto 4px auto; border-radius: 50%; overflow: hidden; background: #020617; }
+      #stZoomCard {
+        background: linear-gradient(160deg,#090d16,#1e1b4b); border: 2.5px solid #fde047;
+        border-radius: 22px; padding: 18px; width: 100%; max-width: 290px; color: #fff; text-align: center;
+      }
+      .st-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 9px 0; }
+      .st-item { background: rgba(255,255,255,0.08); border: 1.5px solid rgba(56,189,248,0.45); border-radius: 12px; padding: 7px 3px; cursor: pointer; }
+      .st-item.locked { opacity: 0.58; border-color: #64748b; }
+      .st-art { width: 62px; height: 62px; margin: 0 auto 4px auto; border-radius: 50%; overflow: hidden; background: #020617; }
+      #stZoomRing { width: 150px; height: 150px; margin: 12px auto; border-radius: 50%; overflow: hidden; background: #020617; }
+      #stZoomRing svg, .st-art svg { width: 100%; height: 100%; display: block; }
     </style>
 
     <div id="opGiantBanner">
@@ -2217,64 +2216,155 @@ module.exports = function initMultiServers(app, io) {
 
     <div id="opCreatorDock">
       <div style="display:flex;justify-content:space-between;color:#fde047;font-size:10px;font-weight:900;">
-        <span>⚡ GOD MODE</span>
+        <span>⚡ ROYAL POWERS</span>
         <button onclick="document.getElementById('opCreatorDock').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:4px;padding:0 5px;">✕</button>
       </div>
-      <button class="op-dock-btn" onclick="sendOpFx('shake')">🌋 Screen Shake</button>
-      <button class="op-dock-btn" onclick="sendOpFx('confetti')">🎊 Party Drop</button>
-      <button class="op-dock-btn" onclick="sendOpBanner()">📢 Big Banner</button>
+      <button class="op-dock-btn" onclick="socket.emit('creatorOpAction',{type:'shake'})">🌋 Screen Shake</button>
+      <button class="op-dock-btn" onclick="socket.emit('creatorOpAction',{type:'confetti'})">🎊 Party Drop</button>
+      <button class="op-dock-btn" onclick="const m=prompt('Banner Text:');if(m)socket.emit('creatorOpAction',{type:'banner',text:m})">📢 Big Banner</button>
     </div>
 
     <div id="stVaultModal" onclick="if(event.target===this)this.style.display='none'">
       <div id="stVaultCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:900;font-size:14px;color:#38bdf8;">✨ NEON AVATAR VAULT</span>
-          <button onclick="document.getElementById('stVaultModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:3px 9px;font-weight:900;">✕</button>
+          <span style="font-weight:900;font-size:15px;color:#38bdf8;">✨ ROYAL AVATAR VAULT</span>
+          <button onclick="document.getElementById('stVaultModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:900;">✕</button>
         </div>
+        <div style="font-size:11px;color:#fde047;margin-top:4px;">Tap any player's avatar in chat to inspect!</div>
         <div class="st-grid" id="stGrid"></div>
-        <div style="display:flex;gap:5px;margin-top:6px;">
-          <input id="stCodeInput" placeholder="Code (#sammuop)..." style="flex:1;padding:7px;border-radius:8px;border:1px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
-          <button onclick="stRedeemCode()" style="padding:7px 10px;background:#a855f7;border:none;color:#fff;border-radius:8px;font-weight:bold;font-size:12px;">🔓 Unlock</button>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input id="stCodeInput" placeholder="Enter Secret Code..." style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
+          <button onclick="stRedeemCode()" style="padding:8px 12px;background:linear-gradient(90deg,#a855f7,#ec4899);border:none;color:#fff;border-radius:10px;font-weight:bold;font-size:12px;">🔓 Unlock</button>
         </div>
       </div>
     </div>
-    <script>
+
+    <div id="stZoomModal" onclick="this.style.display='none'">
+      <div id="stZoomCard" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:12px;color:#7dd3fc;">✨ CHARACTER SHOWCASE</span>
+          <button onclick="document.getElementById('stZoomModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 8px;font-weight:900;">✕</button>
+        </div>
+        <div id="stZoomRing"></div>
+        <div id="stZoomUser" style="font-size:18px;font-weight:900;color:#fff;">Player</div>
+        <div id="stZoomTitle" style="font-size:12px;color:#fde047;margin-top:3px;font-weight:bold;">Character</div>
+      </div>
+    </div>
+      <script>
     (function() {
-      function buildLiteAvatar(c1, c2, hair, neon, crown, spin) {
+      const SAMAKSH_ROYAL_SVG = '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+        '<defs>' +
+          '<radialGradient id="uBg" cx="50%" cy="32%" r="72%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="38%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#03050c"/></radialGradient>' +
+          '<radialGradient id="uSk" cx="42%" cy="30%" r="68%"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="48%" stop-color="#38bdf8"/><stop offset="85%" stop-color="#1d4ed8"/><stop offset="100%" stop-color="#1e3a8a"/></radialGradient>' +
+          '<linearGradient id="uGd" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fef9c3"/><stop offset="35%" stop-color="#facc15"/><stop offset="70%" stop-color="#d97706"/><stop offset="100%" stop-color="#78350f"/></linearGradient>' +
+          '<linearGradient id="uHr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#334155"/><stop offset="40%" stop-color="#0f172a"/><stop offset="100%" stop-color="#020617"/></linearGradient>' +
+        '</defs>' +
+        '<circle cx="50" cy="50" r="49" fill="url(#uBg)"/>' +
+        '<polygon points="50,2 56,44 44,44" fill="#fde047" opacity="0.14"/>' +
+        '<polygon points="50,98 56,44 44,44" fill="#fde047" opacity="0.14"/>' +
+        '<polygon points="2,50 44,44 44,56" fill="#38bdf8" opacity="0.14"/>' +
+        '<polygon points="98,50 44,44 44,56" fill="#38bdf8" opacity="0.14"/>' +
+        '<g class="st-spin-chakra">' +
+          '<circle cx="50" cy="44" r="39" fill="none" stroke="#fde047" stroke-width="1.6" stroke-dasharray="5 3"/>' +
+          '<circle cx="50" cy="44" r="33" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="2 3"/>' +
+          '<circle cx="50" cy="44" r="27" fill="rgba(253,224,71,0.08)" stroke="#f59e0b" stroke-width="0.9"/>' +
+          '<polygon points="50,2 52.5,9 47.5,9" fill="#fde047"/><polygon points="50,86 52.5,79 47.5,79" fill="#fde047"/>' +
+          '<polygon points="8,44 15,41.5 15,46.5" fill="#fde047"/><polygon points="92,44 85,41.5 85,46.5" fill="#fde047"/>' +
+          '<polygon points="20,14 26,18 23,21" fill="#38bdf8"/><polygon points="80,14 74,18 77,21" fill="#38bdf8"/>' +
+          '<polygon points="20,74 26,70 23,67" fill="#38bdf8"/><polygon points="80,74 74,70 77,67" fill="#38bdf8"/>' +
+        '</g>' +
+        '<path d="M13,17 Q4,50 13,83" fill="none" stroke="url(#uGd)" stroke-width="3.4" stroke-linecap="round"/>' +
+        '<path d="M13,17 Q8,50 13,83" fill="none" stroke="#fef08a" stroke-width="1"/>' +
+        '<line x1="13" y1="17" x2="13" y2="83" stroke="#ffffff" stroke-width="0.9" opacity="0.9"/>' +
+        '<line x1="87" y1="15" x2="66" y2="77" stroke="url(#uGd)" stroke-width="3.2" stroke-linecap="round"/>' +
+        '<polygon points="88,12 78,20 88,23" fill="#e0f2fe" stroke="#38bdf8" stroke-width="0.8"/>' +
+        '<polygon points="66,77 62,83 68,82" fill="#ef4444"/>' +
+        '<path d="M23,41 C16,62 21,77 28,85 L72,85 C79,77 84,62 77,41 Z" fill="url(#uHr)"/>' +
+        '<path d="M14,98 C17,73 33,66 50,66 C67,66 83,73 86,98 Z" fill="url(#uGd)" stroke="#ffffff" stroke-width="1.3"/>' +
+        '<path d="M13,84 Q23,69 35,76 L28,93 Z" fill="url(#uGd)" stroke="#fef08a" stroke-width="1.2"/>' +
+        '<path d="M87,84 Q77,69 65,76 L72,93 Z" fill="url(#uGd)" stroke="#fef08a" stroke-width="1.2"/>' +
+        '<path d="M24,72 L50,91 L76,72" fill="none" stroke="#dc2626" stroke-width="4.2" stroke-linecap="round"/>' +
+        '<path d="M27,74 L50,93 L73,74" fill="none" stroke="#fde047" stroke-width="1.3" stroke-dasharray="2 2.5"/>' +
+        '<polygon points="50,70 57,78.5 50,87 43,78.5" fill="#0ea5e9" stroke="#ffffff" stroke-width="1.5"/>' +
+        '<polygon points="50,73 54,78.5 50,84 46,78.5" fill="#bae6fd"/>' +
+        '<path d="M44,59 L44,69 Q50,72 56,69 L56,59 Z" fill="#1d4ed8"/>' +
+        '<path d="M42,67 Q50,71 58,67" fill="none" stroke="url(#uGd)" stroke-width="2.2"/>' +
+        '<path d="M33,31 C33,24 67,24 67,31 L66,48 C65,58 56,65 50,66.8 C44,65 35,58 34,48 Z" fill="url(#uSk)" stroke="#bae6fd" stroke-width="1.2"/>' +
+        '<circle cx="31.5" cy="52" r="3.2" fill="url(#uGd)" stroke="#fff" stroke-width="0.8"/>' +
+        '<circle cx="68.5" cy="52" r="3.2" fill="url(#uGd)" stroke="#fff" stroke-width="0.8"/>' +
+        '<path d="M28,41 L32,23 L41,31 L50,19 L59,31 L68,23 L72,41 C65,33 56,34 50,39 C44,34 35,33 28,41 Z" fill="url(#uHr)"/>' +
+        '<path d="M35,27 L41,32 L50,22 L59,32 L65,27" fill="none" stroke="#60a5fa" stroke-width="1.3" opacity="0.9"/>' +
+        '<rect x="30.5" y="30" width="39" height="5.8" rx="2.8" fill="#b91c1c" stroke="url(#uGd)" stroke-width="1.5"/>' +
+        '<polygon points="50,27 54,33 50,38 46,33" fill="url(#uGd)" stroke="#fff" stroke-width="0.9"/>' +
+        '<circle cx="50" cy="33" r="1.8" fill="#ef4444"/>' +
+        '<g class="st-sway-feather">' +
+          '<path d="M62,27 Q65,18 64,12" stroke="#fde047" stroke-width="1.4" fill="none"/>' +
+          '<ellipse cx="64" cy="14" rx="6.5" ry="9.2" fill="#10b981" stroke="#fde047" stroke-width="1.5"/>' +
+          '<ellipse cx="64" cy="14" rx="3.8" ry="5.4" fill="#1d4ed8"/>' +
+          '<circle cx="64" cy="14" r="1.9" fill="#fef08a"/><circle cx="64" cy="14" r="0.8" fill="#090d16"/>' +
+        '</g>' +
+        '<path d="M47.8,37 L47.8,43.5 Q50,45.5 52.2,43.5 L52.2,37" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>' +
+        '<line x1="50" y1="38" x2="50" y2="43.5" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>' +
+        '<path d="M35,45.5 L44.5,47.8 M65,45.5 L55.5,47.8" stroke="#020617" stroke-width="2.1" stroke-linecap="round"/>' +
+        '<ellipse cx="41" cy="50.5" rx="4" ry="2.9" fill="#ffffff"/>' +
+        '<circle cx="41" cy="50.5" r="2.2" fill="#0284c7"/><circle cx="41" cy="50.5" r="1.1" fill="#090d16"/>' +
+        '<circle cx="42.1" cy="49.4" r="0.95" fill="#ffffff"/>' +
+        '<ellipse cx="59" cy="50.5" rx="4" ry="2.9" fill="#ffffff"/>' +
+        '<circle cx="59" cy="50.5" r="2.2" fill="#0284c7"/><circle cx="59" cy="50.5" r="1.1" fill="#090d16"/>' +
+        '<circle cx="60.1" cy="49.4" r="0.95" fill="#ffffff"/>' +
+        '<path d="M49.6,49.5 L48.8,54.5 L50.8,55" fill="none" stroke="#1e3a8a" stroke-width="1.2" stroke-linecap="round"/>' +
+        '<path d="M44.5,58.5 Q50,62 56,57.5" stroke="#1e3a8a" stroke-width="2.1" fill="none" stroke-linecap="round"/>' +
+        '<polygon class="st-sparkle" points="14,14 16,18 20,20 16,22 14,26 12,22 8,20 12,18" fill="#ffffff"/>' +
+        '<polygon class="st-sparkle" points="86,15 88,19 92,21 88,23 86,27 84,23 80,21 84,19" fill="#bae6fd"/>' +
+      '</svg>';
+        let sc = 0;
+      function makeProAnime(o) {
+        sc++;
+        const id = 'pa_' + sc;
+        const isGirl = o.g === 'girl';
         return '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<circle cx="50" cy="50" r="49" fill="' + c1 + '"/>' +
-          '<circle cx="50" cy="46" r="41" fill="none" stroke="' + neon + '" stroke-width="2" stroke-dasharray="9 5"' + (spin ? ' class="st-spin-chakra"' : '') + '/>' +
-          '<path d="M18,98 C20,72 34,65 50,65 C66,65 80,72 82,98 Z" fill="' + c2 + '" stroke="' + neon + '" stroke-width="2"/>' +
-          '<path d="M33,32 C33,23 67,23 67,32 L65,50 C64,59 56,65 50,66 C44,65 36,59 35,50 Z" fill="#fed7aa"/>' +
-          '<circle cx="41" cy="49" r="3.5" fill="#090d16"/><circle cx="41" cy="49" r="2" fill="' + neon + '"/><circle cx="42" cy="48" r="0.9" fill="#fff"/>' +
-          '<circle cx="59" cy="49" r="3.5" fill="#090d16"/><circle cx="59" cy="49" r="2" fill="' + neon + '"/><circle cx="60" cy="48" r="0.9" fill="#fff"/>' +
-          '<path d="M44,58 Q50,62 56,57" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-          '<polygon points="24,44 20,22 34,29 42,12 50,25 58,12 66,29 80,22 76,44 63,34 50,39 37,34" fill="' + hair + '" stroke="' + neon + '" stroke-width="1.2"/>' +
-          (crown ? '<polygon points="34,23 39,10 45,18 50,6 55,18 61,10 66,23" fill="#fde047" stroke="#fff" stroke-width="1.2"/>' : '') +
+          '<defs>' +
+            '<radialGradient id="' + id + '_b" cx="40%" cy="25%" r="75%"><stop offset="0%" stop-color="' + o.bg1 + '"/><stop offset="100%" stop-color="#040712"/></radialGradient>' +
+            '<linearGradient id="' + id + '_o" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="' + o.o1 + '"/><stop offset="100%" stop-color="' + o.o2 + '"/></linearGradient>' +
+          '</defs>' +
+          '<circle cx="50" cy="50" r="49" fill="url(#' + id + '_b)"/>' +
+          '<circle cx="50" cy="47" r="40" fill="none" stroke="' + o.eye + '" stroke-width="1.4" stroke-dasharray="7 4" class="st-spin-chakra"/>' +
+          (o.wings ? '<path d="M10,48 Q22,20 38,44 Q22,60 10,48 Z M90,48 Q78,20 62,44 Q78,60 90,48 Z" fill="' + o.eye + '" opacity="0.6" stroke="#fff" stroke-width="1.2"/>' : '') +
+          (o.swords ? '<line x1="16" y1="18" x2="84" y2="84" stroke="#e2e8f0" stroke-width="3.5"/><line x1="84" y1="18" x2="16" y2="84" stroke="' + o.eye + '" stroke-width="3.5"/>' : '') +
+          (isGirl ? '<path d="M16,44 C11,72 15,93 24,99 L76,99 C85,93 89,72 84,44 C84,18 16,18 16,44 Z" fill="' + o.hair + '"/>' : '') +
+          '<path d="M18,98 C20,74 34,67 50,67 C66,67 80,74 82,98 Z" fill="url(#' + id + '_o)" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>' +
+          '<path d="M33,71 L50,87 L67,71" fill="none" stroke="#fde047" stroke-width="2.2"/>' +
+          '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="' + (o.skin || '#fcd3b2') + '"/>' +
+          '<ellipse cx="41" cy="50" rx="4" ry="3.8" fill="#fff"/><circle cx="41" cy="50" r="2.5" fill="' + o.eye + '"/><circle cx="41" cy="50" r="1.1" fill="#090d16"/><circle cx="42.2" cy="48.8" r="1.1" fill="#fff"/>' +
+          '<ellipse cx="59" cy="50" rx="4" ry="3.8" fill="#fff"/><circle cx="59" cy="50" r="2.5" fill="' + o.eye + '"/><circle cx="59" cy="50" r="1.1" fill="#090d16"/><circle cx="60.2" cy="48.8" r="1.1" fill="#fff"/>' +
+          (o.mask ? '<path d="M30,52 L70,52 L66,69 Q50,75 34,69 Z" fill="#0f172a" stroke="' + o.eye + '" stroke-width="1.5"/>' : '<path d="M44,59 Q50,63 56,58.5" stroke="#9f1239" stroke-width="2" fill="none" stroke-linecap="round"/>') +
+          (isGirl
+            ? '<path d="M26,46 C26,21 74,21 74,46 C67,33 56,33 50,42 C44,33 33,33 26,46 Z" fill="' + o.hair + '"/>'
+            : '<polygon points="24,45 19,24 34,30 41,13 50,26 59,13 66,30 81,24 76,45 63,35 50,40 37,35" fill="' + o.hair + '"/>') +
+          (o.tiara ? '<polygon points="31,26 37,12 44,21 50,8 56,21 63,12 69,26" fill="#fde047" stroke="#fff" stroke-width="1.4"/>' : '') +
+          (o.visor ? '<rect x="30" y="45" width="40" height="10" rx="5" fill="' + o.eye + '" opacity="0.88" stroke="#fff" stroke-width="1.4"/>' : '') +
         '</svg>';
       }
 
       const ITEMS = [
-        { id: 'superhost',   emoji: '🪷', name: '🪷👑 SAMAKSH',     aura: 'st-aura-samaksh', req: 'code', svg: buildLiteAvatar('#1e3a8a','#0f172a','#020617','#fde047',true,true) },
-        { id: 'host_milly',  emoji: '💖', name: '💖 Milly Queen',  aura: 'st-aura-empress', req: 'code', svg: buildLiteAvatar('#9d174d','#4c0519','#fbcfe8','#f472b6',true,true) },
-        { id: 'diamond',     emoji: '💎', name: 'Cyber Striker',   aura: 'st-aura-ice',     req: 'free', svg: buildLiteAvatar('#0369a1','#090d16','#38bdf8','#00f0ff',false,false) },
-        { id: 'phoenix',     emoji: '🔥', name: 'Blaze Assassin',  aura: 'st-aura-fire',    req: 'free', svg: buildLiteAvatar('#9a3412','#1c1917','#fb923c','#f97316',false,false) },
-        { id: 'ninja',       emoji: '🥷', name: 'Shadow Shinobi',  aura: 'st-aura-violet',  req: 'free', svg: buildLiteAvatar('#4c1d95','#090d16','#1e1b4b','#c084fc',false,false) },
-        { id: 'host_sid',    emoji: '⚡', name: '⚡ Sid Thunder',  aura: 'st-aura-ice',     req: 'code', svg: buildLiteAvatar('#1e40af','#090d16','#0284c7','#fde047',false,false) },
-        { id: 'host_shubhi', emoji: '🌷', name: '🌷 Shubhi',       aura: 'st-aura-pink',    req: 'code', svg: buildLiteAvatar('#831843','#3b0764','#f472b6','#fbcfe8',true,false) },
-        { id: 'host_zoro',   emoji: '⚔️', name: '⚔️ Zoro Dojo',    aura: 'st-aura-emerald', req: 'code', svg: buildLiteAvatar('#14532d','#052e16','#22c55e','#4ade80',false,false) },
-        { id: 'host_sarah',  emoji: '🦋', name: '🦋 Sarah',        aura: 'st-aura-ice',     req: 'code', svg: buildLiteAvatar('#075985','#1e1b4b','#7dd3fc','#38bdf8',true,false) }
+        { id: 'superhost',   emoji: '🪷', name: '🪷👑 SAMAKSH 👑🪷', aura: 'st-aura-samaksh', req: 'code', featured: true, svg: SAMAKSH_ROYAL_SVG },
+        { id: 'host_milly',  emoji: '💖', name: '💖 Milly Empress',  aura: 'st-aura-empress', req: 'code', featured: true, svg: makeProAnime({ g:'girl', bg1:'#f43f5e', skin:'#fff1f2', hair:'#fb7185', o1:'#fb7185', o2:'#be123c', eye:'#e11d48', tiara:true, wings:true }) },
+        { id: 'diamond',     emoji: '💎', name: 'Cyber Striker',     aura: 'st-aura-ice',     req: 'free', svg: makeProAnime({ g:'boy',  bg1:'#0284c7', hair:'#0284c7', o1:'#38bdf8', o2:'#0f172a', eye:'#38bdf8', visor:true }) },
+        { id: 'samurai',     emoji: '👹', name: 'Crimson Ronin',     aura: 'st-aura-fire',    req: 'free', svg: makeProAnime({ g:'boy',  bg1:'#dc2626', hair:'#0f172a', o1:'#ef4444', o2:'#7f1d1d', eye:'#facc15', swords:true }) },
+        { id: 'phoenix',     emoji: '🔥', name: 'Blaze Queen',       aura: 'st-aura-fire',    req: 'free', svg: makeProAnime({ g:'girl', bg1:'#ea580c', hair:'#ea580c', o1:'#f97316', o2:'#7c2d12', eye:'#fde047', wings:true }) },
+        { id: 'ninja',       emoji: '🥷', name: 'Shadow Shinobi',    aura: 'st-aura-violet',  req: 'free', svg: makeProAnime({ g:'boy',  bg1:'#6d28d9', hair:'#090d16', o1:'#7c3aed', o2:'#1e1b4b', eye:'#c084fc', mask:true }) },
+        { id: 'host_sid',    emoji: '⚡', name: '⚡ Sid Thunder',    aura: 'st-aura-ice',     req: 'code', svg: makeProAnime({ g:'boy',  bg1:'#2563eb', hair:'#0284c7', o1:'#3b82f6', o2:'#1e3a8a', eye:'#fde047', visor:true }) },
+        { id: 'host_shubhi', emoji: '🌷', name: '🌷 Shubhi Blossom', aura: 'st-aura-pink',    req: 'code', svg: makeProAnime({ g:'girl', bg1:'#f472b6', hair:'#e879f9', o1:'#f472b6', o2:'#be185d', eye:'#ec4899', tiara:true }) },
+        { id: 'host_zoro',   emoji: '⚔️', name: '⚔️ Zoro Dojo',      aura: 'st-aura-emerald', req: 'code', svg: makeProAnime({ g:'boy',  bg1:'#15803d', hair:'#16a34a', o1:'#22c55e', o2:'#14532d', eye:'#4ade80', swords:true }) },
+        { id: 'host_sarah',  emoji: '🦋', name: '🦋 Sarah Cyber',    aura: 'st-aura-ice',     req: 'code', svg: makeProAnime({ g:'girl', bg1:'#0284c7', hair:'#38bdf8', o1:'#38bdf8', o2:'#1e3a8a', eye:'#0284c7', tiara:true, wings:true }) },
+        { id: 'host_heer',   emoji: '🌸', name: '🌸 Heer Star',      aura: 'st-aura-pink',    req: 'code', svg: makeProAnime({ g:'girl', bg1:'#ec4899', hair:'#f472b6', o1:'#f472b6', o2:'#831843', eye:'#db2777', tiara:true }) },
+        { id: 'host_ishika', emoji: '✨', name: '✨ Ishika Gold',    aura: 'st-aura-gold',    req: 'code', svg: makeProAnime({ g:'girl', bg1:'#eab308', hair:'#facc15', o1:'#facc15', o2:'#713f12', eye:'#d97706', wings:true }) },
+        { id: 'host_izzan',  emoji: '🔥', name: '🔥 Izzan Fire',     aura: 'st-aura-fire',    req: 'code', svg: makeProAnime({ g:'boy',  bg1:'#dc2626', hair:'#dc2626', o1:'#ef4444', o2:'#7f1d1d', eye:'#fde047', swords:true }) }
       ];
-
-      let unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
-      let playerAuraMap = {}, playerPortraitMap = {}, playerAvatarIdMap = {};
+        let unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+      let playerAuraMap = {}, playerPortraitMap = {}, playerAvatarIdMap = {}, playerBadgeMap = {};
       const getUname = () => (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
 
-      window.sendOpFx = (type) => { if (typeof socket !== 'undefined') socket.emit('creatorOpAction', { type }); };
-      window.sendOpBanner = () => {
-        const msg = prompt('Enter Broadcast Text:');
-        if (msg && typeof socket !== 'undefined') socket.emit('creatorOpAction', { type: 'banner', text: msg });
-      };
       window.stRedeemCode = () => {
         const code = (document.getElementById('stCodeInput').value || '').trim();
         if (code && typeof socket !== 'undefined') socket.emit('verifyAvatarCodeV6', { code });
@@ -2288,14 +2378,15 @@ module.exports = function initMultiServers(app, io) {
           const ok = av.req === 'free' || unlocked.includes(av.id);
           const d = document.createElement('div');
           d.className = 'st-item' + (ok ? '' : ' locked');
+          if (av.featured) d.style.cssText = 'grid-column:1/-1;border:2px solid #fde047;background:rgba(250,204,21,0.14);';
           d.innerHTML =
             '<div class="st-art ' + av.aura + '">' + av.svg + '</div>' +
             '<div style="font-weight:900;font-size:10px;">' + av.name + '</div>' +
-            '<div style="font-size:9px;color:' + (ok ? '#4ade80' : '#f87171') + ';">' + (ok ? '✅ Equip' : '🔒 Code') + '</div>';
+            '<div style="font-size:9px;color:' + (ok ? '#4ade80' : '#f87171') + ';">' + (ok ? '✅ Tap to Equip' : '🔒 Secret Code') + '</div>';
           d.onclick = () => {
-            if (!ok) { alert('🔒 Enter secret code below!'); return; }
+            if (!ok) { alert('🔒 Enter secret code below to unlock!'); return; }
             const me = getUname();
-            playerAuraMap[me] = av.aura; playerPortraitMap[me] = av.svg; playerAvatarIdMap[me] = av.id;
+            playerAuraMap[me] = av.aura; playerPortraitMap[me] = av.svg; playerAvatarIdMap[me] = av.id; playerBadgeMap[me] = av.name;
             if (av.id === 'superhost') document.getElementById('opCreatorDock').style.display = 'flex';
             if (typeof socket !== 'undefined') {
               socket.emit('equipAvatarFxV6', { username: me, avatar: av.emoji, avatarId: av.id, fx: av.aura, badge: av.name });
@@ -2306,7 +2397,20 @@ module.exports = function initMultiServers(app, io) {
           grid.appendChild(d);
         });
       };
+
       document.addEventListener('click', (e) => {
+        const bubble = e.target.closest('.st-live-bubble');
+        if (bubble) {
+          e.preventDefault(); e.stopPropagation();
+          const s = bubble.getAttribute('data-sender') || '';
+          const ring = document.getElementById('stZoomRing');
+          ring.className = playerAuraMap[s] || '';
+          ring.innerHTML = bubble.innerHTML;
+          document.getElementById('stZoomUser').textContent = bubble.getAttribute('data-user') || s;
+          document.getElementById('stZoomTitle').textContent = playerBadgeMap[s] || 'Avatar';
+          document.getElementById('stZoomModal').style.display = 'flex';
+          return;
+        }
         const btn = e.target.closest('button, a, div[onclick]');
         if (btn && (btn.id === 'openAvatarVaultBtn' || /avatars/i.test((btn.textContent || '').trim()))) {
           if (btn.closest('#stVaultModal')) return;
@@ -2320,21 +2424,15 @@ module.exports = function initMultiServers(app, io) {
         const nodes = document.querySelectorAll('#chatBox b, #chatBox strong, #chatBox span, #messages b, #messages span, .player-item span');
         const list = nodes.length ? nodes : document.querySelectorAll('b, strong, span');
         list.forEach(el => {
-          if (el.children.length > 0 || el.closest('#stVaultModal') || el.closest('#opCreatorDock')) return;
+          if (el.children.length > 0 || el.closest('#stVaultModal') || el.closest('#stZoomModal') || el.closest('#opCreatorDock')) return;
           const raw = (el.textContent || '').trim();
-          const sender = raw.replace(/\s*(cap\s*[ab]|👑|creator|\[⚡ creator\]|\[👑 empress\])\s*/gi, '').trim().toLowerCase();
+          const sender = raw.replace(/\s*(cap\s*[ab]|👑|creator)\s*/gi, '').trim().toLowerCase();
           if (!sender || sender.length > 22) return;
 
           const avId = playerAvatarIdMap[sender];
           if (!avId) return;
 
-          if ((avId === 'superhost' || avId === 'host_milly') && !el.dataset.opTagged) {
-            el.dataset.opTagged = '1';
-            const tag = document.createElement('span');
-            tag.className = (avId === 'superhost') ? 'op-tag-creator' : 'op-tag-empress';
-            tag.textContent = (avId === 'superhost') ? '⚡ CREATOR' : '👑 EMPRESS';
-            el.appendChild(tag);
-
+          if (avId === 'superhost' || avId === 'host_milly') {
             let row = el.parentElement;
             if (row && row.nextElementSibling && !row.nextElementSibling.querySelector('input, button')) {
               row.nextElementSibling.classList.add(avId === 'host_milly' ? 'st-chat-milly' : 'st-chat-rainbow');
@@ -2348,12 +2446,11 @@ module.exports = function initMultiServers(app, io) {
           );
           if (iconSpan) {
             container.dataset.stStamp = avId;
-            iconSpan.innerHTML = '<span class="st-live-bubble ' + (playerAuraMap[sender] || '') + '">' + playerPortraitMap[sender] + '</span>';
+            iconSpan.innerHTML = '<span class="st-live-bubble ' + (playerAuraMap[sender] || '') + '" data-user="' + raw.replace(/"/g,'') + '" data-sender="' + sender + '">' + playerPortraitMap[sender] + '</span>';
           }
         });
       }
-
-      let renderQueued = false;
+        let renderQueued = false;
       const obs = new MutationObserver(() => {
         if (!renderQueued) {
           renderQueued = true;
@@ -2367,12 +2464,24 @@ module.exports = function initMultiServers(app, io) {
           window._stSockReady = true;
           socket.emit('getMyAvatarStatsV6');
 
+          const origEmit = socket.emit.bind(socket);
+          socket.emit = function(ev, payload, ...rest) {
+            if (ev === 'chatMessage' && payload) {
+              const txt = (typeof payload === 'object' ? payload.text : payload) || '';
+              if (txt.trim().toLowerCase() === '/op' && unlocked.includes('superhost')) {
+                document.getElementById('opCreatorDock').style.display = 'flex';
+                return socket;
+              }
+            }
+            return origEmit(ev, payload, ...rest);
+          };
+
           socket.on('avatarStatsDataV6', (d) => {
             if (d && d.avatarMap) {
               Object.entries(d.avatarMap).forEach(([u, info]) => {
                 const found = ITEMS.find(x => x.id === info.avatarId);
                 if (found) {
-                  playerAuraMap[u] = found.aura; playerPortraitMap[u] = found.svg; playerAvatarIdMap[u] = found.id;
+                  playerAuraMap[u] = found.aura; playerPortraitMap[u] = found.svg; playerAvatarIdMap[u] = found.id; playerBadgeMap[u] = found.name;
                 }
               });
               renderStudioBubbles();
@@ -2396,9 +2505,9 @@ module.exports = function initMultiServers(app, io) {
           socket.on('triggerCreatorFx', (fx) => {
             if (fx._serverId && fx._serverId !== window.selectedServerId) return;
             if (fx.type === 'shake') {
-              document.body.classList.remove('op-screen-shake');
-              void document.body.offsetWidth;
-              document.body.classList.add('op-screen-shake');
+              document.body.style.transform = 'translateX(-6px)';
+              setTimeout(() => document.body.style.transform = 'translateX(6px)', 80);
+              setTimeout(() => document.body.style.transform = '', 160);
             } else if (fx.type === 'banner') {
               const b = document.getElementById('opGiantBanner');
               document.getElementById('opBannerText').textContent = fx.text;
@@ -2406,7 +2515,7 @@ module.exports = function initMultiServers(app, io) {
               setTimeout(() => { b.style.display = 'none'; }, 4500);
             } else if (fx.type === 'confetti') {
               const box = document.createElement('div');
-              box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999999;display:flex;justify-content:space-around;font-size:26px;padding-top:20px;';
+              box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999999;display:flex;justify-content:space-around;font-size:28px;padding-top:25px;';
               box.innerHTML = '<span>🎉</span><span>💎</span><span>👑</span><span>🔥</span><span>✨</span>';
               document.body.appendChild(box);
               setTimeout(() => box.remove(), 2000);
@@ -2442,6 +2551,5 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
 };
-                 
 
 };

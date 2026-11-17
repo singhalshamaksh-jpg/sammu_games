@@ -1185,7 +1185,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
           '<line x1="16" y1="85" x2="84" y2="73" stroke="url(#uGold)" stroke-width="4.2" stroke-linecap="round"/>' +
         '</svg>'
     
-        
+        );
 
     app.locals.AVATAR_RPG_UI = COMBINED_UI
         .replace('img: KRISHNA_URI', 'img: "' + KRISHNA_FIXED + '"')

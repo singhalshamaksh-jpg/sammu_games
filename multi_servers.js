@@ -2084,11 +2084,11 @@ module.exports = function initMultiServers(app, io) {
         });
     });
     // === END phonk======  //       
-      // === V8 ULTRA AVATAR ENGINE - PART 1 ===
+     // === V14 COMPLETE ARMORY & ECONOMY - PIECE 1 ===
     OG_HOSTS.delete("Zaira");
     OG_HOSTS.add("zaira");
 
-    const V8_SECRET_CODES = {
+    const V14_SECRET_CODES = {
         '#sammuop':    { avatarId: 'superhost',   name: '🪷👑 SAMAKSH 👑🪷' },
         '#millyqueen': { avatarId: 'host_milly',  name: '👸💖 Princess Milly' },
         '#moongalaxy': { avatarId: 'host_moon',   name: '🩺🌙 Dr. Moon' },
@@ -2099,25 +2099,58 @@ module.exports = function initMultiServers(app, io) {
         '#sarahfly':   { avatarId: 'host_sarah',  name: '🦋 Sarah Valkyrie' },
         '#heerstar':   { avatarId: 'host_heer',   name: '🌸 Heer Starlight' },
         '#izzanfire':  { avatarId: 'host_izzan',  name: '🔥 Izzan Dragon' },
-        '#susshadow':  { avatarId: 'host_sus',    name: '👀 Sus Shadow-Queen' },
+        '#susshadow':  { avatarId: 'host_sus',    name: '👸💚 Princess Sus' },
         '#zairaorbit': { avatarId: 'host_zaira',  name: '🪐 Zaira Nova' },
         '#advaitvolt': { avatarId: 'host_advait', name: '⚡ Advait Titan' },
         '#ruwiibloom': { avatarId: 'host_ruwii',  name: '🌺 Ruwii Kitsune' }
     };
-     // === V8 ULTRA AVATAR ENGINE - PART 2 ===
-    const v8EquippedDB = {};
-    const AV_REFS_FILE = path.join(__dirname, 'avatar_refs_db.json');
-    let avatarRefsDB = {};
-    if (fs.existsSync(AV_REFS_FILE)) {
-        try { avatarRefsDB = JSON.parse(fs.readFileSync(AV_REFS_FILE, 'utf8')); } catch (e) {}
-    }
-    function saveAvRefs() {
-        try { fs.writeFileSync(AV_REFS_FILE, JSON.stringify(avatarRefsDB, null, 2)); } catch (e) {}
-    }
 
+    const v14EquippedDB = {};
+    const AV_REFS_FILE = path.join(__dirname, 'avatar_refs_db.json');
+    const ECON_DB_FILE = path.join(__dirname, 'player_economy_db.json');
+    let avatarRefsDB = {};
+    let econDB = {};
+
+    if (fs.existsSync(AV_REFS_FILE)) { try { avatarRefsDB = JSON.parse(fs.readFileSync(AV_REFS_FILE, 'utf8')); } catch (e) {} }
+    if (fs.existsSync(ECON_DB_FILE)) { try { econDB = JSON.parse(fs.readFileSync(ECON_DB_FILE, 'utf8')); } catch (e) {} }
+
+    function saveAvRefs() { try { fs.writeFileSync(AV_REFS_FILE, JSON.stringify(avatarRefsDB, null, 2)); } catch (e) {} }
+    function saveEcon()   { try { fs.writeFileSync(ECON_DB_FILE, JSON.stringify(econDB, null, 2)); } catch (e) {} }
+    function getOrCreateEcon(u) {
+        const c = (u || '').trim().toLowerCase();
+        if (!c) return null;
+        if (!econDB[c]) econDB[c] = { mvp: 0, streak: 0, lastDay: '', unlocked: [], customTitle: '' };
+        return econDB[c];
+    }
+      // === V14 COMPLETE ARMORY & ECONOMY - PIECE 2 ===
     io.on('connection', (socket) => {
+        socket.on('joinRoom', (data) => {
+            const uname = (data && data.username) ? data.username.trim().toLowerCase() : '';
+            if (!uname) return;
+            const rec = getOrCreateEcon(uname);
+            const today = new Date().toISOString().slice(0, 10);
+            const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+            if (rec.lastDay !== today) {
+                rec.streak = (rec.lastDay === yesterday) ? (rec.streak + 1) : 1;
+                rec.lastDay = today;
+                if (rec.streak >= 10 && !rec.unlocked.includes('streak_10_phoenix')) {
+                    rec.unlocked.push('streak_10_phoenix');
+                    setTimeout(() => {
+                        socket.emit('message', {
+                            username: "Sammu's Bot",
+                            text: `🔥🎉 **10-DAY STREAK COMPLETE!** **${data.username}** unlocked **🔥 Phoenix Warlord** in the Guild Armory! 🏆`,
+                            _serverId: socket.activeServerId
+                        });
+                    }, 1200);
+                }
+                saveEcon();
+            }
+            socket.emit('v14EconSync', rec);
+        });
+
         socket.on('verifyAvatarCodeV6', ({ code }) => {
-            const match = V8_SECRET_CODES[(code || '').trim().toLowerCase()];
+            const match = V14_SECRET_CODES[(code || '').trim().toLowerCase()];
             if (match) {
                 socket.isCodeVerified = match.avatarId;
                 socket.emit('avatarCodeResultV6', { ok: true, avatarId: match.avatarId, name: match.name });
@@ -2133,80 +2166,106 @@ module.exports = function initMultiServers(app, io) {
             const isMilly = (data.avatarId === 'host_milly') && (verifyOGHostTripleLock(cleanU, socket, false) || socket.isCodeVerified === 'host_milly');
             if ((data.avatarId === 'superhost' && !isCreator) || (data.avatarId === 'host_milly' && !isMilly)) return;
 
-            v8EquippedDB[cleanU] = { avatarId: data.avatarId, fx: data.fx, badge: data.badge };
-            if (socket.activeServerId) io.to(socket.activeServerId).emit('avatarStatsDataV6', { avatarMap: v8EquippedDB });
-        });
-
-        socket.on('getMyAvatarStatsV6', () => socket.emit('avatarStatsDataV6', { avatarMap: v8EquippedDB }));
-
-        socket.on('creatorOpAction', (data) => {
-            if (!socket.activeServerId || !data || !data.type) return;
-            const cleanU = (socket.username || '').trim().toLowerCase();
-            const eq = v8EquippedDB[cleanU];
-            if (!(eq && eq.avatarId === 'superhost') && !verifyOGHostTripleLock(cleanU, socket, false)) return;
-            io.to(socket.activeServerId).emit('triggerCreatorFx', { type: data.type, text: data.text || '', _serverId: socket.activeServerId });
-        });
-
-        socket.on('registerAvatarRef', ({ refUser, deviceId }) => {
-            if (!refUser || !deviceId) return;
-            const cleanRef = refUser.trim().toLowerCase();
-            if (!cleanRef) return;
-            if (!avatarRefsDB[cleanRef]) avatarRefsDB[cleanRef] = [];
-            if (!avatarRefsDB[cleanRef].includes(deviceId)) {
-                avatarRefsDB[cleanRef].push(deviceId);
-                saveAvRefs();
-                io.emit('avatarRefCountUpdate', { username: cleanRef, count: avatarRefsDB[cleanRef].length });
+            v14EquippedDB[cleanU] = { avatarId: data.avatarId, fx: data.fx, badge: data.badge };
+            if (socket.activeServerId) {
+                io.to(socket.activeServerId).emit('avatarStatsDataV6', { avatarMap: v14EquippedDB });
+                if (data.avatarId === 'superhost' || data.avatarId.startsWith('host_')) {
+                    io.to(socket.activeServerId).emit('v14BossArrival', { player: data.username, title: data.badge, _serverId: socket.activeServerId });
+                }
             }
         });
 
-        socket.on('getMyAvatarRefCount', (username) => {
-            const cleanU = (username || '').trim().toLowerCase();
-            socket.emit('avatarRefCountUpdate', { username: cleanU, count: (cleanU && avatarRefsDB[cleanU]) ? avatarRefsDB[cleanU].length : 0 });
+        socket.on('getMyAvatarStatsV6', () => socket.emit('avatarStatsDataV6', { avatarMap: v14EquippedDB }));
+        socket.on('getV14Econ', (u) => { const r = getOrCreateEcon(u); if (r) socket.emit('v14EconSync', r); });
+        socket.on('syncEarnedMvp', ({ username, pts }) => {
+            const r = getOrCreateEcon(username);
+            if (r) { r.mvp = Math.max(r.mvp, Number(pts) || 0); saveEcon(); socket.emit('v14EconSync', r); }
+        });
+
+        socket.on('buyV14ShopItem', ({ username, itemType, itemId, cost, label }) => {
+            const r = getOrCreateEcon(username);
+            const price = Number(cost) || 0;
+            if (!r || r.mvp < price) return socket.emit('v14ShopResult', { ok: false, msg: `❌ Need ${price} MVP Points! (You have ${r ? r.mvp : 0})` });
+            if (itemType === 'avatar') {
+                if (r.unlocked.includes(itemId)) return;
+                r.mvp -= price; r.unlocked.push(itemId);
+            } else if (itemType === 'title') {
+                r.mvp -= price; r.customTitle = label;
+                if (v14EquippedDB[username.toLowerCase()]) v14EquippedDB[username.toLowerCase()].badge = label;
+                else v14EquippedDB[username.toLowerCase()] = { avatarId: 'diamond', fx: 'v14-ring-gold', badge: label };
+                if (socket.activeServerId) io.to(socket.activeServerId).emit('avatarStatsDataV6', { avatarMap: v14EquippedDB });
+            }
+            saveEcon();
+            socket.emit('v14EconSync', r);
+            socket.emit('v14ShopResult', { ok: true, msg: `🎉 Unlocked ${label}!` });
+        });
+
+        socket.on('registerAvatarRef', ({ refUser, deviceId }) => {
+            const c = (refUser || '').trim().toLowerCase();
+            if (!c || !deviceId) return;
+            if (!avatarRefsDB[c]) avatarRefsDB[c] = [];
+            if (!avatarRefsDB[c].includes(deviceId)) { avatarRefsDB[c].push(deviceId); saveAvRefs(); io.emit('avatarRefCountUpdate', { username: c, count: avatarRefsDB[c].length }); }
+        });
+
+        socket.on('getMyAvatarRefCount', (u) => {
+            const c = (u || '').trim().toLowerCase();
+            socket.emit('avatarRefCountUpdate', { username: c, count: (c && avatarRefsDB[c]) ? avatarRefsDB[c].length : 0 });
+        });
+
+        socket.on('creatorOpAction', (data) => {
+            if (!socket.activeServerId || !data || !data.type) return;
+            const c = (socket.username || '').trim().toLowerCase();
+            if (!(v14EquippedDB[c] && v14EquippedDB[c].avatarId === 'superhost') && !verifyOGHostTripleLock(c, socket, false)) return;
+            io.to(socket.activeServerId).emit('triggerCreatorFx', { type: data.type, text: data.text || '', _serverId: socket.activeServerId });
         });
     });
-    // === V8 ULTRA AVATAR ENGINE - PART 3 ===
-    const V8_HOLOGRAPHIC_CLIENT = `
+    // === V14 COMPLETE ARMORY & ECONOMY - PIECE 3 ===
+    const V14_CLIENT_BUNDLE = `
     <style>
-      @keyframes v8Spin { to { transform: rotate(360deg); } }
-      @keyframes v8CounterSpin { to { transform: rotate(-360deg); } }
-      @keyframes v8Prism { 0% { border-color:#fde047; box-shadow:0 0 14px #fde047; } 33% { border-color:#38bdf8; box-shadow:0 0 14px #38bdf8; } 66% { border-color:#f43f5e; box-shadow:0 0 14px #f43f5e; } 100% { border-color:#fde047; box-shadow:0 0 14px #fde047; } }
-      .v8-spin { transform-origin: 50px 46px; animation: v8Spin 8s linear infinite; }
-      .v8-cspin { transform-origin: 50px 46px; animation: v8CounterSpin 13s linear infinite; }
-      .v8-aura-samaksh { border: 2.5px solid #fde047 !important; animation: v8Prism 2.5s linear infinite !important; }
-      .v8-aura-empress { border: 2.5px solid #fbcfe8 !important; box-shadow: 0 0 12px #f472b6 !important; }
-      .v8-aura-ice     { border: 2px solid #38bdf8 !important; box-shadow: 0 0 8px #0284c7 !important; }
-      .v8-aura-fire    { border: 2px solid #f97316 !important; box-shadow: 0 0 8px #dc2626 !important; }
-      .v8-aura-pink    { border: 2px solid #f472b6 !important; box-shadow: 0 0 8px #ec4899 !important; }
-      .v8-aura-emerald { border: 2px solid #4ade80 !important; box-shadow: 0 0 8px #10b981 !important; }
-      .v8-aura-gold    { border: 2px solid #fde047 !important; box-shadow: 0 0 10px #eab308 !important; }
-      .v8-aura-violet  { border: 2px solid #c084fc !important; box-shadow: 0 0 8px #9333ea !important; }
-      .v8-glow-samaksh { background: linear-gradient(120deg, rgba(255,0,85,0.36), rgba(253,224,71,0.28), rgba(0,240,255,0.36)) !important; border: 2px solid #fde047 !important; box-shadow: 0 0 14px rgba(253,224,71,0.5) !important; border-radius: 14px !important; color: #fff !important; font-weight: 800 !important; }
-      .v8-glow-empress { background: linear-gradient(135deg, rgba(244,114,182,0.38), rgba(251,207,232,0.24)) !important; border: 2px solid #fbcfe8 !important; box-shadow: 0 0 12px rgba(244,114,182,0.5) !important; border-radius: 14px !important; color: #fff !important; font-weight: 800 !important; }
-      .v8-glow-ice     { background: linear-gradient(135deg, rgba(2,132,199,0.34), rgba(56,189,248,0.22)) !important; border: 1.5px solid #38bdf8 !important; box-shadow: 0 0 10px rgba(56,189,248,0.4) !important; border-radius: 14px !important; color: #fff !important; }
-      .v8-glow-fire    { background: linear-gradient(135deg, rgba(220,38,38,0.34), rgba(249,115,22,0.24)) !important; border: 1.5px solid #fb923c !important; box-shadow: 0 0 10px rgba(249,115,22,0.4) !important; border-radius: 14px !important; color: #fff !important; }
-      .v8-glow-pink    { background: linear-gradient(135deg, rgba(219,39,119,0.32), rgba(244,114,182,0.22)) !important; border: 1.5px solid #f472b6 !important; box-shadow: 0 0 10px rgba(244,114,182,0.4) !important; border-radius: 14px !important; color: #fff !important; }
-      .v8-glow-emerald { background: linear-gradient(135deg, rgba(5,150,105,0.34), rgba(74,222,128,0.22)) !important; border: 1.5px solid #4ade80 !important; box-shadow: 0 0 10px rgba(74,222,128,0.4) !important; border-radius: 14px !important; color: #fff !important; }
-      .v8-glow-gold    { background: linear-gradient(135deg, rgba(217,119,6,0.34), rgba(253,224,71,0.24)) !important; border: 1.5px solid #fde047 !important; box-shadow: 0 0 10px rgba(253,224,71,0.4) !important; border-radius: 14px !important; color: #fff !important; }
-      .v8-glow-violet  { background: linear-gradient(135deg, rgba(124,58,237,0.34), rgba(192,132,252,0.24)) !important; border: 1.5px solid #c084fc !important; box-shadow: 0 0 10px rgba(192,132,252,0.4) !important; border-radius: 14px !important; color: #fff !important; }
-      .v8-bubble { position:relative !important; display:inline-flex !important; width:42px !important; height:42px !important; border-radius:50% !important; overflow:hidden !important; vertical-align:middle !important; margin-right:6px !important; background:#03050c !important; flex-shrink:0 !important; cursor:pointer !important; }
-      .v8-bubble svg, .v8-bubble canvas { position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; display:block !important; }
-      .v8-bubble canvas { pointer-events:none !important; z-index:2 !important; }
-       /* === V8 ULTRA AVATAR ENGINE - PART 4 === */
+      @keyframes v14Chakra3D { 0% { transform: perspective(260px) rotateX(58deg) rotateY(-12deg) rotateZ(0deg); } 50% { transform: perspective(260px) rotateX(52deg) rotateY(12deg) rotateZ(180deg); } 100% { transform: perspective(260px) rotateX(58deg) rotateY(-12deg) rotateZ(360deg); } }
+      @keyframes v14PrismGlow { 0%, 100% { box-shadow: 0 0 10px #fde047; border-color: #fde047; } 50% { box-shadow: 0 0 12px #38bdf8; border-color: #38bdf8; } }
+      @keyframes v14BossIn { 0% { transform: translate(-50%,-50%) scale(0.7); opacity: 0; } 15% { transform: translate(-50%,-50%) scale(1.03); opacity: 1; } 85% { transform: translate(-50%,-50%) scale(1); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1.1); opacity: 0; } }
+
+      .v14-chakra-3d { transform-origin: 50px 48px; animation: v14Chakra3D 8s linear infinite; }
+      .v14-ring-samaksh { border: 2.5px solid #fde047 !important; animation: v14PrismGlow 2.6s ease-in-out infinite !important; }
+      .v14-ring-empress { border: 2.5px solid #fbcfe8 !important; box-shadow: 0 0 10px #f472b6 !important; }
+      .v14-ring-ice     { border: 2px solid #38bdf8 !important; box-shadow: 0 0 8px #0284c7 !important; }
+      .v14-ring-fire    { border: 2px solid #fb923c !important; box-shadow: 0 0 8px #ea580c !important; }
+      .v14-ring-pink    { border: 2px solid #f472b6 !important; box-shadow: 0 0 8px #ec4899 !important; }
+      .v14-ring-emerald { border: 2px solid #4ade80 !important; box-shadow: 0 0 8px #10b981 !important; }
+      .v14-ring-gold    { border: 2px solid #fde047 !important; box-shadow: 0 0 8px #eab308 !important; }
+      .v14-ring-violet  { border: 2px solid #c084fc !important; box-shadow: 0 0 8px #9333ea !important; }
+
+      .v14-chat-samaksh { background: linear-gradient(120deg, rgba(255,0,85,0.34), rgba(253,224,71,0.26), rgba(0,240,255,0.34)) !important; border: 2px solid #fde047 !important; border-radius: 14px !important; color: #fff !important; font-weight: 800 !important; }
+      .v14-chat-empress { background: linear-gradient(135deg, rgba(244,114,182,0.36), rgba(251,207,232,0.22)) !important; border: 2px solid #fbcfe8 !important; border-radius: 14px !important; color: #fff !important; font-weight: 800 !important; }
+      .v14-chat-ice     { background: linear-gradient(135deg, rgba(2,132,199,0.32), rgba(56,189,248,0.18)) !important; border: 1.5px solid #38bdf8 !important; border-radius: 14px !important; color: #fff !important; }
+      .v14-chat-fire    { background: linear-gradient(135deg, rgba(220,38,38,0.32), rgba(249,115,22,0.2)) !important; border: 1.5px solid #fb923c !important; border-radius: 14px !important; color: #fff !important; }
+      .v14-chat-pink    { background: linear-gradient(135deg, rgba(219,39,119,0.3), rgba(244,114,182,0.18)) !important; border: 1.5px solid #f472b6 !important; border-radius: 14px !important; color: #fff !important; }
+      .v14-chat-emerald { background: linear-gradient(135deg, rgba(5,150,105,0.32), rgba(74,222,128,0.18)) !important; border: 1.5px solid #4ade80 !important; border-radius: 14px !important; color: #fff !important; }
+      .v14-chat-gold    { background: linear-gradient(135deg, rgba(217,119,6,0.32), rgba(253,224,71,0.2)) !important; border: 1.5px solid #fde047 !important; border-radius: 14px !important; color: #fff !important; }
+      .v14-chat-violet  { background: linear-gradient(135deg, rgba(124,58,237,0.32), rgba(192,132,252,0.2)) !important; border: 1.5px solid #c084fc !important; border-radius: 14px !important; color: #fff !important; }
+
+      .v14-bubble { position:relative !important; display:inline-flex !important; width:40px !important; height:40px !important; border-radius:50% !important; overflow:hidden !important; vertical-align:middle !important; margin-right:6px !important; background:#090d16 !important; flex-shrink:0 !important; cursor:pointer !important; }
+      .v14-bubble img, .st-art img, #stZoomRing img { width:100% !important; height:100% !important; object-fit:cover !important; display:block !important; border-radius:50% !important; }
+      .v14-pin { position:absolute; bottom:-1px; right:-1px; font-size:12px; filter:drop-shadow(0 1px 2px #000); }
+      .v14-title-pill { display:inline-block; font-size:9px; font-weight:900; padding:1px 6px; border-radius:8px; margin-left:5px; background:#1e1b4b; border:1px solid #fde047; color:#fde047; vertical-align:middle; }
+       /* === V14 COMPLETE ARMORY & ECONOMY - PIECE 4 === */
+      #v14BossSlash { display:none; position:fixed; top:25%; left:50%; z-index:99999999; background:linear-gradient(90deg,#090d16,#311042,#7c2d12,#090d16); border-top:2px solid #fde047; border-bottom:2px solid #38bdf8; padding:10px 22px; text-align:center; color:#fff; min-width:260px; pointer-events:none; animation:v14BossIn 3.1s ease-in-out forwards; }
       #opCreatorDock { display:none; position:fixed; bottom:68px; right:10px; z-index:999998; background:#0f172a; border:2px solid #fde047; border-radius:14px; padding:8px; flex-direction:column; gap:5px; width:150px; }
       .op-dock-btn { background:#2563eb; border:1px solid #38bdf8; color:#fff; font-weight:800; font-size:11px; padding:6px; border-radius:8px; }
       #opGiantBanner { display:none; position:fixed; top:18%; left:50%; transform:translateX(-50%); z-index:9999999; background:#090d16; border:2.5px solid #fde047; padding:12px; border-radius:14px; text-align:center; width:85%; max-width:340px; color:#fff; }
-      #stVaultModal, #stZoomModal { display:none; position:fixed; inset:0; background:rgba(4,7,18,0.94); z-index:999999999; align-items:center; justify-content:center; padding:10px; }
-      #stVaultCard { background:linear-gradient(160deg,#0f172a,#1e1b4b); border:2px solid #38bdf8; border-radius:18px; padding:12px; width:100%; max-width:400px; color:#fff; text-align:center; max-height:88vh; overflow-y:auto; }
+      #stVaultModal, #stZoomModal { display:none; position:fixed; inset:0; background:rgba(4,7,18,0.95); z-index:999999999; align-items:center; justify-content:center; padding:10px; }
+      #stVaultCard { background:linear-gradient(160deg,#0f172a,#1e1b4b); border:2px solid #38bdf8; border-radius:18px; padding:12px; width:100%; max-width:410px; color:#fff; text-align:center; max-height:88vh; overflow-y:auto; }
       #stZoomCard { background:linear-gradient(160deg,#090d16,#1e1b4b); border:2.5px solid #fde047; border-radius:22px; padding:18px; width:100%; max-width:290px; color:#fff; text-align:center; }
-      .st-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:7px; margin:9px 0; }
-      .st-item { background:rgba(255,255,255,0.08); border:1.5px solid rgba(56,189,248,0.45); border-radius:12px; padding:7px 3px; cursor:pointer; }
-      .st-item.locked { opacity:0.58; border-color:#64748b; }
-      .st-art { position:relative; width:64px; height:64px; margin:0 auto 4px auto; border-radius:50%; overflow:hidden; background:#020617; }
-      #stZoomRing { position:relative; width:155px; height:155px; margin:12px auto; border-radius:50%; overflow:hidden; background:#020617; }
-      #stZoomRing svg, #stZoomRing canvas, .st-art svg, .st-art canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
-      #stZoomRing canvas, .st-art canvas { pointer-events:none; z-index:2; }
+      .st-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:7px; margin:8px 0; }
+      .st-item { background:rgba(255,255,255,0.08); border:1.5px solid rgba(56,189,248,0.45); border-radius:12px; padding:7px 4px; cursor:pointer; }
+      .st-item.locked { opacity:0.62; border-color:#64748b; }
+      .st-art { position:relative; width:64px; height:64px; margin:0 auto 4px auto; border-radius:50%; overflow:hidden; background:#090d16; }
+      #stZoomRing { position:relative; width:155px; height:155px; margin:12px auto; border-radius:50%; overflow:hidden; background:#090d16; }
+      .v14-dot { width:20px; height:20px; border-radius:50%; border:2px solid #fff; cursor:pointer; }
     </style>
 
+    <div id="v14BossSlash"><div style="font-size:10px;letter-spacing:1.5px;color:#fde047;font-weight:900;">⚡ MYTHIC CHALLENGER APPEARED ⚡</div><div id="v14BossName" style="font-size:18px;font-weight:900;"></div><div id="v14BossTitle" style="font-size:12px;color:#38bdf8;font-weight:800;"></div></div>
     <div id="opGiantBanner"><div style="font-size:10px;color:#fde047;font-weight:900;">⚡ CREATOR BROADCAST ⚡</div><div id="opBannerText" style="font-size:16px;font-weight:900;margin-top:3px;"></div></div>
     <div id="opCreatorDock">
       <div style="display:flex;justify-content:space-between;color:#fde047;font-size:10px;font-weight:900;"><span>⚡ ROYAL POWERS</span><button onclick="document.getElementById('opCreatorDock').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:4px;padding:0 5px;">✕</button></div>
@@ -2218,14 +2277,23 @@ module.exports = function initMultiServers(app, io) {
     <div id="stVaultModal" onclick="if(event.target===this)this.style.display='none'">
       <div id="stVaultCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:900;font-size:15px;color:#38bdf8;">🌌 HOLOGRAPHIC AVATAR VAULT</span>
+          <span style="font-weight:900;font-size:15px;color:#38bdf8;">⚔️ SAMMU GUILD ARMORY</span>
           <button onclick="document.getElementById('stVaultModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:900;">✕</button>
         </div>
-        <div style="font-size:11px;color:#fde047;margin-top:4px;">Tap any player's avatar in chat to inspect!</div>
+        <div id="v14WalletTop" style="margin-top:6px;"></div>
         <div class="st-grid" id="stGrid"></div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
+        <div style="display:flex;gap:6px;margin-top:6px;">
           <input id="stCodeInput" placeholder="Enter Secret Code..." style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #c084fc;background:#090d16;color:#fff;font-size:12px;">
           <button onclick="stRedeemCode()" style="padding:8px 12px;background:linear-gradient(90deg,#a855f7,#ec4899);border:none;color:#fff;border-radius:10px;font-weight:bold;font-size:12px;">🔓 Unlock</button>
+        </div>
+        <div style="display:flex;gap:7px;justify-content:center;align-items:center;margin-top:8px;padding:6px;background:rgba(255,255,255,0.05);border-radius:12px;">
+          <span style="font-size:10px;font-weight:900;color:#cbd5e1;">Aura:</span>
+          <div class="v14-dot" style="background:linear-gradient(45deg,#fde047,#38bdf8,#f43f5e);" onclick="switchMyAura('v14-ring-samaksh')"></div>
+          <div class="v14-dot" style="background:#f472b6;" onclick="switchMyAura('v14-ring-empress')"></div>
+          <div class="v14-dot" style="background:#38bdf8;" onclick="switchMyAura('v14-ring-ice')"></div>
+          <div class="v14-dot" style="background:#fb923c;" onclick="switchMyAura('v14-ring-fire')"></div>
+          <div class="v14-dot" style="background:#4ade80;" onclick="switchMyAura('v14-ring-emerald')"></div>
+          <div class="v14-dot" style="background:#fde047;" onclick="switchMyAura('v14-ring-gold')"></div>
         </div>
       </div>
     </div>
@@ -2242,272 +2310,223 @@ module.exports = function initMultiServers(app, io) {
       </div>
     </div>
      <script>
-    // === V8 ULTRA AVATAR ENGINE - PART 5 ===
+    // === V14 COMPLETE ARMORY & ECONOMY - PIECE 5 ===
     (function() {
       const urlP = new URLSearchParams(window.location.search);
-      const pendingAvRef = urlP.get('avref');
-      if (pendingAvRef) localStorage.setItem('sammu_pending_avref', pendingAvRef.trim().toLowerCase());
+      if (urlP.get('avref')) localStorage.setItem('sammu_pending_avref', urlP.get('avref').trim().toLowerCase());
       let myRefCount = parseInt(localStorage.getItem('sammu_my_avref_count') || '0', 10);
-      let uid = 0;
+      let myEcon = { mvp: 0, streak: 1, unlocked: [], customTitle: '' };
 
-      function makeV8Char(o) {
-        uid++;
-        const id = 'v8c_' + uid;
-        const isGirl = o.g === 'girl';
-        const sp = o.species || 'human';
+      const SAMAKSH_3D_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+        '<defs><radialGradient id="sBg" cx="50%" cy="32%" r="74%"><stop offset="0%" stop-color="#fde047"/><stop offset="35%" stop-color="#6d28d9"/><stop offset="100%" stop-color="#02040a"/></radialGradient>' +
+        '<linearGradient id="sGd" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fef9c3"/><stop offset="50%" stop-color="#facc15"/><stop offset="100%" stop-color="#78350f"/></linearGradient>' +
+        '<radialGradient id="sSk" cx="42%" cy="30%" r="68%"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="50%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#1e3a8a"/></radialGradient></defs>' +
+        '<circle cx="50" cy="50" r="49" fill="url(#sBg)"/>' +
+        '<g class="v14-chakra-3d"><circle cx="50" cy="48" r="44" fill="none" stroke="url(#sGd)" stroke-width="4.2"/><circle cx="50" cy="48" r="38" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="4 3"/>' +
+        '<polygon points="50,0 54,8 46,8" fill="#fde047"/><polygon points="50,96 54,88 46,88" fill="#fde047"/><polygon points="2,48 10,44 10,52" fill="#fde047"/><polygon points="98,48 90,44 90,52" fill="#fde047"/>' +
+        '<polygon points="15,13 23,17 19,22" fill="#38bdf8"/><polygon points="85,13 77,17 81,22" fill="#38bdf8"/><polygon points="15,83 23,79 19,74" fill="#38bdf8"/><polygon points="85,83 77,79 81,74" fill="#38bdf8"/></g>' +
+        '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="url(#sGd)" stroke="#fef9c3" stroke-width="1.4"/>' +
+        '<path d="M31,70 L50,89 L69,70" fill="none" stroke="#dc2626" stroke-width="4"/><polygon points="50,72 56,79 50,86 44,79" fill="#38bdf8" stroke="#fff" stroke-width="1.3"/>' +
+        '<path d="M33,31 C33,24 67,24 67,31 L66,48 C65,58 56,65 50,66.8 C44,65 35,58 34,48 Z" fill="url(#sSk)" stroke="#bae6fd" stroke-width="1.2"/>' +
+        '<path d="M27,42 L32,22 L41,30 L50,18 L59,30 L68,22 L73,42 C64,33 56,34 50,39 C44,34 36,33 27,42 Z" fill="#0f172a"/>' +
+        '<polygon points="33,21 38,9 44,17 50,4 56,17 62,9 67,21" fill="url(#sGd)" stroke="#fff" stroke-width="1.1"/>' +
+        '<path d="M47.8,37 L47.8,43.5 Q50,45.5 52.2,43.5 L52.2,37" fill="none" stroke="#fff" stroke-width="1.8"/><line x1="50" y1="38" x2="50" y2="43.5" stroke="#ef4444" stroke-width="1.5"/>' +
+        '<ellipse cx="41" cy="50.5" rx="4.2" ry="3.2" fill="#fff"/><circle cx="41" cy="50.5" r="2.3" fill="#0284c7"/><circle cx="41" cy="50.5" r="1.1" fill="#fde047"/>' +
+        '<ellipse cx="59" cy="50.5" rx="4.2" ry="3.2" fill="#fff"/><circle cx="59" cy="50.5" r="2.3" fill="#0284c7"/><circle cx="59" cy="50.5" r="1.1" fill="#fde047"/>' +
+        '<path d="M44,58.5 Q50,62 56,57.5" stroke="#1e3a8a" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'
+      );
 
-        let back = '';
-        if (sp === 'samaksh_op') {
-          back =
-            '<polygon points="50,0 60,45 40,45" fill="#fef08a" opacity="0.28"/><polygon points="50,100 60,45 40,45" fill="#fef08a" opacity="0.28"/>' +
-            '<polygon points="0,50 45,40 45,60" fill="#38bdf8" opacity="0.28"/><polygon points="100,50 45,40 45,60" fill="#38bdf8" opacity="0.28"/>' +
-            '<polygon points="14,14 48,40 40,48" fill="#e879f9" opacity="0.22"/><polygon points="86,14 52,40 60,48" fill="#e879f9" opacity="0.22"/>' +
-            '<g class="v8-spin"><circle cx="50" cy="46" r="44" fill="none" stroke="#fde047" stroke-width="2.2" stroke-dasharray="6 3"/><polygon points="50,0 54.5,8.5 45.5,8.5" fill="#fde047"/><polygon points="50,92 54.5,83.5 45.5,83.5" fill="#fde047"/><polygon points="4,46 12.5,41.5 12.5,50.5" fill="#fde047"/><polygon points="96,46 87.5,41.5 87.5,50.5" fill="#fde047"/></g>' +
-            '<g class="v8-cspin"><circle cx="50" cy="46" r="36" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="3 3"/><circle cx="50" cy="46" r="29" fill="none" stroke="#f43f5e" stroke-width="1.2" stroke-dasharray="2 3"/></g>' +
-            '<path d="M9,14 Q0,50 9,86" fill="none" stroke="#facc15" stroke-width="4" stroke-linecap="round"/><line x1="9" y1="14" x2="9" y2="86" stroke="#fff" stroke-width="1.2"/>' +
-            '<line x1="91" y1="12" x2="66" y2="80" stroke="#facc15" stroke-width="3.8" stroke-linecap="round"/><polygon points="92,8 79,18 92,23" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>';
-        } else if (sp === 'princess') {
-          back =
-            '<g class="v8-spin"><circle cx="50" cy="46" r="42" fill="none" stroke="#fbcfe8" stroke-width="1.6" stroke-dasharray="3 4"/><circle cx="50" cy="4" r="2.2" fill="#fde047"/><circle cx="50" cy="88" r="2.2" fill="#fde047"/></g>' +
-            '<path d="M4,32 Q18,6 40,42 Q18,54 4,32 Z M96,32 Q82,6 60,42 Q82,54 96,32 Z" fill="#fff1f2" opacity="0.92" stroke="#f472b6" stroke-width="1.5"/>' +
-            '<path d="M9,58 Q22,40 40,54 Q22,76 9,58 Z M91,58 Q78,40 60,54 Q78,76 91,58 Z" fill="#fbcfe8" opacity="0.82" stroke="#fde047" stroke-width="1.2"/>';
-        } else if (sp === 'zoro_swords') {
-          back =
-            '<g class="v8-spin"><circle cx="50" cy="46" r="41" fill="none" stroke="#4ade80" stroke-width="1.6" stroke-dasharray="7 3"/></g>' +
-            '<line x1="12" y1="12" x2="88" y2="86" stroke="#f8fafc" stroke-width="4.2" stroke-linecap="round"/>' +
-            '<line x1="88" y1="12" x2="12" y2="86" stroke="#4ade80" stroke-width="4.2" stroke-linecap="round"/>' +
-            '<line x1="16" y1="10" x2="24" y2="18" stroke="#fde047" stroke-width="5"/><line x1="84" y1="10" x2="76" y2="18" stroke="#fde047" stroke-width="5"/>';
-        } else if (sp === 'solar') {
-          back =
-            '<g class="v8-spin"><circle cx="50" cy="46" r="42" fill="none" stroke="#fde047" stroke-width="2" stroke-dasharray="5 2"/><polygon points="50,1 54,10 46,10" fill="#fde047"/><polygon points="15,18 23,24 18,28" fill="#fde047"/><polygon points="85,18 77,24 82,28" fill="#fde047"/></g>' +
-            '<path d="M6,38 Q20,10 38,40 Q18,52 6,38 Z M94,38 Q80,10 62,40 Q82,52 94,38 Z" fill="#fef08a" opacity="0.72" stroke="#f59e0b" stroke-width="1.3"/>';
-        } else if (sp === 'kitsune') {
-          back = '<path d="M12,76 Q1,44 18,26 Q24,48 26,74 Z M88,76 Q99,44 82,26 Q76,48 74,74 Z" fill="#fb7185" stroke="#fde047" stroke-width="1.3"/><path d="M20,82 Q6,60 18,44 Q26,62 30,80 Z M80,82 Q94,60 82,44 Q74,62 70,80 Z" fill="#fff1f2" opacity="0.88"/>';
-        } else if (sp === 'witch') {
-          back = '<ellipse cx="50" cy="48" rx="45" ry="13" fill="none" stroke="#c084fc" stroke-width="1.6" transform="rotate(-16 50 48)"/><circle cx="50" cy="46" r="39" fill="none" stroke="#e879f9" stroke-width="1.3" stroke-dasharray="3 4" class="v8-spin"/>';
-        } else if (sp === 'valkyrie') {
-          back = '<path d="M6,38 Q20,10 38,40 Q18,52 6,38 Z M94,38 Q80,10 62,40 Q82,52 94,38 Z" fill="' + o.eye + '" opacity="0.75" stroke="#fff" stroke-width="1.3"/>';
-        } else if (sp === 'phantom_girl') {
-          back = '<path d="M12,75 Q4,45 18,22 Q12,48 22,78 Z M88,75 Q96,45 82,22 Q88,48 78,78 Z" fill="#10b981" opacity="0.55"/><circle cx="50" cy="46" r="40" fill="none" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="2 4" class="v8-spin"/>';
-        } else if (sp === 'thunder') {
-          back = '<polygon points="15,12 24,28 18,30 26,48 11,30 17,28" fill="#fde047" stroke="#38bdf8" stroke-width="1"/><polygon points="85,12 76,28 82,30 74,48 89,30 83,28" fill="#fde047" stroke="#38bdf8" stroke-width="1"/><circle cx="50" cy="46" r="41" fill="none" stroke="#38bdf8" stroke-width="1.7" stroke-dasharray="8 3" class="v8-spin"/>';
-        } else if (sp === 'dragon') {
-          back = '<path d="M8,44 Q20,14 38,44 Q20,58 8,44 Z M92,44 Q80,14 62,44 Q80,58 92,44 Z" fill="#7f1d1d" stroke="#f97316" stroke-width="1.6"/><path d="M26,26 Q16,8 33,17 M74,26 Q84,8 67,17" fill="none" stroke="#fde047" stroke-width="3.2" stroke-linecap="round"/>';
-        }
-          // === V8 ULTRA AVATAR ENGINE - PART 6 ===
-        let hairBack = '';
-        if (isGirl) {
-          hairBack = o.twin
-            ? '<circle cx="19" cy="46" r="13.5" fill="' + o.hair + '"/><circle cx="81" cy="46" r="13.5" fill="' + o.hair + '"/><path d="M21,44 C17,74 21,94 27,99 L73,99 C79,94 83,74 79,44 Z" fill="' + o.hair + '"/>'
-            : '<path d="M15,44 C9,72 14,94 23,99 L77,99 C86,94 91,72 85,44 C85,17 15,17 15,44 Z" fill="' + o.hair + '"/>';
-        }
+      const ZORO_FIXED_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+        '<circle cx="50" cy="50" r="49" fill="#064e3b"/>' +
+        '<line x1="8" y1="60" x2="92" y2="96" stroke="#f8fafc" stroke-width="4" stroke-linecap="round"/><line x1="92" y1="60" x2="8" y2="96" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>' +
+        '<circle cx="15" cy="63" r="3.4" fill="#fde047"/><circle cx="85" cy="63" r="3.4" fill="#fde047"/>' +
+        '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="#14532d" stroke="#4ade80" stroke-width="1.5"/>' +
+        '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#fcd3b2"/>' +
+        '<line x1="30" y1="51" x2="30" y2="57" stroke="#fde047" stroke-width="2" stroke-dasharray="1.5 1"/>' +
+        '<polygon points="24,44 19,21 34,28 41,11 50,24 59,11 66,28 81,21 76,44 63,34 50,39 37,34" fill="#16a34a"/>' +
+        '<rect x="30" y="30" width="40" height="5" rx="2" fill="#052e16" stroke="#4ade80" stroke-width="1.2"/>' +
+        '<ellipse cx="41" cy="50" rx="4" ry="3.3" fill="#fff"/><circle cx="41" cy="50" r="2.2" fill="#15803d"/><line x1="38" y1="44" x2="43" y2="56" stroke="#991b1b" stroke-width="1.8"/>' +
+        '<ellipse cx="59" cy="50" rx="4" ry="3.3" fill="#fff"/><circle cx="59" cy="50" r="2.2" fill="#15803d"/>' +
+        '<path d="M44,59 Q50,62 56,58" stroke="#7f1d1d" stroke-width="2" fill="none"/></svg>'
+      );
 
-        let outfit =
-          '<path d="M15,98 C18,72 33,65 50,65 C67,65 82,72 85,98 Z" fill="url(#' + id + '_o)" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>' +
-          '<path d="M13,85 Q24,69 36,76 L28,94 Z M87,85 Q76,69 64,76 L72,94 Z" fill="' + o.o1 + '" stroke="#fde047" stroke-width="1.1"/>' +
-          '<path d="M31,70 L50,89 L69,70" fill="none" stroke="#fde047" stroke-width="2.1"/>' +
-          '<polygon points="50,72 56,79 50,86 44,79" fill="' + o.eye + '" stroke="#ffffff" stroke-width="1.2"/>';
+      const SUS_PRINCESS_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+        '<circle cx="50" cy="50" r="49" fill="#065f46"/>' +
+        '<path d="M8,40 Q20,14 38,42 Q18,54 8,40 Z M92,40 Q80,14 62,42 Q82,54 92,40 Z" fill="#d1fae5" opacity="0.78" stroke="#fde047" stroke-width="1.2"/>' +
+        '<path d="M15,44 C9,72 14,94 23,99 L77,99 C86,94 91,72 85,44 C85,17 15,17 15,44 Z" fill="#10b981"/>' +
+        '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="#047857" stroke="#fde047" stroke-width="1.5"/>' +
+        '<circle cx="50" cy="79" r="3.5" fill="#f43f5e" stroke="#fde047" stroke-width="1.2"/>' +
+        '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#fff1f2"/>' +
+        '<ellipse cx="36" cy="55" rx="4.2" ry="2.4" fill="#fb7185" opacity="0.45"/><ellipse cx="64" cy="55" rx="4.2" ry="2.4" fill="#fb7185" opacity="0.45"/>' +
+        '<ellipse cx="41" cy="50" rx="4.2" ry="3.8" fill="#fff"/><circle cx="41" cy="50" r="2.6" fill="#059669"/><circle cx="42.2" cy="48.8" r="1.2" fill="#fff"/>' +
+        '<ellipse cx="59" cy="50" rx="4.2" ry="3.8" fill="#fff"/><circle cx="59" cy="50" r="2.6" fill="#059669"/><circle cx="60.2" cy="48.8" r="1.2" fill="#fff"/>' +
+        '<path d="M45,58.5 Q50,63 55,58.5" stroke="#e11d48" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+        '<path d="M25,46 C25,20 75,20 75,46 C67,33 56,33 50,42 C44,33 33,33 25,46 Z" fill="#34d399"/>' +
+        '<polygon points="31,24 37,10 44,19 50,5 56,19 63,10 69,24" fill="#fde047" stroke="#fff" stroke-width="1.3"/></svg>'
+      );
+       // === V14 COMPLETE ARMORY & ECONOMY - PIECE 6 ===
+      const db = (s, seed, bg) => 'https://dicebear.com' + s + '/svg?seed=' + encodeURIComponent(seed) + '&backgroundColor=' + bg;
 
-        if (sp === 'princess') {
-          outfit += '<path d="M26,74 Q50,84 74,74" fill="none" stroke="#fff1f2" stroke-width="2.4"/><circle cx="50" cy="79" r="3.4" fill="#f43f5e" stroke="#fde047" stroke-width="1.2"/>';
-        }
-        if (o.stethoscope) {
-          outfit += '<path d="M36,67 C34,82 42,88 50,88 C58,88 66,82 64,67" fill="none" stroke="#e2e8f0" stroke-width="3.2" stroke-linecap="round"/><path d="M50,88 L50,95 L63,91" fill="none" stroke="#94a3b8" stroke-width="2.4" stroke-linecap="round"/><circle cx="64" cy="90" r="4.6" fill="#38bdf8" stroke="#ffffff" stroke-width="1.4"/><circle cx="64" cy="90" r="1.8" fill="#0f172a"/>';
-        }
-
-        let face =
-          '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="' + (o.skin || '#fcd3b2') + '"/>' +
-          (sp === 'kitsune' ? '<polygon points="28,28 23,8 41,22" fill="' + o.hair + '" stroke="#fde047" stroke-width="1.3"/><polygon points="72,28 77,8 59,22" fill="' + o.hair + '" stroke="#fde047" stroke-width="1.3"/>' : '') +
-          '<path d="M35,44.5 L44.5,47 M65,44.5 L55.5,47" stroke="#090d16" stroke-width="2.1" stroke-linecap="round"/>' +
-          '<ellipse cx="41" cy="50.5" rx="4.2" ry="3.6" fill="#fff"/><circle cx="41" cy="50.5" r="2.5" fill="' + o.eye + '"/><circle cx="41" cy="50.5" r="1.1" fill="#03050c"/><circle cx="42.2" cy="49.2" r="1.1" fill="#fff"/>' +
-          '<ellipse cx="59" cy="50.5" rx="4.2" ry="3.6" fill="#fff"/><circle cx="59" cy="50.5" r="2.5" fill="' + o.eye + '"/><circle cx="59" cy="50.5" r="1.1" fill="#03050c"/><circle cx="60.2" cy="49.2" r="1.1" fill="#fff"/>' +
-          (o.mask
-            ? '<path d="M30,53 L70,53 L66,69 Q50,75 34,69 Z" fill="#050811" stroke="' + o.eye + '" stroke-width="1.5"/>'
-            : '<path d="M44,59 Q50,63 56,58.5" stroke="#9f1239" stroke-width="2" fill="none" stroke-linecap="round"/>');
-
-        if (o.shades) {
-          face += '<polygon points="29,46 48,46 46,55 31,55" fill="#090d16" stroke="#fde047" stroke-width="1.5"/><polygon points="52,46 71,46 69,55 54,55" fill="#090d16" stroke="#fde047" stroke-width="1.5"/><line x1="48" y1="48" x2="52" y2="48" stroke="#fde047" stroke-width="2"/><line x1="33" y1="48" x2="39" y2="53" stroke="#38bdf8" stroke-width="1.4" opacity="0.85"/><line x1="56" y1="48" x2="62" y2="53" stroke="#38bdf8" stroke-width="1.4" opacity="0.85"/>';
-        }
-
-        const hairFront = isGirl
-          ? '<path d="M25,46 C25,20 75,20 75,46 C67,33 56,33 50,42 C44,33 33,33 25,46 Z" fill="' + o.hair + '"/>'
-          : '<polygon points="23,45 17,21 33,29 40,11 50,25 60,11 67,29 83,21 77,45 63,34 50,40 37,34" fill="' + o.hair + '"/>';
-
-        let headgear = '';
-        if (sp === 'samaksh_op') {
-          headgear = '<polygon points="30,21 35,9 41,16 46,6 50,15 54,6 59,16 65,9 70,21" fill="#fde047" stroke="#fff" stroke-width="1.2"/><circle cx="50" cy="11" r="2.1" fill="#38bdf8"/><rect x="30" y="30" width="40" height="5.6" rx="2.8" fill="#dc2626" stroke="#fde047" stroke-width="1.5"/><path d="M47.8,37 L47.8,43.5 Q50,45.5 52.2,43.5 L52.2,37" fill="none" stroke="#fff" stroke-width="1.8"/><line x1="50" y1="38" x2="50" y2="43.5" stroke="#ef4444" stroke-width="1.5"/>';
-        } else if (sp === 'princess') {
-          headgear = '<polygon points="30,24 36,9 43,19 50,4 57,19 64,9 70,24" fill="#fde047" stroke="#fff" stroke-width="1.4"/><circle cx="50" cy="14" r="2.3" fill="#f43f5e" stroke="#fff" stroke-width="0.7"/>';
-        } else if (sp === 'zoro_swords') {
-          headgear = '<rect x="30" y="30" width="40" height="5.5" rx="2" fill="#14532d" stroke="#4ade80" stroke-width="1.4"/>';
-        } else if (sp === 'witch') {
-          headgear = '<ellipse cx="50" cy="25" rx="34" ry="7" fill="#1e1b4b" stroke="#c084fc" stroke-width="1.5"/><polygon points="31,24 50,2 69,24" fill="#311042" stroke="#e879f9" stroke-width="1.4"/><polygon points="44,18 56,18 50,12" fill="#fde047"/>';
-        } else if (o.tiara) {
-          headgear = '<polygon points="31,25 37,11 44,20 50,7 56,20 63,11 69,25" fill="#fde047" stroke="#fff" stroke-width="1.3"/>';
-        } else if (o.visor) {
-          headgear = '<rect x="29" y="45" width="42" height="10" rx="5" fill="' + o.eye + '" opacity="0.86" stroke="#fff" stroke-width="1.5"/>';
-        }
-
-        return '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
-          '<defs><radialGradient id="' + id + '_b" cx="42%" cy="25%" r="76%"><stop offset="0%" stop-color="' + o.bg1 + '"/><stop offset="65%" stop-color="' + o.bg2 + '"/><stop offset="100%" stop-color="#02040a"/></radialGradient><linearGradient id="' + id + '_o" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="' + o.o1 + '"/><stop offset="100%" stop-color="' + o.o2 + '"/></linearGradient></defs>' +
-          '<circle cx="50" cy="50" r="49" fill="url(#' + id + '_b)"/>' +
-          back + hairBack + outfit + face + hairFront + headgear +
-        '</svg>';
-      }
-       // === V8 ULTRA AVATAR ENGINE - PART 7 ===
-      const V8_ITEMS = [
-        { id: 'superhost',     emoji: '🪷', name: '🪷👑 SAMAKSH 👑🪷',     aura: 'v8-aura-samaksh', fx: 'supreme', req: 'code', featured: true, svg: makeV8Char({ g:'boy',  species:'samaksh_op',   skin:'#38bdf8', bg1:'#f59e0b', bg2:'#311042', hair:'#0f172a', o1:'#facc15', o2:'#9a3412', eye:'#38bdf8' }) },
-        { id: 'host_milly',    emoji: '👸', name: '👸💖 Princess Milly',   aura: 'v8-aura-empress', fx: 'sakura',  req: 'code', featured: true, svg: makeV8Char({ g:'girl', species:'princess',     skin:'#fff1f2', bg1:'#f43f5e', bg2:'#500724', hair:'#fb7185', o1:'#f472b6', o2:'#be185d', eye:'#e11d48' }) },
-        { id: 'diamond',       emoji: '💎', name: 'Cyber Striker',         aura: 'v8-aura-ice',     fx: 'bolt',    req: 'free', svg: makeV8Char({ g:'boy',  species:'thunder',      bg1:'#0284c7', bg2:'#090d16', hair:'#38bdf8', o1:'#0284c7', o2:'#0f172a', eye:'#38bdf8', visor:true }) },
-        { id: 'samurai',       emoji: '👹', name: 'Crimson Ronin',         aura: 'v8-aura-fire',    fx: 'ember',   req: 'free', svg: makeV8Char({ g:'boy',  species:'dragon',       bg1:'#dc2626', bg2:'#450a0a', hair:'#0f172a', o1:'#ef4444', o2:'#7f1d1d', eye:'#facc15' }) },
-        { id: 'phoenix',       emoji: '🔥', name: 'Blaze Valkyrie',        aura: 'v8-aura-fire',    fx: 'ember',   req: 'free', svg: makeV8Char({ g:'girl', species:'valkyrie',     bg1:'#ea580c', bg2:'#431407', hair:'#f97316', o1:'#ea580c', o2:'#7c2d12', eye:'#fde047', tiara:true }) },
-        { id: 'ninja',         emoji: '🥷', name: 'Shadow Shinobi',        aura: 'v8-aura-violet',  fx: 'matrix',  req: 'free', svg: makeV8Char({ g:'boy',  species:'thunder',      bg1:'#6d28d9', bg2:'#1e1b4b', hair:'#090d16', o1:'#7c3aed', o2:'#1e1b4b', eye:'#c084fc', mask:true }) },
-        { id: 'host_moon',     emoji: '🩺', name: '🩺🌙 Dr. Moon',         aura: 'v8-aura-violet',  fx: 'cosmos',  req: 'code', svg: makeV8Char({ g:'girl', species:'witch',        bg1:'#7c3aed', bg2:'#1e1b4b', hair:'#c084fc', o1:'#0284c7', o2:'#1e1b4b', eye:'#e879f9', stethoscope:true }) },
-        { id: 'host_ishika',   emoji: '☀️', name: '☀️✨ Empress Ishika',   aura: 'v8-aura-gold',    fx: 'supreme', req: 'code', svg: makeV8Char({ g:'girl', species:'solar',        bg1:'#f59e0b', bg2:'#451a03', hair:'#fde047', o1:'#d97706', o2:'#78350f', eye:'#facc15', tiara:true }) },
-        { id: 'host_zoro',     emoji: '⚔️', name: '⚔️🐉 Zoro 3-Sword',     aura: 'v8-aura-emerald', fx: 'matrix',  req: 'code', svg: makeV8Char({ g:'boy',  species:'zoro_swords',  bg1:'#16a34a', bg2:'#052e16', hair:'#22c55e', o1:'#15803d', o2:'#14532d', eye:'#4ade80' }) },
-        { id: 'host_sid',      emoji: '😎', name: '😎⚡ Sid Thunder',      aura: 'v8-aura-gold',    fx: 'bolt',    req: 'code', svg: makeV8Char({ g:'boy',  species:'thunder',      bg1:'#eab308', bg2:'#1e3a8a', hair:'#facc15', o1:'#2563eb', o2:'#1e3a8a', eye:'#fde047', shades:true }) },
-        { id: 'host_ruwii',    emoji: '🌺', name: '🌺 Ruwii Kitsune',      aura: 'v8-aura-gold',    fx: 'sakura',  req: 'code', svg: makeV8Char({ g:'girl', species:'kitsune',      bg1:'#e11d48', bg2:'#451a03', hair:'#fb7185', o1:'#f59e0b', o2:'#881337', eye:'#fde047', tiara:true }) },
-        { id: 'host_zaira',    emoji: '🪐', name: '🪐 Zaira Nova',         aura: 'v8-aura-ice',     fx: 'cosmos',  req: 'code', svg: makeV8Char({ g:'girl', species:'valkyrie',     twin:true, bg1:'#0ea5e9', bg2:'#1e1b4b', hair:'#7dd3fc', o1:'#0369a1', o2:'#1e1b4b', eye:'#38bdf8', tiara:true }) },
-        { id: 'host_sarah',    emoji: '🦋', name: '🦋 Sarah Valkyrie',     aura: 'v8-aura-ice',     fx: 'cosmos',  req: 'code', svg: makeV8Char({ g:'girl', species:'valkyrie',     bg1:'#0284c7', bg2:'#082f49', hair:'#38bdf8', o1:'#0284c7', o2:'#1e3a8a', eye:'#38bdf8', tiara:true }) },
-        { id: 'host_shubhi',   emoji: '🌷', name: '🌷 Shubhi Sakura',      aura: 'v8-aura-pink',    fx: 'sakura',  req: 'code', svg: makeV8Char({ g:'girl', species:'princess',     twin:true, bg1:'#ec4899', bg2:'#500724', hair:'#f472b6', o1:'#ec4899', o2:'#9d174d', eye:'#f472b6' }) },
-        { id: 'host_sus',      emoji: '👀', name: '👀 Sus Shadow-Queen',   aura: 'v8-aura-emerald', fx: 'matrix',  req: 'code', svg: makeV8Char({ g:'girl', species:'phantom_girl', bg1:'#059669', bg2:'#022c22', hair:'#34d399', o1:'#065f46', o2:'#022c22', eye:'#4ade80', mask:true }) },
-        { id: 'host_heer',     emoji: '🌸', name: '🌸 Heer Starlight',     aura: 'v8-aura-pink',    fx: 'sakura',  req: 'code', svg: makeV8Char({ g:'girl', species:'kitsune',      twin:true, bg1:'#f472b6', bg2:'#4c0519', hair:'#fda4af', o1:'#f43f5e', o2:'#881337', eye:'#fb7185', tiara:true }) },
-        { id: 'host_izzan',    emoji: '🔥', name: '🔥 Izzan Dragon',       aura: 'v8-aura-fire',    fx: 'ember',   req: 'code', svg: makeV8Char({ g:'boy',  species:'dragon',       bg1:'#dc2626', bg2:'#450a0a', hair:'#ef4444', o1:'#dc2626', o2:'#7f1d1d', eye:'#fde047' }) },
-        { id: 'host_advait',   emoji: '⚡', name: '⚡ Advait Titan',       aura: 'v8-aura-ice',     fx: 'bolt',    req: 'code', svg: makeV8Char({ g:'boy',  species:'thunder',      bg1:'#2563eb', bg2:'#090d16', hair:'#60a5fa', o1:'#1d4ed8', o2:'#0f172a', eye:'#38bdf8', visor:true }) },
-        { id: 'ref_wolf',      emoji: '🐺', name: '🐺 Cyber-Wolf (1 Ref)', aura: 'v8-aura-ice',     fx: 'bolt',    req: 'ref', reqRefs: 1, svg: makeV8Char({ g:'boy',  species:'kitsune',      bg1:'#0284c7', bg2:'#0f172a', hair:'#38bdf8', o1:'#1e293b', o2:'#0f172a', eye:'#38bdf8' }) },
-        { id: 'ref_kitsune',   emoji: '🦊', name: '🦊 Astral Fox (3 Refs)',aura: 'v8-aura-violet',  fx: 'cosmos',  req: 'ref', reqRefs: 3, svg: makeV8Char({ g:'girl', species:'kitsune',      bg1:'#7c3aed', bg2:'#1e1b4b', hair:'#e879f9', o1:'#4c1d95', o2:'#1e1b4b', eye:'#c084fc', tiara:true }) },
-        { id: 'ref_sovereign', emoji: '🐉', name: '🐉 Gold Sovereign (5)', aura: 'v8-aura-gold',    fx: 'supreme', req: 'ref', reqRefs: 5, svg: makeV8Char({ g:'boy',  species:'dragon',       bg1:'#f59e0b', bg2:'#451a03', hair:'#fde047', o1:'#b45309', o2:'#451a03', eye:'#facc15', tiara:true }) }
+      const V14_ITEMS = [
+        { id: 'superhost',         pin: '👑', name: '🪷👑 SAMAKSH 👑🪷',     ring: 'v14-ring-samaksh', req: 'code', featured: true, img: SAMAKSH_3D_URI },
+        { id: 'host_milly',        pin: '👸', name: '👸💖 Princess Milly',   ring: 'v14-ring-empress', req: 'code', featured: true, img: db('lorelei', 'PrincessMillyRoyal', 'f43f5e,fbcfe8') },
+        { id: 'diamond',           pin: '💎', name: 'Cyber Striker',         ring: 'v14-ring-ice',     req: 'free', img: db('bottts-neutral', 'CyberStriker77', '0284c7') },
+        { id: 'samurai',           pin: '👹', name: 'Crimson Ronin',         ring: 'v14-ring-fire',    req: 'free', img: db('adventurer', 'CrimsonRoninX', 'dc2626') },
+        { id: 'phoenix',           pin: '🔥', name: 'Blaze Valkyrie',        ring: 'v14-ring-fire',    req: 'free', img: db('lorelei', 'BlazeValkyrie', 'ea580c') },
+        { id: 'ninja',             pin: '🥷', name: 'Shadow Shinobi',        ring: 'v14-ring-violet',  req: 'free', img: db('adventurer-neutral', 'ShadowShinobi', '6d28d9') },
+        { id: 'host_sus',          pin: '👸', name: '👸💚 Princess Sus',     ring: 'v14-ring-emerald', req: 'code', img: SUS_PRINCESS_URI },
+        { id: 'host_zoro',         pin: '⚔️', name: '⚔️🐉 Zoro 3-Sword',     ring: 'v14-ring-emerald', req: 'code', img: ZORO_FIXED_URI },
+        { id: 'host_moon',         pin: '🩺', name: '🩺🌙 Dr. Moon',         ring: 'v14-ring-violet',  req: 'code', img: db('lorelei', 'DrMoonClinicMD', '7c3aed,38bdf8') },
+        { id: 'host_ishika',       pin: '☀️', name: '☀️✨ Empress Ishika',   ring: 'v14-ring-gold',    req: 'code', img: db('lorelei', 'EmpressIshikaSun', 'f59e0b,fde047') },
+        { id: 'host_sid',          pin: '😎', name: '😎⚡ Sid Thunder',      ring: 'v14-ring-gold',    req: 'code', img: db('adventurer', 'SidThunderShades', 'eab308,1e3a8a') },
+        { id: 'host_ruwii',        pin: '🌺', name: '🌺 Ruwii Kitsune',      ring: 'v14-ring-gold',    req: 'code', img: db('lorelei', 'RuwiiKitsuneFox', 'e11d48,f59e0b') },
+        { id: 'host_zaira',        pin: '🪐', name: '🪐 Zaira Nova',         ring: 'v14-ring-ice',     req: 'code', img: db('lorelei', 'ZairaCosmicOrbit', '0ea5e9,1e1b4b') },
+        { id: 'host_sarah',        pin: '🦋', name: '🦋 Sarah Valkyrie',     ring: 'v14-ring-ice',     req: 'code', img: db('lorelei', 'SarahButterfly9', '0284c7,38bdf8') },
+        { id: 'host_shubhi',       pin: '🌷', name: '🌷 Shubhi Sakura',      ring: 'v14-ring-pink',    req: 'code', img: db('lorelei', 'ShubhiBlossom99', 'ec4899,fbcfe8') },
+        { id: 'host_heer',         pin: '🌸', name: '🌸 Heer Starlight',     ring: 'v14-ring-pink',    req: 'code', img: db('lorelei', 'HeerStarlight88', 'f472b6,881337') },
+        { id: 'host_izzan',        pin: '🔥', name: '🔥 Izzan Dragon',       ring: 'v14-ring-fire',    req: 'code', img: db('adventurer', 'IzzanDragonLord', 'dc2626,7f1d1d') },
+        { id: 'host_advait',       pin: '⚡', name: '⚡ Advait Titan',       ring: 'v14-ring-ice',     req: 'code', img: db('adventurer', 'AdvaitCitadelBolt', '2563eb,090d16') },
+        { id: 'streak_10_phoenix', pin: '🔥', name: '🔥 Phoenix (10d Streak)', ring: 'v14-ring-fire',  req: 'streak', reqDays: 10, img: db('adventurer', 'PhoenixWarlord10', 'ea580c,7f1d1d') },
+        { id: 'shop_reaper',       pin: '💀', name: '💀 Soul Reaper',        ring: 'v14-ring-violet',  req: 'shop', cost: 15, img: db('bottts-neutral', 'SoulReaper15', '4c1d95') },
+        { id: 'shop_valkyrie',     pin: '⚔️', name: '⚔️ Frost Valkyrie',     ring: 'v14-ring-ice',     req: 'shop', cost: 25, img: db('lorelei', 'FrostValkyrie25', '0284c7,bae6fd') },
+        { id: 'shop_emperor',      pin: '👑', name: '👑 Golden Emperor',     ring: 'v14-ring-gold',    req: 'shop', cost: 40, img: db('adventurer', 'GoldenEmperor40', 'f59e0b,78350f') },
+        { id: 'ref_wolf',          pin: '🐺', name: '🐺 Cyber-Wolf (1 Ref)', ring: 'v14-ring-ice',     req: 'ref', reqRefs: 1, img: db('adventurer', 'CyberWolfAlpha1', '0284c7,0f172a') },
+        { id: 'ref_kitsune',       pin: '🦊', name: '🦊 Astral Fox (3 Refs)',ring: 'v14-ring-violet',  req: 'ref', reqRefs: 3, img: db('lorelei', 'AstralFoxKitsune3', '7c3aed,1e1b4b') },
+        { id: 'ref_sovereign',     pin: '🐉', name: '🐉 Gold Sovereign (5)', ring: 'v14-ring-gold',    req: 'ref', reqRefs: 5, img: db('adventurer', 'GoldSovereign5', 'f59e0b,451a03') }
       ];
-        // === V8 ULTRA AVATAR ENGINE - PART 8 ===
-      const v8Players = {};
-      const auraToChat = {
-        'v8-aura-samaksh': 'v8-glow-samaksh', 'v8-aura-empress': 'v8-glow-empress',
-        'v8-aura-ice': 'v8-glow-ice', 'v8-aura-fire': 'v8-glow-fire',
-        'v8-aura-pink': 'v8-glow-pink', 'v8-aura-emerald': 'v8-glow-emerald',
-        'v8-aura-gold': 'v8-glow-gold', 'v8-aura-violet': 'v8-glow-violet'
+
+      const SHOP_TITLES = [
+        { label: '💀 Lobby Demon', cost: 10 },
+        { label: '⚡ Clutch God', cost: 20 },
+        { label: '👑 Arena King', cost: 35 }
+      ];
+           // === V14 COMPLETE ARMORY & ECONOMY - PIECE 7 ===
+      const v14Players = {};
+      const ringToChat = {
+        'v14-ring-samaksh': 'v14-chat-samaksh', 'v14-ring-empress': 'v14-chat-empress',
+        'v14-ring-ice': 'v14-chat-ice', 'v14-ring-fire': 'v14-chat-fire',
+        'v14-ring-pink': 'v14-chat-pink', 'v14-ring-emerald': 'v14-chat-emerald',
+        'v14-ring-gold': 'v14-chat-gold', 'v14-ring-violet': 'v14-chat-violet'
       };
       const getMe = () => (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
 
-      window.stRedeemCode = () => {
-        const code = (document.getElementById('stCodeInput').value || '').trim();
-        if (code && typeof socket !== 'undefined') socket.emit('verifyAvatarCodeV6', { code });
-      };
-
-      window.copyAvatarRefLink = function() {
-        const me = getMe();
-        if (!me) { alert('Join a room with your username first!'); return; }
+      window.stRedeemCode = () => { const c = (document.getElementById('stCodeInput').value || '').trim(); if (c && typeof socket !== 'undefined') socket.emit('verifyAvatarCodeV6', { code: c }); };
+      window.buyShopTitle = (cost, label) => { if (typeof socket !== 'undefined') socket.emit('buyV14ShopItem', { username: getMe(), itemType: 'title', itemId: label, cost, label }); };
+      window.copyAvatarRefLink = () => {
+        const me = getMe(); if (!me) return alert('Join a room first!');
         const link = window.location.origin + '/?avref=' + encodeURIComponent(me);
         if (navigator.clipboard) navigator.clipboard.writeText(link);
-        alert('🔗 Avatar Invite Link Copied!\\n' + link + '\\n\\n1 Ref = 🐺 Cyber-Wolf\\n3 Refs = 🦊 Astral Fox\\n5 Refs = 🐉 Gold Sovereign');
+        alert('🔗 Avatar Invite Link Copied!\\n' + link + '\\n\\n1 Ref = Cyber-Wolf | 3 Refs = Astral Fox | 5 Refs = Gold Sovereign');
+      };
+
+      window.switchMyAura = function(ringClass) {
+        const me = getMe(); if (!me || typeof socket === 'undefined' || !v14Players[me]) return alert('Equip a Hero Avatar first!');
+        v14Players[me] = { ...v14Players[me], ring: ringClass };
+        socket.emit('equipAvatarFxV6', { username: me, avatarId: v14Players[me].id, fx: ringClass, badge: v14Players[me].badge || v14Players[me].name });
       };
 
       window.stDrawVault = function() {
         const grid = document.getElementById('stGrid');
+        const walletTop = document.getElementById('v14WalletTop');
         if (!grid) return;
-        const unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
-        grid.innerHTML =
-          '<div style="grid-column:1/-1;background:rgba(16,185,129,0.18);border:1.5px solid #34d399;border-radius:12px;padding:7px;">' +
-            '<div style="font-size:11px;font-weight:900;color:#6ee7b7;">🎁 Your Avatar Referrals: ' + myRefCount + '/5</div>' +
-            '<button onclick="copyAvatarRefLink()" style="margin-top:4px;padding:4px 12px;border:none;border-radius:9px;background:#10b981;color:#fff;font-weight:900;font-size:11px;cursor:pointer;">🔗 Copy Invite Link</button>' +
-          '</div>';
+        const codeUnlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+        const pct = Math.min(100, Math.round((myEcon.streak / 10) * 100));
 
-        V8_ITEMS.forEach(av => {
-          const ok = av.req === 'free' || (av.req === 'code' && unlocked.includes(av.id)) || (av.req === 'ref' && myRefCount >= av.reqRefs);
-          const lockLabel = av.req === 'ref' ? ('🔒 Need ' + av.reqRefs + ' Refs') : '🔒 Secret Code';
+        if (walletTop) {
+          walletTop.innerHTML =
+            '<div style="background:rgba(253,224,71,0.12);border:1px solid rgba(253,224,71,0.4);border-radius:10px;padding:6px 10px;font-size:11px;font-weight:900;">' +
+              '<div style="display:flex;justify-content:space-between;"><span style="color:#fde047;">🪙 MVP: ' + myEcon.mvp + ' Pts</span><span style="color:#38bdf8;">🔥 Streak: ' + myEcon.streak + '/10d</span><span style="color:#4ade80;">🔗 Refs: ' + myRefCount + '/5</span></div>' +
+              '<div style="width:100%;height:5px;background:#090d16;border-radius:5px;margin-top:4px;overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#f59e0b,#10b981);"></div></div>' +
+              '<button onclick="copyAvatarRefLink()" style="margin-top:5px;padding:3px 10px;border:none;border-radius:8px;background:#10b981;color:#fff;font-size:10px;font-weight:900;cursor:pointer;">🔗 Copy Invite Link</button>' +
+            '</div>';
+        }
+
+        grid.innerHTML = '';
+        V14_ITEMS.forEach(av => {
+          const ok = av.req === 'free' || (av.req === 'code' && codeUnlocked.includes(av.id)) ||
+                     (av.req === 'streak' && (myEcon.streak >= av.reqDays || myEcon.unlocked.includes(av.id))) ||
+                     (av.req === 'shop' && myEcon.unlocked.includes(av.id)) ||
+                     (av.req === 'ref' && myRefCount >= av.reqRefs);
+
+          let statusTxt = ok ? '✅ Tap to Equip' : (av.req === 'streak' ? ('🔒 Day ' + myEcon.streak + '/10') : (av.req === 'shop' ? ('🪙 Buy (' + av.cost + ' Pts)') : (av.req === 'ref' ? ('🔒 ' + av.reqRefs + ' Refs') : '🔒 Secret Code')));
           const d = document.createElement('div');
           d.className = 'st-item' + (ok ? '' : ' locked');
           if (av.featured) d.style.cssText = 'grid-column:1/-1;border:2px solid #fde047;background:rgba(250,204,21,0.16);';
-          d.innerHTML =
-            '<div class="st-art ' + av.aura + '" data-fx="' + av.fx + '">' + av.svg + '<canvas width="70" height="70"></canvas></div>' +
-            '<div style="font-weight:900;font-size:10px;">' + av.name + '</div>' +
-            '<div style="font-size:9px;color:' + (ok ? '#4ade80' : '#fbbf24') + ';">' + (ok ? '✅ Tap to Equip' : lockLabel) + '</div>';
+          d.innerHTML = '<div class="st-art ' + av.ring + '"><img src="' + av.img + '" loading="lazy"><span class="v14-pin">' + av.pin + '</span></div><div style="font-weight:900;font-size:10px;">' + av.name + '</div><div style="font-size:9px;color:' + (ok ? '#4ade80' : '#fbbf24') + ';">' + statusTxt + '</div>';
+
           d.onclick = () => {
-            if (!ok) { if (av.req === 'ref') copyAvatarRefLink(); else alert('🔒 Enter secret code below to unlock!'); return; }
+            if (!ok) {
+              if (av.req === 'shop') socket.emit('buyV14ShopItem', { username: getMe(), itemType: 'avatar', itemId: av.id, cost: av.cost, label: av.name });
+              else if (av.req === 'ref') copyAvatarRefLink();
+              else if (av.req === 'streak') alert('🔥 Come back for ' + (10 - myEcon.streak) + ' more day(s) to unlock!');
+              else alert('🔒 Enter secret code below to unlock!');
+              return;
+            }
             const me = getMe();
-            v8Players[me] = av;
+            v14Players[me] = av;
             if (av.id === 'superhost') document.getElementById('opCreatorDock').style.display = 'flex';
-            if (typeof socket !== 'undefined') socket.emit('equipAvatarFxV6', { username: me, avatar: av.emoji, avatarId: av.id, fx: av.aura, badge: av.name });
+            if (typeof socket !== 'undefined') socket.emit('equipAvatarFxV6', { username: me, avatarId: av.id, fx: av.ring, badge: myEcon.customTitle || av.name });
             document.getElementById('stVaultModal').style.display = 'none';
-            renderV8Bubbles();
           };
           grid.appendChild(d);
         });
-      };
-        // === V8 ULTRA AVATAR ENGINE - PART 9 ===
-      setInterval(() => {
-        const list = document.querySelectorAll('.v8-bubble canvas, .st-art canvas, #stZoomRing canvas');
-        if (!list.length) return;
-        const t = Date.now() / 1000;
-        list.forEach(c => {
-          const fx = (c.parentElement && c.parentElement.dataset && c.parentElement.dataset.fx) || 'cosmos';
-          const ctx = c.getContext('2d'), w = c.width, h = c.height;
-          ctx.clearRect(0, 0, w, h);
-          if (fx === 'supreme') {
-            for (let i = 0; i < 6; i++) {
-              const a = t * 2.4 + i * (Math.PI / 3);
-              ctx.fillStyle = i % 2 === 0 ? '#fde047' : '#38bdf8';
-              ctx.beginPath(); ctx.arc(w/2 + Math.cos(a)*w*0.42, h/2 + Math.sin(a)*h*0.42, w > 80 ? 3.2 : 1.7, 0, Math.PI*2); ctx.fill();
-            }
-          } else if (fx === 'sakura') {
-            ctx.fillStyle = '#fbcfe8';
-            for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.ellipse((i*23 + t*18)%w, (i*19 + t*24)%h, w > 80 ? 3.5 : 1.8, w > 80 ? 2 : 1, t+i, 0, Math.PI*2); ctx.fill(); }
-          } else if (fx === 'ember') {
-            for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 === 0 ? '#f97316' : '#fde047'; ctx.beginPath(); ctx.arc(w*0.2 + ((i*17 + Math.sin(t*3+i)*6)%(w*0.6)), h - ((t*32 + i*21)%h), w > 80 ? 2.6 : 1.4, 0, Math.PI*2); ctx.fill(); }
-          } else if (fx === 'bolt') {
-            if (Math.sin(t * 14) > 0.25) { ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = w > 80 ? 2 : 1.2; ctx.beginPath(); ctx.moveTo(w*0.15, h*0.2); ctx.lineTo(w*0.3, h*0.45); ctx.lineTo(w*0.2, h*0.5); ctx.lineTo(w*0.35, h*0.8); ctx.stroke(); }
-          } else if (fx === 'matrix') {
-            ctx.fillStyle = '#4ade80'; ctx.font = (w > 80 ? '10px' : '6px') + ' monospace';
-            for (let i = 0; i < 4; i++) ctx.fillText(i % 2 === 0 ? '1' : '0', w*(0.18 + i*0.2), (t*38 + i*27)%h);
-          } else {
-            ctx.fillStyle = '#e879f9';
-            for (let i = 0; i < 5; i++) { const a = t * 1.6 + i * 1.25; ctx.beginPath(); ctx.arc(w/2 + Math.cos(a)*w*0.4, h/2 + Math.sin(a)*h*0.4, w > 80 ? 2.4 : 1.3, 0, Math.PI*2); ctx.fill(); }
-          }
-        });
-      }, 45);
 
-      function renderV8Bubbles() {
-        const nodes = document.querySelectorAll('#chatBox b, #chatBox strong, #chatBox span, #messages b, #messages span, .player-item span');
-        const list = nodes.length ? nodes : document.querySelectorAll('b, strong, span');
-        list.forEach(el => {
-          if (el.children.length > 0 || el.closest('#stVaultModal') || el.closest('#stZoomModal') || el.closest('#opCreatorDock')) return;
+        const titleRow = document.createElement('div');
+        titleRow.style.cssText = 'grid-column:1/-1;background:rgba(168,85,247,0.15);border:1px solid #c084fc;border-radius:10px;padding:6px;margin-top:4px;';
+        titleRow.innerHTML = '<div style="font-size:10px;font-weight:900;color:#e879f9;margin-bottom:4px;">🏷️ BUY CHAT TITLES</div>' +
+          SHOP_TITLES.map(t => '<button onclick="buyShopTitle(' + t.cost + ',\\'' + t.label + '\\')" style="margin:2px;background:#1e1b4b;border:1px solid #fde047;color:#fff;font-size:10px;font-weight:bold;padding:3px 7px;border-radius:7px;cursor:pointer;">' + t.label + ' (🪙' + t.cost + ')</button>').join('');
+        grid.appendChild(titleRow);
+      };
+         // === V14 COMPLETE ARMORY & ECONOMY - PIECE 8A ===
+      function renderV14Chat() {
+        const nodes = document.querySelectorAll('#chatBox b, #chatBox strong, #messages b, #messages strong');
+        nodes.forEach(el => {
+          if (el.closest('#stVaultModal') || el.closest('#stZoomModal')) return;
           const raw = (el.textContent || '').trim();
           const sender = raw.replace(/\s*(cap\s*[ab]|👑|creator)\s*/gi, '').trim().toLowerCase();
-          const av = v8Players[sender];
+          const av = v14Players[sender];
           if (!av) return;
 
           const row = el.parentElement;
-          const glowCls = auraToChat[av.aura];
-          if (row && glowCls) {
-            const msgBubble = (row.nextElementSibling && !row.nextElementSibling.querySelector('input, button')) ? row.nextElementSibling : row.closest('div');
-            if (msgBubble && !msgBubble.dataset.v8GlowApplied) {
-              msgBubble.dataset.v8GlowApplied = glowCls;
-              msgBubble.classList.add(glowCls);
-              msgBubble.style.padding = msgBubble.style.padding || '6px 10px';
-            }
+          if (!row) return;
+          if (!row.querySelector('.v14-title-pill')) {
+            const pill = document.createElement('span');
+            pill.className = 'v14-title-pill';
+            pill.textContent = av.badge || av.name;
+            el.insertAdjacentElement('afterend', pill);
           }
 
-          if (!row || row.dataset.v8Stamp === av.id) return;
-          const iconSpan = Array.from(row.children).find(c => c !== el && !c.querySelector('button') && ((c.textContent || '').trim().length <= 4 || c.querySelector('.v8-bubble')));
+          const chatCls = ringToChat[av.ring];
+          const msgBubble = (row.nextElementSibling && !row.nextElementSibling.querySelector('input, button')) ? row.nextElementSibling : row.closest('div');
+          if (msgBubble && chatCls && !msgBubble.dataset.v14Glow) {
+            msgBubble.dataset.v14Glow = chatCls;
+            msgBubble.classList.add(chatCls);
+            msgBubble.style.padding = msgBubble.style.padding || '6px 10px';
+          }
+
+          if (row.dataset.v14Stamp === av.id) return;
+          const iconSpan = Array.from(row.children).find(c => c !== el && !c.classList.contains('v14-title-pill') && !c.querySelector('button') && ((c.textContent || '').trim().length <= 4 || c.querySelector('.v14-bubble')));
           if (iconSpan) {
-            row.dataset.v8Stamp = av.id;
-            iconSpan.innerHTML = '<span class="v8-bubble ' + av.aura + '" data-fx="' + av.fx + '" data-user="' + raw.replace(/"/g,'') + '" data-sender="' + sender + '">' + av.svg + '<canvas width="44" height="44"></canvas></span>';
+            row.dataset.v14Stamp = av.id;
+            iconSpan.innerHTML = '<span class="v14-bubble ' + av.ring + '" data-user="' + raw.replace(/"/g,'') + '" data-sender="' + sender + '"><img src="' + av.img + '"><span class="v14-pin">' + av.pin + '</span></span>';
           }
         });
       }
-       // === V8 ULTRA AVATAR ENGINE - PART 10 ===
+
       document.addEventListener('click', (e) => {
-        const b = e.target.closest('.v8-bubble');
+        const b = e.target.closest('.v14-bubble');
         if (b) {
           e.preventDefault(); e.stopPropagation();
           const s = b.getAttribute('data-sender') || '';
-          const av = v8Players[s];
-          if (!av) return;
+          const av = v14Players[s]; if (!av) return;
           const ring = document.getElementById('stZoomRing');
-          ring.className = av.aura;
-          ring.dataset.fx = av.fx;
-          ring.innerHTML = av.svg + '<canvas width="155" height="155"></canvas>';
+          ring.className = av.ring;
+          ring.innerHTML = '<img src="' + av.img + '">';
           document.getElementById('stZoomUser').textContent = b.getAttribute('data-user') || s;
-          document.getElementById('stZoomTitle').textContent = av.name;
+          document.getElementById('stZoomTitle').textContent = av.badge || av.name;
           document.getElementById('stZoomModal').style.display = 'flex';
           return;
         }
@@ -2519,42 +2538,43 @@ module.exports = function initMultiServers(app, io) {
           document.getElementById('stVaultModal').style.display = 'flex';
         }
       }, true);
-
+       // === V14 COMPLETE ARMORY & ECONOMY - PIECE 8B ===
       setInterval(() => {
         if (!document.getElementById('openAvatarVaultBtn')) {
-          const anchor = document.getElementById('openPhonkDjBtn') || document.getElementById('openChefBtn') ||
-            Array.from(document.querySelectorAll('button, a, div[onclick]')).find(el => el.children.length === 0 && /jam|🎹|phonk/i.test(el.textContent || ''));
-          if (anchor && anchor.parentNode) {
-            const btn = anchor.cloneNode(true);
-            btn.id = 'openAvatarVaultBtn';
-            btn.removeAttribute('onclick');
-            btn.textContent = '👑 Avatars';
-            anchor.parentNode.insertBefore(btn, anchor.nextSibling);
-          }
+          const anchor = document.getElementById('openPhonkDjBtn') || document.getElementById('openChefBtn') || Array.from(document.querySelectorAll('button, a, div[onclick]')).find(el => el.children.length === 0 && /jam|🎹|phonk/i.test(el.textContent || ''));
+          if (anchor && anchor.parentNode) { const btn = anchor.cloneNode(true); btn.id = 'openAvatarVaultBtn'; btn.removeAttribute('onclick'); btn.textContent = '👑 Avatars'; anchor.parentNode.insertBefore(btn, anchor.nextSibling); }
         }
-        if (typeof socket !== 'undefined' && !window._v8SockBound) {
-          window._v8SockBound = true;
+        if (typeof socket !== 'undefined' && !window._v14Bound) {
+          window._v14Bound = true;
           const devId = localStorage.getItem('sammu_dev_uid') || ('dev_' + Math.random().toString(36).slice(2));
           const pending = localStorage.getItem('sammu_pending_avref');
           if (pending) { socket.emit('registerAvatarRef', { refUser: pending, deviceId: devId }); localStorage.removeItem('sammu_pending_avref'); }
           const me = getMe();
-          if (me) socket.emit('getMyAvatarRefCount', me);
+          if (me) { socket.emit('getMyAvatarRefCount', me); socket.emit('getV14Econ', me); }
           socket.emit('getMyAvatarStatsV6');
 
-          socket.on('avatarRefCountUpdate', (d) => {
-            if (d && d.username === getMe()) { myRefCount = d.count || 0; localStorage.setItem('sammu_my_avref_count', String(myRefCount)); if (document.getElementById('stVaultModal')?.style.display === 'flex') window.stDrawVault(); }
-          });
+          socket.on('avatarRefCountUpdate', (d) => { if (d && d.username === getMe()) { myRefCount = d.count || 0; localStorage.setItem('sammu_my_avref_count', String(myRefCount)); } });
+          socket.on('v14EconSync', (r) => { if (r) { myEcon = r; if (document.getElementById('stVaultModal')?.style.display === 'flex') window.stDrawVault(); } });
+          socket.on('v14ShopResult', (res) => { if (res && res.msg) alert(res.msg); if (res && res.ok && document.getElementById('stVaultModal')?.style.display === 'flex') window.stDrawVault(); });
+          socket.on('updateMVP', (data) => { const cur = getMe(); if (cur && data && Array.isArray(data.board)) { const f = data.board.find(x => x.name && x.name.toLowerCase() === cur); if (f && f.pts > myEcon.mvp) socket.emit('syncEarnedMvp', { username: cur, pts: f.pts }); } });
           socket.on('avatarCodeResultV6', (res) => {
             if (res && res.ok && res.avatarId) {
-              const unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
-              if (!unlocked.includes(res.avatarId)) { unlocked.push(res.avatarId); localStorage.setItem('sammu_unlocked_avatars', JSON.stringify(unlocked)); }
+              const u = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+              if (!u.includes(res.avatarId)) { u.push(res.avatarId); localStorage.setItem('sammu_unlocked_avatars', JSON.stringify(u)); }
               if (res.avatarId === 'superhost') document.getElementById('opCreatorDock').style.display = 'flex';
-              alert('🎉 Unlocked: ' + res.name + '!');
-              window.stDrawVault();
-            } else { alert('❌ Invalid Secret Code!'); }
+              alert('🎉 Unlocked: ' + res.name + '!'); window.stDrawVault();
+            } else alert('❌ Invalid Secret Code!');
           });
           socket.on('avatarStatsDataV6', (d) => {
-            if (d && d.avatarMap) { Object.entries(d.avatarMap).forEach(([u, info]) => { const found = V8_ITEMS.find(x => x.id === info.avatarId); if (found) v8Players[u] = found; }); renderV8Bubbles(); }
+            if (d && d.avatarMap) { Object.entries(d.avatarMap).forEach(([u, info]) => { const f = V14_ITEMS.find(x => x.id === info.avatarId); if (f) v14Players[u] = { ...f, ring: info.fx || f.ring, badge: info.badge || f.name }; }); renderV14Chat(); }
+          });
+          socket.on('v14BossArrival', (d) => {
+            if (!d || (d._serverId && d._serverId !== window.selectedServerId)) return;
+            const s = document.getElementById('v14BossSlash');
+            document.getElementById('v14BossName').textContent = d.player.toUpperCase();
+            document.getElementById('v14BossTitle').textContent = d.title;
+            s.style.display = 'none'; void s.offsetWidth; s.style.display = 'block';
+            setTimeout(() => { s.style.display = 'none'; }, 3100);
           });
           socket.on('triggerCreatorFx', (fx) => {
             if (fx._serverId && fx._serverId !== window.selectedServerId) return;
@@ -2563,135 +2583,56 @@ module.exports = function initMultiServers(app, io) {
             else if (fx.type === 'confetti') { const box = document.createElement('div'); box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999999;display:flex;justify-content:space-around;font-size:28px;padding-top:25px;'; box.innerHTML = '<span>🎉</span><span>💎</span><span>👑</span><span>🔥</span><span>✨</span>'; document.body.appendChild(box); setTimeout(() => box.remove(), 2000); }
           });
         }
-        renderV8Bubbles();
-      }, 750);
-    })();
-    </script>
-    `;
-
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>')) {
-                body = body.replace('</body>', V8_HOLOGRAPHIC_CLIENT + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
-    // === END V8 ULTRA AVATAR ENGINE ===
-     // === V8.5 TRUE 3D HOLOGRAPHIC FOIL & TOUCH-TILT UPGRADE ===
-    const V8_3D_HOLO_ADDON = `
-    <style>
-      @keyframes holoFoilSweep {
-        0%   { background-position: 0% 50%; filter: hue-rotate(0deg); }
-        50%  { background-position: 100% 50%; filter: hue-rotate(180deg); }
-        100% { background-position: 0% 50%; filter: hue-rotate(360deg); }
-      }
-      @keyframes float3D {
-        0%, 100% { transform: translateZ(18px) translateY(0px); }
-        50%      { transform: translateZ(26px) translateY(-3px); }
-      }
-
-      /* 3D Perspective Stage */
-      .st-item, #stZoomCard {
-        transform-style: preserve-3d !important;
-        perspective: 700px !important;
-        transition: transform 0.12s ease-out, box-shadow 0.2s ease !important;
-        position: relative !important;
-        overflow: hidden !important;
-      }
-
-      /* 3D Pop-Out Avatar Depth */
-      .st-art, #stZoomRing {
-        transform-style: preserve-3d !important;
-        box-shadow: 0 10px 22px rgba(0,0,0,0.75), inset 0 0 14px rgba(255,255,255,0.35) !important;
-      }
-      .st-art svg, #stZoomRing svg {
-        animation: float3D 3s ease-in-out infinite !important;
-      }
-
-      /* Prismatic Holographic Foil Overlay (Pokemon / Yu-Gi-Oh Secret Rare Effect) */
-      .st-art::after, #stZoomRing::after, .v8-bubble::after {
-        content: "";
-        position: absolute;
-        inset: -20%;
-        pointer-events: none;
-        z-index: 4;
-        background: linear-gradient(
-          115deg,
-          transparent 20%,
-          rgba(255, 0, 128, 0.38) 36%,
-          rgba(0, 240, 255, 0.45) 48%,
-          rgba(253, 224, 71, 0.42) 60%,
-          transparent 78%
-        );
-        background-size: 220% 220%;
-        mix-blend-mode: color-dodge;
-        animation: holoFoilSweep 3.4s ease-in-out infinite;
-      }
-
-      /* 3D Glossy Glass Dome Reflection */
-      .st-art::before, #stZoomRing::before, .v8-bubble::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 5;
-        background: radial-gradient(circle at 30% 22%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.08) 38%, rgba(0,0,0,0.55) 100%);
-      }
-    </style>
-    <script>
-    (function() {
-      // Interactive 3D Finger-Tilt & Gyroscope Parallax on Vault Cards & Showcase Modal
-      function bind3DTilt(el, maxTilt) {
-        if (!el || el.dataset.tilt3d) return;
-        el.dataset.tilt3d = '1';
-
-        const handleMove = (clientX, clientY) => {
-          const r = el.getBoundingClientRect();
-          const nx = ((clientX - r.left) / r.width) - 0.5;
-          const ny = ((clientY - r.top) / r.height) - 0.5;
-          const rx = (-ny * maxTilt).toFixed(1);
-          const ry = (nx * maxTilt).toFixed(1);
-          el.style.transform = 'perspective(650px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale3d(1.03,1.03,1.03)';
-        };
-
-        const resetTilt = () => {
-          el.style.transform = 'perspective(650px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
-        };
-
-        el.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
-        el.addEventListener('touchmove', e => {
-          if (e.touches && e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: true });
-        el.addEventListener('mouseleave', resetTilt);
-        el.addEventListener('touchend', resetTilt);
-      }
-
-      setInterval(() => {
-        document.querySelectorAll('.st-item').forEach(card => bind3DTilt(card, 18));
-        const zoomCard = document.getElementById('stZoomCard');
-        if (zoomCard) bind3DTilt(zoomCard, 22);
+        renderV14Chat();
       }, 900);
     })();
     </script>
     `;
+                                             });
+    // === V14 COMPLETE ARMORY & ECONOMY - PIECE 9 (MOBILE ANTI-LAG BOOSTER) ===
+    const V14_MOBILE_ANTILAG = `
+    <style>
+      @media (max-width: 768px) {
+        * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+      }
+    </style>
+    <script>
+    (function() {
+      document.addEventListener('error', function(e) {
+        const el = e.target;
+        if (el && el.tagName === 'IMG' && (el.closest('.v14-bubble') || el.closest('.st-art') || el.closest('#stZoomRing')) && !el.dataset.fbDone) {
+          el.dataset.fbDone = '1';
+          el.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+            '<svg xmlns="http://w3.org" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#1e1b4b"/><text x="50" y="64" font-size="44" font-family="sans-serif" font-weight="900" fill="#fde047" text-anchor="middle">★</text></svg>'
+          );
+        }
+      }, true);
+
+      setInterval(() => {
+        if (document.hidden) return;
+        const box = document.getElementById('chatBox') || document.getElementById('messages');
+        if (box) {
+          while (box.children.length > 45) box.removeChild(box.firstElementChild);
+        }
+      }, 2500);
+    })();
+    </script>
+    `;
 
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>')) {
-                body = body.replace('</body>', V8_3D_HOLO_ADDON + '\n</body>');
+                body = body.replace('</body>', V14_CLIENT_BUNDLE + '\n' + V14_MOBILE_ANTILAG + '\n</body>');
             }
             return origSend.call(this, body);
         };
         next();
     });
-    // === END V8.5 3D HOLOGRAPHIC UPGRADE ===
-
+    // === END V14 COMPLETE ARMORY & ECONOMY ===
 };
+          
+
             
 
 

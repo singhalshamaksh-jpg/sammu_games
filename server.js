@@ -4,6 +4,48 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 5e6 });
 const path = require('path');
 const fs = require('fs');
+// === ANTI-OVERLOAD & ANTI-SPAM SHIELD ===
+const ipConnections = new Map();
+const MAX_CONNS_PER_IP = 4;
+
+io.use((socket, next) => {
+    const fwd = socket.handshake.headers['x-forwarded-for'];
+    const ip = (fwd && typeof fwd === 'string') ? fwd.split(',')[0].trim() : (socket.handshake.address || 'unknown');
+    const current = ipConnections.get(ip) || 0;
+
+    if (current >= MAX_CONNS_PER_IP) {
+        return next(new Error('Too many connections from this IP'));
+    }
+
+    ipConnections.set(ip, current + 1);
+    socket.on('disconnect', () => {
+        const left = (ipConnections.get(ip) || 1) - 1;
+        if (left <= 0) ipConnections.delete(ip);
+        else ipConnections.set(ip, left);
+    });
+    next();
+});
+
+io.on('connection', (socket) => {
+    let eventCount = 0;
+    const resetTimer = setInterval(() => { eventCount = 0; }, 2000);
+    socket.on('disconnect', () => clearInterval(resetTimer));
+
+    socket.use((packet, next) => {
+        eventCount++;
+        // Block anyone sending more than 12 events every 2 seconds
+        if (eventCount > 12) {
+            return;
+        }
+        // Block oversized payloads (> 350 KB) that try to crash RAM
+        const rawSize = JSON.stringify(packet || '').length;
+        if (rawSize > 350000) {
+            return;
+        }
+        next();
+    });
+});
+
 // ================= ALL-IN-ONE MASTER FIX FOR SERVER.JS =================
 const { AsyncLocalStorage } = require('async_hooks');
 const _srvStore = new AsyncLocalStorage();

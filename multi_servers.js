@@ -2726,6 +2726,12 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END V14.7 AUTO-USERNAME DETECTOR & EQUIP FIX ===
+    // === AUTO-REPAIR DICEBEAR URLS & SVG XMLNS ===
+    V14_CLIENT_BUNDLE = V14_CLIENT_BUNDLE
+        .replace("https://dicebear.com' + s + '/svg", "https://dicebear.com' + s + '/svg")
+        .replaceAll('http://w3.org', 'http://w3.org');
+    V14_MOBILE_ANTILAG = V14_MOBILE_ANTILAG
+        .replaceAll('http://w3.org', 'http://w3.org');
 
 };
                 

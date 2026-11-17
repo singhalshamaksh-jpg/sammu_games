@@ -2774,6 +2774,156 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
     // === END SINGLE-BLOCK PATCH ===
+    // === ALL-IN-ONE MASTER FIX BLOCK (ZAIRA LOCK + SUS, MOON & ZAIRA AVATARS + SVG FIX) ===
+    OG_HOSTS.delete("Zaira");
+    OG_HOSTS.add("zaira");
+
+    const ALL_AVATAR_CODES = {
+        '#sammuop':    { avatarId: 'superhost',   name: '🪷👑 SAMAKSH 👑🪷' },
+        '#millyqueen': { avatarId: 'host_milly',  name: '💖 Milly Empress' },
+        '#sidbolt':    { avatarId: 'host_sid',    name: '⚡ Sid Thunder' },
+        '#shubhirose': { avatarId: 'host_shubhi', name: '🌷 Shubhi Blossom' },
+        '#zorosword':  { avatarId: 'host_zoro',   name: '⚔️ Zoro Dojo' },
+        '#sarahfly':   { avatarId: 'host_sarah',  name: '🦋 Sarah Cyber' },
+        '#heerstar':   { avatarId: 'host_heer',   name: '🌸 Heer Star' },
+        '#ishikagold': { avatarId: 'host_ishika', name: '✨ Ishika Gold' },
+        '#izzanfire':  { avatarId: 'host_izzan',  name: '🔥 Izzan Fire' },
+        '#susshadow':  { avatarId: 'host_sus',    name: '👀 Sus Phantom' },
+        '#moongalaxy': { avatarId: 'host_moon',   name: '🌙 Moon Celestial' },
+        '#zairaorbit': { avatarId: 'host_zaira',  name: '🪐 Zaira Cosmic' }
+    };
+
+    io.on('connection', (socket) => {
+        setImmediate(() => {
+            socket.removeAllListeners('verifyAvatarCodeV6');
+            socket.on('verifyAvatarCodeV6', ({ code }) => {
+                const match = ALL_AVATAR_CODES[(code || '').trim().toLowerCase()];
+                if (match) {
+                    socket.isCodeVerified = match.avatarId;
+                    socket.emit('avatarCodeResultV6', { ok: true, avatarId: match.avatarId, name: match.name });
+                } else {
+                    socket.emit('avatarCodeResultV6', { ok: false });
+                }
+            });
+        });
+    });
+
+    const MASTER_AVATAR_FIX_CLIENT = `
+    <script>
+    (function() {
+      const NEW_AVATARS = [
+        {
+          id: 'host_sus', emoji: '👀', name: '👀 Sus Phantom', aura: 'st-aura-emerald',
+          svg: '<svg xmlns="http://w3.org" viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="#022c22"/><circle cx="50" cy="47" r="40" fill="none" stroke="#4ade80" stroke-width="1.4" stroke-dasharray="7 4" class="st-spin-chakra"/><path d="M18,98 C20,74 34,67 50,67 C66,67 80,74 82,98 Z" fill="#065f46" stroke="#4ade80" stroke-width="1.5"/><path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#fcd3b2"/><ellipse cx="41" cy="50" rx="4" ry="3.8" fill="#fff"/><circle cx="41" cy="50" r="2.5" fill="#10b981"/><ellipse cx="59" cy="50" rx="4" ry="3.8" fill="#fff"/><circle cx="59" cy="50" r="2.5" fill="#10b981"/><path d="M30,52 L70,52 L66,69 Q50,75 34,69 Z" fill="#090d16" stroke="#4ade80" stroke-width="1.5"/><polygon points="24,45 19,24 34,30 41,13 50,26 59,13 66,30 81,24 76,45 63,35 50,40 37,35" fill="#090d16"/></svg>'
+        },
+        {
+          id: 'host_moon', emoji: '🌙', name: '🌙 Moon Celestial', aura: 'st-aura-violet',
+          svg: '<svg xmlns="http://w3.org" viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="#1e1b4b"/><circle cx="50" cy="47" r="40" fill="none" stroke="#e879f9" stroke-width="1.4" stroke-dasharray="7 4" class="st-spin-chakra"/><path d="M10,48 Q22,20 38,44 Q22,60 10,48 Z M90,48 Q78,20 62,44 Q78,60 90,48 Z" fill="#c084fc" opacity="0.65" stroke="#fff" stroke-width="1.2"/><path d="M16,44 C11,72 15,93 24,99 L76,99 C85,93 89,72 84,44 C84,18 16,18 16,44 Z" fill="#a855f7"/><path d="M18,98 C20,74 34,67 50,67 C66,67 80,74 82,98 Z" fill="#6d28d9" stroke="#f0abfc" stroke-width="1.5"/><path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#ffe4e6"/><ellipse cx="41" cy="50" rx="4" ry="3.8" fill="#fff"/><circle cx="41" cy="50" r="2.5" fill="#c026d3"/><ellipse cx="59" cy="50" rx="4" ry="3.8" fill="#fff"/><circle cx="59" cy="50" r="2.5" fill="#c026d3"/><path d="M44,59 Q50,63 56,58.5" stroke="#9f1239" stroke-width="2" fill="none"/><path d="M26,46 C26,21 74,21 74,46 C67,33 56,33 50,42 C44,33 33,33 26,46 Z" fill="#c084fc"/><polygon points="31,26 37,12 44,21 50,8 56,21 63,12 69,26" fill="#fde047" stroke="#fff" stroke-width="1.4"/></svg>'
+        },
+        {
+          id: 'host_zaira', emoji: '🪐', name: '🪐 Zaira Cosmic', aura: 'st-aura-ice',
+          svg: '<svg xmlns="http://w3.org" viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="#082f49"/><circle cx="50" cy="47" r="40" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="7 4" class="st-spin-chakra"/><path d="M10,48 Q22,20 38,44 Q22,60 10,48 Z M90,48 Q78,20 62,44 Q78,60 90,48 Z" fill="#38bdf8" opacity="0.6" stroke="#fff" stroke-width="1.2"/><path d="M16,44 C11,72 15,93 24,99 L76,99 C85,93 89,72 84,44 C84,18 16,18 16,44 Z" fill="#0284c7"/><path d="M18,98 C20,74 34,67 50,67 C66,67 80,74 82,98 Z" fill="#0369a1" stroke="#bae6fd" stroke-width="1.5"/><path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#ffe4e6"/><ellipse cx="41" cy="50" rx="4" ry="3.8" fill="#fff"/><circle cx="41" cy="50" r="2.5" fill="#0284c7"/><ellipse cx="59" cy="50" rx="4" ry="3.8" fill="#fff"/><circle cx="59" cy="50" r="2.5" fill="#0284c7"/><path d="M44,59 Q50,63 56,58.5" stroke="#9f1239" stroke-width="2" fill="none"/><path d="M26,46 C26,21 74,21 74,46 C67,33 56,33 50,42 C44,33 33,33 26,46 Z" fill="#38bdf8"/><polygon points="31,26 37,12 44,21 50,8 56,21 63,12 69,26" fill="#fde047" stroke="#fff" stroke-width="1.4"/></svg>'
+        }
+      ];
+
+      const extraPlayerMap = {};
+
+      function fixSvgXmlns(root) {
+        (root || document).querySelectorAll('svg').forEach(svg => {
+          if (svg.getAttribute('xmlns') === 'http://w3.org') {
+            svg.setAttribute('xmlns', 'http://w3.org');
+          }
+        });
+      }
+
+      function renderExtraChatBubbles() {
+        const nodes = document.querySelectorAll('#chatBox b, #chatBox strong, #chatBox span, #messages b, #messages span, .player-item span');
+        const list = nodes.length ? nodes : document.querySelectorAll('b, strong, span');
+        list.forEach(el => {
+          if (el.children.length > 0 || el.closest('#stVaultModal') || el.closest('#stZoomModal')) return;
+          const raw = (el.textContent || '').trim();
+          const sender = raw.replace(/\s*(cap\s*[ab]|👑|creator)\s*/gi, '').trim().toLowerCase();
+          const av = extraPlayerMap[sender];
+          if (!av) return;
+          const container = el.parentElement;
+          if (!container || container.dataset.extraStamp === av.id) return;
+          const iconSpan = Array.from(container.children).find(c =>
+            c !== el && !c.querySelector('button') && ((c.textContent || '').trim().length <= 4 || c.querySelector('.st-live-bubble'))
+          );
+          if (iconSpan) {
+            container.dataset.extraStamp = av.id;
+            iconSpan.innerHTML = '<span class="st-live-bubble ' + av.aura + '" data-user="' + raw.replace(/"/g, '') + '" data-sender="' + sender + '">' + av.svg + '</span>';
+          }
+        });
+      }
+
+      function injectExtraVaultCards() {
+        const grid = document.getElementById('stGrid');
+        if (!grid) return;
+        fixSvgXmlns(grid);
+        const unlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+        NEW_AVATARS.forEach(av => {
+          if (grid.querySelector('[data-avid="' + av.id + '"]')) return;
+          const ok = unlocked.includes(av.id);
+          const d = document.createElement('div');
+          d.className = 'st-item' + (ok ? '' : ' locked');
+          d.setAttribute('data-avid', av.id);
+          d.innerHTML =
+            '<div class="st-art ' + av.aura + '">' + av.svg + '</div>' +
+            '<div style="font-weight:900;font-size:10px;">' + av.name + '</div>' +
+            '<div style="font-size:9px;color:' + (ok ? '#4ade80' : '#f87171') + ';">' + (ok ? '✅ Tap to Equip' : '🔒 Secret Code') + '</div>';
+          d.onclick = () => {
+            if (!ok) { alert('🔒 Enter secret code below to unlock!'); return; }
+            const me = (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
+            extraPlayerMap[me] = av;
+            if (typeof socket !== 'undefined') {
+              socket.emit('equipAvatarFxV6', { username: me, avatar: av.emoji, avatarId: av.id, fx: av.aura, badge: av.name });
+            }
+            document.getElementById('stVaultModal').style.display = 'none';
+            renderExtraChatBubbles();
+          };
+          grid.appendChild(d);
+        });
+      }
+
+      setInterval(() => {
+        if (window.stDrawVault && !window.stDrawVault._masterPatched) {
+          const orig = window.stDrawVault;
+          window.stDrawVault = function() {
+            orig.apply(this, arguments);
+            injectExtraVaultCards();
+          };
+          window.stDrawVault._masterPatched = true;
+        }
+        if (typeof socket !== 'undefined' && !window._extraAvSockBound) {
+          window._extraAvSockBound = true;
+          socket.on('avatarStatsDataV6', (d) => {
+            if (d && d.avatarMap) {
+              Object.entries(d.avatarMap).forEach(([u, info]) => {
+                const found = NEW_AVATARS.find(x => x.id === info.avatarId);
+                if (found) extraPlayerMap[u] = found;
+              });
+              renderExtraChatBubbles();
+            }
+          });
+        }
+        renderExtraChatBubbles();
+      }, 800);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', MASTER_AVATAR_FIX_CLIENT + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === END ALL-IN-ONE MASTER FIX BLOCK ===
 
 };
 

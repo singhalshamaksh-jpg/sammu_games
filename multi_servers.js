@@ -2311,8 +2311,254 @@ module.exports = function initMultiServers(app, io) {
     </div>
      <script>
     // === V14 COMPLETE ARMORY & ECONOMY - PIECE 5 ===
-    
-                  socket.on('updateMVP', (data) => { const cur = getMe(); if (cur && data && Array.isArray(data.board)) { const f = data.board.find(x => x.name && x.name.toLowerCase() === cur); if (f && f.pts > myEcon.mvp) socket.emit('syncEarnedMvp', { username: cur, pts: f.pts }); } });
+        // === V14 COMPLETE ARMORY & ECONOMY - PIECE 5 ===
+    (function() {
+      const urlP = new URLSearchParams(window.location.search);
+      if (urlP.get('avref')) localStorage.setItem('sammu_pending_avref', urlP.get('avref').trim().toLowerCase());
+      let myRefCount = parseInt(localStorage.getItem('sammu_my_avref_count') || '0', 10);
+      let myEcon = { mvp: 0, streak: 1, unlocked: [], customTitle: '' };
+
+      const SAMAKSH_3D_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+        '<defs><radialGradient id="sBg" cx="50%" cy="32%" r="74%"><stop offset="0%" stop-color="#fde047"/><stop offset="35%" stop-color="#6d28d9"/><stop offset="100%" stop-color="#02040a"/></radialGradient>' +
+        '<linearGradient id="sGd" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fef9c3"/><stop offset="50%" stop-color="#facc15"/><stop offset="100%" stop-color="#78350f"/></linearGradient>' +
+        '<radialGradient id="sSk" cx="42%" cy="30%" r="68%"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="50%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#1e3a8a"/></radialGradient></defs>' +
+        '<circle cx="50" cy="50" r="49" fill="url(#sBg)"/>' +
+        '<g class="v14-chakra-3d"><circle cx="50" cy="48" r="44" fill="none" stroke="url(#sGd)" stroke-width="4.2"/><circle cx="50" cy="48" r="38" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="4 3"/>' +
+        '<polygon points="50,0 54,8 46,8" fill="#fde047"/><polygon points="50,96 54,88 46,88" fill="#fde047"/><polygon points="2,48 10,44 10,52" fill="#fde047"/><polygon points="98,48 90,44 90,52" fill="#fde047"/>' +
+        '<polygon points="15,13 23,17 19,22" fill="#38bdf8"/><polygon points="85,13 77,17 81,22" fill="#38bdf8"/><polygon points="15,83 23,79 19,74" fill="#38bdf8"/><polygon points="85,83 77,79 81,74" fill="#38bdf8"/></g>' +
+        '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="url(#sGd)" stroke="#fef9c3" stroke-width="1.4"/>' +
+        '<path d="M31,70 L50,89 L69,70" fill="none" stroke="#dc2626" stroke-width="4"/><polygon points="50,72 56,79 50,86 44,79" fill="#38bdf8" stroke="#fff" stroke-width="1.3"/>' +
+        '<path d="M33,31 C33,24 67,24 67,31 L66,48 C65,58 56,65 50,66.8 C44,65 35,58 34,48 Z" fill="url(#sSk)" stroke="#bae6fd" stroke-width="1.2"/>' +
+        '<path d="M27,42 L32,22 L41,30 L50,18 L59,30 L68,22 L73,42 C64,33 56,34 50,39 C44,34 36,33 27,42 Z" fill="#0f172a"/>' +
+        '<polygon points="33,21 38,9 44,17 50,4 56,17 62,9 67,21" fill="url(#sGd)" stroke="#fff" stroke-width="1.1"/>' +
+        '<path d="M47.8,37 L47.8,43.5 Q50,45.5 52.2,43.5 L52.2,37" fill="none" stroke="#fff" stroke-width="1.8"/><line x1="50" y1="38" x2="50" y2="43.5" stroke="#ef4444" stroke-width="1.5"/>' +
+        '<ellipse cx="41" cy="50.5" rx="4.2" ry="3.2" fill="#fff"/><circle cx="41" cy="50.5" r="2.3" fill="#0284c7"/><circle cx="41" cy="50.5" r="1.1" fill="#fde047"/>' +
+        '<ellipse cx="59" cy="50.5" rx="4.2" ry="3.2" fill="#fff"/><circle cx="59" cy="50.5" r="2.3" fill="#0284c7"/><circle cx="59" cy="50.5" r="1.1" fill="#fde047"/>' +
+        '<path d="M44,58.5 Q50,62 56,57.5" stroke="#1e3a8a" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'
+      );
+
+      const ZORO_FIXED_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+        '<circle cx="50" cy="50" r="49" fill="#064e3b"/>' +
+        '<line x1="8" y1="60" x2="92" y2="96" stroke="#f8fafc" stroke-width="4" stroke-linecap="round"/><line x1="92" y1="60" x2="8" y2="96" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>' +
+        '<circle cx="15" cy="63" r="3.4" fill="#fde047"/><circle cx="85" cy="63" r="3.4" fill="#fde047"/>' +
+        '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="#14532d" stroke="#4ade80" stroke-width="1.5"/>' +
+        '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#fcd3b2"/>' +
+        '<line x1="30" y1="51" x2="30" y2="57" stroke="#fde047" stroke-width="2" stroke-dasharray="1.5 1"/>' +
+        '<polygon points="24,44 19,21 34,28 41,11 50,24 59,11 66,28 81,21 76,44 63,34 50,39 37,34" fill="#16a34a"/>' +
+        '<rect x="30" y="30" width="40" height="5" rx="2" fill="#052e16" stroke="#4ade80" stroke-width="1.2"/>' +
+        '<ellipse cx="41" cy="50" rx="4" ry="3.3" fill="#fff"/><circle cx="41" cy="50" r="2.2" fill="#15803d"/><line x1="38" y1="44" x2="43" y2="56" stroke="#991b1b" stroke-width="1.8"/>' +
+        '<ellipse cx="59" cy="50" rx="4" ry="3.3" fill="#fff"/><circle cx="59" cy="50" r="2.2" fill="#15803d"/>' +
+        '<path d="M44,59 Q50,62 56,58" stroke="#7f1d1d" stroke-width="2" fill="none"/></svg>'
+      );
+
+      const SUS_PRINCESS_URI = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://w3.org" viewBox="0 0 100 100">' +
+        '<circle cx="50" cy="50" r="49" fill="#065f46"/>' +
+        '<path d="M8,40 Q20,14 38,42 Q18,54 8,40 Z M92,40 Q80,14 62,42 Q82,54 92,40 Z" fill="#d1fae5" opacity="0.78" stroke="#fde047" stroke-width="1.2"/>' +
+        '<path d="M15,44 C9,72 14,94 23,99 L77,99 C86,94 91,72 85,44 C85,17 15,17 15,44 Z" fill="#10b981"/>' +
+        '<path d="M16,98 C19,73 33,66 50,66 C67,66 81,73 84,98 Z" fill="#047857" stroke="#fde047" stroke-width="1.5"/>' +
+        '<circle cx="50" cy="79" r="3.5" fill="#f43f5e" stroke="#fde047" stroke-width="1.2"/>' +
+        '<path d="M32,31 C32,24 68,24 68,31 L67,48 C66,58 57,65 50,66.5 C43,65 34,58 33,48 Z" fill="#fff1f2"/>' +
+        '<ellipse cx="36" cy="55" rx="4.2" ry="2.4" fill="#fb7185" opacity="0.45"/><ellipse cx="64" cy="55" rx="4.2" ry="2.4" fill="#fb7185" opacity="0.45"/>' +
+        '<ellipse cx="41" cy="50" rx="4.2" ry="3.8" fill="#fff"/><circle cx="41" cy="50" r="2.6" fill="#059669"/><circle cx="42.2" cy="48.8" r="1.2" fill="#fff"/>' +
+        '<ellipse cx="59" cy="50" rx="4.2" ry="3.8" fill="#fff"/><circle cx="59" cy="50" r="2.6" fill="#059669"/><circle cx="60.2" cy="48.8" r="1.2" fill="#fff"/>' +
+        '<path d="M45,58.5 Q50,63 55,58.5" stroke="#e11d48" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+        '<path d="M25,46 C25,20 75,20 75,46 C67,33 56,33 50,42 C44,33 33,33 25,46 Z" fill="#34d399"/>' +
+        '<polygon points="31,24 37,10 44,19 50,5 56,19 63,10 69,24" fill="#fde047" stroke="#fff" stroke-width="1.3"/></svg>'
+      );
+      // === V14 COMPLETE ARMORY & ECONOMY - PIECE 6 ===
+      const db = (s, seed, bg) => 'https://dicebear.com' + s + '/svg?seed=' + encodeURIComponent(seed) + '&backgroundColor=' + bg;
+
+      const V14_ITEMS = [
+        { id: 'superhost',         pin: '👑', name: '🪷👑 SAMAKSH 👑🪷',     ring: 'v14-ring-samaksh', req: 'code', featured: true, img: SAMAKSH_3D_URI },
+        { id: 'host_milly',        pin: '👸', name: '👸💖 Princess Milly',   ring: 'v14-ring-empress', req: 'code', featured: true, img: db('lorelei', 'PrincessMillyRoyal', 'f43f5e,fbcfe8') },
+        { id: 'diamond',           pin: '💎', name: 'Cyber Striker',         ring: 'v14-ring-ice',     req: 'free', img: db('bottts-neutral', 'CyberStriker77', '0284c7') },
+        { id: 'samurai',           pin: '👹', name: 'Crimson Ronin',         ring: 'v14-ring-fire',    req: 'free', img: db('adventurer', 'CrimsonRoninX', 'dc2626') },
+        { id: 'phoenix',           pin: '🔥', name: 'Blaze Valkyrie',        ring: 'v14-ring-fire',    req: 'free', img: db('lorelei', 'BlazeValkyrie', 'ea580c') },
+        { id: 'ninja',             pin: '🥷', name: 'Shadow Shinobi',        ring: 'v14-ring-violet',  req: 'free', img: db('adventurer-neutral', 'ShadowShinobi', '6d28d9') },
+        { id: 'host_sus',          pin: '👸', name: '👸💚 Princess Sus',     ring: 'v14-ring-emerald', req: 'code', img: SUS_PRINCESS_URI },
+        { id: 'host_zoro',         pin: '⚔️', name: '⚔️🐉 Zoro 3-Sword',     ring: 'v14-ring-emerald', req: 'code', img: ZORO_FIXED_URI },
+        { id: 'host_moon',         pin: '🩺', name: '🩺🌙 Dr. Moon',         ring: 'v14-ring-violet',  req: 'code', img: db('lorelei', 'DrMoonClinicMD', '7c3aed,38bdf8') },
+        { id: 'host_ishika',       pin: '☀️', name: '☀️✨ Empress Ishika',   ring: 'v14-ring-gold',    req: 'code', img: db('lorelei', 'EmpressIshikaSun', 'f59e0b,fde047') },
+        { id: 'host_sid',          pin: '😎', name: '😎⚡ Sid Thunder',      ring: 'v14-ring-gold',    req: 'code', img: db('adventurer', 'SidThunderShades', 'eab308,1e3a8a') },
+        { id: 'host_ruwii',        pin: '🌺', name: '🌺 Ruwii Kitsune',      ring: 'v14-ring-gold',    req: 'code', img: db('lorelei', 'RuwiiKitsuneFox', 'e11d48,f59e0b') },
+        { id: 'host_zaira',        pin: '🪐', name: '🪐 Zaira Nova',         ring: 'v14-ring-ice',     req: 'code', img: db('lorelei', 'ZairaCosmicOrbit', '0ea5e9,1e1b4b') },
+        { id: 'host_sarah',        pin: '🦋', name: '🦋 Sarah Valkyrie',     ring: 'v14-ring-ice',     req: 'code', img: db('lorelei', 'SarahButterfly9', '0284c7,38bdf8') },
+        { id: 'host_shubhi',       pin: '🌷', name: '🌷 Shubhi Sakura',      ring: 'v14-ring-pink',    req: 'code', img: db('lorelei', 'ShubhiBlossom99', 'ec4899,fbcfe8') },
+        { id: 'host_heer',         pin: '🌸', name: '🌸 Heer Starlight',     ring: 'v14-ring-pink',    req: 'code', img: db('lorelei', 'HeerStarlight88', 'f472b6,881337') },
+        { id: 'host_izzan',        pin: '🔥', name: '🔥 Izzan Dragon',       ring: 'v14-ring-fire',    req: 'code', img: db('adventurer', 'IzzanDragonLord', 'dc2626,7f1d1d') },
+        { id: 'host_advait',       pin: '⚡', name: '⚡ Advait Titan',       ring: 'v14-ring-ice',     req: 'code', img: db('adventurer', 'AdvaitCitadelBolt', '2563eb,090d16') },
+        { id: 'streak_10_phoenix', pin: '🔥', name: '🔥 Phoenix (10d Streak)', ring: 'v14-ring-fire',  req: 'streak', reqDays: 10, img: db('adventurer', 'PhoenixWarlord10', 'ea580c,7f1d1d') },
+        { id: 'shop_reaper',       pin: '💀', name: '💀 Soul Reaper',        ring: 'v14-ring-violet',  req: 'shop', cost: 15, img: db('bottts-neutral', 'SoulReaper15', '4c1d95') },
+        { id: 'shop_valkyrie',     pin: '⚔️', name: '⚔️ Frost Valkyrie',     ring: 'v14-ring-ice',     req: 'shop', cost: 25, img: db('lorelei', 'FrostValkyrie25', '0284c7,bae6fd') },
+        { id: 'shop_emperor',      pin: '👑', name: '👑 Golden Emperor',     ring: 'v14-ring-gold',    req: 'shop', cost: 40, img: db('adventurer', 'GoldenEmperor40', 'f59e0b,78350f') },
+        { id: 'ref_wolf',          pin: '🐺', name: '🐺 Cyber-Wolf (1 Ref)', ring: 'v14-ring-ice',     req: 'ref', reqRefs: 1, img: db('adventurer', 'CyberWolfAlpha1', '0284c7,0f172a') },
+        { id: 'ref_kitsune',       pin: '🦊', name: '🦊 Astral Fox (3 Refs)',ring: 'v14-ring-violet',  req: 'ref', reqRefs: 3, img: db('lorelei', 'AstralFoxKitsune3', '7c3aed,1e1b4b') },
+        { id: 'ref_sovereign',     pin: '🐉', name: '🐉 Gold Sovereign (5)', ring: 'v14-ring-gold',    req: 'ref', reqRefs: 5, img: db('adventurer', 'GoldSovereign5', 'f59e0b,451a03') }
+      ];
+
+      const SHOP_TITLES = [
+        { label: '💀 Lobby Demon', cost: 10 },
+        { label: '⚡ Clutch God', cost: 20 },
+        { label: '👑 Arena King', cost: 35 }
+      ];
+
+       // === V14 COMPLETE ARMORY & ECONOMY - PIECE 7 & 8A ===
+      const v14Players = {};
+      const ringToChat = {
+        'v14-ring-samaksh': 'v14-chat-samaksh', 'v14-ring-empress': 'v14-chat-empress',
+        'v14-ring-ice': 'v14-chat-ice', 'v14-ring-fire': 'v14-chat-fire',
+        'v14-ring-pink': 'v14-chat-pink', 'v14-ring-emerald': 'v14-chat-emerald',
+        'v14-ring-gold': 'v14-chat-gold', 'v14-ring-violet': 'v14-chat-violet'
+      };
+      const getMe = () => (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').trim().toLowerCase();
+
+      window.stRedeemCode = () => { const c = (document.getElementById('stCodeInput').value || '').trim(); if (c && typeof socket !== 'undefined') socket.emit('verifyAvatarCodeV6', { code: c }); };
+      window.buyShopTitle = (cost, label) => { if (typeof socket !== 'undefined') socket.emit('buyV14ShopItem', { username: getMe(), itemType: 'title', itemId: label, cost, label }); };
+      window.copyAvatarRefLink = () => {
+        const me = getMe(); if (!me) return alert('Join a room first!');
+        const link = window.location.origin + '/?avref=' + encodeURIComponent(me);
+        if (navigator.clipboard) navigator.clipboard.writeText(link);
+        alert('🔗 Avatar Invite Link Copied!\\n' + link + '\\n\\n1 Ref = Cyber-Wolf | 3 Refs = Astral Fox | 5 Refs = Gold Sovereign');
+      };
+
+      window.switchMyAura = function(ringClass) {
+        const me = getMe(); if (!me || typeof socket === 'undefined' || !v14Players[me]) return alert('Equip a Hero Avatar first!');
+        v14Players[me] = { ...v14Players[me], ring: ringClass };
+        socket.emit('equipAvatarFxV6', { username: me, avatarId: v14Players[me].id, fx: ringClass, badge: v14Players[me].badge || v14Players[me].name });
+      };
+
+      window.stDrawVault = function() {
+        const grid = document.getElementById('stGrid');
+        const walletTop = document.getElementById('v14WalletTop');
+        if (!grid) return;
+        const codeUnlocked = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
+        const pct = Math.min(100, Math.round((myEcon.streak / 10) * 100));
+
+        if (walletTop) {
+          walletTop.innerHTML =
+            '<div style="background:rgba(253,224,71,0.12);border:1px solid rgba(253,224,71,0.4);border-radius:10px;padding:6px 10px;font-size:11px;font-weight:900;">' +
+              '<div style="display:flex;justify-content:space-between;"><span style="color:#fde047;">🪙 MVP: ' + myEcon.mvp + ' Pts</span><span style="color:#38bdf8;">🔥 Streak: ' + myEcon.streak + '/10d</span><span style="color:#4ade80;">🔗 Refs: ' + myRefCount + '/5</span></div>' +
+              '<div style="width:100%;height:5px;background:#090d16;border-radius:5px;margin-top:4px;overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#f59e0b,#10b981);"></div></div>' +
+              '<button onclick="copyAvatarRefLink()" style="margin-top:5px;padding:3px 10px;border:none;border-radius:8px;background:#10b981;color:#fff;font-size:10px;font-weight:900;cursor:pointer;">🔗 Copy Invite Link</button>' +
+            '</div>';
+        }
+
+        grid.innerHTML = '';
+        V14_ITEMS.forEach(av => {
+          const ok = av.req === 'free' || (av.req === 'code' && codeUnlocked.includes(av.id)) ||
+                     (av.req === 'streak' && (myEcon.streak >= av.reqDays || myEcon.unlocked.includes(av.id))) ||
+                     (av.req === 'shop' && myEcon.unlocked.includes(av.id)) ||
+                     (av.req === 'ref' && myRefCount >= av.reqRefs);
+
+          let statusTxt = ok ? '✅ Tap to Equip' : (av.req === 'streak' ? ('🔒 Day ' + myEcon.streak + '/10') : (av.req === 'shop' ? ('🪙 Buy (' + av.cost + ' Pts)') : (av.req === 'ref' ? ('🔒 ' + av.reqRefs + ' Refs') : '🔒 Secret Code')));
+          const d = document.createElement('div');
+          d.className = 'st-item' + (ok ? '' : ' locked');
+          if (av.featured) d.style.cssText = 'grid-column:1/-1;border:2px solid #fde047;background:rgba(250,204,21,0.16);';
+          d.innerHTML = '<div class="st-art ' + av.ring + '"><img src="' + av.img + '" loading="lazy"><span class="v14-pin">' + av.pin + '</span></div><div style="font-weight:900;font-size:10px;">' + av.name + '</div><div style="font-size:9px;color:' + (ok ? '#4ade80' : '#fbbf24') + ';">' + statusTxt + '</div>';
+
+          d.onclick = () => {
+            if (!ok) {
+              if (av.req === 'shop') socket.emit('buyV14ShopItem', { username: getMe(), itemType: 'avatar', itemId: av.id, cost: av.cost, label: av.name });
+              else if (av.req === 'ref') copyAvatarRefLink();
+              else if (av.req === 'streak') alert('🔥 Come back for ' + (10 - myEcon.streak) + ' more day(s) to unlock!');
+              else alert('🔒 Enter secret code below to unlock!');
+              return;
+            }
+            const me = getMe();
+            v14Players[me] = av;
+            if (av.id === 'superhost') document.getElementById('opCreatorDock').style.display = 'flex';
+            if (typeof socket !== 'undefined') socket.emit('equipAvatarFxV6', { username: me, avatarId: av.id, fx: av.ring, badge: myEcon.customTitle || av.name });
+            document.getElementById('stVaultModal').style.display = 'none';
+          };
+          grid.appendChild(d);
+        });
+
+        const titleRow = document.createElement('div');
+        titleRow.style.cssText = 'grid-column:1/-1;background:rgba(168,85,247,0.15);border:1px solid #c084fc;border-radius:10px;padding:6px;margin-top:4px;';
+        titleRow.innerHTML = '<div style="font-size:10px;font-weight:900;color:#e879f9;margin-bottom:4px;">🏷️ BUY CHAT TITLES</div>' +
+          SHOP_TITLES.map(t => '<button onclick="buyShopTitle(' + t.cost + ',\\'' + t.label + '\\')" style="margin:2px;background:#1e1b4b;border:1px solid #fde047;color:#fff;font-size:10px;font-weight:bold;padding:3px 7px;border-radius:7px;cursor:pointer;">' + t.label + ' (🪙' + t.cost + ')</button>').join('');
+        grid.appendChild(titleRow);
+      };
+
+      function renderV14Chat() {
+        const nodes = document.querySelectorAll('#chatBox b, #chatBox strong, #messages b, #messages strong');
+        nodes.forEach(el => {
+          if (el.closest('#stVaultModal') || el.closest('#stZoomModal')) return;
+          const raw = (el.textContent || '').trim();
+          const sender = raw.replace(/\s*(cap\s*[ab]|👑|creator)\s*/gi, '').trim().toLowerCase();
+          const av = v14Players[sender];
+          if (!av) return;
+
+          const row = el.parentElement;
+          if (!row) return;
+          if (!row.querySelector('.v14-title-pill')) {
+            const pill = document.createElement('span');
+            pill.className = 'v14-title-pill';
+            pill.textContent = av.badge || av.name;
+            el.insertAdjacentElement('afterend', pill);
+          }
+
+          const chatCls = ringToChat[av.ring];
+          const msgBubble = (row.nextElementSibling && !row.nextElementSibling.querySelector('input, button')) ? row.nextElementSibling : row.closest('div');
+          if (msgBubble && chatCls && !msgBubble.dataset.v14Glow) {
+            msgBubble.dataset.v14Glow = chatCls;
+            msgBubble.classList.add(chatCls);
+            msgBubble.style.padding = msgBubble.style.padding || '6px 10px';
+          }
+
+          if (row.dataset.v14Stamp === av.id) return;
+          const iconSpan = Array.from(row.children).find(c => c !== el && !c.classList.contains('v14-title-pill') && !c.querySelector('button') && ((c.textContent || '').trim().length <= 4 || c.querySelector('.v14-bubble')));
+          if (iconSpan) {
+            row.dataset.v14Stamp = av.id;
+            iconSpan.innerHTML = '<span class="v14-bubble ' + av.ring + '" data-user="' + raw.replace(/"/g,'') + '" data-sender="' + sender + '"><img src="' + av.img + '"><span class="v14-pin">' + av.pin + '</span></span>';
+          }
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const b = e.target.closest('.v14-bubble');
+        if (b) {
+          e.preventDefault(); e.stopPropagation();
+          const s = b.getAttribute('data-sender') || '';
+          const av = v14Players[s]; if (!av) return;
+          const ring = document.getElementById('stZoomRing');
+          ring.className = av.ring;
+          ring.innerHTML = '<img src="' + av.img + '">';
+          document.getElementById('stZoomUser').textContent = b.getAttribute('data-user') || s;
+          document.getElementById('stZoomTitle').textContent = av.badge || av.name;
+          document.getElementById('stZoomModal').style.display = 'flex';
+          return;
+        }
+        const btn = e.target.closest('button, a, div[onclick]');
+        if (btn && (btn.id === 'openAvatarVaultBtn' || /avatars/i.test((btn.textContent || '').trim()))) {
+          if (btn.closest('#stVaultModal')) return;
+          e.preventDefault(); e.stopPropagation();
+          window.stDrawVault();
+          document.getElementById('stVaultModal').style.display = 'flex';
+        }
+      }, true);
+       // === V14 COMPLETE ARMORY & ECONOMY - PIECE 8B & 9 ===
+      setInterval(() => {
+        if (!document.getElementById('openAvatarVaultBtn')) {
+          const anchor = document.getElementById('openPhonkDjBtn') || document.getElementById('openChefBtn') || Array.from(document.querySelectorAll('button, a, div[onclick]')).find(el => el.children.length === 0 && /jam|🎹|phonk/i.test(el.textContent || ''));
+          if (anchor && anchor.parentNode) { const btn = anchor.cloneNode(true); btn.id = 'openAvatarVaultBtn'; btn.removeAttribute('onclick'); btn.textContent = '👑 Avatars'; anchor.parentNode.insertBefore(btn, anchor.nextSibling); }
+        }
+        if (typeof socket !== 'undefined' && !window._v14Bound) {
+          window._v14Bound = true;
+          const devId = localStorage.getItem('sammu_dev_uid') || ('dev_' + Math.random().toString(36).slice(2));
+          const pending = localStorage.getItem('sammu_pending_avref');
+          if (pending) { socket.emit('registerAvatarRef', { refUser: pending, deviceId: devId }); localStorage.removeItem('sammu_pending_avref'); }
+          const me = getMe();
+          if (me) { socket.emit('getMyAvatarRefCount', me); socket.emit('getV14Econ', me); }
+          socket.emit('getMyAvatarStatsV6');
+
+          socket.on('avatarRefCountUpdate', (d) => { if (d && d.username === getMe()) { myRefCount = d.count || 0; localStorage.setItem('sammu_my_avref_count', String(myRefCount)); } });
+          socket.on('v14EconSync', (r) => { if (r) { myEcon = r; if (document.getElementById('stVaultModal')?.style.display === 'flex') window.stDrawVault(); } });
+          socket.on('v14ShopResult', (res) => { if (res && res.msg) alert(res.msg); if (res && res.ok && document.getElementById('stVaultModal')?.style.display === 'flex') window.stDrawVault(); });
+          socket.on('updateMVP', (data) => { const cur = getMe(); if (cur && data && Array.isArray(data.board)) { const f = data.board.find(x => x.name && x.name.toLowerCase() === cur); if (f && f.pts > myEcon.mvp) socket.emit('syncEarnedMvp', { username: cur, pts: f.pts }); } });
           socket.on('avatarCodeResultV6', (res) => {
             if (res && res.ok && res.avatarId) {
               const u = JSON.parse(localStorage.getItem('sammu_unlocked_avatars') || '[]');
@@ -2339,4 +2585,51 @@ module.exports = function initMultiServers(app, io) {
             else if (fx.type === 'confetti') { const box = document.createElement('div'); box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999999;display:flex;justify-content:space-around;font-size:28px;padding-top:25px;'; box.innerHTML = '<span>🎉</span><span>💎</span><span>👑</span><span>🔥</span><span>✨</span>'; document.body.appendChild(box); setTimeout(() => box.remove(), 2000); }
           });
         }
-   
+        renderV14Chat();
+      }, 900);
+    })();
+    </script>
+    `;
+
+    const V14_MOBILE_ANTILAG = `
+    <style>
+      @media (max-width: 768px) {
+        * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+      }
+    </style>
+    <script>
+    (function() {
+      document.addEventListener('error', function(e) {
+        const el = e.target;
+        if (el && el.tagName === 'IMG' && (el.closest('.v14-bubble') || el.closest('.st-art') || el.closest('#stZoomRing')) && !el.dataset.fbDone) {
+          el.dataset.fbDone = '1';
+          el.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+            '<svg xmlns="http://w3.org" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#1e1b4b"/><text x="50" y="64" font-size="44" font-family="sans-serif" font-weight="900" fill="#fde047" text-anchor="middle">★</text></svg>'
+          );
+        }
+      }, true);
+
+      setInterval(() => {
+        if (document.hidden) return;
+        const box = document.getElementById('chatBox') || document.getElementById('messages');
+        if (box) {
+          while (box.children.length > 45) box.removeChild(box.firstElementChild);
+        }
+      }, 2500);
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', V14_CLIENT_BUNDLE + '\n' + V14_MOBILE_ANTILAG + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === END V14 COMPLETE ARMORY & ECONOMY ===
+};
+                

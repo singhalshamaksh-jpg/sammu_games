@@ -4,27 +4,20 @@ const path = require('path');
 module.exports = function initServerAds(app, io) {
     const ADS_DB_FILE = path.join(__dirname, 'ads_db.json');
 
-    // Never show network ads in Milly's or Zoro's servers
+    // Keep Milly's & Zoro's servers strictly for their own main promos
     const PROTECTED_SERVERS = new Set(['srv_milly', 'srv_zoro']);
 
-    // 1. PASTE YOUR CPM AD SCRIPTS PER SERVER HERE (Shows ONLY before joining the room!)
-    const NETWORK_SCRIPTS = {
-        srv_samaksh: `<!-- Paste Adsterra 320x50 Banner for Samaksh's Arena -->`,
-        srv_moon:    `<!-- Paste Adsterra 320x50 Banner for Moon's Galaxy -->`,
-        srv_advait:  `<!-- Paste Adsterra 320x50 Banner for Advait's Citadel -->`,
-        srv_diamond: `<!-- Paste Adsterra Social Bar for Diamond Server -->`,
-        srv_heer:    `<!-- Paste Monetag In-Page Push for Heer's Haven -->`,
-        srv_izzan:   `<!-- Paste Monetag In-Page Push for Izzan's Fortress -->`,
-        srv_shubhi:  `<!-- Paste Monetag Vignette for Shubhi's Castle -->`,
-        srv_sid:     `<!-- Paste Monetag In-Page Push for Sid's Kingdom -->`,
-        srv_ishika:  `<!-- Paste HilltopAds 300x50 Banner for Ishika's Lounge -->`,
-        srv_sus:     `<!-- Paste HilltopAds 300x50 Banner for Sus Bunker -->`,
-        srv_sarah:   `<!-- Paste HilltopAds 300x50 Banner for Sarah's Sanctuary -->`,
-        srv_ruwii:   `<!-- Paste HilltopAds 300x50 Banner for Ruwii's Garden -->`,
-        srv_zaira:   `<!-- Paste Direct Sponsor / Ad Script for Zaira's Orbit -->`
+    // Default YouTube Cross-Promo banner for open servers
+    const DEFAULT_COLLAB_OFFER = {
+        active: true,
+        tag: "🤝 YOUTUBE CROSS-PROMO SLOT",
+        title: "Want Your YouTube Promoted Here?",
+        desc: "Give a shoutout to Milly Didi or Yori Akiyama & get a FREE 7-day banner! Email: singhalshamaksh@gmail.com",
+        btnText: "📩 Apply for Collab",
+        url: "mailto:singhalshamaksh@://gmail.com",
+        color: "#facc15"
     };
 
-    // 2. CUSTOM DIRECT SPONSOR BANNERS (Controlled live via /setad)
     let serverAds = {};
     if (fs.existsSync(ADS_DB_FILE)) {
         try { serverAds = JSON.parse(fs.readFileSync(ADS_DB_FILE, 'utf8')); } catch (e) {}
@@ -34,140 +27,96 @@ module.exports = function initServerAds(app, io) {
         try { fs.writeFileSync(ADS_DB_FILE, JSON.stringify(serverAds, null, 2)); } catch (e) {}
     }
 
-    const LOBBY_ONLY_AD_WIDGET = `
+    const ENTRY_AD_SLOT_WIDGET = `
     <style>
-      #lobbyOnlyAdWrapper {
-        display: none; max-width: 360px; margin: 8px auto; text-align: center;
-        position: relative; z-index: 48;
-      }
-      #srvSponsorBanner {
-        display: none; padding: 8px 12px; margin-bottom: 6px;
+      #lobbyCrossPromoBox {
+        display: none; max-width: 340px; margin: 8px auto; padding: 10px 12px;
         background: linear-gradient(135deg, #0f172a, #1e1b4b);
-        border: 1.5px solid #38bdf8; border-radius: 14px; color: #fff;
+        border: 1.5px solid #facc15; border-radius: 14px; color: #fff;
+        text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
       }
-      #srvCpmSlot {
-        display: none; max-width: 340px; min-height: 50px; margin: 0 auto;
-        overflow: hidden; border-radius: 10px;
-      }
-      #srvSponsorTag { font-size: 10px; font-weight: 900; color: #38bdf8; }
-      #srvSponsorTitle { font-size: 13px; font-weight: 900; margin: 2px 0; }
-      #srvSponsorDesc { font-size: 11px; color: #cbd5e1; margin-bottom: 5px; }
-      #srvSponsorBtn {
-        display: inline-block; padding: 4px 12px; border-radius: 18px;
-        font-size: 11px; font-weight: 900; text-decoration: none; color: #090d16; background: #38bdf8;
+      #cpTag { font-size: 10px; font-weight: 900; letter-spacing: 0.5px; color: #facc15; }
+      #cpTitle { font-size: 13px; font-weight: 900; margin: 2px 0; }
+      #cpDesc { font-size: 11px; color: #cbd5e1; margin-bottom: 6px; line-height: 1.35; }
+      #cpBtn {
+        display: inline-block; padding: 5px 14px; border-radius: 18px;
+        font-size: 11px; font-weight: 900; text-decoration: none; color: #090d16; background: #facc15;
       }
     </style>
 
-    <div id="lobbyOnlyAdWrapper">
-      <div id="srvSponsorBanner">
-        <div id="srvSponsorTag">📢 SPONSORED</div>
-        <div id="srvSponsorTitle"></div>
-        <div id="srvSponsorDesc"></div>
-        <a id="srvSponsorBtn" href="#" target="_blank" rel="noopener noreferrer">Open</a>
-      </div>
-      <div id="srvCpmSlot"></div>
+    <div id="lobbyCrossPromoBox">
+      <div id="cpTag">🤝 CROSS-PROMO</div>
+      <div id="cpTitle"></div>
+      <div id="cpDesc"></div>
+      <a id="cpBtn" href="#" target="_blank" rel="noopener noreferrer">Open Link</a>
     </div>
 
     <script>
     (function() {
-      var hasJoinedArena = false;
+      var joinedArena = false;
 
-      // Place the ad container right where Zoro & Milly's lobby promo banners appear
-      function mountInLobby() {
-        var wrap = document.getElementById('lobbyOnlyAdWrapper');
-        if (!wrap || wrap.dataset.mounted === '1') return;
-        var anchor = document.getElementById('zoroPromoBox') || document.getElementById('didiPromoBox');
-        if (anchor && anchor.parentNode) {
-          anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
-          wrap.dataset.mounted = '1';
+      // Finds the existing ADVERTISEMENT slot right below ENTER LOBBY 🚀
+      function mountInsideAdvertisementSlot() {
+        var box = document.getElementById('lobbyCrossPromoBox');
+        if (!box || box.dataset.mounted === '1') return;
+
+        var adEl = Array.from(document.querySelectorAll('div, span, p, small, h3, h4')).find(function(el) {
+          return el.children.length === 0 && /^advertisement$/i.test((el.textContent || '').trim());
+        });
+
+        if (adEl && adEl.parentNode) {
+          adEl.parentNode.insertBefore(box, adEl.nextSibling);
+          box.dataset.mounted = '1';
         }
       }
 
-      // Completely hide & wipe ads once the player joins the arena!
-      window.hideLobbyAdsForever = function() {
-        hasJoinedArena = true;
-        var wrap = document.getElementById('lobbyOnlyAdWrapper');
-        var cpm = document.getElementById('srvCpmSlot');
-        if (cpm) { cpm.innerHTML = ''; cpm.style.display = 'none'; }
-        if (wrap) { wrap.style.setProperty('display', 'none', 'important'); }
+      window.hideLobbyPromo = function() {
+        joinedArena = true;
+        var box = document.getElementById('lobbyCrossPromoBox');
+        if (box) box.style.setProperty('display', 'none', 'important');
       };
 
-      function showLobbyAd(data) {
-        if (hasJoinedArena) return;
-        mountInLobby();
+      function renderPromo(ad) {
+        if (joinedArena) return;
+        mountInsideAdvertisementSlot();
+        var box = document.getElementById('lobbyCrossPromoBox');
+        if (!box) return;
+        if (!ad || !ad.active) { box.style.display = 'none'; return; }
 
-        var wrap = document.getElementById('lobbyOnlyAdWrapper');
-        var box = document.getElementById('srvSponsorBanner');
-        var slot = document.getElementById('srvCpmSlot');
-        if (!wrap || !box || !slot) return;
-
-        var hasCustom = data.ad && data.ad.active;
-        var hasCpm = data.cpmHtml && data.cpmHtml.indexOf('<!--') !== 0 && data.cpmHtml.trim().length > 0;
-
-        if (!hasCustom && !hasCpm) {
-          wrap.style.display = 'none';
-          return;
-        }
-
-        wrap.style.display = 'block';
-
-        if (hasCustom) {
-          document.getElementById('srvSponsorTitle').textContent = data.ad.title || '';
-          document.getElementById('srvSponsorDesc').textContent = data.ad.desc || '';
-          var btn = document.getElementById('srvSponsorBtn');
-          btn.textContent = data.ad.btnText || '🔥 Visit';
-          btn.href = data.ad.url || '#';
-          box.style.display = 'block';
-        } else {
-          box.style.display = 'none';
-        }
-
-        slot.innerHTML = '';
-        if (hasCpm) {
-          slot.style.display = 'block';
-          var temp = document.createElement('div');
-          temp.innerHTML = data.cpmHtml;
-          Array.from(temp.childNodes).forEach(function(node) {
-            if (node.tagName === 'SCRIPT') {
-              var s = document.createElement('script');
-              if (node.src) s.src = node.src;
-              else s.textContent = node.textContent;
-              s.async = true;
-              slot.appendChild(s);
-            } else {
-              slot.appendChild(node.cloneNode(true));
-            }
-          });
-        } else {
-          slot.style.display = 'none';
-        }
+        var col = ad.color || '#facc15';
+        box.style.borderColor = col;
+        document.getElementById('cpTag').style.color = col;
+        document.getElementById('cpTag').textContent = ad.tag || '📢 FEATURED';
+        document.getElementById('cpTitle').textContent = ad.title || '';
+        document.getElementById('cpDesc').textContent = ad.desc || '';
+        var btn = document.getElementById('cpBtn');
+        btn.textContent = ad.btnText || '🔥 Check It Out';
+        btn.href = ad.url || '#';
+        btn.style.background = col;
+        box.style.display = 'block';
       }
 
       setInterval(function() {
-        if (typeof socket === 'undefined' || window._lobbyAdsBound) return;
-        window._lobbyAdsBound = true;
+        mountInsideAdvertisementSlot();
+        if (typeof socket === 'undefined' || window._cpBound) return;
+        window._cpBound = true;
 
-        // 1. Intercept joinRoom emit so ads vanish the instant user clicks Join!
         var origEmit = socket.emit.bind(socket);
-        socket.emit = function(ev, payload) {
-          if (ev === 'joinRoom') {
-            window.hideLobbyAdsForever();
-          }
+        socket.emit = function(ev) {
+          if (ev === 'joinRoom') window.hideLobbyPromo();
           return origEmit.apply(this, arguments);
         };
 
-        // 2. Fetch lobby ad right when server is selected (before joining arena)
         socket.on('serverAccessGranted', function(srv) {
-          hasJoinedArena = false;
+          joinedArena = false;
           if (srv && srv.id) socket.emit('requestServerAd', srv.id);
         });
 
-        // 3. Also hide on initRole / updatePlayers just in case
-        socket.on('initRole', window.hideLobbyAdsForever);
+        socket.on('initRole', window.hideLobbyPromo);
 
         socket.on('updateServerAd', function(data) {
-          if (!hasJoinedArena && data && data.serverId === window.selectedServerId) {
-            showLobbyAd(data);
+          if (!joinedArena && data && data.serverId === window.selectedServerId) {
+            renderPromo(data.ad);
           }
         });
       }, 800);
@@ -179,7 +128,7 @@ module.exports = function initServerAds(app, io) {
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>')) {
-                body = body.replace('</body>', LOBBY_ONLY_AD_WIDGET + '\n</body>');
+                body = body.replace('</body>', ENTRY_AD_SLOT_WIDGET + '\n</body>');
             }
             return origSend.call(this, body);
         };
@@ -189,12 +138,11 @@ module.exports = function initServerAds(app, io) {
     io.on('connection', (socket) => {
         socket.on('requestServerAd', (serverId) => {
             if (!serverId) return;
-            const cpmHtml = PROTECTED_SERVERS.has(serverId) ? '' : (NETWORK_SCRIPTS[serverId] || '');
-            socket.emit('updateServerAd', {
-                serverId,
-                ad: serverAds[serverId] || null,
-                cpmHtml
-            });
+            if (PROTECTED_SERVERS.has(serverId)) {
+                socket.emit('updateServerAd', { serverId, ad: null });
+                return;
+            }
+            socket.emit('updateServerAd', { serverId, ad: serverAds[serverId] || DEFAULT_COLLAB_OFFER });
         });
 
         socket.on('chatMessage', (payload) => {
@@ -204,15 +152,31 @@ module.exports = function initServerAds(app, io) {
             if (sender !== 'samaksh' && sender !== 'sammu') return;
 
             const clean = raw.trim();
-            if (clean.toLowerCase().startsWith('/setad ')) {
-                const [targetSrv, title, desc, btnText, url] = clean.slice(7).split('|').map(s => s.trim());
+
+            // Set YouTube Collab OR Fashion/Beauty Affiliate Link per server:
+            // /setcollab srv_heer | 💅 Nail Art Kits Under ₹199 | Cute press-on nails & lip glosses! | 🛍️ Shop Flipkart | https://flipkart.com...
+            if (clean.toLowerCase().startsWith('/setcollab ')) {
+                const [targetSrv, title, desc, btnText, url] = clean.slice(11).split('|').map(s => s.trim());
                 if (!targetSrv || !title || !url || PROTECTED_SERVERS.has(targetSrv)) return;
+                const isFashion = /flipkart|myntra|nykaa|shop|fashion|nail|makeup/i.test(title + desc + url);
                 serverAds[targetSrv] = {
-                    active: true, title, desc: desc || '', btnText: btnText || '🚀 Open',
-                    url: url.startsWith('http') ? url : 'https://' + url
+                    active: true,
+                    tag: isFashion ? '💄 TRENDING FASHION & BEAUTY' : '🔥 FEATURED COLLAB CREATOR',
+                    title,
+                    desc: desc || '',
+                    btnText: btnText || (isFashion ? '🛍️ View Deal' : '▶️ Subscribe'),
+                    url: url.startsWith('http') ? url : 'https://' + url,
+                    color: isFashion ? '#f472b6' : '#38bdf8'
                 };
                 saveAds();
-                socket.emit('message', { username: 'SYSTEM', text: `✅ Lobby-Only Ad saved for **${targetSrv}**!`, _serverId: socket.activeServerId });
+                socket.emit('message', { username: 'SYSTEM', text: `✅ Entry Banner updated for **${targetSrv}**!`, _serverId: socket.activeServerId });
+            }
+
+            if (clean.toLowerCase().startsWith('/resetcollab ')) {
+                const targetSrv = clean.slice(13).trim();
+                delete serverAds[targetSrv];
+                saveAds();
+                socket.emit('message', { username: 'SYSTEM', text: `🔄 **${targetSrv}** reset to Collab Offer banner.`, _serverId: socket.activeServerId });
             }
         });
     });

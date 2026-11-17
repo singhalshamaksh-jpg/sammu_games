@@ -3057,11 +3057,9 @@ require('./avatarArmory')(app, io, {
     OG_HOSTS: new Set(["sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus", "sarah", "advait", "ruwii", "zaira", "shubhi", "sid"]),
     verifyOGHostTripleLock: () => true
 });
-app.use((req, res, next) => {
-    const _s = res.send.bind(res);
-    res.send = (b) => _s(typeof b === 'string' && b.includes('</body>') ? b.replace('</body>', (app.locals.AVATAR_RPG_UI || '') + '\n</body>') : b);
-    next();
-});
+
+app.get('/avatar_widget', (req, res) => res.send(app.locals.AVATAR_RPG_UI || ''));
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));
+

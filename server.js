@@ -3005,6 +3005,8 @@ setInterval(() => {
         io.emit('syncGame', gameData);
     }
 }, 33);
+const initServerAds = require('./ads');
+initServerAds(app, io);
 
 
 const PORT = process.env.PORT || 3000;

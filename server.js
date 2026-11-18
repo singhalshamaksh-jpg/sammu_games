@@ -4,6 +4,10 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 5e6 });
 const path = require('path');
 const fs = require('fs');
+
+const OG_HOSTS = new Set(["sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus", "sarah", "advait", "ruwii", "zaira", "shubhi", "sid"]);
+global.OG_HOSTS = OG_HOSTS;
+
 // === ANTI-OVERLOAD & ANTI-SPAM SHIELD ===
 const ipConnections = new Map();
 const MAX_CONNS_PER_IP = 4;
@@ -3054,11 +3058,97 @@ const initServerAds = require('./ads');
 initServerAds(app, io);
 
 require('./avatarArmory')(app, io, {
-    OG_HOSTS: new Set(["sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus", "sarah", "advait", "ruwii", "zaira", "shubhi", "sid"]),
+    OG_HOSTS: OG_HOSTS,
     verifyOGHostTripleLock: () => true
 });
 
 app.get('/avatar_widget', (req, res) => res.send(app.locals.AVATAR_RPG_UI || ''));
+
+async function getAIReply(promptText) {
+    const groqKey = process.env.GROQ_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const sysPrompt = "You are 🤖 Sammu AI, a witty gaming chatbot in a multiplayer lobby. Give a very short (1-2 sentences), funny Hinglish reply with emojis.";
+    const userPrompt = promptText || "hello";
+
+    try {
+        if (groqKey) {
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${groqKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [
+                        { role: 'system', content: sysPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    max_tokens: 100
+                })
+            });
+            if (res.ok) {
+                const json = await res.json();
+                const text = json.choices?.[0]?.message?.content;
+                if (text) return text.trim();
+            }
+        }
+        if (geminiKey) {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: `${sysPrompt}\nUser prompt: ${userPrompt}` }]
+                    }]
+                })
+            });
+            if (res.ok) {
+                const json = await res.json();
+                const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) return text.trim();
+            }
+        }
+    } catch (err) {
+        console.error("AI Fetch Error:", err);
+    }
+    const funReplies = [
+        "Arre bro! AI server thoda rest le raha hai, par tumhara Sammu AI hamesha OP hai! 😎⚡",
+        "Savage response loading... 99%! Agle round mein match jeet ke dikhao! 🏆🔥",
+        "Dimaag garam ho gaya bro, thoda paani pio aur arena mein aao! 🌊🤖"
+    ];
+    return funReplies[Math.floor(Math.random() * funReplies.length)];
+}
+
+io.use((socket, next) => {
+    socket.use(async (packet, pktNext) => {
+        try {
+            const ev = packet && packet[0];
+            const payload = packet && packet[1];
+            if (ev === 'chatMessage') {
+                const raw = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
+                if (typeof raw === 'string') {
+                    const trimmed = raw.trim();
+                    if (trimmed.toLowerCase().startsWith('!ai') || trimmed.toLowerCase().startsWith('@gemini')) {
+                        const prompt = trimmed.replace(/^(!ai|@gemini)/i, '').trim();
+                        const srvId = socket.activeServerId || 'global';
+                        getAIReply(prompt).then(reply => {
+                            io.emit('message', {
+                                username: "🤖 Sammu AI",
+                                text: reply,
+                                _serverId: srvId
+                            });
+                        });
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("AI Socket Middleware Error:", err);
+        }
+        pktNext();
+    });
+    next();
+});
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));

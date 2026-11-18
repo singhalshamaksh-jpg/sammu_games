@@ -742,10 +742,6 @@ const NEW_ARENAS_WIDGET = `
 })();
 </script>
 `;
-require('./avatarArmory')(app, io, {
-    OG_HOSTS: OG_HOSTS,
-    verifyOGHostTripleLock: () => true
-});
 
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');

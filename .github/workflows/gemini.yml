@@ -217,7 +217,7 @@ jobs:
                   else:
                       print("WARNING: Search block did not match:", s[:60])
 
-                            if applied > 0 and updated_code != code:
+              if applied > 0 and updated_code != code:
                   with open(filepath, "w", encoding="utf-8") as f:
                       f.write(updated_code)
                   print("SUCCESS: Applied patches to", filepath)

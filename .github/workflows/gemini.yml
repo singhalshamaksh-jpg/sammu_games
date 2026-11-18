@@ -21,12 +21,12 @@ jobs:
           ISSUE_BODY: \${{ github.event.issue.body }}
         run: |
           python3 - << 'EOF'
-          import os, json, urllib.request, time
+          import os, json, urllib.request
 
           api_key = os.environ["GEMINI_API_KEY"]
           title = os.environ.get("ISSUE_TITLE", "")
           body = os.environ.get("ISSUE_BODY", "")
-          instruction = title + " - " + body
+          instruction = (title + " " + body).strip()
           url = "https://googleapis.com" + api_key
 
           target_files = []
@@ -34,22 +34,27 @@ jobs:
               dirs[:] = [d for d in dirs if d not in ("node_modules", ".git", ".github")]
               for file in files:
                   if file.endswith((".js", ".html", ".css")):
-                      target_files.append(os.path.join(root, file))
+                      if any(f in instruction.lower() for f in (file.lower(),)) or not any(ext in instruction.lower() for ext in (".js", ".html", ".css")):
+                          target_files.append(os.path.join(root, file))
 
           for filepath in target_files:
-              print("Checking " + filepath)
+              print("Processing " + filepath)
               with open(filepath, "r", encoding="utf-8") as f:
                   code = f.read()
               prompt = (
-                  "You are maintaining a Node.js + Socket.io game site. File: " + filepath + "\n"
-                  "User Request: " + instruction + "\n"
-                  "Fix any syntax errors, undefined variables, bugs, or apply the user request if relevant to this file. Keep all existing features safe. "
-                  "Return ONLY the raw complete file code with no markdown backticks or explanations:\n\n" + code
+                  "You are editing " + filepath + " for a Node.js + Socket.io game website.\n"
+                  "Task: " + instruction + "\n"
+                  "Apply the requested change cleanly while keeping all existing code intact. "
+                  "Output ONLY the raw complete file code with zero markdown formatting or explanations:\n\n" + code
               )
-              data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8")
+              payload = {
+                  "contents": [{"parts": [{"text": prompt}]}],
+                  "generationConfig": {"maxOutputTokens": 65536}
+              }
+              data = json.dumps(payload).encode("utf-8")
               req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
               try:
-                  with urllib.request.urlopen(req) as resp:
+                  with urllib.request.urlopen(req, timeout=120) as resp:
                       result = json.loads(resp.read().decode("utf-8"))
                       fixed = result["candidates"][0]["content"]["parts"][0]["text"].strip()
                       if fixed.startswith("```"):
@@ -58,9 +63,10 @@ jobs:
                           with open(filepath, "w", encoding="utf-8") as f:
                               f.write(fixed + "\n")
                           print("SUCCESS: Updated " + filepath)
+                      else:
+                          print("NO CHANGE: " + filepath)
               except Exception as e:
                   print("ERROR on " + filepath + ": " + str(e))
-              time.sleep(2)
           EOF
 
       - name: Commit and push AI updates

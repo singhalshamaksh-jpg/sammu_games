@@ -877,7 +877,12 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         let t = 0;
         function draw() {
           const c = document.getElementById('rpgStageCanvas');
-          if (!c) return;
+          const modal = document.getElementById('rpgArenaModal');
+          if (!c || !modal || modal.style.display === 'none' || !document.body.contains(c)) {
+            if (animId) cancelAnimationFrame(animId);
+            animId = null;
+            return;
+          }
           const ctx = c.getContext('2d');
           t += 0.06;
 
@@ -1225,7 +1230,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         document.body.appendChild(bar);
       }
 
-      setInterval(() => {
+      function initArmory() {
         ensureFloatingArmoryBar();
         if (typeof socket !== 'undefined' && !window._allArmoryBound) {
           window._allArmoryBound = true;
@@ -1270,10 +1275,44 @@ module.exports = function initAvatarArmory(app, io, helpers) {
           });
         }
         renderChatAvatars();
-      }, 800);
+      }
+
+      // Initial call on DOMContentLoaded
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initArmory);
+      } else {
+        initArmory();
+      }
+
+      // MutationObserver for chat updates
+      function setupChatObserver() {
+        const chatBox = document.getElementById('chatBox');
+        const messages = document.getElementById('messages');
+        const targets = [chatBox, messages].filter(Boolean);
+        if (targets.length === 0) {
+          // Retry after a short delay
+          setTimeout(setupChatObserver, 500);
+          return;
+        }
+        const observer = new MutationObserver(() => renderChatAvatars());
+        targets.forEach(target => observer.observe(target, { childList: true, subtree: true }));
+      }
+      setupChatObserver();
     })();
     </script>
     `;
+
+    // Inject COMBINED_UI into all HTML responses
+    app.use((req, res, next) => {
+        const originalSend = res.send;
+        res.send = function (body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', COMBINED_UI + '</body>');
+            }
+            originalSend.call(this, body);
+        };
+        next();
+    });
 
     app.locals.AVATAR_RPG_UI = COMBINED_UI;
 };

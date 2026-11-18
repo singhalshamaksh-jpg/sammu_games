@@ -742,11 +742,16 @@ const NEW_ARENAS_WIDGET = `
 })();
 </script>
 `;
+require('./avatarArmory')(app, io, {
+    OG_HOSTS: OG_HOSTS,
+    verifyOGHostTripleLock: () => true
+});
+
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');
     fs.readFile(indexPath, 'utf8', (err, html) => {
         if (err) return next();
-        const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET).join('\n');
+        const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET, app.locals.AVATAR_RPG_UI || '').join('\n');
         res.send(html.replace('</body>', allWidgets + '\n</body>'));
     });
 });
@@ -3056,11 +3061,6 @@ setInterval(() => {
 // Injects Avatar & RPG UI at the front of Express before index.html is sent
 const initServerAds = require('./ads');
 initServerAds(app, io);
-
-require('./avatarArmory')(app, io, {
-    OG_HOSTS: OG_HOSTS,
-    verifyOGHostTripleLock: () => true
-});
 
 app.get('/avatar_widget', (req, res) => res.send(app.locals.AVATAR_RPG_UI || ''));
 

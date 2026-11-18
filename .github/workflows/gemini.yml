@@ -10,6 +10,7 @@ permissions:
 jobs:
   ai-patch:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -62,12 +63,15 @@ jobs:
 
               payload = {
                   "contents": [{"parts": [{"text": prompt}]}],
-                  "generationConfig": {"responseMimeType": "application/json"}
+                  "generationConfig": {
+                      "responseMimeType": "application/json",
+                      "thinkingConfig": {"thinkingBudget": 0}
+                  }
               }
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
 
               try:
-                  with urllib.request.urlopen(req, timeout=90) as resp:
+                  with urllib.request.urlopen(req, timeout=600) as resp:
                       result = json.loads(resp.read().decode("utf-8"))
                       cand = result.get("candidates").pop(0)
                       part = cand.get("content").get("parts").pop(0)
@@ -102,3 +106,4 @@ jobs:
           git config user.email "actions@github.com"
           git add .
           git diff --quiet && git diff --staged --quiet || (git commit -m "AI patch from Issue" && git push)
+          

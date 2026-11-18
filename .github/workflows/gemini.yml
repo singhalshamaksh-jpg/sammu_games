@@ -1,4 +1,4 @@
-name: Gemini Issue Coder
+name: Universal AI Code Patcher
 
 on:
   issues:
@@ -8,65 +8,87 @@ permissions:
   contents: write
 
 jobs:
-  code-with-gemini:
+  ai-patch:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Ask Gemini to edit files
+      - name: Apply Smart AI Patch to Any File
         env:
           GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
           ISSUE_TITLE: \${{ github.event.issue.title }}
           ISSUE_BODY: \${{ github.event.issue.body }}
         run: |
           python3 - << 'EOF'
-          import os, json, urllib.request
+          import os, json, urllib.request, sys
 
           api_key = os.environ["GEMINI_API_KEY"]
-          title = os.environ.get("ISSUE_TITLE", "")
-          body = os.environ.get("ISSUE_BODY", "")
-          instruction = (title + " " + body).strip()
+          instruction = (os.environ.get("ISSUE_TITLE", "") + "\n" + os.environ.get("ISSUE_BODY", "")).strip()
           url = "https://googleapis.com" + api_key
 
-          target_files = []
+          all_files = []
           for root, dirs, files in os.walk("."):
               dirs[:] = [d for d in dirs if d not in ("node_modules", ".git", ".github")]
               for file in files:
                   if file.endswith((".js", ".html", ".css")):
-                      if any(f in instruction.lower() for f in (file.lower(),)) or not any(ext in instruction.lower() for ext in (".js", ".html", ".css")):
-                          target_files.append(os.path.join(root, file))
+                      all_files.append(os.path.join(root, file).lstrip("./"))
 
-          for filepath in target_files:
-              print("Processing " + filepath)
+          # Match exact file mentioned in issue, or fallback to server.js
+          mentioned = [f for f in all_files if os.path.basename(f).lower() in instruction.lower()]
+          if not mentioned:
+              mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
+
+          for filepath in mentioned:
+              print("Patching file:", filepath)
               with open(filepath, "r", encoding="utf-8") as f:
                   code = f.read()
+
               prompt = (
-                  "You are editing " + filepath + " for a Node.js + Socket.io game website.\n"
-                  "Task: " + instruction + "\n"
-                  "Apply the requested change cleanly while keeping all existing code intact. "
-                  "Output ONLY the raw complete file code with zero markdown formatting or explanations:\n\n" + code
+                  f"You are a senior Node.js & web developer editing `{filepath}`.\n"
+                  f"User Request:\n{instruction}\n\n"
+                  "Instead of rewriting the whole file, output a JSON array of exact search-and-replace patches.\n"
+                  "Format:\n"
+                  '[{"search": "exact existing lines from file to match", "replace": "new updated lines"}]\n\n'
+                  "Rules:\n"
+                  "1. 'search' MUST match existing lines in the file character-for-character (include 2-3 surrounding lines for uniqueness).\n"
+                  "2. To add new code at the bottom or inside a function, include the existing anchor lines in 'search' and put existing + new lines in 'replace'.\n"
+                  "3. Output ONLY valid raw JSON. No markdown backticks.\n\n"
+                  f"File Content ({filepath}):\n{code}"
               )
+
               payload = {
                   "contents": [{"parts": [{"text": prompt}]}],
-                  "generationConfig": {"maxOutputTokens": 65536}
+                  "generationConfig": {"responseMimeType": "application/json"}
               }
-              data = json.dumps(payload).encode("utf-8")
-              req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+              req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+
               try:
-                  with urllib.request.urlopen(req, timeout=120) as resp:
+                  with urllib.request.urlopen(req, timeout=90) as resp:
                       result = json.loads(resp.read().decode("utf-8"))
-                      fixed = result["candidates"][0]["content"]["parts"][0]["text"].strip()
-                      if fixed.startswith("```"):
-                          fixed = "\n".join(fixed.split("\n")[1:-1])
-                      if fixed and fixed != code.strip():
+                      raw_json = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+                      patches = json.loads(raw_json)
+
+                      updated_code = code
+                      applied = 0
+                      for p in patches:
+                          s, r = p.get("search", ""), p.get("replace", "")
+                          if s and s in updated_code:
+                              updated_code = updated_code.replace(s, r, 1)
+                              applied += 1
+                          else:
+                              print("WARNING: Search block did not match exactly:", s[:60])
+
+                      if applied > 0 and updated_code != code:
                           with open(filepath, "w", encoding="utf-8") as f:
-                              f.write(fixed + "\n")
-                          print("SUCCESS: Updated " + filepath)
+                              f.write(updated_code)
+                          print(f"SUCCESS: Applied {applied} patch(es) to {filepath}")
                       else:
-                          print("NO CHANGE: " + filepath)
+                          print(f"NO CHANGES APPLIED to {filepath}")
+                          sys.exit(1)
               except Exception as e:
-                  print("ERROR on " + filepath + ": " + str(e))
+                  print("ERROR:", e)
+                  sys.exit(1)
           EOF
 
       - name: Commit and push AI updates
@@ -74,4 +96,4 @@ jobs:
           git config user.name "Gemini AI"
           git config user.email "actions@github.com"
           git add .
-          git diff --quiet && git diff --staged --quiet || (git commit -m "AI update from Issue" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "AI patch from Issue" && git push)

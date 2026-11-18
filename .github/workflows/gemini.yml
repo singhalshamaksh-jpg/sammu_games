@@ -20,11 +20,13 @@ jobs:
           ISSUE_TITLE: \${{ github.event.issue.title }}
           ISSUE_BODY: \${{ github.event.issue.body }}
         run: |
-          python3 -c '
-          import os, json, urllib.request
+          python3 - << 'EOF'
+          import os, json, urllib.request, time
 
           api_key = os.environ["GEMINI_API_KEY"]
-          instruction = f"{os.environ.get(\"ISSUE_TITLE\", \"\")} - {os.environ.get(\"ISSUE_BODY\", \"\")}"
+          title = os.environ.get("ISSUE_TITLE", "")
+          body = os.environ.get("ISSUE_BODY", "")
+          instruction = f"{title} - {body}"
           url = f"https://googleapis.com{api_key}"
 
           target_files = []
@@ -35,12 +37,13 @@ jobs:
                       target_files.append(os.path.join(root, file))
 
           for filepath in target_files:
+              print(f"Checking {filepath}...")
               with open(filepath, "r", encoding="utf-8") as f:
                   code = f.read()
               prompt = (
                   f"You are maintaining a Node.js + Socket.io game site. File: {filepath}\n"
                   f"User Request: {instruction}\n"
-                  f"Only change this file if the request applies to it. Keep all existing features safe. "
+                  f"Fix any syntax errors, undefined variables, bugs, or apply the user's request if relevant to this file. Keep all existing features safe. "
                   f"Return ONLY the raw complete file code with no markdown backticks or explanations:\n\n{code}"
               )
               data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8")
@@ -48,15 +51,17 @@ jobs:
               try:
                   with urllib.request.urlopen(req) as resp:
                       result = json.loads(resp.read().decode("utf-8"))
-                      fixed = result["candidates"]["content"]["parts"]["text"].strip()
+                      fixed = result["candidates"][0]["content"]["parts"][0]["text"].strip()
                       if fixed.startswith("```"):
                           fixed = "\n".join(fixed.split("\n")[1:-1])
                       if fixed and fixed != code.strip():
                           with open(filepath, "w", encoding="utf-8") as f:
                               f.write(fixed + "\n")
+                          print(f"Updated {filepath}!")
               except Exception as e:
                   print(f"Skipped {filepath}: {e}")
-          '
+              time.sleep(2)
+          EOF
 
       - name: Commit and push AI updates
         run: |

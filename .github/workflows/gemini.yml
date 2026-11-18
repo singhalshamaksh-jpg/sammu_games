@@ -25,7 +25,8 @@ jobs:
 
           api_key = os.environ["GEMINI_API_KEY"]
           instruction = (os.environ.get("ISSUE_TITLE", "") + "\n" + os.environ.get("ISSUE_BODY", "")).strip()
-          url = "https://googleapis.com" + api_key
+          host = "generativelanguage." + "googleapis.com"
+          url = "https://" + host + "/v1beta/models/gemini-2.5-flash:generateContent?key=" + api_key
 
           all_files = []
           for root, dirs, files in os.walk("."):
@@ -68,7 +69,9 @@ jobs:
               try:
                   with urllib.request.urlopen(req, timeout=90) as resp:
                       result = json.loads(resp.read().decode("utf-8"))
-                      raw_json = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+                      cand = result.get("candidates").pop(0)
+                      part = cand.get("content").get("parts").pop(0)
+                      raw_json = part.get("text").strip()
                       patches = json.loads(raw_json)
 
                       updated_code = code

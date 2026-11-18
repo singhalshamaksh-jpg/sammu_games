@@ -16,9 +16,9 @@ jobs:
 
       - name: Apply Smart AI Patch to Any File
         env:
-          GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
-          ISSUE_TITLE: \${{ github.event.issue.title }}
-          ISSUE_BODY: \${{ github.event.issue.body }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           python3 - << 'EOF'
           import os, json, urllib.request, sys
@@ -32,9 +32,11 @@ jobs:
               dirs[:] = [d for d in dirs if d not in ("node_modules", ".git", ".github")]
               for file in files:
                   if file.endswith((".js", ".html", ".css")):
-                      all_files.append(os.path.join(root, file).lstrip("./"))
+                      clean_path = os.path.join(root, file)
+                      if clean_path.startswith("./"):
+                          clean_path = clean_path[2:]
+                      all_files.append(clean_path)
 
-          # Match exact file mentioned in issue, or fallback to server.js
           mentioned = [f for f in all_files if os.path.basename(f).lower() in instruction.lower()]
           if not mentioned:
               mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
@@ -45,16 +47,16 @@ jobs:
                   code = f.read()
 
               prompt = (
-                  f"You are a senior Node.js & web developer editing `{filepath}`.\n"
-                  f"User Request:\n{instruction}\n\n"
-                  "Instead of rewriting the whole file, output a JSON array of exact search-and-replace patches.\n"
+                  "You are a senior Node.js and web developer editing " + filepath + ".\n"
+                  "User Request:\n" + instruction + "\n\n"
+                  "Output a JSON array of exact search-and-replace patches.\n"
                   "Format:\n"
-                  '[{"search": "exact existing lines from file to match", "replace": "new updated lines"}]\n\n'
+                  '[{"search": "exact existing lines from file", "replace": "new updated lines"}]\n\n'
                   "Rules:\n"
-                  "1. 'search' MUST match existing lines in the file character-for-character (include 2-3 surrounding lines for uniqueness).\n"
-                  "2. To add new code at the bottom or inside a function, include the existing anchor lines in 'search' and put existing + new lines in 'replace'.\n"
-                  "3. Output ONLY valid raw JSON. No markdown backticks.\n\n"
-                  f"File Content ({filepath}):\n{code}"
+                  "1. search MUST match existing lines in the file character-for-character (include 2-3 surrounding lines).\n"
+                  "2. To add new code, include existing anchor lines in search and put existing + new lines in replace.\n"
+                  "3. Output ONLY valid raw JSON with no markdown backticks.\n\n"
+                  "File Content (" + filepath + "):\n" + code
               )
 
               payload = {
@@ -77,14 +79,14 @@ jobs:
                               updated_code = updated_code.replace(s, r, 1)
                               applied += 1
                           else:
-                              print("WARNING: Search block did not match exactly:", s[:60])
+                              print("WARNING: Search block did not match:", s[:60])
 
                       if applied > 0 and updated_code != code:
                           with open(filepath, "w", encoding="utf-8") as f:
                               f.write(updated_code)
-                          print(f"SUCCESS: Applied {applied} patch(es) to {filepath}")
+                          print("SUCCESS: Applied patches to", filepath)
                       else:
-                          print(f"NO CHANGES APPLIED to {filepath}")
+                          print("NO CHANGES APPLIED to", filepath)
                           sys.exit(1)
               except Exception as e:
                   print("ERROR:", e)

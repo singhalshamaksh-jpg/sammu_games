@@ -22,12 +22,12 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           python3 - << 'EOF'
-          import os, json, urllib.request, sys
+          import os, json, urllib.request, urllib.error, sys, time
 
           api_key = os.environ["GEMINI_API_KEY"]
           instruction = (os.environ.get("ISSUE_TITLE", "") + "\n" + os.environ.get("ISSUE_BODY", "")).strip()
           host = "generativelanguage." + "googleapis.com"
-          url = "https://" + host + "/v1beta/models/gemini-3.8-flash:generateContent?key=" + api_key
+          models = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]
 
           all_files = []
           for root, dirs, files in os.walk("."):
@@ -43,6 +43,8 @@ jobs:
           if not mentioned:
               mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
 
+          total_applied = 0
+
           for filepath in mentioned:
               print("Patching file:", filepath)
               with open(filepath, "r", encoding="utf-8") as f:
@@ -57,7 +59,8 @@ jobs:
                   "Rules:\n"
                   "1. search MUST match existing lines in the file character-for-character (include 2-3 surrounding lines).\n"
                   "2. To add new code, include existing anchor lines in search and put existing + new lines in replace.\n"
-                  "3. Output ONLY valid raw JSON with no markdown backticks.\n\n"
+                  "3. If this file has no bugs or needs no changes for the request, return [].\n"
+                  "4. Output ONLY valid raw JSON with no markdown backticks.\n\n"
                   "File Content (" + filepath + "):\n" + code
               )
 
@@ -68,36 +71,49 @@ jobs:
                       "thinkingConfig": {"thinkingBudget": 0}
                   }
               }
-              req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+              body_bytes = json.dumps(payload).encode("utf-8")
 
-              try:
-                  with urllib.request.urlopen(req, timeout=600) as resp:
-                      result = json.loads(resp.read().decode("utf-8"))
-                      cand = result.get("candidates").pop(0)
-                      part = cand.get("content").get("parts").pop(0)
-                      raw_json = part.get("text").strip()
-                      patches = json.loads(raw_json)
+              success = False
+              for attempt in range(5):
+                  model = models[attempt % len(models)]
+                  url = "https://" + host + "/v1beta/models/" + model + ":generateContent?key=" + api_key
+                  req = urllib.request.Request(url, data=body_bytes, headers={"Content-Type": "application/json"})
+                  try:
+                      with urllib.request.urlopen(req, timeout=600) as resp:
+                          result = json.loads(resp.read().decode("utf-8"))
+                          cand = result.get("candidates").pop(0)
+                          part = cand.get("content").get("parts").pop(0)
+                          raw_json = part.get("text").strip()
+                          patches = json.loads(raw_json)
 
-                      updated_code = code
-                      applied = 0
-                      for p in patches:
-                          s, r = p.get("search", ""), p.get("replace", "")
-                          if s and s in updated_code:
-                              updated_code = updated_code.replace(s, r, 1)
-                              applied += 1
+                          updated_code = code
+                          applied = 0
+                          for p in patches:
+                              s, r = p.get("search", ""), p.get("replace", "")
+                              if s and s in updated_code:
+                                  updated_code = updated_code.replace(s, r, 1)
+                                  applied += 1
+
+                          if applied > 0 and updated_code != code:
+                              with open(filepath, "w", encoding="utf-8") as f:
+                                  f.write(updated_code)
+                              print("SUCCESS: Applied patches to", filepath)
+                              total_applied += applied
                           else:
-                              print("WARNING: Search block did not match:", s[:60])
+                              print("CLEAN: No changes needed for", filepath)
+                          success = True
+                          break
+                  except urllib.error.HTTPError as e:
+                      print("Temporary API error (" + str(e.code) + ") on " + model + ", retrying in 8s...")
+                      time.sleep(8)
+                  except Exception as e:
+                      print("ERROR on " + filepath + ":", e)
+                      time.sleep(5)
 
-                      if applied > 0 and updated_code != code:
-                          with open(filepath, "w", encoding="utf-8") as f:
-                              f.write(updated_code)
-                          print("SUCCESS: Applied patches to", filepath)
-                      else:
-                          print("NO CHANGES APPLIED to", filepath)
-                          sys.exit(1)
-              except Exception as e:
-                  print("ERROR:", e)
+              if not success:
+                  print("FAILED after 5 retries on", filepath)
                   sys.exit(1)
+              time.sleep(3)
           EOF
 
       - name: Commit and push AI updates

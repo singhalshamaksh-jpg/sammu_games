@@ -2068,12 +2068,92 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
 
+    const AI_CONSOLE_WIDGET = `
+    <script>
+    (function() {
+      function setupAiConsole() {
+        if (window.selectedServerId !== 'srv_topsecret') return;
+        if (!document.getElementById('aiConsoleFab')) {
+          const fab = document.createElement('button');
+          fab.id = 'aiConsoleFab';
+          fab.innerText = '🤖 AI Console';
+          fab.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:99999999;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:2px solid #c4b5fd;border-radius:999px;padding:12px 18px;font-size:14px;font-weight:900;cursor:pointer;';
+          fab.onclick = function() { openAiConsole(); };
+          document.body.appendChild(fab);
+        }
+        if (!window._aiConsoleBound) {
+          window._aiConsoleBound = true;
+          socket.on('aiCommandsSync', renderAiCommands);
+        }
+      }
+
+      function openAiConsole() {
+        let modal = document.getElementById('aiConsoleModal');
+        if (!modal) {
+          modal = document.createElement('div');
+          modal.id = 'aiConsoleModal';
+          modal.style.cssText = 'position:fixed;inset:0;background:rgba(7,11,25,0.95);z-index:99999998;display:none;align-items:center;justify-content:center;padding:12px;';
+          modal.innerHTML = '<div style="background:#0f172a;border:2px solid #38bdf8;border-radius:20px;padding:14px;width:100%;max-width:420px;color:#fff;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:900;font-size:15px;color:#38bdf8;">🤖 AI CONSOLE</span><button onclick="document.getElementById('aiConsoleModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕ Close</button></div><div style="display:flex;gap:6px;margin-bottom:8px;"><input id="aiCmdInput" placeholder="AI Command..." style="flex:1;padding:9px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:12px;box-sizing:border-box;"><textarea id="aiCodeInput" placeholder="Optional Code..." style="width:100%;height:60px;margin-top:6px;padding:8px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;box-sizing:border-box;font-family:monospace;"></textarea></div><button onclick="sendAiCommand()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;font-size:13px;cursor:pointer;">🚀 Send</button><div id="aiCommandList" style="margin-top:10px;max-height:220px;overflow-y:auto;"></div></div>';
+          document.body.appendChild(modal);
+        }
+        modal.style.display = 'flex';
+        renderAiCommands();
+      }
+
+      function sendAiCommand() {
+        const cmd = (document.getElementById('aiCmdInput') || {}).value || '';
+        const code = (document.getElementById('aiCodeInput') || {}).value || '';
+        if (!cmd) return;
+        if (typeof socket !== 'undefined') socket.emit('addAiCommand', { cmd, code });
+        document.getElementById('aiCmdInput').value = '';
+        document.getElementById('aiCodeInput').value = '';
+      }
+
+      function renderAiCommands() {
+        const box = document.getElementById('aiCommandList');
+        if (!box) return;
+        box.innerHTML = '';
+        if (typeof aiCommandsSync === 'undefined' || !Array.isArray(aiCommandsSync)) {
+          box.innerHTML = '<div style="font-size:11px;color:#94a3b8;">No AI commands synced.</div>';
+          return;
+        }
+        aiCommandsSync.forEach(c => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:7px 9px;margin-bottom:6px;font-size:11px;color:#fff;';
+          row.innerHTML = '<span>' + (c.text || '') + '</span>';
+          const actions = document.createElement('div');
+          actions.style.cssText = 'display:flex;gap:5px;';
+          const copyBtn = document.createElement('button');
+          copyBtn.textContent = 'Copy';
+          copyBtn.style.cssText = 'background:#0284c7;border:none;color:#fff;border-radius:7px;padding:4px 7px;font-size:10px;font-weight:bold;cursor:pointer;';
+          copyBtn.onclick = function() { navigator.clipboard.writeText(c.text || ''); };
+          const doneBtn = document.createElement('button');
+          doneBtn.textContent = c.done ? 'Undo' : 'Done';
+          doneBtn.style.cssText = 'background:#f59e0b;border:none;color:#fff;border-radius:7px;padding:4px 7px;font-size:10px;font-weight:bold;cursor:pointer;';
+          doneBtn.onclick = function() { if (typeof socket !== 'undefined') socket.emit('markAiDone', c.id); };
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Delete';
+          delBtn.style.cssText = 'background:#ef4444;border:none;color:#fff;border-radius:7px;padding:4px 7px;font-size:10px;font-weight:bold;cursor:pointer;';
+          delBtn.onclick = function() { if (typeof socket !== 'undefined') socket.emit('deleteAiCommand', c.id); };
+          actions.appendChild(copyBtn); actions.appendChild(doneBtn); actions.appendChild(delBtn);
+          row.appendChild(document.createTextNode(c.text || ''));
+          row.appendChild(actions);
+          box.appendChild(row);
+        });
+      }
+      window.openAiConsole = openAiConsole;
+      window.sendAiCommand = sendAiCommand;
+      window.renderAiCommands = renderAiCommands;
+    })();
+    </script>
+    `;
+
     // Avatar Armory RPG UI injection
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>')) {
-                body = body.replace('</body>', (app.locals.AVATAR_RPG_UI || '') + '\n</body>');
+                body = body.replace('</body>', AI_CONSOLE_WIDGET + '\n' + (app.locals.AVATAR_RPG_UI || '') + '\n</body>');
             }
             return origSend.call(this, body);
         };

@@ -49,7 +49,7 @@ jobs:
               mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
 
           def parse_ai_json(text):
-              text = text.strip()
+              text = (text or "").strip()
               start = text.find("{")
               if start == -1:
                   raise ValueError("No JSON object found in AI output")
@@ -57,7 +57,39 @@ jobs:
               obj, _ = decoder.raw_decode(text, idx=start)
               return obj
 
-          def call_chat_api(url, api_key, model_name, prompt_text, use_json_mode=True, extra_headers=None):
+          def get_live_groq_models():
+              try:
+                  host = "".join(["api", ".", "groq", ".", "com"])
+                  req = urllib.request.Request(
+                      "https://" + host + "/openai/v1/models",
+                      headers={"Authorization": "Bearer " + groq_key, "User-Agent": "SammuGames-Patcher"}
+                  )
+                  with urllib.request.urlopen(req, timeout=20) as resp:
+                      items = json.loads(resp.read().decode("utf-8")).get("data", [])
+                      ids = [m.get("id", "") for m in items if "llama" in m.get("id", "").lower() or "qwen" in m.get("id", "").lower()]
+                      ids.sort(key=lambda x: ("70b" not in x and "32b" not in x, x))
+                      return ids[:3]
+              except Exception:
+                  return ["llama-3.3-70b-versatile"]
+
+          def get_live_gemini_models():
+              try:
+                  host = "".join(["generativelanguage", ".", "googleapis", ".", "com"])
+                  req = urllib.request.Request("https://" + host + "/v1beta/models?key=" + gemini_key)
+                  with urllib.request.urlopen(req, timeout=20) as resp:
+                      items = json.loads(resp.read().decode("utf-8")).get("models", [])
+                      ids = []
+                      for m in items:
+                          name = m.get("name", "").replace("models/", "")
+                          methods = m.get("supportedGenerationMethods", [])
+                          if "generateContent" in methods and "flash" in name and "lite" not in name and "image" not in name and "audio" not in name:
+                              ids.append(name)
+                      ids.sort(reverse=True)
+                      return ids[:3] if ids else ["gemini-3.8-flash"]
+              except Exception:
+                  return ["gemini-3.8-flash"]
+
+          def call_chat_api(url, api_key, model_name, prompt_text, use_json_mode=False, extra_headers=None):
               payload = {
                   "model": model_name,
                   "messages": [{"role": "user", "content": prompt_text}],
@@ -75,11 +107,14 @@ jobs:
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
               with urllib.request.urlopen(req, timeout=180) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
-                  return data.get("choices").pop(0).get("message").get("content").strip()
-
-          def call_gemini(prompt_text):
+                  choices = data.get("choices") or []
+                  if not choices:
+                      return ""
+                  msg = choices.pop(0).get("message") or {}
+                  return (msg.get("content") or "").strip()
+          def call_gemini(model_name, prompt_text):
               host = "".join(["generativelanguage", ".", "googleapis", ".", "com"])
-              url = f"https://{host}/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+              url = "https://" + host + "/v1beta/models/" + model_name + ":generateContent?key=" + gemini_key
               payload = {
                   "contents": [{"parts": [{"text": prompt_text}]}],
                   "generationConfig": {"responseMimeType": "application/json"}
@@ -87,7 +122,11 @@ jobs:
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
               with urllib.request.urlopen(req, timeout=300) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
-                  return data.get("candidates").pop(0).get("content").get("parts").pop(0).get("text").strip()
+                  cands = data.get("candidates") or []
+                  if not cands:
+                      return ""
+                  parts = (cands.pop(0).get("content") or {}).get("parts") or []
+                  return (parts.pop(0).get("text") or "").strip() if parts else ""
 
           for filepath in mentioned:
               print("Patching file:", filepath)
@@ -112,50 +151,54 @@ jobs:
               raw_json = None
 
               if groq_key and not raw_json:
-                  try:
-                      print("1. Trying Groq Llama-3.3-70B...")
-                      groq_host = "".join(["api", ".", "groq", ".", "com"])
-                      raw_json = call_chat_api(f"https://{groq_host}/openai/v1/chat/completions", groq_key, "llama-3.3-70b-versatile", prompt, True)
-                  except urllib.error.HTTPError as e:
-                      print("Groq HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
-                  except Exception as e:
-                      print("Groq skipped:", repr(e))
+                  groq_host = "".join(["api", ".", "groq", ".", "com"])
+                  for g_model in get_live_groq_models():
+                      try:
+                          print("1. Trying Groq:", g_model)
+                          raw_json = call_chat_api("https://" + groq_host + "/openai/v1/chat/completions", groq_key, g_model, prompt, True)
+                          if raw_json:
+                              break
+                      except Exception as e:
+                          print("Groq skipped:", g_model, str(e)[:150])
 
               if gemini_key and not raw_json:
-                  try:
-                      print("2. Trying Gemini 2.5 Flash...")
-                      raw_json = call_gemini(prompt)
-                  except urllib.error.HTTPError as e:
-                      print("Gemini HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
-                  except Exception as e:
-                      print("Gemini skipped:", repr(e))
+                  for gem_model in get_live_gemini_models():
+                      try:
+                          print("2. Trying Gemini:", gem_model)
+                          raw_json = call_gemini(gem_model, prompt)
+                          if raw_json:
+                              break
+                      except Exception as e:
+                          print("Gemini skipped:", gem_model, str(e)[:150])
 
               if openrouter_key and not raw_json:
-                  try:
-                      print("3. Trying OpenRouter (openrouter/free)...")
-                      or_host = "".join(["openrouter", ".", "ai"])
-                      raw_json = call_chat_api(
-                          f"https://{or_host}/api/v1/chat/completions",
-                          openrouter_key,
-                          "openrouter/free",
-                          prompt,
-                          False,
-                          {"HTTP-Referer": "https://github.com", "X-Title": "SammuGames"}
-                      )
-                  except urllib.error.HTTPError as e:
-                      print("OpenRouter HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
-                  except Exception as e:
-                      print("OpenRouter skipped:", repr(e))
+                  or_host = "".join(["openrouter", ".", "ai"])
+                  for or_model in ["openrouter/free", "qwen/qwen3-coder:free", "meta-llama/llama-3.3-70b-instruct:free"]:
+                      try:
+                          print("3. Trying OpenRouter:", or_model)
+                          raw_json = call_chat_api(
+                              "https://" + or_host + "/api/v1/chat/completions",
+                              openrouter_key,
+                              or_model,
+                              prompt,
+                              False,
+                              {"HTTP-Referer": "https://github.com", "X-Title": "SammuGames"}
+                          )
+                          if raw_json:
+                              break
+                      except Exception as e:
+                          print("OpenRouter skipped:", or_model, str(e)[:150])
 
               if gh_token and not raw_json:
-                  try:
-                      print("4. Trying Built-in GitHub Models (gpt-4o-mini)...")
-                      gh_host = "".join(["models", ".", "github", ".", "ai"])
-                      raw_json = call_chat_api(f"https://{gh_host}/inference/chat/completions", gh_token, "gpt-4o-mini", prompt, False)
-                  except urllib.error.HTTPError as e:
-                      print("GitHub Models HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
-                  except Exception as e:
-                      print("GitHub Models skipped:", repr(e))
+                  gh_host = "".join(["models", ".", "github", ".", "ai"])
+                  for gh_model in ["openai/gpt-4o-mini", "meta/llama-3.3-70b-instruct"]:
+                      try:
+                          print("4. Trying GitHub Models:", gh_model)
+                          raw_json = call_chat_api("https://" + gh_host + "/inference/chat/completions", gh_token, gh_model, prompt, False)
+                          if raw_json:
+                              break
+                      except Exception as e:
+                          print("GitHub Models skipped:", gh_model, str(e)[:150])
 
               if not raw_json:
                   print("FAILED on", filepath)

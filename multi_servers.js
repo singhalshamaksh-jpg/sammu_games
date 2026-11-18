@@ -2020,6 +2020,18 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
 
+    // Avatar Armory RPG UI injection
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', (app.locals.AVATAR_RPG_UI || '') + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
     io.on('connection', (socket) => {
         setImmediate(() => {
             const listeners = socket.listeners('disconnect');
@@ -2091,6 +2103,9 @@ module.exports = function initMultiServers(app, io) {
         });
     });
     // === END phonk======  //       
+    
+    // Initialize Avatar Armory (RPG System)
+    require('./avatarArmory')(app, io, { OG_HOSTS, verifyOGHostTripleLock });
       
 };
  

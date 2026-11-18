@@ -44,7 +44,7 @@ jobs:
               mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
 
           def call_groq(prompt_text):
-              url = "https://api." + "://groq.com"
+              url = "https://groq.com"
               payload = {
                   "model": "llama-3.3-70b-versatile",
                   "messages": [{"role": "user", "content": prompt_text}],
@@ -62,11 +62,10 @@ jobs:
               )
               with urllib.request.urlopen(req, timeout=180) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
-                  return data.get("choices").pop(0).get("message").get("content").strip()
+                  return data["choices"][0]["message"]["content"].strip()
 
           def call_gemini(prompt_text):
-              host = "generativelanguage." + "googleapis.com"
-              url = "https://" + host + "/v1beta/models/gemini-3.5-flash:generateContent?key=" + gemini_key
+              url = f"https://googleapis.com{gemini_key}"
               payload = {
                   "contents": [{"parts": [{"text": prompt_text}]}],
                   "generationConfig": {"responseMimeType": "application/json"}
@@ -74,7 +73,7 @@ jobs:
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
               with urllib.request.urlopen(req, timeout=300) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
-                  return data.get("candidates").pop(0).get("content").get("parts").pop(0).get("text").strip()
+                  return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
           for filepath in mentioned:
               print("Patching file:", filepath)

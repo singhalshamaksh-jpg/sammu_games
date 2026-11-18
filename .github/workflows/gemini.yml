@@ -17,10 +17,10 @@ jobs:
 
       - name: Apply Smart AI Patch to Any File
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
+          GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
+          ISSUE_TITLE: \${{ github.event.issue.title }}
+          ISSUE_BODY: \${{ github.event.issue.body }}
         run: |
           python3 - << 'EOF'
           import os, json, urllib.request, urllib.error, sys, time
@@ -60,7 +60,7 @@ jobs:
                       "User-Agent": "SammuGames-Patcher"
                   }
               )
-              with urllib.request.urlopen(req, timeout=120) as resp:
+              with urllib.request.urlopen(req, timeout=180) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
                   return data.get("choices").pop(0).get("message").get("content").strip()
 
@@ -72,7 +72,7 @@ jobs:
                   "generationConfig": {"responseMimeType": "application/json"}
               }
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
-              with urllib.request.urlopen(req, timeout=120) as resp:
+              with urllib.request.urlopen(req, timeout=300) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
                   return data.get("candidates").pop(0).get("content").get("parts").pop(0).get("text").strip()
 
@@ -90,18 +90,22 @@ jobs:
                   "Rules:\n"
                   "1. search MUST match existing lines in the file character-for-character (include 2-3 surrounding lines).\n"
                   "2. To add new code, include existing anchor lines in search and put existing + new lines in replace.\n"
-                  "3. If no changes are needed, return {\"patches\": []}.\n"
-                  "4. Output ONLY valid raw JSON.\n\n"
+                  "3. Properly escape all newlines (\\n) and quotes inside JSON strings.\n"
+                  "4. If no changes are needed, return {\"patches\": []}.\n"
+                  "5. Output ONLY valid raw JSON.\n\n"
                   "File Content (" + filepath + "):\n" + code
               )
 
               raw_json = None
               if groq_key:
-                  try:
-                      print("Using Groq Llama-3.3-70B...")
-                      raw_json = call_groq(prompt)
-                  except Exception as e:
-                      print("Groq error:", e)
+                  for attempt in range(3):
+                      try:
+                          print("Using Groq Llama-3.3-70B...")
+                          raw_json = call_groq(prompt)
+                          break
+                      except Exception as e:
+                          print("Groq error:", e)
+                          time.sleep(4)
 
               if not raw_json and gemini_key:
                   for attempt in range(3):
@@ -117,7 +121,10 @@ jobs:
                   print("FAILED on", filepath)
                   sys.exit(1)
 
-              parsed = json.loads(raw_json)
+              if raw_json.startswith("```"):
+                  raw_json = "\n".join(raw_json.split("\n")[1:-1]).strip()
+
+              parsed = json.loads(raw_json, strict=False)
               patches = parsed.get("patches", parsed) if isinstance(parsed, dict) else parsed
 
               updated_code = code
@@ -127,6 +134,8 @@ jobs:
                   if s and s in updated_code:
                       updated_code = updated_code.replace(s, r, 1)
                       applied += 1
+                  else:
+                      print("WARNING: Search block did not match:", s[:60])
 
               if applied > 0 and updated_code != code:
                   with open(filepath, "w", encoding="utf-8") as f:

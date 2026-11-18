@@ -48,20 +48,14 @@ jobs:
           if not mentioned:
               mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
 
-          def extract_json(text):
+          def parse_ai_json(text):
               text = text.strip()
-              if "```" in text:
-                  for p in text.split("```"):
-                      p = p.strip()
-                      if p.startswith("json"):
-                          p = p[4:].strip()
-                      if p.startswith("{"):
-                          return p
               start = text.find("{")
-              end = text.rfind("}")
-              if start != -1 and end != -1:
-                  return text[start:end+1]
-              return text
+              if start == -1:
+                  raise ValueError("No JSON object found in AI output")
+              decoder = json.JSONDecoder(strict=False)
+              obj, _ = decoder.raw_decode(text, idx=start)
+              return obj
 
           def call_chat_api(url, api_key, model_name, prompt_text, use_json_mode=True, extra_headers=None):
               payload = {
@@ -81,10 +75,10 @@ jobs:
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
               with urllib.request.urlopen(req, timeout=180) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
-                  return data["choices"][0]["message"]["content"].strip()
+                  return data["choices"]["message"]["content"].strip()
 
           def call_gemini(prompt_text):
-              url = "https://googleapis.com" + "/v1beta/models/gemini-2.5-flash:generateContent?key=" + gemini_key
+              url = "https://generativelanguage." + "://googleapis.com" + gemini_key
               payload = {
                   "contents": [{"parts": [{"text": prompt_text}]}],
                   "generationConfig": {"responseMimeType": "application/json"}
@@ -92,7 +86,7 @@ jobs:
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
               with urllib.request.urlopen(req, timeout=300) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
-                  return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                  return data["candidates"]["content"]["parts"]["text"].strip()
 
           for filepath in mentioned:
               print("Patching file:", filepath)
@@ -119,7 +113,7 @@ jobs:
               if groq_key and not raw_json:
                   try:
                       print("1. Trying Groq Llama-3.3-70B...")
-                      groq_url = "https://groq.com" + "/openai/v1/chat/completions"
+                      groq_url = "https://api." + "://groq.com"
                       raw_json = call_chat_api(groq_url, groq_key, "llama-3.3-70b-versatile", prompt, True)
                   except urllib.error.HTTPError as e:
                       print("Groq HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
@@ -136,7 +130,7 @@ jobs:
                       print("Gemini skipped:", repr(e))
 
               if openrouter_key and not raw_json:
-                  or_url = "https://openrouter.ai" + "/api/v1/chat/completions"
+                  or_url = "https://openrouter." + "ai/api/v1/chat/completions"
                   for or_model in ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free", "qwen/qwen-2.5-coder-32b-instruct:free"]:
                       try:
                           print(f"3. Trying OpenRouter ({or_model})...")
@@ -158,7 +152,7 @@ jobs:
               if gh_token and not raw_json:
                   try:
                       print("4. Trying Built-in GitHub Models (gpt-4o-mini)...")
-                      gh_url = "https://azure.com" + "/chat/completions"
+                      gh_url = "https://inference.ai." + "://azure.com"
                       raw_json = call_chat_api(gh_url, gh_token, "gpt-4o-mini", prompt, False)
                   except urllib.error.HTTPError as e:
                       print("GitHub Models HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
@@ -169,8 +163,7 @@ jobs:
                   print("FAILED on", filepath)
                   sys.exit(1)
 
-              clean_json = extract_json(raw_json)
-              parsed = json.loads(clean_json, strict=False)
+              parsed = parse_ai_json(raw_json)
               patches = parsed.get("patches", parsed) if isinstance(parsed, dict) else parsed
 
               updated_code = code

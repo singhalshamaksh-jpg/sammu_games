@@ -639,6 +639,25 @@ module.exports = function initMultiServers(app, io) {
 
       setInterval(upgradeHornToMemeMaker, 1000);
 
+      setInterval(() => {
+        if (window.selectedServerId === 'srv_topsecret') {
+          const exists = document.getElementById('aiConsoleFab');
+          if (window.selectedServerId === 'srv_topsecret') {
+            if (!exists) {
+              const fab = document.createElement('button');
+              fab.id = 'aiConsoleFab';
+              fab.innerText = '🤖 AI Console';
+              fab.style.cssText = 'position:fixed;bottom:18px;left:18px;z-index:99999999;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:2px solid #c4b5fd;border-radius:999px;padding:12px 18px;font-size:14px;font-weight:900;cursor:pointer';
+              fab.onclick = function() { openAiConsole(); };
+              document.body.appendChild(fab);
+            }
+            fab.style.display = 'block';
+          } else {
+            if (exists) exists.style.display = 'none';
+          }
+        }
+      }, 800);
+
       function hookServerSocket() {
         if (typeof socket === 'undefined' || window._srvHooked) return;
         window._srvHooked = true;

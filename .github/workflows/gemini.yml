@@ -75,10 +75,11 @@ jobs:
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
               with urllib.request.urlopen(req, timeout=180) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
-                  return data["choices"]["message"]["content"].strip()
+                  return data.get("choices").pop(0).get("message").get("content").strip()
 
           def call_gemini(prompt_text):
-              url = "https://generativelanguage." + "://googleapis.com" + gemini_key
+              host = "".join(["generativelanguage", ".", "googleapis", ".", "com"])
+              url = f"https://{host}/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
               payload = {
                   "contents": [{"parts": [{"text": prompt_text}]}],
                   "generationConfig": {"responseMimeType": "application/json"}
@@ -86,7 +87,7 @@ jobs:
               req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
               with urllib.request.urlopen(req, timeout=300) as resp:
                   data = json.loads(resp.read().decode("utf-8"))
-                  return data["candidates"]["content"]["parts"]["text"].strip()
+                  return data.get("candidates").pop(0).get("content").get("parts").pop(0).get("text").strip()
 
           for filepath in mentioned:
               print("Patching file:", filepath)
@@ -113,8 +114,8 @@ jobs:
               if groq_key and not raw_json:
                   try:
                       print("1. Trying Groq Llama-3.3-70B...")
-                      groq_url = "https://api." + "://groq.com"
-                      raw_json = call_chat_api(groq_url, groq_key, "llama-3.3-70b-versatile", prompt, True)
+                      groq_host = "".join(["api", ".", "groq", ".", "com"])
+                      raw_json = call_chat_api(f"https://{groq_host}/openai/v1/chat/completions", groq_key, "llama-3.3-70b-versatile", prompt, True)
                   except urllib.error.HTTPError as e:
                       print("Groq HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
                   except Exception as e:
@@ -130,30 +131,27 @@ jobs:
                       print("Gemini skipped:", repr(e))
 
               if openrouter_key and not raw_json:
-                  or_url = "https://openrouter." + "ai/api/v1/chat/completions"
-                  for or_model in ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free", "qwen/qwen-2.5-coder-32b-instruct:free"]:
-                      try:
-                          print(f"3. Trying OpenRouter ({or_model})...")
-                          raw_json = call_chat_api(
-                              or_url,
-                              openrouter_key,
-                              or_model,
-                              prompt,
-                              False,
-                              {"HTTP-Referer": "https://github.com", "X-Title": "SammuGames"}
-                          )
-                          if raw_json:
-                              break
-                      except urllib.error.HTTPError as e:
-                          print(f"OpenRouter {or_model} HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
-                      except Exception as e:
-                          print(f"OpenRouter {or_model} skipped:", repr(e))
+                  try:
+                      print("3. Trying OpenRouter (openrouter/free)...")
+                      or_host = "".join(["openrouter", ".", "ai"])
+                      raw_json = call_chat_api(
+                          f"https://{or_host}/api/v1/chat/completions",
+                          openrouter_key,
+                          "openrouter/free",
+                          prompt,
+                          False,
+                          {"HTTP-Referer": "https://github.com", "X-Title": "SammuGames"}
+                      )
+                  except urllib.error.HTTPError as e:
+                      print("OpenRouter HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
+                  except Exception as e:
+                      print("OpenRouter skipped:", repr(e))
 
               if gh_token and not raw_json:
                   try:
                       print("4. Trying Built-in GitHub Models (gpt-4o-mini)...")
-                      gh_url = "https://inference.ai." + "://azure.com"
-                      raw_json = call_chat_api(gh_url, gh_token, "gpt-4o-mini", prompt, False)
+                      gh_host = "".join(["models", ".", "github", ".", "ai"])
+                      raw_json = call_chat_api(f"https://{gh_host}/inference/chat/completions", gh_token, "gpt-4o-mini", prompt, False)
                   except urllib.error.HTTPError as e:
                       print("GitHub Models HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
                   except Exception as e:

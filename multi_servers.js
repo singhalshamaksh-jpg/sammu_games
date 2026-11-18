@@ -143,9 +143,8 @@ module.exports = function initMultiServers(app, io) {
         if (event === 'toggleDidiPromo') {
             millyPromoOn = Boolean(args.at(0));
             saveDB();
-            io.to('srv_milly').emit('toggleDidiPromo', millyPromoOn);
             Object.keys(serversDB).forEach(id => {
-                if (id !== 'srv_milly') io.to(id).emit('toggleDidiPromo', false);
+                io.to(id).emit('toggleDidiPromo', millyPromoOn);
             });
             return true;
         }
@@ -1174,7 +1173,7 @@ module.exports = function initMultiServers(app, io) {
                     });
                 }
             }
-            if (socket.activeServerId === 'srv_milly' && millyPromoOn) {
+            if (millyPromoOn) {
                 setTimeout(() => socket.emit('toggleDidiPromo', true), 600);
             }
         });
@@ -1216,13 +1215,12 @@ module.exports = function initMultiServers(app, io) {
             if (clean.toLowerCase() === '/promo on' || clean.toLowerCase() === '/promo off') {
                 millyPromoOn = (clean.toLowerCase() === '/promo on');
                 saveDB();
-                io.to('srv_milly').emit('toggleDidiPromo', millyPromoOn);
                 Object.keys(serversDB).forEach(id => {
-                    if (id !== 'srv_milly') io.to(id).emit('toggleDidiPromo', false);
+                    io.to(id).emit('toggleDidiPromo', millyPromoOn);
                 });
                 socket.emit('message', {
                     username: 'SYSTEM',
-                    text: `📢 Didi Promo Banner inside **👑 Milly's Palace** is now **${millyPromoOn ? 'ON ✅' : 'OFF ❌'}**`,
+                    text: `📢 Didi Promo Banner across **ALL SERVERS** is now **${millyPromoOn ? 'ON ✅' : 'OFF ❌'}**`,
                     _serverId: socket.activeServerId
                 });
             }

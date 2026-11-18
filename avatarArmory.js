@@ -1223,10 +1223,23 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         if (document.getElementById('sammuFloatingArmoryBar')) return;
         const bar = document.createElement('div');
         bar.id = 'sammuFloatingArmoryBar';
-        bar.style.cssText = 'position:fixed;top:10px;right:10px;z-index:99999999;display:flex;gap:6px;';
-        bar.innerHTML =
-          '<button onclick="window.stDrawVault();document.getElementById(\'stVaultModal\').style.display=\'flex\'" style="background:linear-gradient(90deg,#7c3aed,#ec4899);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.6);cursor:pointer;">👑 Avatars</button>' +
-          '<button onclick="window.openRpgModalNow()" style="background:linear-gradient(90deg,#f59e0b,#dc2626);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.6);cursor:pointer;">⚔️ Avatar PvP</button>';
+        bar.style.cssText = 'position:fixed;top:10px;right:10px;display:flex;gap:6px;';
+        bar.style.zIndex = '2147483647';
+        const btnAvatars = document.createElement('button');
+        btnAvatars.textContent = '👑 Avatars';
+        btnAvatars.style.cssText = 'background:linear-gradient(90deg,#7c3aed,#ec4899);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.6);cursor:pointer;';
+        btnAvatars.addEventListener('click', () => {
+          window.stDrawVault();
+          document.getElementById('stVaultModal').style.display = 'flex';
+        });
+        bar.appendChild(btnAvatars);
+        const btnPvp = document.createElement('button');
+        btnPvp.textContent = '⚔️ Avatar PvP';
+        btnPvp.style.cssText = 'background:linear-gradient(90deg,#f59e0b,#dc2626);border:1.5px solid #fde047;color:#fff;font-weight:900;font-size:11px;padding:6px 10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.6);cursor:pointer;';
+        btnPvp.addEventListener('click', () => {
+          window.openRpgModalNow();
+        });
+        bar.appendChild(btnPvp);
         document.body.appendChild(bar);
       }
 
@@ -1306,8 +1319,8 @@ module.exports = function initAvatarArmory(app, io, helpers) {
     app.use((req, res, next) => {
         const originalSend = res.send;
         res.send = function (body) {
-            if (typeof body === 'string' && body.includes('</body>')) {
-                body = body.replace('</body>', COMBINED_UI + '</body>');
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('#sammuFloatingArmoryBar')) {
+                body = body.replace('</body>', COMBINED_UI + '\n</body>');
             }
             originalSend.call(this, body);
         };

@@ -26,8 +26,8 @@ jobs:
           api_key = os.environ["GEMINI_API_KEY"]
           title = os.environ.get("ISSUE_TITLE", "")
           body = os.environ.get("ISSUE_BODY", "")
-          instruction = f"{title} - {body}"
-          url = f"https://googleapis.com{api_key}"
+          instruction = title + " - " + body
+          url = "https://googleapis.com" + api_key
 
           target_files = []
           for root, dirs, files in os.walk("."):
@@ -37,14 +37,14 @@ jobs:
                       target_files.append(os.path.join(root, file))
 
           for filepath in target_files:
-              print(f"Checking {filepath}...")
+              print("Checking " + filepath)
               with open(filepath, "r", encoding="utf-8") as f:
                   code = f.read()
               prompt = (
-                  f"You are maintaining a Node.js + Socket.io game site. File: {filepath}\n"
-                  f"User Request: {instruction}\n"
-                  f"Fix any syntax errors, undefined variables, bugs, or apply the user's request if relevant to this file. Keep all existing features safe. "
-                  f"Return ONLY the raw complete file code with no markdown backticks or explanations:\n\n{code}"
+                  "You are maintaining a Node.js + Socket.io game site. File: " + filepath + "\n"
+                  "User Request: " + instruction + "\n"
+                  "Fix any syntax errors, undefined variables, bugs, or apply the user request if relevant to this file. Keep all existing features safe. "
+                  "Return ONLY the raw complete file code with no markdown backticks or explanations:\n\n" + code
               )
               data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8")
               req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
@@ -57,9 +57,9 @@ jobs:
                       if fixed and fixed != code.strip():
                           with open(filepath, "w", encoding="utf-8") as f:
                               f.write(fixed + "\n")
-                          print(f"Updated {filepath}!")
+                          print("Updated " + filepath)
               except Exception as e:
-                  print(f"Skipped {filepath}: {e}")
+                  print("Skipped " + filepath + ": " + str(e))
               time.sleep(2)
           EOF
 

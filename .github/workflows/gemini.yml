@@ -18,15 +18,15 @@ jobs:
 
       - name: Apply Smart AI Patch to Any File
         env:
-          GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
-          OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-          ISSUE_TITLE: \${{ github.event.issue.title }}
-          ISSUE_BODY: \${{ github.event.issue.body }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           python3 - << 'EOF'
-          import os, json, urllib.request, urllib.error, sys, time
+          import os, json, urllib.request, urllib.error, sys
 
           groq_key = os.environ.get("GROQ_API_KEY", "").strip()
           gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
@@ -48,13 +48,29 @@ jobs:
           if not mentioned:
               mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
 
-          def call_openai_compatible(url, api_key, model_name, prompt_text, extra_headers=None):
+          def extract_json(text):
+              text = text.strip()
+              if "```" in text:
+                  for p in text.split("```"):
+                      p = p.strip()
+                      if p.startswith("json"):
+                          p = p[4:].strip()
+                      if p.startswith("{"):
+                          return p
+              start = text.find("{")
+              end = text.rfind("}")
+              if start != -1 and end != -1:
+                  return text[start:end+1]
+              return text
+
+          def call_chat_api(url, api_key, model_name, prompt_text, use_json_mode=True, extra_headers=None):
               payload = {
                   "model": model_name,
                   "messages": [{"role": "user", "content": prompt_text}],
-                  "response_format": {"type": "json_object"},
                   "temperature": 0.1
               }
+              if use_json_mode:
+                  payload["response_format"] = {"type": "json_object"}
               headers = {
                   "Content-Type": "application/json",
                   "Authorization": "Bearer " + api_key,
@@ -68,7 +84,7 @@ jobs:
                   return data["choices"][0]["message"]["content"].strip()
 
           def call_gemini(prompt_text):
-              url = "https://googleapis.com" + gemini_key
+              url = "https://googleapis.com" + "/v1beta/models/gemini-2.5-flash:generateContent?key=" + gemini_key
               payload = {
                   "contents": [{"parts": [{"text": prompt_text}]}],
                   "generationConfig": {"responseMimeType": "application/json"}
@@ -86,7 +102,7 @@ jobs:
               prompt = (
                   "You are a senior Node.js and web developer editing " + filepath + ".\n"
                   "User Request:\n" + instruction + "\n\n"
-                  "Output a JSON object containing a 'patches' array of exact search-and-replace blocks.\n"
+                  "Output ONLY a valid JSON object containing a 'patches' array of exact search-and-replace blocks.\n"
                   "Format:\n"
                   '{"patches": [{"search": "exact existing lines from file", "replace": "new updated lines"}]}\n\n'
                   "Rules:\n"
@@ -94,7 +110,7 @@ jobs:
                   "2. To add new code, include existing anchor lines in search and put existing + new lines in replace.\n"
                   "3. Properly escape all newlines (\\n) and quotes inside JSON strings.\n"
                   "4. If no changes are needed, return {\"patches\": []}.\n"
-                  "5. Output ONLY valid raw JSON.\n\n"
+                  "5. Output ONLY valid raw JSON, no markdown or explanation.\n\n"
                   "File Content (" + filepath + "):\n" + code
               )
 
@@ -103,45 +119,58 @@ jobs:
               if groq_key and not raw_json:
                   try:
                       print("1. Trying Groq Llama-3.3-70B...")
-                      raw_json = call_openai_compatible("https://groq.com", groq_key, "llama-3.3-70b-versatile", prompt)
+                      groq_url = "https://groq.com" + "/openai/v1/chat/completions"
+                      raw_json = call_chat_api(groq_url, groq_key, "llama-3.3-70b-versatile", prompt, True)
+                  except urllib.error.HTTPError as e:
+                      print("Groq HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
                   except Exception as e:
-                      print("Groq skipped:", e)
+                      print("Groq skipped:", repr(e))
 
               if gemini_key and not raw_json:
                   try:
                       print("2. Trying Gemini 2.5 Flash...")
                       raw_json = call_gemini(prompt)
+                  except urllib.error.HTTPError as e:
+                      print("Gemini HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
                   except Exception as e:
-                      print("Gemini skipped:", e)
+                      print("Gemini skipped:", repr(e))
 
               if openrouter_key and not raw_json:
-                  try:
-                      print("3. Trying OpenRouter Qwen-2.5-Coder-32B (Free)...")
-                      raw_json = call_openai_compatible(
-                          "https://openrouter.ai",
-                          openrouter_key,
-                          "qwen/qwen-2.5-coder-32b-instruct:free",
-                          prompt,
-                          {"HTTP-Referer": "https://github.com", "X-Title": "SammuGames"}
-                      )
-                  except Exception as e:
-                      print("OpenRouter skipped:", e)
+                  or_url = "https://openrouter.ai" + "/api/v1/chat/completions"
+                  for or_model in ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free", "qwen/qwen-2.5-coder-32b-instruct:free"]:
+                      try:
+                          print(f"3. Trying OpenRouter ({or_model})...")
+                          raw_json = call_chat_api(
+                              or_url,
+                              openrouter_key,
+                              or_model,
+                              prompt,
+                              False,
+                              {"HTTP-Referer": "https://github.com", "X-Title": "SammuGames"}
+                          )
+                          if raw_json:
+                              break
+                      except urllib.error.HTTPError as e:
+                          print(f"OpenRouter {or_model} HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
+                      except Exception as e:
+                          print(f"OpenRouter {or_model} skipped:", repr(e))
 
               if gh_token and not raw_json:
                   try:
-                      print("4. Trying Built-in GitHub Models (GPT-4o-mini)...")
-                      raw_json = call_openai_compatible("https://azure.com", gh_token, "gpt-4o-mini", prompt)
+                      print("4. Trying Built-in GitHub Models (gpt-4o-mini)...")
+                      gh_url = "https://azure.com" + "/chat/completions"
+                      raw_json = call_chat_api(gh_url, gh_token, "gpt-4o-mini", prompt, False)
+                  except urllib.error.HTTPError as e:
+                      print("GitHub Models HTTP error:", e.code, e.read().decode("utf-8", errors="ignore")[:200])
                   except Exception as e:
-                      print("GitHub Models skipped:", e)
+                      print("GitHub Models skipped:", repr(e))
 
               if not raw_json:
                   print("FAILED on", filepath)
                   sys.exit(1)
 
-              if raw_json.startswith("```"):
-                  raw_json = "\n".join(raw_json.split("\n")[1:-1]).strip()
-
-              parsed = json.loads(raw_json, strict=False)
+              clean_json = extract_json(raw_json)
+              parsed = json.loads(clean_json, strict=False)
               patches = parsed.get("patches", parsed) if isinstance(parsed, dict) else parsed
 
               updated_code = code

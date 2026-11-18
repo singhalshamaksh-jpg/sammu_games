@@ -17,6 +17,7 @@ jobs:
 
       - name: Apply Smart AI Patch to Any File
         env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -24,10 +25,9 @@ jobs:
           python3 - << 'EOF'
           import os, json, urllib.request, urllib.error, sys, time
 
-          api_key = os.environ["GEMINI_API_KEY"]
+          groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+          gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
           instruction = (os.environ.get("ISSUE_TITLE", "") + "\n" + os.environ.get("ISSUE_BODY", "")).strip()
-          host = "generativelanguage." + "googleapis.com"
-          models = ["gemini-3.5-flash", "gemini-3.8-flash"]
 
           all_files = []
           for root, dirs, files in os.walk("."):
@@ -43,6 +43,39 @@ jobs:
           if not mentioned:
               mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
 
+          def call_groq(prompt_text):
+              url = "https://api." + "://groq.com"
+              payload = {
+                  "model": "llama-3.3-70b-versatile",
+                  "messages": [{"role": "user", "content": prompt_text}],
+                  "response_format": {"type": "json_object"},
+                  "temperature": 0.1
+              }
+              req = urllib.request.Request(
+                  url,
+                  data=json.dumps(payload).encode("utf-8"),
+                  headers={
+                      "Content-Type": "application/json",
+                      "Authorization": "Bearer " + groq_key,
+                      "User-Agent": "SammuGames-Patcher"
+                  }
+              )
+              with urllib.request.urlopen(req, timeout=120) as resp:
+                  data = json.loads(resp.read().decode("utf-8"))
+                  return data.get("choices").pop(0).get("message").get("content").strip()
+
+          def call_gemini(prompt_text):
+              host = "generativelanguage." + "googleapis.com"
+              url = "https://" + host + "/v1beta/models/gemini-3.5-flash:generateContent?key=" + gemini_key
+              payload = {
+                  "contents": [{"parts": [{"text": prompt_text}]}],
+                  "generationConfig": {"responseMimeType": "application/json"}
+              }
+              req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+              with urllib.request.urlopen(req, timeout=120) as resp:
+                  data = json.loads(resp.read().decode("utf-8"))
+                  return data.get("candidates").pop(0).get("content").get("parts").pop(0).get("text").strip()
+
           for filepath in mentioned:
               print("Patching file:", filepath)
               with open(filepath, "r", encoding="utf-8") as f:
@@ -51,71 +84,61 @@ jobs:
               prompt = (
                   "You are a senior Node.js and web developer editing " + filepath + ".\n"
                   "User Request:\n" + instruction + "\n\n"
-                  "Output a JSON array of exact search-and-replace patches.\n"
+                  "Output a JSON object containing a 'patches' array of exact search-and-replace blocks.\n"
                   "Format:\n"
-                  '[{"search": "exact existing lines from file", "replace": "new updated lines"}]\n\n'
+                  '{"patches": [{"search": "exact existing lines from file", "replace": "new updated lines"}]}\n\n'
                   "Rules:\n"
                   "1. search MUST match existing lines in the file character-for-character (include 2-3 surrounding lines).\n"
                   "2. To add new code, include existing anchor lines in search and put existing + new lines in replace.\n"
-                  "3. If this file has no bugs or needs no changes for the request, return [].\n"
-                  "4. Output ONLY valid raw JSON with no markdown backticks.\n\n"
+                  "3. If no changes are needed, return {\"patches\": []}.\n"
+                  "4. Output ONLY valid raw JSON.\n\n"
                   "File Content (" + filepath + "):\n" + code
               )
 
-              payload = {
-                  "contents": [{"parts": [{"text": prompt}]}],
-                  "generationConfig": {
-                      "responseMimeType": "application/json"
-                  }
-              }
-              body_bytes = json.dumps(payload).encode("utf-8")
-
-              success = False
-              for attempt in range(5):
-                  model = models[attempt % len(models)]
-                  url = "https://" + host + "/v1beta/models/" + model + ":generateContent?key=" + api_key
-                  req = urllib.request.Request(url, data=body_bytes, headers={"Content-Type": "application/json"})
+              raw_json = None
+              if groq_key:
                   try:
-                      with urllib.request.urlopen(req, timeout=600) as resp:
-                          result = json.loads(resp.read().decode("utf-8"))
-                          cand = result.get("candidates").pop(0)
-                          part = cand.get("content").get("parts").pop(0)
-                          raw_json = part.get("text").strip()
-                          patches = json.loads(raw_json)
-
-                          updated_code = code
-                          applied = 0
-                          for p in patches:
-                              s, r = p.get("search", ""), p.get("replace", "")
-                              if s and s in updated_code:
-                                  updated_code = updated_code.replace(s, r, 1)
-                                  applied += 1
-
-                          if applied > 0 and updated_code != code:
-                              with open(filepath, "w", encoding="utf-8") as f:
-                                  f.write(updated_code)
-                              print("SUCCESS: Applied patches to", filepath)
-                          else:
-                              print("CLEAN: No changes needed for", filepath)
-                          success = True
-                          break
-                  except urllib.error.HTTPError as e:
-                      err_msg = e.read().decode("utf-8", errors="ignore")
-                      print("API error (" + str(e.code) + ") on " + model + ": " + err_msg[:120])
-                      time.sleep(8)
+                      print("Using Groq Llama-3.3-70B...")
+                      raw_json = call_groq(prompt)
                   except Exception as e:
-                      print("ERROR on " + filepath + ":", e)
-                      time.sleep(5)
+                      print("Groq error:", e)
 
-              if not success:
-                  print("FAILED after 5 retries on", filepath)
+              if not raw_json and gemini_key:
+                  for attempt in range(3):
+                      try:
+                          print("Falling back to Gemini...")
+                          raw_json = call_gemini(prompt)
+                          break
+                      except Exception as e:
+                          print("Gemini error:", e)
+                          time.sleep(8)
+
+              if not raw_json:
+                  print("FAILED on", filepath)
                   sys.exit(1)
-              time.sleep(3)
+
+              parsed = json.loads(raw_json)
+              patches = parsed.get("patches", parsed) if isinstance(parsed, dict) else parsed
+
+              updated_code = code
+              applied = 0
+              for p in patches:
+                  s, r = p.get("search", ""), p.get("replace", "")
+                  if s and s in updated_code:
+                      updated_code = updated_code.replace(s, r, 1)
+                      applied += 1
+
+              if applied > 0 and updated_code != code:
+                  with open(filepath, "w", encoding="utf-8") as f:
+                      f.write(updated_code)
+                  print("SUCCESS: Applied patches to", filepath)
+              else:
+                  print("CLEAN: No changes needed for", filepath)
           EOF
 
       - name: Commit and push AI updates
         run: |
-          git config user.name "Gemini AI"
+          git config user.name "Sammu AI Coder"
           git config user.email "actions@github.com"
           git add .
           git diff --quiet && git diff --staged --quiet || (git commit -m "AI patch from Issue" && git push)

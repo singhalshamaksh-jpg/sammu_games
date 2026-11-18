@@ -28,7 +28,7 @@ module.exports = function initMultiServers(app, io) {
             type: "secret", 
             password: "#bhaibahencharaontop" 
         },
-        srv_topsecret: { id: 'srv_topsecret', name: "🕵️ TOP SECRET", owner: "sammu", theme: "diamond", max: 20, type: "secret", password: "#topsecretvault" }
+        srv_topsecret: { id: 'srv_topsecret', name: "🕵️ TOP SECRET", owner: "sammu", theme: "diamond", max: 20, type: "secret", password: "#topsecretvault", allowedHosts: ["sammu", "samaksh", "zoro", "milly"] }
     };
     let serversDB = { ...defaultServers };
     let lockedOGSignatures = {};
@@ -1310,12 +1310,12 @@ module.exports = function initMultiServers(app, io) {
 
         socket.on('getAiCommands', () => {
             if (socket.activeServerId !== 'srv_topsecret') return;
-            socket.emit('aiCommandList', aiCommandQueue);
+            socket.emit('aiCommandsSync', aiCommandQueue);
         });
 
         socket.on('addAiCommand', (data) => {
             if (socket.activeServerId !== 'srv_topsecret') return;
-            const text = (data && typeof data.text === 'string') ? data.text.trim() : '';
+            const text = (data && typeof data.text === 'string') ? data.text.trim() : ((data && typeof data.cmd === 'string') ? data.cmd.trim() : '');
             if (!text) return;
             aiCommandQueue.push({
                 id: 'ai_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
@@ -1325,7 +1325,7 @@ module.exports = function initMultiServers(app, io) {
                 addedAt: Date.now()
             });
             saveDB();
-            io.to('srv_topsecret').emit('aiCommandList', aiCommandQueue);
+            io.to('srv_topsecret').emit('aiCommandsSync', aiCommandQueue);
         });
 
         socket.on('markAiDone', (id) => {
@@ -1334,7 +1334,7 @@ module.exports = function initMultiServers(app, io) {
             if (item) {
                 item.done = !item.done;
                 saveDB();
-                io.to('srv_topsecret').emit('aiCommandList', aiCommandQueue);
+                io.to('srv_topsecret').emit('aiCommandsSync', aiCommandQueue);
             }
         });
 
@@ -1342,7 +1342,7 @@ module.exports = function initMultiServers(app, io) {
             if (socket.activeServerId !== 'srv_topsecret') return;
             aiCommandQueue = aiCommandQueue.filter(c => c.id !== id);
             saveDB();
-            io.to('srv_topsecret').emit('aiCommandList', aiCommandQueue);
+            io.to('srv_topsecret').emit('aiCommandsSync', aiCommandQueue);
         });
 
         socket.on('disconnect', () => {

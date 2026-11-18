@@ -128,8 +128,6 @@ module.exports = function initMultiServers(app, io) {
                 }
             }
         }
-        return null;
-
         if (typeof payload.text === 'string') {
             const lower = payload.text.toLowerCase();
             for (const [uname, srvId] of playerServerMap.entries()) {
@@ -787,16 +785,16 @@ module.exports = function initMultiServers(app, io) {
         if (t.timer) clearTimeout(t.timer);
 
         const ranking = Object.entries(t.matchScores || {})
-            .sort((a, b) => b - a);
+            .sort((a, b) => b.at(1) - a.at(1));
 
-        const first = ranking || null;
-        const second = ranking || null;
-        const third = ranking || null;
+        const first = ranking.at(0) || null;
+        const second = ranking.at(1) || null;
+        const third = ranking.at(2) || null;
 
         let msg = `🎊 **15-GAME TOURNAMENT FINISHED! (${t.gamesPlayed}/${t.maxGames} Games Played)** 🎊\n`;
-        if (first) msg += `🥇 **1st Place (TROPHY):** **${first}** (${first} Wins)\n`;
-        if (second) msg += `🥈 **2nd Place (SILVER MEDAL):** **${second}** (${second} Wins)\n`;
-        if (third) msg += `🥉 **3rd Place (BRONZE MEDAL):** **${third}** (${third} Wins)`;
+        if (first) msg += `🥇 **1st Place (TROPHY):** **${first.at(0)}** (${first.at(1)} Wins)\n`;
+        if (second) msg += `🥈 **2nd Place (SILVER MEDAL):** **${second.at(0)}** (${second.at(1)} Wins)\n`;
+        if (third) msg += `🥉 **3rd Place (BRONZE MEDAL):** **${third.at(0)}** (${third.at(1)} Wins)`;
 
         t.currentPair = null;
         io.to(serverId).emit('message', {
@@ -873,7 +871,7 @@ module.exports = function initMultiServers(app, io) {
         });
 
         const shuffled = [...contestants].sort(() => Math.random() - 0.5);
-        const pA = shuffled, pB = shuffled;
+        const pA = shuffled.at(0), pB = shuffled.at(1);
 
         t.gamesPlayed++;
         t.currentPair = { pA, pB };

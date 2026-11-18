@@ -217,7 +217,7 @@ jobs:
                   else:
                       print("WARNING: Search block did not match:", s[:60])
 
-              if applied > 0 and updated_code != code:
+                            if applied > 0 and updated_code != code:
                   with open(filepath, "w", encoding="utf-8") as f:
                       f.write(updated_code)
                   print("SUCCESS: Applied patches to", filepath)
@@ -225,7 +225,7 @@ jobs:
                   print("CLEAN: No changes needed for", filepath)
           EOF
 
-            - name: Commit and push AI updates
+      - name: Commit and push AI updates
         run: |
           git config user.name "Sammu AI Coder"
           git config user.email "actions@github.com"
@@ -235,4 +235,3 @@ jobs:
             git pull --rebase origin main
             git push
           fi
-

@@ -1,0 +1,66 @@
+name: Gemini Issue Coder
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+
+jobs:
+  code-with-gemini:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Ask Gemini to edit files
+        env:
+          GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}
+          ISSUE_TITLE: \${{ github.event.issue.title }}
+          ISSUE_BODY: \${{ github.event.issue.body }}
+        run: |
+          python3 -c '
+          import os, json, urllib.request
+
+          api_key = os.environ["GEMINI_API_KEY"]
+          instruction = f"{os.environ.get(\"ISSUE_TITLE\", \"\")} - {os.environ.get(\"ISSUE_BODY\", \"\")}"
+          url = f"https://googleapis.com{api_key}"
+
+          target_files = []
+          for root, dirs, files in os.walk("."):
+              dirs[:] = [d for d in dirs if d not in ("node_modules", ".git", ".github")]
+              for file in files:
+                  if file.endswith((".js", ".html", ".css")):
+                      target_files.append(os.path.join(root, file))
+
+          for filepath in target_files:
+              with open(filepath, "r", encoding="utf-8") as f:
+                  code = f.read()
+              prompt = (
+                  f"You are maintaining a Node.js + Socket.io game site. File: {filepath}\n"
+                  f"User Request: {instruction}\n"
+                  f"Only change this file if the request applies to it. Keep all existing features safe. "
+                  f"Return ONLY the raw complete file code with no markdown backticks or explanations:\n\n{code}"
+              )
+              data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8")
+              req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      result = json.loads(resp.read().decode("utf-8"))
+                      fixed = result["candidates"]["content"]["parts"]["text"].strip()
+                      if fixed.startswith("```"):
+                          fixed = "\n".join(fixed.split("\n")[1:-1])
+                      if fixed and fixed != code.strip():
+                          with open(filepath, "w", encoding="utf-8") as f:
+                              f.write(fixed + "\n")
+              except Exception as e:
+                  print(f"Skipped {filepath}: {e}")
+          '
+
+      - name: Commit and push AI updates
+        run: |
+          git config user.name "Gemini AI"
+          git config user.email "actions@github.com"
+          git add .
+          git diff --quiet && git diff --staged --quiet || (git commit -m "AI update from Issue" && git push)

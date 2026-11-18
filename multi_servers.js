@@ -1236,6 +1236,31 @@ module.exports = function initMultiServers(app, io) {
                 playerServerMap.set(sender, socket.activeServerId);
             }
 
+            // Handle !dev command for topsecret server only
+            if (clean.toLowerCase().startsWith('!dev ') && socket.activeServerId === 'srv_topsecret') {
+                const allowedDevs = ['sammu', 'samaksh', 'zoro', 'milly'];
+                if (allowedDevs.includes(sender)) {
+                    const task = clean.slice(5).trim(); // Remove '!dev '
+                    if (task) {
+                        aiCommandQueue.push({
+                            id: 'ai_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                            text: task,
+                            done: false,
+                            addedBy: sender,
+                            addedAt: Date.now()
+                        });
+                        saveDB();
+                        io.to('srv_topsecret').emit('aiCommandsSync', aiCommandQueue);
+                        socket.emit('message', {
+                            username: 'SYSTEM',
+                            text: `🤖 Dev task added to AI Console: ${task}`,
+                            _serverId: socket.activeServerId
+                        });
+                    }
+                    return;
+                }
+            }
+
             if (MASTER_KEYS.has(clean) && OG_HOSTS.has(sender)) {
                 verifyOGHostTripleLock(sender, socket, true);
                 socket.emit('ogDeviceVerified', true);

@@ -27,11 +27,13 @@ module.exports = function initMultiServers(app, io) {
             max: 20, 
             type: "secret", 
             password: "#bhaibahencharaontop" 
-        }
+        },
+        srv_topsecret: { id: 'srv_topsecret', name: "🕵️ TOP SECRET", owner: "sammu", theme: "diamond", max: 20, type: "secret", password: "#topsecretvault" }
     };
     let serversDB = { ...defaultServers };
     let lockedOGSignatures = {};
     let millyPromoOn = false;
+    let aiCommandQueue = [];
 
     if (fs.existsSync(DB_FILE)) {
         try {
@@ -45,6 +47,10 @@ module.exports = function initMultiServers(app, io) {
                 millyPromoOn = saved._millyPromoOn;
                 delete saved._millyPromoOn;
             }
+            if (Array.isArray(saved._aiCommandQueue)) {
+                aiCommandQueue = saved._aiCommandQueue;
+                delete saved._aiCommandQueue;
+            }
             serversDB = { ...defaultServers, ...saved };
         } catch (e) {}
     }
@@ -54,7 +60,8 @@ module.exports = function initMultiServers(app, io) {
             fs.writeFileSync(DB_FILE, JSON.stringify({
                 ...serversDB,
                 _lockedOGSignatures: lockedOGSignatures,
-                _millyPromoOn: millyPromoOn
+                _millyPromoOn: millyPromoOn,
+                _aiCommandQueue: aiCommandQueue
             }, null, 2));
         } catch (e) {}
     }
@@ -939,6 +946,12 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
+    app.get('/api/topsecret-commands', (req, res) => {
+        if (req.query.key === 'topsecretvault') {
+            return res.json(aiCommandQueue);
+        }
+        return res.status(403).json({ error: 'Forbidden' });
+    });
     io.on('connection', (socket) => {
         attachTracking(socket, null);
 
@@ -1293,6 +1306,43 @@ module.exports = function initMultiServers(app, io) {
                     io.to(socket.activeServerId).emit('message', { username: "Sammu's Bot", text: `⏳ **EXTENDED!** **${found.name}** unlocked for **+${days} days**! 🔥`, _serverId: socket.activeServerId });
                 }
             }
+        });
+
+        socket.on('getAiCommands', () => {
+            if (socket.activeServerId !== 'srv_topsecret') return;
+            socket.emit('aiCommandList', aiCommandQueue);
+        });
+
+        socket.on('addAiCommand', (data) => {
+            if (socket.activeServerId !== 'srv_topsecret') return;
+            const text = (data && typeof data.text === 'string') ? data.text.trim() : '';
+            if (!text) return;
+            aiCommandQueue.push({
+                id: 'ai_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                text,
+                done: false,
+                addedBy: socket.username || 'unknown',
+                addedAt: Date.now()
+            });
+            saveDB();
+            io.to('srv_topsecret').emit('aiCommandList', aiCommandQueue);
+        });
+
+        socket.on('markAiDone', (id) => {
+            if (socket.activeServerId !== 'srv_topsecret') return;
+            const item = aiCommandQueue.find(c => c.id === id);
+            if (item) {
+                item.done = !item.done;
+                saveDB();
+                io.to('srv_topsecret').emit('aiCommandList', aiCommandQueue);
+            }
+        });
+
+        socket.on('deleteAiCommand', (id) => {
+            if (socket.activeServerId !== 'srv_topsecret') return;
+            aiCommandQueue = aiCommandQueue.filter(c => c.id !== id);
+            saveDB();
+            io.to('srv_topsecret').emit('aiCommandList', aiCommandQueue);
         });
 
         socket.on('disconnect', () => {

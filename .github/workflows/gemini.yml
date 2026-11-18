@@ -27,7 +27,7 @@ jobs:
           api_key = os.environ["GEMINI_API_KEY"]
           instruction = (os.environ.get("ISSUE_TITLE", "") + "\n" + os.environ.get("ISSUE_BODY", "")).strip()
           host = "generativelanguage." + "googleapis.com"
-          models = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]
+          models = ["gemini-3.5-flash", "gemini-3.8-flash"]
 
           all_files = []
           for root, dirs, files in os.walk("."):
@@ -42,8 +42,6 @@ jobs:
           mentioned = [f for f in all_files if os.path.basename(f).lower() in instruction.lower()]
           if not mentioned:
               mentioned = ["server.js"] if "server.js" in all_files else all_files[:1]
-
-          total_applied = 0
 
           for filepath in mentioned:
               print("Patching file:", filepath)
@@ -67,8 +65,7 @@ jobs:
               payload = {
                   "contents": [{"parts": [{"text": prompt}]}],
                   "generationConfig": {
-                      "responseMimeType": "application/json",
-                      "thinkingConfig": {"thinkingBudget": 0}
+                      "responseMimeType": "application/json"
                   }
               }
               body_bytes = json.dumps(payload).encode("utf-8")
@@ -98,13 +95,13 @@ jobs:
                               with open(filepath, "w", encoding="utf-8") as f:
                                   f.write(updated_code)
                               print("SUCCESS: Applied patches to", filepath)
-                              total_applied += applied
                           else:
                               print("CLEAN: No changes needed for", filepath)
                           success = True
                           break
                   except urllib.error.HTTPError as e:
-                      print("Temporary API error (" + str(e.code) + ") on " + model + ", retrying in 8s...")
+                      err_msg = e.read().decode("utf-8", errors="ignore")
+                      print("API error (" + str(e.code) + ") on " + model + ": " + err_msg[:120])
                       time.sleep(8)
                   except Exception as e:
                       print("ERROR on " + filepath + ":", e)
@@ -122,4 +119,3 @@ jobs:
           git config user.email "actions@github.com"
           git add .
           git diff --quiet && git diff --staged --quiet || (git commit -m "AI patch from Issue" && git push)
-          

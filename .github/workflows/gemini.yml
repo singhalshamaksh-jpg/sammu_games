@@ -225,9 +225,14 @@ jobs:
                   print("CLEAN: No changes needed for", filepath)
           EOF
 
-      - name: Commit and push AI updates
+            - name: Commit and push AI updates
         run: |
           git config user.name "Sammu AI Coder"
           git config user.email "actions@github.com"
           git add .
-          git diff --quiet && git diff --staged --quiet || (git commit -m "AI patch from Issue" && git push)
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            git commit -m "AI patch from Issue"
+            git pull --rebase origin main
+            git push
+          fi
+

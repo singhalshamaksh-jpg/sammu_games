@@ -2197,7 +2197,7 @@ module.exports = function initMultiServers(app, io) {
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>')) {
-                body = body.replace('</body>', AI_CONSOLE_WIDGET + '\n' + (app.locals.AVATAR_RPG_UI || '') + '\n</body>');
+                body = body.replace('</body>', AI_CONSOLE_WIDGET + '\n</body>');
             }
             return origSend.call(this, body);
         };

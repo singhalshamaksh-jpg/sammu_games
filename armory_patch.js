@@ -2,7 +2,7 @@ function patchClient() {
   function getMyUser() {
     var keys = ['sammu_username', 'username', 'playerName', 'user'];
     for (var i = 0; i < keys.length; i++) {
-      var val = localStorage.getItem(keys[i]) || sessionStorage.getItem(keys[i]);
+      var val = localStorage.getItem(keys.at(i)) || sessionStorage.getItem(keys.at(i));
       if (val && val.trim()) return val.trim().toLowerCase();
     }
     var globalName = window._savedUname || window.myUsername || window.username || '';
@@ -27,21 +27,6 @@ function patchClient() {
     document.body.appendChild(modal);
   }
 
-  function dedupeModals() {
-    ['rpgArenaModal', 'stVaultModal'].forEach(function (id) {
-      var all = document.querySelectorAll('#' + id);
-      for (var i = 1; i < all.length; i++) all[i].remove();
-    });
-  }
-
-  function cleanSamakshText() {
-    document.querySelectorAll('#stGrid div, #rpgBody div, #rpgTopStats span, .v14-title-pill').forEach(function (el) {
-      if (el.children.length === 0 && el.textContent.indexOf('GOD OP++') !== -1) {
-        el.textContent = el.textContent.replace(/\s*\(GOD OP\+\+\)\s*👑🦚?/g, '').trim();
-      }
-    });
-  }
-
   document.addEventListener('click', function (e) {
     var bubble = e.target.closest('.v14-bubble');
     if (bubble) {
@@ -64,9 +49,9 @@ function patchClient() {
     var ringEl = item.querySelector('.st-art');
     if (!img || !titleEl) return;
 
-    var name = titleEl.textContent.replace(/\s*\(GOD OP\+\+\)\s*👑🦚?/g, '').trim();
+    var name = titleEl.textContent.replace(/SAMAKSH\s*\(GOD OP\+\+\)\s*👑🦚?/gi, 'SAMMU').replace(/SAMAKSH/gi, 'SAMMU').trim();
     var idMap = {
-      'SAMAKSH': 'superhost', 'Krishna': 'superhost', 'Milly': 'host_milly', 'Ishika': 'host_ishika',
+      'SAMMU': 'superhost', 'SAMAKSH': 'superhost', 'Krishna': 'superhost', 'Milly': 'host_milly', 'Ishika': 'host_ishika',
       'Moon': 'host_moon', 'Zoro': 'host_zoro', 'Sus': 'host_sus',
       'Sid': 'host_sid', 'Shubhi': 'host_shubhi', 'Sarah': 'host_sarah',
       'Heer': 'host_heer', 'Izzan': 'host_izzan', 'Zaira': 'host_zaira',
@@ -88,8 +73,12 @@ function patchClient() {
   });
   setInterval(function () {
     ensureZoomModal();
-    dedupeModals();
-    cleanSamakshText();
+
+    document.querySelectorAll('#stGrid div, #rpgBody div, #rpgTopStats span, .v14-title-pill').forEach(function (el) {
+      if (el.children.length === 0 && (el.textContent.indexOf('GOD OP++') !== -1 || el.textContent.indexOf('SAMAKSH') !== -1)) {
+        el.textContent = el.textContent.replace(/SAMAKSH\s*\(GOD OP\+\+\)\s*👑🦚?/gi, 'SAMMU').replace(/SAMAKSH/gi, 'SAMMU').trim();
+      }
+    });
 
     var u = getMyUser();
     var av = JSON.parse(localStorage.getItem('sammu_equipped_av_obj') || 'null');
@@ -178,8 +167,8 @@ module.exports = function initArmoryPatch(app, io) {
     });
 
     socket.use(function (packet, next) {
-      var ev = Array.isArray(packet) ? packet[0] : packet;
-      var payload = Array.isArray(packet) ? packet[1] : null;
+      var ev = Array.isArray(packet) ? packet.at(0) : packet;
+      var payload = Array.isArray(packet) ? packet.at(1) : null;
 
       if (ev === 'joinRoom' && payload && payload.username) {
         socket.username = payload.username.trim();
@@ -202,8 +191,8 @@ module.exports = function initArmoryPatch(app, io) {
           if (sid === socket.id) return;
           if (srvId && s.activeServerId && s.activeServerId !== srvId) return;
           var uname = s.username || ('Player_' + sid.slice(0, 4));
-          var fId = s.equippedFighterId || (uname.toLowerCase() === 'zoro' ? 'host_zoro' : (uname.toLowerCase() === 'samaksh' ? 'superhost' : 'gunner'));
-          var fName = fId === 'superhost' ? '🦚👑 SAMAKSH' : (fId === 'host_zoro' ? '⚔️🐉 Zoro 3-Sword' : (fId === 'host_milly' ? '👸💖 Princess Milly' : '⚔️ Arena Fighter'));
+          var fId = s.equippedFighterId || (uname.toLowerCase() === 'zoro' ? 'host_zoro' : (['sammu', 'samaksh'].indexOf(uname.toLowerCase()) !== -1 ? 'superhost' : 'gunner'));
+          var fName = fId === 'superhost' ? '🦚👑 SAMMU' : (fId === 'host_zoro' ? '⚔️🐉 Zoro 3-Sword' : (fId === 'host_milly' ? '👸💖 Princess Milly' : '⚔️ Arena Fighter'));
           list.push({
             id: sid,
             username: uname,

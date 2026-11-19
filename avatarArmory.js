@@ -964,6 +964,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
             const me = getMe();
             if (!ok) return alert('🔒 Enter secret code below to unlock!');
             playersMap[me] = av;
+            localStorage.setItem('sammu_equipped_av_id', av.id);
             if (typeof socket !== 'undefined') {
               socket.emit('equipAvatarFxV6', { username: me, avatarId: av.id, fx: av.ring, badge: av.name });
               socket.emit('rpgSelectFighter', { username: me, fighterId: av.id });
@@ -1066,7 +1067,8 @@ module.exports = function initAvatarArmory(app, io, helpers) {
       };
       window.renderRpgBody = function() {
         const body = document.getElementById('rpgBody'), top = document.getElementById('rpgTopStats');
-        if (!body || !rpgData) return;
+        if (!body) return;
+        if (!rpgData) rpgData = { profile: { mvp: 30, gold: 200, activeChar: 'gunner', owned: { gunner: { lvl: 1, xp: 0 } } }, fighters: { gunner: { id: 'gunner', name: '🔫 Cyber Gunner', tier: 'Common', baseHp: 750, baseAtk: 100, color: '#94a3b8', icon: '🔫', skills: [] } }, accessories: [] };
         const p = rpgData.profile, f = rpgData.fighters[p.activeChar] || rpgData.fighters.gunner, st = calcStats(f, p);
         top.innerHTML = '<span style="color:#fde047;">🪙 MVP: ' + p.mvp + '</span><span style="color:#fbbf24;">💰 Gold: ' + p.gold + '</span><span style="color:' + f.color + ';">' + f.name + ' (Lvl ' + st.lvl + ')</span>';
 
@@ -1167,6 +1169,12 @@ module.exports = function initAvatarArmory(app, io, helpers) {
       };
 
       function renderChatAvatars() {
+        const meUname = getMe();
+        if (meUname && !playersMap[meUname]) {
+          const equippedAvId = localStorage.getItem('sammu_equipped_av_id');
+          const equippedAv = equippedAvId ? AVATAR_ITEMS.find(x => x.id === equippedAvId) : null;
+          if (equippedAv) playersMap[meUname] = equippedAv;
+        }
         const nodes = document.querySelectorAll('#chatBox b, #chatBox strong, #messages b, #messages strong, .msg-user');
         nodes.forEach(el => {
           if (el.closest('#stVaultModal') || el.closest('#rpgArenaModal')) return;
@@ -1195,18 +1203,11 @@ module.exports = function initAvatarArmory(app, io, helpers) {
           }
 
           if (row.dataset.v14Stamp === av.id) return;
-          const iconSpan = Array.from(row.children).find(
-            c => c !== el && !c.classList.contains('v14-title-pill') && !c.querySelector('button') && (c.textContent || '').trim().length <= 4
-          );
-          if (iconSpan) {
-            row.dataset.v14Stamp = av.id;
-            const pin = av.id === 'superhost' ? '🦚' : (av.id === 'host_milly' ? '💖' : (av.id === 'host_ishika' ? '☀️' : '⚔️'));
-            iconSpan.innerHTML =
-              '<span class="v14-bubble ' + av.ring + '" title="' + av.name + '">' +
-                '<img src="' + av.img + '">' +
-                '<span class="v14-pin">' + pin + '</span>' +
-              '</span>';
-          }
+          row.dataset.v14Stamp = av.id;
+          const bubble = document.createElement('span');
+          bubble.className = 'v14-bubble ' + av.ring;
+          bubble.innerHTML = '<img src="' + av.img + '">';
+          el.insertAdjacentElement('beforebegin', bubble);
         });
       }
       window.openRpgModalNow = function() {

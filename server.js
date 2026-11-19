@@ -3145,10 +3145,7 @@ io.use((socket, next) => {
     });
     next();
 });
-const verifyOGHostTripleLock = () => true;
-require('./armory_patch')(app, io, { verifyOGHostTripleLock: typeof verifyOGHostTripleLock !== 'undefined' ? verifyOGHostTripleLock : (() => true) });
 
-require('./fix_buttons')(app);
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));

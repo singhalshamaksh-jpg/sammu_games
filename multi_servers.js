@@ -1903,7 +1903,7 @@ module.exports = function initMultiServers(app, io) {
             [baseFreq, baseFreq * 1.48].forEach(f => {
               const osc = ctx.createOscillator(), gain = ctx.createGain();
               osc.type = 'square'; osc.frequency.setValueAtTime(f, now);
-              gain.gain.setValueAtTime(0.16, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
+              gain.gain.setValueAtTime(0.35, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
               osc.connect(gain); gain.connect(ctx.destination);
               osc.start(now); osc.stop(now + 0.22);
             });
@@ -1912,7 +1912,7 @@ module.exports = function initMultiServers(app, io) {
             osc.type = 'sine';
             const startF = (sound === 'bass808') ? 135 : 165, endF = (sound === 'bass808') ? 35 : 45, dur = (sound === 'bass808') ? 0.62 : 0.24;
             osc.frequency.setValueAtTime(startF, now); osc.frequency.exponentialRampToValueAtTime(endF, now + dur);
-            gain.gain.setValueAtTime(0.45, now); gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+            gain.gain.setValueAtTime(0.85, now); gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
             osc.connect(gain); gain.connect(ctx.destination);
             osc.start(now); osc.stop(now + dur + 0.02);
           } else if (sound === 'siren' || sound === 'horn') {

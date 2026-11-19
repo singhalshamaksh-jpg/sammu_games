@@ -2276,8 +2276,6 @@ module.exports = function initMultiServers(app, io) {
     });
     // === END phonk======  //       
     
-    // Initialize Avatar Armory (RPG System)
-    require('./avatarArmory')(app, io, { OG_HOSTS, verifyOGHostTripleLock });
     return OG_HOSTS;
       
 };

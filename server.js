@@ -53,6 +53,7 @@ io.on('connection', (socket) => {
 // ================= ALL-IN-ONE MASTER FIX FOR SERVER.JS =================
 const { AsyncLocalStorage } = require('async_hooks');
 const _srvStore = new AsyncLocalStorage();
+const { serverRooms, getRoom, deleteRoom } = require('./roomState');
 const _srvHosts = new Map();
 // 1. Auto-fix Meme Studio Photo Upload & Gallery Picker in the browser
 app.use((req, res, next) => {
@@ -140,7 +141,7 @@ function _syncRoomState(srvId, callerSocket) {
 io.use((socket, next) => {
     socket.use((packet, pktNext) => {
         const srvId = socket.activeServerId || 'global';
-        _srvStore.run(srvId, () => {
+        runInServerRoom(srvId, () => {
             const ev = packet && packet.at(0);
             const payload = packet && packet.at(1);
 
@@ -193,6 +194,18 @@ io.use((socket, next) => {
         });
     });
     socket.on('disconnect', () => {
+        // Remove disconnected player from players
+        const lp = players.find(p => p.id === socket.id);
+        if (lp) io.emit('message', { username: "Sammu's Bot", text: `😢 ${lp.username} has left the room` });
+        players = players.filter(p => p.id !== socket.id);
+        io.emit('updatePlayers', players);
+        
+        // Call deleteRoom if players.length === 0
+        if (players.length === 0) {
+            deleteRoom(srvId);
+        }
+        
+        // Clean up _srvHosts
         if (socket.activeServerId && _srvHosts.get(socket.activeServerId) === socket.id) _srvHosts.delete(socket.activeServerId);
     });
     next();

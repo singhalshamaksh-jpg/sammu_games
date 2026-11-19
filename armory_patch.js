@@ -46,6 +46,18 @@ module.exports = function initArmoryPatch(app, io, helpers) {
         res.type('application/javascript');
         res.send(`
 (function() {
+  // 1. Intercept io() so window.socket is ALWAYS exposed to Avatar Armory & RPG
+  if (typeof window.io === 'function' && !window._ioHookedForArmory) {
+    window._ioHookedForArmory = true;
+    const origIo = window.io;
+    window.io = function(...args) {
+      const s = origIo.apply(this, args);
+      window.socket = s;
+      return s;
+    };
+  }
+
+  // 2. Tap-to-Zoom Avatar Modal
   const modal = document.createElement('div');
   modal.id = 'stZoomModal';
   modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(4,7,18,0.92);z-index:999999999;align-items:center;justify-content:center;flex-direction:column;';
@@ -57,13 +69,22 @@ module.exports = function initArmoryPatch(app, io, helpers) {
     '</div>';
   document.body.appendChild(modal);
 
+  // 3. Hide secret code hints & keep RPG/Avatars synced
   setInterval(() => {
     ['stCodeInput', 'rpgHostCodeInp'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.placeholder = 'Enter Secret Host Code...';
+      if (el && el.placeholder !== 'Enter Secret Host Code...') el.placeholder = 'Enter Secret Host Code...';
     });
-  }, 800);
+    const rpgModal = document.getElementById('rpgArenaModal');
+    const rpgBody = document.getElementById('rpgBody');
+    if (rpgModal && rpgModal.style.display === 'flex' && rpgBody && !rpgBody.innerHTML.trim() && window.socket) {
+      const u = (window._savedUname || localStorage.getItem('sammu_username') || localStorage.getItem('username') || 'player1').trim().toLowerCase();
+      window.socket.emit('rpgGetState', u);
+      window.socket.emit('getMyAvatarStatsV6');
+    }
+  }, 700);
 
+  // 4. Open Zoom Modal when tapping any avatar bubble in chat
   document.addEventListener('click', (e) => {
     const bubble = e.target.closest('.v14-bubble');
     if (!bubble) return;

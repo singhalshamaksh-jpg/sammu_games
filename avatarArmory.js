@@ -569,7 +569,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         });
     });
 
-    const COMBINED_UI = `
+    const COMBINED_UI = String.raw`
     <style>
       @keyframes divineAuraRing {
         0%, 100% { box-shadow: 0 0 12px #fde047, 0 0 24px #f97316; border-color: #fde047; }

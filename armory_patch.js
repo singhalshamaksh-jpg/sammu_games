@@ -15,14 +15,29 @@ module.exports = function initArmoryPatch(app, io, helpers) {
                 socket.emit('rpgToast', '🛡️ Locked to Princess Milly only!');
                 return;
             }
+            if (event === 'rpgGetRoomPlayers') {
+                const srvId = socket.activeServerId;
+                const list = [];
+                const roomSet = srvId ? io.sockets.adapter.rooms.get(srvId) : null;
+                const sockets = (roomSet && roomSet.size > 1) ? roomSet : io.sockets.sockets.keys();
+                for (const sid of sockets) {
+                    const s = io.sockets.sockets.get(sid);
+                    if (s && sid !== socket.id) {
+                        if (srvId && s.activeServerId && s.activeServerId !== srvId) continue;
+                        const uname = s.username || ('Player_' + sid.slice(0, 4));
+                        list.push({ id: sid, username: uname, fighterName: '⚔️ Arena Fighter', fighterId: 'gunner', lvl: 1 });
+                    }
+                }
+                socket.emit('rpgRoomPlayersList', list);
+                return;
+            }
             next();
         });
     });
 
     app.get('/armory-patch.js', (req, res) => {
         res.type('application/javascript');
-        res.send(`
-(function() {
+ {
   // 1. Tap-to-Zoom Avatar Modal
   const modal = document.createElement('div');
   modal.id = 'stZoomModal';

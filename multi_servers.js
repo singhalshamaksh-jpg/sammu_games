@@ -2275,7 +2275,204 @@ module.exports = function initMultiServers(app, io) {
         });
     });
     // === END phonk======  //       
-    
+        // === PHONK DJ PRO UPGRADE & ANTI-LAG ENGINE (PASTE BEFORE return OG_HOSTS;) ===
+    const PHONK_PRO_UPGRADE = `
+    <script>
+    (function() {
+      // 1. Stop heavy DOM polling intervals on old phones
+      const _origSetInterval = window.setInterval;
+      window.setInterval = function(fn, ms, ...args) {
+        if (ms >= 600 && ms <= 1500 && fn && /querySelectorAll\(['"]button['"]\)|aiConsoleFab|injectImposterBtn/.test(fn.toString())) {
+          return _origSetInterval(fn, 4500, ...args);
+        }
+        return _origSetInterval(fn, ms, ...args);
+      };
+
+      let proCtx = null, proFilter = null, proDist = null;
+      window._phonkBoost = true;
+      window._phonkFilterFreq = 16000;
+
+      function getProAudio() {
+        if (!proCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          proCtx = new AC();
+          proFilter = proCtx.createBiquadFilter();
+          proFilter.type = 'lowpass';
+          proFilter.frequency.value = window._phonkFilterFreq;
+          proFilter.Q.value = 2.2;
+          proFilter.connect(proCtx.destination);
+
+          const n = 22050, curve = new Float32Array(n);
+          for (let i = 0; i < n; i++) {
+            const x = (i * 2) / n - 1;
+            curve[i] = ((3 + 26) * x * 20 * (Math.PI / 180)) / (Math.PI + 26 * Math.abs(x));
+          }
+          proDist = curve;
+        }
+        if (proCtx.state === 'suspended') proCtx.resume();
+        return proCtx;
+      }
+
+      // Override classic playPhonkSynth with Studio Brazilian Phonk & Jumpstyle DSP
+      window.playPhonkSynth = function(sound) {
+        try {
+          const ctx = getProAudio(), now = ctx.currentTime;
+          const bars = document.querySelectorAll('#djVisualizer .dj-bar');
+          if (bars.length) {
+            bars.forEach(b => { b.style.height = (Math.floor(Math.random() * 82) + 18) + '%'; });
+            setTimeout(() => bars.forEach(b => { b.style.height = '15%'; }), 130);
+          }
+
+          if (sound === 'bass808' || sound === 'kick' || sound === 'batidao_sub') {
+            const osc = ctx.createOscillator(), gain = ctx.createGain(), shaper = ctx.createWaveShaper();
+            shaper.curve = proDist;
+            osc.type = 'sine';
+            const isSub = (sound === 'bass808' || sound === 'batidao_sub');
+            const dur = isSub ? 0.52 : 0.22;
+            osc.frequency.setValueAtTime(isSub ? 155 : 175, now);
+            osc.frequency.exponentialRampToValueAtTime(window._phonkBoost ? 38 : 48, now + 0.085);
+            osc.frequency.exponentialRampToValueAtTime(32, now + dur);
+            gain.gain.setValueAtTime(window._phonkBoost ? 0.85 : 0.6, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+            osc.connect(shaper); shaper.connect(gain); gain.connect(proFilter);
+            osc.start(now); osc.stop(now + dur + 0.02);
+          } else if (sound === 'revbass') {
+            // Heavenly Jumpstyle Reverse-Bass Stomp
+            const osc = ctx.createOscillator(), gain = ctx.createGain(), shaper = ctx.createWaveShaper();
+            shaper.curve = proDist;
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(44, now);
+            osc.frequency.exponentialRampToValueAtTime(74, now + 0.16);
+            gain.gain.setValueAtTime(0.01, now);
+            gain.gain.linearRampToValueAtTime(0.6, now + 0.14);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+            osc.connect(shaper); shaper.connect(gain); gain.connect(proFilter);
+            osc.start(now); osc.stop(now + 0.2);
+          }
+          else if (sound.startsWith('cowbell') || sound.startsWith('lead')) {
+            const isSupersaw = sound.startsWith('lead');
+            const noteMap = {
+              cowbell1: 587.33, cowbell2: 440.00, cowbell3: 659.25, cowbell4: 523.25,
+              lead1: 440.00, lead2: 523.25, lead3: 659.25, lead4: 783.99
+            };
+            const freq = noteMap[sound] || 540;
+            if (isSupersaw) {
+              const gain = ctx.createGain();
+              gain.gain.setValueAtTime(0.01, now);
+              gain.gain.linearRampToValueAtTime(0.24, now + 0.025);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+              gain.connect(proFilter);
+              [-16, -6, 0, 6, 16].forEach(det => {
+                const o = ctx.createOscillator();
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(freq, now); o.detune.value = det;
+                o.connect(gain); o.start(now); o.stop(now + 0.35);
+              });
+            } else {
+              const bp = ctx.createBiquadFilter(), gain = ctx.createGain();
+              bp.type = 'bandpass'; bp.frequency.value = freq * 1.45; bp.Q.value = 3.8;
+              gain.gain.setValueAtTime(0.42, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
+              [1, 1.48].forEach(mult => {
+                const o = ctx.createOscillator();
+                o.type = 'square'; o.frequency.setValueAtTime(freq * mult, now);
+                o.connect(bp); o.start(now); o.stop(now + 0.22);
+              });
+              bp.connect(gain); gain.connect(proFilter);
+            }
+          } else if (sound === 'hat' || sound === 'scratch' || sound === 'laser') {
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.type = sound === 'laser' ? 'sawtooth' : 'triangle';
+            osc.frequency.setValueAtTime(sound === 'laser' ? 1600 : 1100, now);
+            osc.frequency.exponentialRampToValueAtTime(140, now + 0.14);
+            gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+            osc.connect(gain); gain.connect(proFilter);
+            osc.start(now); osc.stop(now + 0.17);
+          } else if (sound === 'siren' || sound === 'horn') {
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(sound === 'horn' ? 480 : 620, now);
+            osc.frequency.linearRampToValueAtTime(sound === 'horn' ? 520 : 1200, now + 0.35);
+            gain.gain.setValueAtTime(0.18, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+            osc.connect(gain); gain.connect(proFilter);
+            osc.start(now); osc.stop(now + 0.56);
+          }
+        } catch (e) {}
+      };
+      // 2. Upgrade the 8 Track Loops to No Batidao & Heavenly Jumpstyle Beats
+      let proBeatTimer = null, proStep = 0;
+      const origStop = window.stopPhonkLoop;
+      window.stopPhonkLoop = function() {
+        if (proBeatTimer) { clearInterval(proBeatTimer); proBeatTimer = null; }
+        if (typeof origStop === 'function') origStop();
+      };
+
+      window.togglePhonkBeat = function(style, label) {
+        window.stopPhonkLoop();
+        const proTracks = {
+          brazil:  { tempo: 115, label: '🇧🇷 No Batidão (Brazilian Phonk)', seq: ['batidao_sub', 'hat', 'cowbell2', 'kick', 'cowbell1', 'hat', 'batidao_sub', 'cowbell3', 'kick', 'cowbell2', 'hat', 'cowbell4', 'batidao_sub', 'cowbell1', 'scratch', 'hat'] },
+          demon:   { tempo: 96,  label: '🌌 Heavenly Jumpstyle (Euphoric)', seq: ['kick', 'revbass', 'lead1', 'revbass', 'kick', 'revbass', 'lead3', 'revbass', 'kick', 'revbass', 'lead4', 'revbass', 'kick', 'revbass', 'lead2', 'lead3'] },
+          drift:   { tempo: 108, label: '🔥 Automotivo Mandelão', seq: ['batidao_sub', 'cowbell1', 'hat', 'cowbell1', 'kick', 'cowbell2', 'hat', 'batidao_sub', 'cowbell3', 'hat', 'cowbell1', 'kick', 'cowbell4', 'scratch', 'hat', 'cowbell2'] },
+          murder:  { tempo: 105, label: '👻 Kordhell Murder Phonk', seq: ['bass808', 'cowbell3', 'hat', 'cowbell1', 'kick', 'cowbell2', 'hat', 'bass808', 'cowbell3', 'cowbell4', 'hat', 'kick', 'cowbell1', 'cowbell2', 'laser', 'hat'] },
+          sigma:   { tempo: 112, label: '🗿 Sigma GigaChad Phonk', seq: ['bass808', 'hat', 'kick', 'cowbell1', 'bass808', 'cowbell2', 'hat', 'cowbell3', 'kick', 'hat', 'bass808', 'cowbell1', 'kick', 'cowbell2', 'cowbell4', 'hat'] },
+          memphis: { tempo: 110, label: '👹 Montagem Dark Memphis', seq: ['batidao_sub', 'cowbell2', 'scratch', 'hat', 'kick', 'cowbell1', 'cowbell2', 'hat', 'batidao_sub', 'cowbell3', 'hat', 'kick', 'cowbell4', 'cowbell1', 'siren', 'hat'] },
+          cyber:   { tempo: 98,  label: '🚀 Euphoric Hardstyle', seq: ['kick', 'revbass', 'lead2', 'revbass', 'kick', 'revbass', 'lead4', 'revbass', 'kick', 'revbass', 'lead3', 'lead4', 'kick', 'revbass', 'lead1', 'laser'] },
+          tokyo:   { tempo: 104, label: '🏎️ Tokyo Drift Phonk', seq: ['cowbell3', 'hat', 'cowbell3', 'kick', 'cowbell1', 'hat', 'cowbell4', 'bass808', 'cowbell1', 'hat', 'cowbell3', 'kick', 'cowbell2', 'scratch', 'hat', 'cowbell1'] }
+        };
+        const chosen = proTracks[style] || proTracks.brazil;
+        const idMap = { drift: 'loopDrift', brazil: 'loopBrazil', murder: 'loopMurder', sigma: 'loopSigma', memphis: 'loopMemphis', cyber: 'loopCyber', tokyo: 'loopTokyo', demon: 'loopDemon' };
+        const btn = document.getElementById(idMap[style]);
+        if (btn) btn.classList.add('active');
+        const np = document.getElementById('djNowPlaying');
+        if (np) np.textContent = '🔥 LIVE: ' + chosen.label + ' (Hit Minimize to chat!)';
+
+        proStep = 0;
+        proBeatTimer = _origSetInterval(() => {
+          window.triggerDjSound(chosen.seq.at(proStep % chosen.seq.length));
+          proStep++;
+        }, chosen.tempo);
+      };
+      // 3. Relabel buttons in Phonk DJ Modal & add Bass Boost + Filter Sweep
+      function upgradePhonkModalControls() {
+        const bBrazil = document.getElementById('loopBrazil');
+        const bDemon = document.getElementById('loopDemon');
+        const bDrift = document.getElementById('loopDrift');
+        const bCyber = document.getElementById('loopCyber');
+        if (bBrazil) bBrazil.textContent = '🇧🇷 No Batidão';
+        if (bDemon) bDemon.textContent = '🌌 Heavenly Jumpstyle';
+        if (bDrift) bDrift.textContent = '🔥 Automotivo';
+        if (bCyber) bCyber.textContent = '🚀 Euphoric Hardstyle';
+
+        const card = document.getElementById('phonkDjCard');
+        if (card && !document.getElementById('proFilterBar')) {
+          const bar = document.createElement('div');
+          bar.id = 'proFilterBar';
+          bar.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid #c084fc;border-radius:12px;padding:7px;margin:6px 0;font-size:11px;';
+          bar.innerHTML =
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+              '<span>🎛️ Filter Sweep</span>' +
+              '<button id="proBoostBtn" onclick="window._phonkBoost=!window._phonkBoost;this.textContent=window._phonkBoost?\'🔊 808 BOOST: ON\':\'🔉 808 BOOST: OFF\'" style="background:#f59e0b;border:none;color:#111;border-radius:8px;padding:3px 8px;font-weight:900;font-size:10px;cursor:pointer;">🔊 808 BOOST: ON</button>' +
+            '</div>' +
+            '<input type="range" min="350" max="16000" value="16000" oninput="window._phonkFilterFreq=Number(this.value);if(typeof proFilter!==\'undefined\'&&proFilter)proFilter.frequency.value=window._phonkFilterFreq;" style="width:100%;accent-color:#e879f9;">';
+          const pads = card.querySelector('.dj-pads');
+          if (pads) card.insertBefore(bar, pads);
+        }
+      }
+      window.addEventListener('DOMContentLoaded', () => setTimeout(upgradePhonkModalControls, 1500));
+    })();
+    </script>
+    `;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('proFilterBar')) {
+                body = body.replace('</body>', PHONK_PRO_UPGRADE + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
     return OG_HOSTS;
       
 };

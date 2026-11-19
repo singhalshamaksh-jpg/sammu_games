@@ -1171,7 +1171,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
         nodes.forEach(el => {
           if (el.closest('#stVaultModal') || el.closest('#rpgArenaModal')) return;
           const raw = (el.textContent || '').trim();
-          const sender = raw.replace(/\s*(cap\s*[ab]|👑|creator)\s*/gi, '').trim().toLowerCase();
+          const sender = raw.replace(/\\s*(cap\\s*[ab]|👑|creator)\\s*/gi, '').trim().toLowerCase();
           const av = playersMap[sender];
           if (!av || !el.parentElement) return;
 
@@ -1328,4 +1328,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
     });
 
     app.locals.AVATAR_RPG_UI = COMBINED_UI;
+
+    app.get('/avatar-rpg-html', (req, res) => { res.type('text/html'); res.send(COMBINED_UI.replace(/<script>[\s\S]*?<\/script>/gi, '')); });
+    app.get('/avatar-rpg-script.js', (req, res) => { res.type('application/javascript'); const s = COMBINED_UI.indexOf('<script>'), e = COMBINED_UI.lastIndexOf('</script>'); res.send(s !== -1 && e !== -1 ? COMBINED_UI.slice(s + 8, e) : ''); });
 };

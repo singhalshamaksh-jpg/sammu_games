@@ -1749,30 +1749,49 @@ fetch('/avatar_widget').then(r => r.text()).then(html => {
   });
 });
     </script>   
-    <link rel="stylesheet" href="/avatar-armory-style.css">
+    <style>#sammuFloatingArmoryBar { display: none !important; }</style>
 <script>
-fetch('/avatar-armory-modals.html').then(r=>r.text()).then(h=>{
-  const d=document.createElement('div'); d.innerHTML=h; document.body.appendChild(d);
-  const s=document.createElement('script'); s.src='/avatar-armory-bundle.js'; document.body.appendChild(s);
+fetch('/avatar-rpg-html').then(r => r.text()).then(html => {
+  const box = document.createElement('div');
+  box.innerHTML = html;
+  document.body.appendChild(box);
+  const s = document.createElement('script');
+  s.src = '/avatar-rpg-script.js';
+  document.body.appendChild(s);
 });
-setInterval(()=>{
-  const m=document.getElementById('memeHornBtn');
-  if(!m||!m.parentElement)return;
-  m.parentElement.style.flexWrap='wrap';
-  if(!document.getElementById('toolbarAvatarsBtn')){
-    const b=m.cloneNode(true); b.id='toolbarAvatarsBtn'; b.removeAttribute('onclick'); b.textContent='👑 Avatars';
-    b.style.background='linear-gradient(90deg,#7c3aed,#ec4899)';
-    b.onclick=e=>{e.preventDefault();if(window.stDrawVault)window.stDrawVault();const x=document.getElementById('stVaultModal');if(x)x.style.display='flex';};
-    m.parentNode.insertBefore(b,m.nextSibling);
+setInterval(() => {
+  const anchor = Array.from(document.querySelectorAll('button')).find(b =>
+    /meme studio|phonk dj|cook|jam/i.test(b.textContent || '') && !b.closest('#stVaultModal')
+  );
+  if (!anchor || !anchor.parentElement) return;
+  anchor.parentElement.style.flexWrap = 'wrap';
+  if (!document.getElementById('toolbarAvatarsBtn')) {
+    const av = anchor.cloneNode(true);
+    av.id = 'toolbarAvatarsBtn';
+    av.removeAttribute('onclick');
+    av.textContent = '👑 Avatars';
+    av.style.background = 'linear-gradient(90deg, #7c3aed, #ec4899)';
+    av.onclick = (e) => {
+      e.preventDefault();
+      if (window.stDrawVault) window.stDrawVault();
+      const m = document.getElementById('stVaultModal');
+      if (m) m.style.display = 'flex';
+    };
+    anchor.parentElement.appendChild(av);
   }
-  if(!document.getElementById('toolbarRpgBtn')){
-    const r=m.cloneNode(true); r.id='toolbarRpgBtn'; r.removeAttribute('onclick'); r.textContent='⚔️ Avatar PvP';
-    r.style.background='linear-gradient(90deg,#f59e0b,#dc2626)';
-    r.onclick=e=>{e.preventDefault();if(window.openRpgModalNow)window.openRpgModalNow();};
-    const a=document.getElementById('toolbarAvatarsBtn')||m;
-    a.parentNode.insertBefore(r,a.nextSibling);
+  if (!document.getElementById('toolbarRpgBtn')) {
+    const rpg = anchor.cloneNode(true);
+    rpg.id = 'toolbarRpgBtn';
+    rpg.removeAttribute('onclick');
+    rpg.textContent = '⚔️ Avatar PvP';
+    rpg.style.background = 'linear-gradient(90deg, #f59e0b, #dc2626)';
+    rpg.onclick = (e) => {
+      e.preventDefault();
+      if (window.openRpgModalNow) window.openRpgModalNow();
+    };
+    anchor.parentElement.appendChild(rpg);
   }
-},700);
+}, 700);
 </script>
 
 </body>

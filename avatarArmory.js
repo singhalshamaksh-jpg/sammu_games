@@ -1267,7 +1267,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
                 if (f) playersMap[usr] = { ...f, ring: info.fx || f.ring, badge: info.badge || f.name };
               });
               renderChatAvatars();
-            }
+            
           });
 
           socket.on('rpgStateSync', (d) => { rpgData = d; renderRpgBody(); });
@@ -1315,6 +1315,13 @@ module.exports = function initAvatarArmory(app, io, helpers) {
     })();
     </script>
     `;
+      setupChatObserver();
+    })();
+    </script>
+    <script src="/armory-patch.js"></script>
+    `;
+
+    // Inject COMBINED_UI into all HTML responses
 
     // Inject COMBINED_UI into all HTML responses
     app.use((req, res, next) => {

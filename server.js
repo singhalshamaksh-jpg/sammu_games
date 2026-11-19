@@ -1,3 +1,5 @@
+process.on('uncaughtException', (err) => console.error('Prevented Crash:', err));
+process.on('unhandledRejection', (err) => console.error('Prevented Rejection:', err));
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);

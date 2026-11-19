@@ -1794,6 +1794,12 @@ setInterval(() => {
 }, 700);
 </script>
 <script src="/armory-patch.js"></script>
+<script>
+if (window.io) {
+  const _origIo = window.io;
+  window.io = function(...a) { const s = _origIo.apply(this, a); window.socket = s; return s; };
+}
+</script>
 
 </body>
 </html>

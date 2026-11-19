@@ -3147,6 +3147,8 @@ io.use((socket, next) => {
 });
 const verifyOGHostTripleLock = () => true;
 require('./avatarArmory')(app, io, { OG_HOSTS, verifyOGHostTripleLock });
+require('./armory_patch')(app, io, { verifyOGHostTripleLock: typeof verifyOGHostTripleLock !== 'undefined' ? verifyOGHostTripleLock : (() => true) });
+
 require('./fix_buttons')(app);
 
 const PORT = process.env.PORT || 3000;

@@ -55,6 +55,36 @@ const { AsyncLocalStorage } = require('async_hooks');
 const _srvStore = new AsyncLocalStorage();
 const { serverRooms, getRoom, deleteRoom } = require('./roomState');
 const _srvHosts = new Map();
+const { serverRooms, getRoom, deleteRoom } = require('./roomState');
+
+function loadRoom(id) {
+    const r = getRoom(id);
+    players = r.players; hostId = r.hostId; hostUsername = r.hostUsername;
+    spinnerEnded = r.spinnerEnded; skincareSession = r.skincareSession; activeMysteryBox = r.activeMysteryBox;
+    drawTimer = r.timers.draw; bombTimer = r.timers.bomb; memoryTimer = r.timers.memory;
+    simonTimer = r.timers.simon; tourneyTimer = r.timers.tourney; reflexTimer = r.timers.reflex;
+    botMemory = r.botMemory; tourneyState = r.tourneyState; gameData = r.gameData;
+}
+
+function saveRoom(id) {
+    const r = getRoom(id);
+    r.players = players; r.hostId = hostId; r.hostUsername = hostUsername;
+    r.spinnerEnded = spinnerEnded; r.skincareSession = skincareSession; r.activeMysteryBox = activeMysteryBox;
+    r.timers.draw = drawTimer; r.timers.bomb = bombTimer; r.timers.memory = memoryTimer;
+    r.timers.simon = simonTimer; r.timers.tourney = tourneyTimer; r.timers.reflex = reflexTimer;
+    r.botMemory = botMemory; r.tourneyState = tourneyState; r.gameData = gameData;
+}
+
+function runInServerRoom(srvId, fn) {
+    const id = String(srvId || 'global');
+    return _srvStore.run(id, () => { loadRoom(id); try { return fn(); } finally { saveRoom(id); } });
+}
+
+function roomTimeout(fn, ms) {
+    const id = _srvStore.getStore() || 'global';
+    return setTimeout(() => runInServerRoom(id, fn), ms);
+}
+
 // 1. Auto-fix Meme Studio Photo Upload & Gallery Picker in the browser
 app.use((req, res, next) => {
     const _send = res.send;

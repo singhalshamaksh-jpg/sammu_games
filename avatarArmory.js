@@ -1315,9 +1315,7 @@ module.exports = function initAvatarArmory(app, io, helpers) {
     })();
     </script>
     `;
-      setupChatObserver();
-    })();
-    </script>
+      
     <script src="/armory-patch.js"></script>
     `;
 

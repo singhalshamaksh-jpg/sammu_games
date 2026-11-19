@@ -33,8 +33,6 @@ module.exports = function initArmoryPatch(app, io, helpers) {
     '<div id="stZoomTitle" style="color:#f472b6;font-weight:800;font-size:13px;margin-bottom:16px;"></div>' +
     '<button onclick="document.getElementById(\\'stZoomModal\\').style.display=\\'none\\'" style="background:#ec4899;color:#fff;border:none;padding:8px 22px;border-radius:12px;font-weight:900;">Close</button>' +
     '</div>';
-  document.body.appendChild(modal);
-
   // 2. Override openRpgModalNow so RPG Arena ALWAYS renders immediately
   let curTab = 'pvp';
   window.rpgTab = function(t) {

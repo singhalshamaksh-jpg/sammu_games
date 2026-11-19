@@ -19,7 +19,7 @@ module.exports = function initFixButtons(app) {
 
     app.get('/armory-patch.js', (req, res) => {
         res.type('application/javascript');
-        res.send(`
+        res.send(String.raw`
 (function() {
     // 1. Change placeholders
     const stCodeInput = document.getElementById('stCodeInput');

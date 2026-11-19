@@ -3145,7 +3145,6 @@ io.use((socket, next) => {
     });
     next();
 });
-const OG_HOSTS = new Set(["sammu","samaksh","zoro","milly","moon","heer","izzan","ishika","sus","sarah","advait","ruwii","zaira","shubhi","sid"]);
 const verifyOGHostTripleLock = () => true;
 require('./avatarArmory')(app, io, { OG_HOSTS, verifyOGHostTripleLock });
 require('./fix_buttons')(app);

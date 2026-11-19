@@ -1579,7 +1579,7 @@ function getRealIP(socket) {
     const fwd = socket.handshake.headers['x-forwarded-for'];
     if (fwd && typeof fwd === 'string') return fwd.split(',').at(0).trim();
     return null;
-
+}
 function resolvePlayerIdentity(socket, payload) {
     const backupName = (payload && typeof payload === 'object' && payload.username && payload.username.trim()) ? payload.username.trim() : null;
     const backupAvatar = (payload && typeof payload === 'object' && payload.avatar) ? payload.avatar : null;

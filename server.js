@@ -1554,13 +1554,8 @@ function generateColorTrap() {
 }
 
 function generateScramble() {
-    const words = new Array(
-        'DRAGON', 'GALAXY', 'ROCKET', 'PLANET', 'NINJA',
-        'TROPHY', 'THUNDER', 'DIAMOND', 'VICTORY', 'ARENA',
-        'CHAMPION', 'PHANTOM', 'VOLCANO', 'WARRIOR', 'MYSTERY',
-        'KINGDOM', 'TORNADO', 'CYBORG', 'LEGEND', 'EMERALD'
-    );
-    const word = words.at(Math.floor(Math.random() * words.length));
+    const words = global.EXTRA_SCRAMBLE_WORDS || ['DRAGON', 'GALAXY', 'ROCKET', 'PLANET', 'NINJA'];
+    const word = words[Math.floor(Math.random() * words.length)];
     let scrambled = word.split('').sort(() => Math.random() - 0.5).join('');
     if (scrambled === word) scrambled = word.split('').reverse().join('');
     return { scrambled, answer: word };

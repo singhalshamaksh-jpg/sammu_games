@@ -2440,7 +2440,7 @@ module.exports = function initMultiServers(app, io) {
           proStep++;
         }, chosen.tempo);
       };
-      // 3. Relabel buttons in Phonk DJ Modal & add Bass Boost + Filter Sweep
+     
       function upgradePhonkModalControls() {
         const bBrazil = document.getElementById('loopBrazil');
         const bDemon = document.getElementById('loopDemon');
@@ -3457,7 +3457,7 @@ module.exports = function initMultiServers(app, io) {
           if (d.phase === 'write') {
             sub.innerHTML = d.submitted
               ? '<span style="color:#4ade80;font-weight:bold;">✅ Answer locked secretly! Waiting for others...</span>'
-              : '✍️ <b>Type your answer in chat!</b> (Hidden from chat so nobody knows it\'s yours!)';
+              : '✍️ <b>Type your answer in chat!</b> (Hidden from chat so nobody knows it is yours!)';
           } else {
             sub.innerHTML = '🗳️ <b>Tap the funniest answer!</b> (You can\'t vote for yourself)';
             d.entries.forEach((ent, idx) => {

@@ -2729,7 +2729,25 @@ module.exports = function initMultiServers(app, io) {
             io.to(srvId).emit('royaleTick', { holderId: nextHolder.id, holderName: nextHolder.username, aliveCount: st.alive.length, _serverId: srvId });
         });
     });
-                 
+             // === 🎲 RANDOM ALL-PLAYER PARTY LAUNCHER ===
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const txt = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof txt !== 'string' || txt.trim().toLowerCase() !== '!party') return;
+
+            syncArenaPlayers(srvId);
+            const count = getArena(srvId).players.length;
+            if (count < 2) {
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **2 players** for a party game!', _serverId: srvId });
+                return;
+            }
+            const cmds = count >= 3 ? ['!imposter', '!mafia', '!royale'] : ['!royale'];
+            const pick = cmds.at(Math.floor(Math.random() * cmds.length));
+            socket.onevent({ type: 2, nsp: '/', data: ['chatMessage', pick] });
+        });
+    });
+        
     return OG_HOSTS;
       
 };

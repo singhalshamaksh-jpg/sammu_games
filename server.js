@@ -3203,6 +3203,137 @@ io.use((socket, next) => {
     });
     next();
 });
+// === 🧠 PERSISTENT AI BANK UPGRADER (GROWS MAIN BANKS & SAVES TO DISK) ===
+const AI_CACHE_FILE = path.join(__dirname, 'ai_banks_cache.json');
+
+global.EXTRA_SCRAMBLE_WORDS = [
+    'DRAGON', 'GALAXY', 'ROCKET', 'PLANET', 'NINJA', 'TROPHY', 'THUNDER', 'DIAMOND',
+    'VICTORY', 'ARENA', 'CHAMPION', 'PHANTOM', 'VOLCANO', 'WARRIOR', 'MYSTERY',
+    'KINGDOM', 'TORNADO', 'CYBORG', 'LEGEND', 'EMERALD'
+];
+global.AI_BLUFF_BANK = [];
+global.AI_IMPOSTER_BANK = [];
+
+// 1. Load previously saved AI items from disk on startup
+if (fs.existsSync(AI_CACHE_FILE)) {
+    try {
+        const cached = JSON.parse(fs.readFileSync(AI_CACHE_FILE, 'utf8'));
+        if (Array.isArray(cached.bluff)) global.AI_BLUFF_BANK.push(...cached.bluff);
+        if (Array.isArray(cached.imposter)) global.AI_IMPOSTER_BANK.push(...cached.imposter);
+        if (Array.isArray(cached.scramble)) global.EXTRA_SCRAMBLE_WORDS.push(...cached.scramble);
+        if (Array.isArray(cached.shayari)) shayariBank.push(...cached.shayari);
+        if (Array.isArray(cached.truth)) truthBank.push(...cached.truth);
+        if (Array.isArray(cached.dare)) dareBank.push(...cached.dare);
+        if (Array.isArray(cached.riddle)) riddleBank.push(...cached.riddle);
+        console.log('📦 Loaded cached AI game banks from disk!');
+    } catch (e) {}
+}
+
+let aiUpgradeRunning = false;
+
+async function upgradeMainGameBanks() {
+    if (aiUpgradeRunning) return;
+    const groqKey = process.env.GROQ_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!groqKey && !geminiKey) return;
+
+    // Stop calling API if banks already have 150+ items saved
+    if (shayariBank.length >= 150 && global.AI_BLUFF_BANK.length >= 80) return;
+
+    aiUpgradeRunning = true;
+    const prompt = `Generate fresh, hilarious Gen-Z & Indian gaming lobby party content in STRICT valid JSON only (no markdown, no apostrophes inside strings):
+{
+  "bluff": ["8 funny scenario prompts with emojis for a party bluff game"],
+  "imposter": ["12 UPPERCASE single or 2-word nouns for Word Imposter like SAMOSA, CRICKET, MINECRAFT"],
+  "scramble": ["12 UPPERCASE 6-to-8 letter English words for Word Scramble like PHANTOM, TITANIC"],
+  "shayari": ["6 funny, savage, or romantic 2-line Hinglish shayaris with emojis"],
+  "truth": ["6 spicy/funny Truth questions for friends in a chat lobby"],
+  "dare": ["6 funny text-chat Dares players can do right in chat"],
+  "riddle": [{"q": "❓ RIDDLE: clever short riddle", "a": "singlewordanswer"}]
+}`;
+
+    try {
+        let rawText = null;
+        if (groqKey) {
+            const res = await fetch('https://groq.com', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.92,
+                    max_tokens: 1200
+                })
+            });
+            if (res.ok) {
+                const j = await res.json();
+                rawText = j.choices?.[0]?.message?.content;
+            }
+        } else if (geminiKey) {
+            const res = await fetch(`https://googleapis.com{geminiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            if (res.ok) {
+                const j = await res.json();
+                rawText = j.candidates?.[0]?.content?.parts?.[0]?.text;
+            }
+        }
+
+        if (rawText) {
+            const match = rawText.match(/\{[\s\S]*\}/);
+            if (match) {
+                const data = JSON.parse(match[0]);
+                const addUnique = (targetArr, items, transform) => {
+                    if (!Array.isArray(items)) return;
+                    const existing = new Set(targetArr.map(x => typeof x === 'string' ? x.toLowerCase() : JSON.stringify(x)));
+                    items.forEach(item => {
+                        const clean = transform ? transform(item) : item;
+                        if (!clean) return;
+                        const key = typeof clean === 'string' ? clean.toLowerCase() : JSON.stringify(clean);
+                        if (!existing.has(key) && targetArr.length < 200) {
+                            existing.add(key);
+                            targetArr.push(clean);
+                        }
+                    });
+                };
+
+                addUnique(global.AI_BLUFF_BANK, data.bluff, s => String(s).trim());
+                addUnique(global.AI_IMPOSTER_BANK, data.imposter, s => String(s).toUpperCase().trim());
+                addUnique(global.EXTRA_SCRAMBLE_WORDS, data.scramble, s => {
+                    const w = String(s).toUpperCase().replace(/[^A-Z]/g, '');
+                    return (w.length >= 5 && w.length <= 9) ? w : null;
+                });
+                addUnique(shayariBank, data.shayari, s => String(s).trim());
+                addUnique(truthBank, data.truth, s => String(s).trim());
+                addUnique(dareBank, data.dare, s => String(s).trim());
+                addUnique(riddleBank, data.riddle, r => (r && r.q && r.a) ? { q: String(r.q).trim(), a: String(r.a).toLowerCase().trim() } : null);
+
+                // Save upgraded banks to disk so they persist even if Groq is busy later
+                fs.writeFileSync(AI_CACHE_FILE, JSON.stringify({
+                    bluff: global.AI_BLUFF_BANK,
+                    imposter: global.AI_IMPOSTER_BANK,
+                    scramble: global.EXTRA_SCRAMBLE_WORDS.slice(20),
+                    shayari: shayariBank.slice(30),
+                    truth: truthBank.slice(25),
+                    dare: dareBank.slice(25),
+                    riddle: riddleBank.slice(50)
+                }, null, 2));
+
+                console.log(`✅ Banks Upgraded! Shayari: ${shayariBank.length}, Truth: ${truthBank.length}, Dare: ${dareBank.length}, Bluff: ${global.AI_BLUFF_BANK.length}, Imposter: ${global.AI_IMPOSTER_BANK.length}`);
+            }
+        }
+    } catch (err) {
+        console.error('AI Bank Upgrade Skipped (Groq/Gemini busy):', err.message);
+    } finally {
+        aiUpgradeRunning = false;
+    }
+}
+
+global.upgradeMainGameBanks = upgradeMainGameBanks;
+setTimeout(upgradeMainGameBanks, 5000);
+setInterval(upgradeMainGameBanks, 8 * 60 * 1000); // Auto-expand banks every 8 minutes
 
 
 const PORT = process.env.PORT || 3000;

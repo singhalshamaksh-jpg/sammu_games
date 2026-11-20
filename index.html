@@ -1887,6 +1887,299 @@
   }, 500);
 })();
 </script>
+<!-- === LIVE WALLPAPER ENGINE (PIECE 1/2) === -->
+<canvas id="liveWallpaperCanvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.85;"></canvas>
+<button id="wpToggleBtn" onclick="toggleLiveWallpaper()" style="position:fixed;bottom:72px;right:12px;z-index:99990;background:rgba(15,23,42,0.85);border:1.5px solid #38bdf8;color:#fff;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:bold;cursor:pointer;backdrop-filter:blur(4px);box-shadow:0 2px 10px rgba(0,0,0,0.4);">🌌 WP: ON</button>
+<!-- === LIVE WALLPAPER SCRIPT (PIECE 2/2) === -->
+<script>
+(function() {
+  var wpEnabled = localStorage.getItem('sammu_wp_on') !== 'false';
+  var canvas = document.getElementById('liveWallpaperCanvas');
+  var ctx = canvas ? canvas.getContext('2d') : null;
+  var particles = [];
+  var shootingStars = [];
+  var lastTheme = '';
+
+  function resizeWp() {
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeWp);
+  resizeWp();
+
+  // Make outer body/containers slightly translucent so wallpaper shines through
+  var style = document.createElement('style');
+  style.textContent = 'body { background: #070b19 !important; } #chatBox, #messages, .chat-messages { background: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(3px); }';
+  document.head.appendChild(style);
+
+  function getThemeKey() {
+    var srv = (window.selectedServerId || '').toLowerCase();
+    if (srv === 'srv_moon') return 'moon_doctor';
+    if (srv === 'srv_milly') return 'milly_yt';
+    if (srv === 'srv_izzan') return 'izzan_football';
+    if (srv === 'srv_zoro' || srv === 'srv_zaira') return 'anime_vibe';
+    return 'cosmic_default';
+  }
+
+  function buildParticles(theme) {
+    particles = [];
+    shootingStars = [];
+    var w = canvas.width || 360, h = canvas.height || 700;
+
+    if (theme === 'moon_doctor') {
+      // Twinkling stars + floating medical/doctor emojis
+      var medIcons = ['🩺', '💊', '🧬', '🩹', '💖', '✨', '🌙'];
+      for (var i = 0; i < 45; i++) {
+        particles.push({
+          type: i < 14 ? 'emoji' : 'star',
+          icon: medIcons[i % medIcons.length],
+          x: Math.random() * w, y: Math.random() * h,
+          r: Math.random() * 1.8 + 0.6,
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: -(Math.random() * 0.35 + 0.1),
+          alpha: Math.random()
+        });
+      }
+    } else if (theme === 'milly_yt') {
+      // YouTuber creator studio (Play buttons, cameras, crowns, gold sparkles)
+      var ytIcons = ['▶️', '🎬', '👑', '🎥', '🔔', '✨', '💖'];
+      for (var i = 0; i < 32; i++) {
+        particles.push({
+          type: i < 16 ? 'emoji' : 'gold',
+          icon: ytIcons[i % ytIcons.length],
+          x: Math.random() * w, y: Math.random() * h,
+          r: Math.random() * 2.2 + 1,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: -(Math.random() * 0.5 + 0.15),
+          alpha: Math.random()
+        });
+      }
+    } else if (theme === 'izzan_football') {
+      // Football stadium lights + bouncing soccer balls & trophies
+      var fbIcons = ['⚽', '🏆', '🥅', '🔥', '👟'];
+      for (var i = 0; i < 24; i++) {
+        particles.push({
+          type: i < 14 ? 'emoji' : 'spark',
+          icon: fbIcons[i % fbIcons.length],
+          x: Math.random() * w, y: Math.random() * h,
+          r: Math.random() * 2 + 1,
+          vx: (Math.random() - 0.5) * 0.9,
+          vy: (Math.random() - 0.5) * 0.9,
+          rot: Math.random() * 6.28,
+          vrot: (Math.random() - 0.5) * 0.04,
+          alpha: 0.75
+        });
+      }
+    } else if (theme === 'anime_vibe') {
+      // Anime cherry blossoms, katana/shuriken & cosmic energy
+      var aniIcons = ['🌸', '⚔️', '🌀', '⚡', '🪐', '✨'];
+      for (var i = 0; i < 36; i++) {
+        particles.push({
+          type: i < 18 ? 'emoji' : 'petal',
+          icon: aniIcons[i % aniIcons.length],
+          x: Math.random() * w, y: Math.random() * h,
+          r: Math.random() * 3 + 1.5,
+          vx: (Math.random() - 0.3) * 0.7,
+          vy: Math.random() * 0.7 + 0.25,
+          alpha: 0.8
+        });
+      }
+    } else {
+      // Default cosmic diamond stars
+      for (var i = 0; i < 45; i++) {
+        particles.push({
+          type: 'star',
+          x: Math.random() * w, y: Math.random() * h,
+          r: Math.random() * 1.8 + 0.6,
+          vx: 0, vy: -0.15,
+          alpha: Math.random()
+        });
+      }
+    }
+  }
+
+  window.toggleLiveWallpaper = function(forceState) {
+    wpEnabled = (typeof forceState === 'boolean') ? forceState : !wpEnabled;
+    localStorage.setItem('sammu_wp_on', wpEnabled ? 'true' : 'false');
+    if (canvas) canvas.style.display = wpEnabled ? 'block' : 'none';
+    var btn = document.getElementById('wpToggleBtn');
+    if (btn) btn.textContent = wpEnabled ? '🌌 WP: ON' : '🌑 WP: OFF';
+  };
+  window.toggleLiveWallpaper(wpEnabled);
+
+  // Listen for !wallpaper on / !wallpaper off typed in chat
+  var hookChatCmd = setInterval(function() {
+    if (typeof socket === 'undefined') return;
+    clearInterval(hookChatCmd);
+    socket.on('message', function(m) {
+      if (!m || typeof m.text !== 'string') return;
+      var t = m.text.trim().toLowerCase();
+      if (t === '!wallpaper off' || t === '!wp off') window.toggleLiveWallpaper(false);
+      if (t === '!wallpaper on' || t === '!wp on') window.toggleLiveWallpaper(true);
+    });
+  }, 1000);
+
+  var lastFrame = 0;
+  function animateWallpaper(ts) {
+    requestAnimationFrame(animateWallpaper);
+    if (!wpEnabled || !ctx || !canvas) return;
+    if (ts - lastFrame < 33) return; // Cap at ~30 FPS for zero phone lag
+    lastFrame = ts;
+
+    var theme = getThemeKey();
+    if (theme !== lastTheme) {
+      lastTheme = theme;
+      buildParticles(theme);
+    }
+
+    var w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Background Gradient per Server
+    var grad = ctx.createLinearGradient(0, 0, 0, h);
+    if (theme === 'moon_doctor') {
+      grad.addColorStop(0, '#070b24');
+      grad.addColorStop(0.5, '#131c42');
+      grad.addColorStop(1, '#082f49');
+    } else if (theme === 'milly_yt') {
+      grad.addColorStop(0, '#1f0812');
+      grad.addColorStop(0.5, '#3b0d22');
+      grad.addColorStop(1, '#1c1917');
+    } else if (theme === 'izzan_football') {
+      grad.addColorStop(0, '#052e16');
+      grad.addColorStop(0.5, '#064e3b');
+      grad.addColorStop(1, '#090d16');
+    } else if (theme === 'anime_vibe') {
+      grad.addColorStop(0, '#1e1035');
+      grad.addColorStop(0.5, '#2e1065');
+      grad.addColorStop(1, '#0f172a');
+    } else {
+      grad.addColorStop(0, '#070b19');
+      grad.addColorStop(1, '#111827');
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Special Centerpiece Art for Moon Didi (Glowing Crescent Moon + Heartbeat Pulse Line)
+    if (theme === 'moon_doctor') {
+      ctx.save();
+      ctx.shadowColor = '#bae6fd';
+      ctx.shadowBlur = 28;
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(w - 65, 85, 30, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0b1330';
+      ctx.beginPath();
+      ctx.arc(w - 53, 77, 26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Subtle glowing ECG heartbeat line across middle
+      ctx.save();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      var midY = h * 0.48;
+      var pulseX = ((ts * 0.12) % (w + 120)) - 60;
+      ctx.moveTo(0, midY);
+      ctx.lineTo(pulseX - 25, midY);
+      ctx.lineTo(pulseX - 15, midY - 22);
+      ctx.lineTo(pulseX - 5, midY + 26);
+      ctx.lineTo(pulseX + 7, midY - 34);
+      ctx.lineTo(pulseX + 18, midY + 14);
+      ctx.lineTo(pulseX + 26, midY);
+      ctx.lineTo(w, midY);
+      ctx.stroke();
+      ctx.restore();
+
+      // Occasional shooting star
+      if (Math.random() < 0.015) {
+        shootingStars.push({ x: Math.random() * w, y: Math.random() * (h * 0.35), len: 60, vx: -6, vy: 4, life: 1 });
+      }
+      for (var s = shootingStars.length - 1; s >= 0; s--) {
+        var st = shootingStars[s];
+        ctx.strokeStyle = 'rgba(254, 240, 138, ' + st.life + ')';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(st.x, st.y);
+        ctx.lineTo(st.x - st.vx * 6, st.y - st.vy * 6);
+        ctx.stroke();
+        st.x += st.vx; st.y += st.vy; st.life -= 0.04;
+        if (st.life <= 0) shootingStars.splice(s, 1);
+      }
+    }
+
+    // Special YouTube Play Glow for Milly
+    if (theme === 'milly_yt') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.14)';
+      ctx.beginPath();
+      ctx.roundRect(w / 2 - 48, h * 0.42, 96, 66, 18);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.beginPath();
+      ctx.moveTo(w / 2 - 12, h * 0.42 + 18);
+      ctx.lineTo(w / 2 - 12, h * 0.42 + 48);
+      ctx.lineTo(w / 2 + 20, h * 0.42 + 33);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Special Stadium Pitch Lines for Izzan
+    if (theme === 'izzan_football') {
+      ctx.strokeStyle = 'rgba(74, 222, 128, 0.14)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(w / 2, h / 2, 70, 0, Math.PI * 2);
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+    }
+
+    // Draw & Move Particles
+    ctx.font = '18px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+
+      if (p.type === 'emoji') {
+        ctx.globalAlpha = 0.45;
+        ctx.fillText(p.icon, p.x, p.y);
+      } else if (p.type === 'petal') {
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = '#f472b6';
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, p.r * 1.6, p.r, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.type === 'gold') {
+        ctx.globalAlpha = 0.4 + Math.sin(ts * 0.005 + i) * 0.3;
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.globalAlpha = 0.3 + Math.abs(Math.sin(ts * 0.003 + i)) * 0.7;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+  requestAnimationFrame(animateWallpaper);
+})();
+</script>
 
 
 

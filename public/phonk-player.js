@@ -7,15 +7,16 @@
   const origStopPhonkLoop = window.stopPhonkLoop;
 
   // Only list the tracks you want as Real MP3s (Tokyo is left out so it uses the original synth!)
-  const MP3_TRACKS = {
-    brazil:  { url: '/phonk/batidao.mp3',   label: '🇧🇷 No Batidão (Brazilian Phonk)' },
-    demon:   { url: '/phonk/jumpstyle.mp3', label: '🌌 Heavenly Jumpstyle' },
-    drift:   { url: '/phonk/automotivo.mp3',label: '🔥 Automotivo Mandelão' },
-    murder:  { url: '/phonk/murder.mp3',    label: '👻 Kordhell Murder Phonk' },
-    sigma:   { url: '/phonk/sigma.mp3',     label: '🗿 Sigma GigaChad' },
-    memphis: { url: '/phonk/memphis.mp3',   label: '👹 Montagem Memphis' },
-    cyber:   { url: '/phonk/hardstyle.mp3', label: '🚀 Euphoric Hardstyle' }
+    const MP3_TRACKS = {
+    brazil:  { url: '/public_phonk_batidao.mp3',        label: '🇧🇷 No Batidão (Brazilian Phonk)' },
+    demon:   { url: '/public_phonk_jumpstyle.mp3',      label: '🌌 Heavenly Jumpstyle' },
+    drift:   { url: '/public_phonk_automotivo.mp3',     label: '🔥 Automotivo Mandelão' },
+    murder:  { url: '/public_phonk_murder.mp3',         label: '👻 Kordhell Murder Phonk' },
+    sigma:   { url: '/public_phonk_sigma.mp3__.mp3',    label: '🗿 Sigma GigaChad' },
+    memphis: { url: '/public_phonk_memphis.mp3',        label: '👹 Montagem Memphis' },
+    cyber:   { url: '/public_phonk_hardstyle.mp3',      label: '🚀 Euphoric Hardstyle' }
   };
+
 
   const BTN_MAP = {
     drift: 'loopDrift', brazil: 'loopBrazil', murder: 'loopMurder', sigma: 'loopSigma',

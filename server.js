@@ -792,10 +792,11 @@ app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');
     fs.readFile(indexPath, 'utf8', (err, html) => {
         if (err) return next();
-        const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET).join('\n');
+        const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET, app.locals.AVATAR_RPG_UI || '').join('\n');
         res.send(html.replace('</body>', allWidgets + '\n<script src="/phonk-player.js"></script>\n</body>'));
     });
 });
+
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 io.engine.pingTimeout = 60000;

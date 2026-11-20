@@ -1120,7 +1120,7 @@ module.exports = function initMultiServers(app, io) {
             );
             const isHostBypass = isAnyLockedOGSignature(socket) || isCreatorSignature;
 
-            if (!isHostBypass && (activeCounts[serverId] || 0) >= (srv.max || 20)) {
+            if (!isHostBypass && (io.sockets.adapter.rooms.get(serverId)?.size || 0) >= (srv.max || 20)) {
                 return socket.emit('serverAccessDenied', 'Server is full (20/20)! Pick another server.');
             }
             if ((srv.type === 'secret' || srv.password) && !isHostBypass && password !== srv.password) {

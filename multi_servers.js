@@ -2599,7 +2599,137 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // === 💣 BOMB POTATO ROYALE (ALL-PLAYERS ELIMINATION PARTY) ===
+    const royaleByServer = new Map();
+    const ROYALE_UI = `
+    <div id="royaleBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999998;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(67,20,7,0.96),rgba(127,29,29,0.96));border:2px solid #f97316;border-radius:16px;padding:10px 12px;width:100%;max-width:360px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(249,115,22,0.5);backdrop-filter:blur(6px);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:900;font-size:12px;color:#fdba74;">💣 BOMB POTATO ROYALE</span>
+          <span id="royaleAlive" style="font-size:10px;color:#fde047;font-weight:bold;">Alive: 0</span>
+        </div>
+        <div id="royaleHolderBox" style="background:rgba(249,115,22,0.2);border:1px solid #fb923c;border-radius:9px;padding:6px 8px;margin-bottom:6px;font-size:13px;font-weight:900;color:#fff;">Waiting for bomb...</div>
+        <button id="royalePassBtn" onclick="if(typeof socket!=='undefined')socket.emit('royalePass')" style="display:none;width:100%;padding:9px;border:none;border-radius:11px;background:linear-gradient(90deg,#facc15,#ef4444);color:#111;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 0 15px rgba(250,204,21,0.7);">🔥 PASS THE BOMB NOW! 🔥</button>
+      </div>
+    </div>
+    <script>
+    (function() {
+      function injectRoyaleHostBtn() {
+        const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /mafia party|word imposter|hoop shootout/i.test(b.textContent || ''));
+        if (targetBtn && targetBtn.parentElement && !document.getElementById('btnLaunchRoyale')) {
+          const btn = targetBtn.cloneNode(true);
+          btn.id = 'btnLaunchRoyale';
+          btn.removeAttribute('onclick');
+          btn.textContent = '27. 💣 Bomb Royale';
+          btn.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!royale'); };
+          targetBtn.parentElement.appendChild(btn);
+        }
+      }
+      setInterval(injectRoyaleHostBtn, 2000);
 
+      function bindRoyale() {
+        if (typeof socket === 'undefined' || window._royaleBound) return;
+        window._royaleBound = true;
+        socket.on('royaleTick', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('royaleBar').style.display = 'flex';
+          document.getElementById('royaleAlive').textContent = 'Alive: ' + d.aliveCount + ' 👥';
+          const isMe = (socket.id === d.holderId);
+          document.getElementById('royaleHolderBox').innerHTML = isMe
+            ? '😱 <span style="color:#fde047;">YOU HAVE THE BOMB!</span> PASS IT!'
+            : '💣 Bomb is with: <span style="color:#fdba74;">' + d.holderName + '</span>';
+          document.getElementById('royalePassBtn').style.display = isMe ? 'block' : 'none';
+        });
+        socket.on('royaleEnd', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('royaleBar').style.display = 'none';
+        });
+      }
+      setInterval(bindRoyale, 1200);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('royaleBar')) {
+                body = body.replace('</body>', ROYALE_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    function runRoyaleRound(srvId) {
+        const st = royaleByServer.get(srvId);
+        if (!st) return;
+        const roomSet = io.sockets.adapter.rooms.get(srvId) || new Set();
+        st.alive = st.alive.filter(p => roomSet.has(p.id));
+
+        if (st.alive.length <= 1) {
+            royaleByServer.delete(srvId);
+            const champ = st.alive.at(0);
+            io.to(srvId).emit('royaleEnd', { _serverId: srvId });
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: champ
+                    ? `🏆💥 **BOMB ROYALE CHAMPION:** **${champ.username}** survived the explosions and won the crown! 👑🔥`
+                    : `💥 Everyone exploded! No survivors!`,
+                _serverId: srvId
+            });
+            return;
+        }
+
+        const starter = st.alive.at(Math.floor(Math.random() * st.alive.length));
+        st.holder = starter;
+        io.to(srvId).emit('royaleTick', { holderId: starter.id, holderName: starter.username, aliveCount: st.alive.length, _serverId: srvId });
+
+        const fuseMs = Math.floor(Math.random() * 4500) + 5000;
+        if (st.timer) clearTimeout(st.timer);
+        st.timer = setTimeout(() => {
+            const cur = royaleByServer.get(srvId);
+            if (!cur || !cur.holder) return;
+            const victim = cur.holder;
+            cur.alive = cur.alive.filter(p => p.id !== victim.id);
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `💥 **KABOOM!!** The bomb blew up on **${victim.username}**! (${cur.alive.length} survivors left!) 🔥`,
+                _serverId: srvId
+            });
+            setTimeout(() => runRoyaleRound(srvId), 2000);
+        }, fuseMs);
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const txt = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (typeof txt === 'string' && txt.trim().toLowerCase() === '!royale' && srvId) {
+                if (royaleByServer.has(srvId)) return;
+                syncArenaPlayers(srvId);
+                const arena = getArena(srvId);
+                if (arena.players.length < 2) {
+                    io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **2 players in this server** to start **💣 Bomb Potato Royale**!', _serverId: srvId });
+                    return;
+                }
+                royaleByServer.set(srvId, { alive: [...arena.players], holder: null, timer: null });
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `💣🔥 **BOMB POTATO ROYALE STARTED!** (${arena.players.length} Players) Watch the top bar and **PASS THE BOMB** before it explodes!`, _serverId: srvId });
+                runRoyaleRound(srvId);
+            }
+        });
+
+        socket.on('royalePass', () => {
+            const srvId = socket.activeServerId;
+            const st = srvId ? royaleByServer.get(srvId) : null;
+            if (!st || !st.holder || st.holder.id !== socket.id) return;
+            const others = st.alive.filter(p => p.id !== socket.id);
+            if (others.length === 0) return;
+            const nextHolder = others.at(Math.floor(Math.random() * others.length));
+            st.holder = nextHolder;
+            io.to(srvId).emit('royaleTick', { holderId: nextHolder.id, holderName: nextHolder.username, aliveCount: st.alive.length, _serverId: srvId });
+        });
+    });
+                 
     return OG_HOSTS;
       
 };

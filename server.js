@@ -226,6 +226,7 @@ io.use((socket, next) => {
         });
     });
     socket.on('disconnect', () => {
+        const srvId = socket.activeServerId;
         // Remove disconnected player from players
         const lp = players.find(p => p.id === socket.id);
         if (lp) io.emit('message', { username: "Sammu's Bot", text: `😢 ${lp.username} has left the room` });

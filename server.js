@@ -3208,18 +3208,59 @@ global.EXTRA_SCRAMBLE_WORDS = [
 ];
 global.AI_BLUFF_BANK = [];
 global.AI_IMPOSTER_BANK = [];
+global.AI_MULTI_ANIME_BANK = [];
+
+function mergeUniqueBank(targetArr, items, transform, maxItems = 250) {
+    if (!Array.isArray(items)) return;
+    const existing = new Set(targetArr.map(x => typeof x === 'string' ? x.toLowerCase() : JSON.stringify(x)));
+    items.forEach(item => {
+        const clean = transform ? transform(item) : item;
+        if (!clean) return;
+        const key = typeof clean === 'string' ? clean.toLowerCase() : JSON.stringify(clean);
+        if (!existing.has(key) && targetArr.length < maxItems) {
+            existing.add(key);
+            targetArr.push(clean);
+        }
+    });
+}
+
+function mergeUniqueSongTasks(targetArr, items, maxItems = 250) {
+    if (!Array.isArray(items)) return;
+    const existingKeywords = new Set(targetArr.filter(t => t && t.songKeyword).map(t => String(t.songKeyword).toLowerCase().trim()));
+    const existingTexts = new Set(targetArr.map(t => JSON.stringify(t)));
+    items.forEach(t => {
+        if (!t || !t.text || !t.songKeyword) return;
+        const kw = String(t.songKeyword).toLowerCase().trim();
+        const clean = { text: String(t.text).trim(), songKeyword: kw };
+        const key = JSON.stringify(clean);
+        if (!existingKeywords.has(kw) && !existingTexts.has(key) && targetArr.length < maxItems) {
+            existingKeywords.add(kw);
+            existingTexts.add(key);
+            targetArr.push(clean);
+        }
+    });
+}
 
 // 1. Load previously saved AI items from disk on startup
 if (fs.existsSync(AI_CACHE_FILE)) {
     try {
         const cached = JSON.parse(fs.readFileSync(AI_CACHE_FILE, 'utf8'));
-        if (Array.isArray(cached.bluff)) global.AI_BLUFF_BANK.push(...cached.bluff);
-        if (Array.isArray(cached.imposter)) global.AI_IMPOSTER_BANK.push(...cached.imposter);
-        if (Array.isArray(cached.scramble)) global.EXTRA_SCRAMBLE_WORDS.push(...cached.scramble);
-        if (Array.isArray(cached.shayari)) shayariBank.push(...cached.shayari);
-        if (Array.isArray(cached.truth)) truthBank.push(...cached.truth);
-        if (Array.isArray(cached.dare)) dareBank.push(...cached.dare);
-        if (Array.isArray(cached.riddle)) riddleBank.push(...cached.riddle);
+        mergeUniqueBank(global.AI_BLUFF_BANK, cached.bluff, s => String(s).trim());
+        mergeUniqueBank(global.AI_IMPOSTER_BANK, cached.imposter, s => String(s).toUpperCase().trim());
+        mergeUniqueBank(global.EXTRA_SCRAMBLE_WORDS, cached.scramble, s => {
+            const w = String(s).toUpperCase().replace(/[^A-Z]/g, '');
+            return (w.length >= 5 && w.length <= 9) ? w : null;
+        });
+        mergeUniqueBank(quizBank, cached.quiz, q => (q && q.q && q.a) ? { q: String(q.q).trim(), a: String(q.a).toLowerCase().trim() } : null);
+        mergeUniqueBank(animeQuizBank, cached.animeQuiz, q => (q && q.q && q.a) ? { q: String(q.q).trim(), a: String(q.a).toLowerCase().trim() } : null);
+        mergeUniqueBank(hindiMovieBank, cached.hindiMovie, m => (m && m.emojis && m.a) ? { emojis: String(m.emojis).trim(), a: String(m.a).toLowerCase().trim(), alt: String(m.alt || m.a).toLowerCase().trim() } : null);
+        mergeUniqueSongTasks(botTasks, cached.songTasks);
+        mergeUniqueBank(roastBank, cached.roast, s => String(s).trim());
+        mergeUniqueBank(shayariBank, cached.shayari, s => String(s).trim());
+        mergeUniqueBank(truthBank, cached.truth, s => String(s).trim());
+        mergeUniqueBank(dareBank, cached.dare, s => String(s).trim());
+        mergeUniqueBank(riddleBank, cached.riddle, r => (r && r.q && r.a) ? { q: String(r.q).trim(), a: String(r.a).toLowerCase().trim() } : null);
+        mergeUniqueBank(global.AI_MULTI_ANIME_BANK, cached.multiAnime, q => (q && q.q && Array.isArray(q.a)) ? { q: String(q.q).trim(), a: q.a.map(x => String(x).toLowerCase().trim()).filter(Boolean) } : null);
         console.log('📦 Loaded cached AI game banks from disk!');
     } catch (e) {}
 }
@@ -3232,32 +3273,38 @@ async function upgradeMainGameBanks() {
     const geminiKey = process.env.GEMINI_API_KEY;
     if (!groqKey && !geminiKey) return;
 
-    // Stop calling API if banks already have 150+ items saved
-    if (shayariBank.length >= 150 && global.AI_BLUFF_BANK.length >= 80) return;
+    // Stop calling API if banks already have 250+ items saved
+    if (quizBank.length >= 250 && animeQuizBank.length >= 250 && hindiMovieBank.length >= 250 && roastBank.length >= 250 && shayariBank.length >= 250 && truthBank.length >= 250 && dareBank.length >= 250 && riddleBank.length >= 250 && global.EXTRA_SCRAMBLE_WORDS.length >= 250 && global.AI_BLUFF_BANK.length >= 250 && global.AI_IMPOSTER_BANK.length >= 250 && global.AI_MULTI_ANIME_BANK.length >= 250) return;
 
     aiUpgradeRunning = true;
-    const prompt = `Generate fresh, hilarious Gen-Z & Indian gaming lobby party content in STRICT valid JSON only (no markdown, no apostrophes inside strings):
+    const prompt = `Generate fresh, hilarious Gen-Z & Indian gaming lobby party content in STRICT valid JSON only (no markdown, no apostrophes inside strings). Return 4 to 6 fresh unique items for EVERY category below:
 {
-  "bluff": ["8 funny scenario prompts with emojis for a party bluff game"],
-  "imposter": ["12 UPPERCASE single or 2-word nouns for Word Imposter like SAMOSA, CRICKET, MINECRAFT"],
-  "scramble": ["12 UPPERCASE 6-to-8 letter English words for Word Scramble like PHANTOM, TITANIC"],
-  "shayari": ["6 funny, savage, or romantic 2-line Hinglish shayaris with emojis"],
-  "truth": ["6 spicy/funny Truth questions for friends in a chat lobby"],
-  "dare": ["6 funny text-chat Dares players can do right in chat"],
-  "riddle": [{"q": "❓ RIDDLE: clever short riddle", "a": "singlewordanswer"}]
+  "quiz": [{"q": "🌍 CATEGORY: question", "a": "lowercase answer"}],
+  "animeQuiz": [{"q": "🍥 ANIME: question", "a": "lowercase answer"}],
+  "hindiMovie": [{"emojis": "3 emojis", "a": "lowercase short title", "alt": "lowercase full title"}],
+  "songTasks": [{"text": "🎵 SONG TASK: Type lyrics/name of a Hindi/Bollywood song containing the word WORD! (Minimum 3 words)", "songKeyword": "word"}],
+  "roast": ["funny Hinglish/English roast line starting with lowercase verb like plays like... or bhai..."],
+  "shayari": ["funny, savage, or romantic 2-line Hinglish shayari with emojis"],
+  "truth": ["spicy/funny Truth question for friends in a chat lobby"],
+  "dare": ["funny text-chat Dare players can do right in chat"],
+  "riddle": [{"q": "❓ RIDDLE: clever short riddle", "a": "singlewordanswer"}],
+  "scramble": ["UPPERCASE 6-to-8 letter English word for Word Scramble"],
+  "bluff": ["funny scenario prompt with emojis for a party bluff game"],
+  "imposter": ["UPPERCASE single or 2-word noun for Word Imposter"],
+  "multiAnime": [{"q": "🌸 ANIME: question", "a": ["lowercase answer"]}]
 }`;
 
     try {
         let rawText = null;
         if (groqKey) {
-            const res = await fetch('https://groq.com', {
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: 'llama-3.3-70b-versatile',
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.92,
-                    max_tokens: 1200
+                    max_tokens: 2000
                 })
             });
             if (res.ok) {
@@ -3265,7 +3312,7 @@ async function upgradeMainGameBanks() {
                 rawText = j.choices?.[0]?.message?.content;
             }
         } else if (geminiKey) {
-            const res = await fetch(`https://googleapis.com{geminiKey}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -3280,43 +3327,41 @@ async function upgradeMainGameBanks() {
             const match = rawText.match(/\{[\s\S]*\}/);
             if (match) {
                 const data = JSON.parse(match[0]);
-                const addUnique = (targetArr, items, transform) => {
-                    if (!Array.isArray(items)) return;
-                    const existing = new Set(targetArr.map(x => typeof x === 'string' ? x.toLowerCase() : JSON.stringify(x)));
-                    items.forEach(item => {
-                        const clean = transform ? transform(item) : item;
-                        if (!clean) return;
-                        const key = typeof clean === 'string' ? clean.toLowerCase() : JSON.stringify(clean);
-                        if (!existing.has(key) && targetArr.length < 200) {
-                            existing.add(key);
-                            targetArr.push(clean);
-                        }
-                    });
-                };
-
-                addUnique(global.AI_BLUFF_BANK, data.bluff, s => String(s).trim());
-                addUnique(global.AI_IMPOSTER_BANK, data.imposter, s => String(s).toUpperCase().trim());
-                addUnique(global.EXTRA_SCRAMBLE_WORDS, data.scramble, s => {
+                mergeUniqueBank(quizBank, data.quiz, q => (q && q.q && q.a) ? { q: String(q.q).trim(), a: String(q.a).toLowerCase().trim() } : null);
+                mergeUniqueBank(animeQuizBank, data.animeQuiz, q => (q && q.q && q.a) ? { q: String(q.q).trim(), a: String(q.a).toLowerCase().trim() } : null);
+                mergeUniqueBank(hindiMovieBank, data.hindiMovie, m => (m && m.emojis && m.a) ? { emojis: String(m.emojis).trim(), a: String(m.a).toLowerCase().trim(), alt: String(m.alt || m.a).toLowerCase().trim() } : null);
+                mergeUniqueSongTasks(botTasks, data.songTasks);
+                mergeUniqueBank(roastBank, data.roast, s => String(s).trim());
+                mergeUniqueBank(shayariBank, data.shayari, s => String(s).trim());
+                mergeUniqueBank(truthBank, data.truth, s => String(s).trim());
+                mergeUniqueBank(dareBank, data.dare, s => String(s).trim());
+                mergeUniqueBank(riddleBank, data.riddle, r => (r && r.q && r.a) ? { q: String(r.q).trim(), a: String(r.a).toLowerCase().trim() } : null);
+                mergeUniqueBank(global.EXTRA_SCRAMBLE_WORDS, data.scramble, s => {
                     const w = String(s).toUpperCase().replace(/[^A-Z]/g, '');
                     return (w.length >= 5 && w.length <= 9) ? w : null;
                 });
-                addUnique(shayariBank, data.shayari, s => String(s).trim());
-                addUnique(truthBank, data.truth, s => String(s).trim());
-                addUnique(dareBank, data.dare, s => String(s).trim());
-                addUnique(riddleBank, data.riddle, r => (r && r.q && r.a) ? { q: String(r.q).trim(), a: String(r.a).toLowerCase().trim() } : null);
+                mergeUniqueBank(global.AI_BLUFF_BANK, data.bluff, s => String(s).trim());
+                mergeUniqueBank(global.AI_IMPOSTER_BANK, data.imposter, s => String(s).toUpperCase().trim());
+                mergeUniqueBank(global.AI_MULTI_ANIME_BANK, data.multiAnime, q => (q && q.q && Array.isArray(q.a)) ? { q: String(q.q).trim(), a: q.a.map(x => String(x).toLowerCase().trim()).filter(Boolean) } : null);
 
                 // Save upgraded banks to disk so they persist even if Groq is busy later
                 fs.writeFileSync(AI_CACHE_FILE, JSON.stringify({
+                    quiz: quizBank,
+                    animeQuiz: animeQuizBank,
+                    hindiMovie: hindiMovieBank,
+                    songTasks: botTasks.filter(t => t.songKeyword),
+                    roast: roastBank,
+                    shayari: shayariBank,
+                    truth: truthBank,
+                    dare: dareBank,
+                    riddle: riddleBank,
+                    scramble: global.EXTRA_SCRAMBLE_WORDS,
                     bluff: global.AI_BLUFF_BANK,
                     imposter: global.AI_IMPOSTER_BANK,
-                    scramble: global.EXTRA_SCRAMBLE_WORDS.slice(20),
-                    shayari: shayariBank.slice(30),
-                    truth: truthBank.slice(25),
-                    dare: dareBank.slice(25),
-                    riddle: riddleBank.slice(50)
+                    multiAnime: global.AI_MULTI_ANIME_BANK
                 }, null, 2));
 
-                console.log(`✅ Banks Upgraded! Shayari: ${shayariBank.length}, Truth: ${truthBank.length}, Dare: ${dareBank.length}, Bluff: ${global.AI_BLUFF_BANK.length}, Imposter: ${global.AI_IMPOSTER_BANK.length}`);
+                console.log(`✅ Banks Upgraded! Quiz: ${quizBank.length}, Anime: ${animeQuizBank.length}, Movies: ${hindiMovieBank.length}, Songs: ${botTasks.filter(t => t.songKeyword).length}, Roast: ${roastBank.length}, Shayari: ${shayariBank.length}, Truth: ${truthBank.length}, Dare: ${dareBank.length}, Riddle: ${riddleBank.length}, Bluff: ${global.AI_BLUFF_BANK.length}, Imposter: ${global.AI_IMPOSTER_BANK.length}, MultiAnime: ${global.AI_MULTI_ANIME_BANK.length}`);
             }
         }
     } catch (err) {

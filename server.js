@@ -33,6 +33,7 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
+    socket.setMaxListeners(30);
     let eventCount = 0;
     const resetTimer = setInterval(() => { eventCount = 0; }, 2000);
     socket.on('disconnect', () => clearInterval(resetTimer));

@@ -4010,6 +4010,212 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
+    // === GUARANTEED SOCKET-DELIVERED UI FOR #30, #31, #32, #33 (PIECE 1/2) ===
+    const LIVE_PARTY_BUNDLE = `
+    <div id="cleanRaidBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(49,16,66,0.97),rgba(15,23,42,0.97));border:2px solid #c084fc;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(192,132,252,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span style="font-weight:900;font-size:11px;color:#e879f9;">🐉 SHADOW DRAGON RAID</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="cRaidTimer" style="font-size:11px;color:#fde047;font-weight:900;">⏳ 12s</span>
+            <button onclick="document.getElementById('cleanRaidBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:6px;">
+          <div style="flex:1;background:#090d16;border:1px solid #4ade80;border-radius:8px;padding:4px;">❤️ Squad HP: <b id="cRaidTeamHp" style="color:#4ade80;">100%</b></div>
+          <div style="flex:1;background:#090d16;border:1px solid #f43f5e;border-radius:8px;padding:4px;">🐉 Boss: <b id="cRaidBossHp" style="color:#fda4af;">3000</b></div>
+        </div>
+        <div id="cRaidActions" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+      </div>
+    </div>
+    <div id="cleanHeistBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(6,78,59,0.97),rgba(15,23,42,0.97));border:2px solid #facc15;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(250,204,21,0.45);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span id="cHeistRound" style="font-weight:900;font-size:11px;color:#fde047;">🏦 MEGA BANK HEIST (1/4)</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="cHeistTimer" style="font-size:11px;color:#38bdf8;font-weight:900;">⏳ 12s</span>
+            <button onclick="document.getElementById('cleanHeistBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:6px;">
+          <div style="flex:1;background:#090d16;border:1px solid #facc15;border-radius:8px;padding:4px;">💰 Loot: <b id="cHeistLoot" style="color:#fde047;">$0</b></div>
+          <div style="flex:1;background:#090d16;border:1px solid #ef4444;border-radius:8px;padding:4px;">🚨 Heat: <b id="cHeistHeat" style="color:#f87171;">0%</b></div>
+        </div>
+        <div id="cHeistActions" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+      </div>
+    </div>
+    <div id="cleanBluffBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(88,28,135,0.97),rgba(15,23,42,0.97));border:2px solid #f472b6;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(244,114,182,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:900;font-size:11px;color:#f9a8d4;">🎭 BLUFF MASTER</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="cBluffTimer" style="font-size:11px;color:#fde047;font-weight:900;">⏳ 20s</span>
+            <button onclick="document.getElementById('cleanBluffBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div id="cBluffPrompt" style="background:rgba(244,114,182,0.2);border:1px solid #f472b6;border-radius:9px;padding:6px;margin-bottom:6px;font-size:12px;font-weight:900;color:#fde047;">Loading...</div>
+        <div id="cBluffSub" style="font-size:11px;color:#cbd5e1;">✍️ Type your funny answer in normal chat now!</div>
+        <div id="cBluffGrid" style="display:flex;flex-direction:column;gap:5px;margin-top:6px;max-height:140px;overflow-y:auto;"></div>
+      </div>
+    </div>
+    <div id="cleanIslandBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(6,78,59,0.97),rgba(120,53,15,0.97));border:2px solid #34d399;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(52,211,153,0.45);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span id="cIslDay" style="font-weight:900;font-size:11px;color:#6ee7b7;">🏝️ CASTAWAY ISLAND (DAY 1/4)</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="cIslTimer" style="font-size:11px;color:#fde047;font-weight:900;">⏳ 14s</span>
+            <button onclick="document.getElementById('cleanIslandBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:6px;">
+          <div style="flex:1;background:#090d16;border:1px solid #4ade80;border-radius:8px;padding:4px;">🥥 Food: <b id="cIslFood" style="color:#4ade80;">60%</b></div>
+          <div style="flex:1;background:#090d16;border:1px solid #f97316;border-radius:8px;padding:4px;">🔥 Fire: <b id="cIslFire" style="color:#fb923c;">60%</b></div>
+        </div>
+        <div id="cIslActions" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+      </div>
+    </div>`;
+
+    io.on('connection', (socket) => {
+        socket.on('joinRoom', () => {
+            setTimeout(() => {
+                socket.emit('injectPartyBundle', LIVE_PARTY_BUNDLE);
+            }, 700);
+        });
+    });
+    // === GUARANTEED SOCKET-DELIVERED UI (PIECE 2/2) ===
+    const SOCKET_UI_BOOT = `
+    <script>
+    (function() {
+      function bootSocketPartyUI() {
+        if (typeof socket === 'undefined' || window._partyBooted) return;
+        window._partyBooted = true;
+
+        socket.on('injectPartyBundle', (html) => {
+          if (!document.getElementById('cleanRaidBar')) {
+            const wrap = document.createElement('div');
+            wrap.innerHTML = html;
+            document.body.appendChild(wrap);
+          }
+          const anchor = Array.from(document.querySelectorAll('button')).find(b => /hoop shootout|word imposter|zombie outbreak/i.test(b.textContent || ''));
+          if (anchor && anchor.parentElement) {
+            const oldIsl = document.getElementById('btnLaunchIsland');
+            if (oldIsl) oldIsl.remove();
+            [
+              { id: 'cBtn30', label: '30. 🐉 Dragon Raid', cmd: '!boss' },
+              { id: 'cBtn31', label: '31. 🏦 Bank Heist', cmd: '!heist' },
+              { id: 'cBtn32', label: '32. 🎭 Bluff Master', cmd: '!bluff' },
+              { id: 'cBtn33', label: '33. 🏝️ Castaway Island', cmd: '!island' }
+            ].forEach(g => {
+              if (!document.getElementById(g.id)) {
+                const btn = anchor.cloneNode(true);
+                btn.id = g.id; btn.removeAttribute('onclick'); btn.textContent = g.label;
+                btn.onclick = () => socket.emit('chatMessage', g.cmd);
+                anchor.parentElement.appendChild(btn);
+              }
+            });
+          }
+        });
+
+        socket.on('raidSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('cleanRaidBar').style.display = 'flex';
+          document.getElementById('cRaidTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          document.getElementById('cRaidTeamHp').textContent = d.teamHp + '%';
+          document.getElementById('cRaidBossHp').textContent = d.bossHp;
+          const box = document.getElementById('cRaidActions'); box.innerHTML = '';
+          if (d.acted) { box.innerHTML = '<span style="font-size:11px;color:#e879f9;font-weight:bold;">✅ Move locked!</span>'; return; }
+          [
+            { id: 'slash', label: '⚔️ Slash (-350)', bg: '#b91c1c' },
+            { id: 'fireball', label: '🔥 Meteor (-500)', bg: '#7e22ce' },
+            { id: 'shield', label: '🛡️ Shield', bg: '#0369a1' },
+            { id: 'heal', label: '💖 Heal (+22%)', bg: '#15803d' }
+          ].forEach(m => {
+            const b = document.createElement('button');
+            b.style.cssText = 'background:' + m.bg + ';border:1px solid #fff;color:#fff;padding:5px 8px;border-radius:9px;font-weight:bold;font-size:10px;cursor:pointer;';
+            b.textContent = m.label; b.onclick = () => socket.emit('raidAct', m.id); box.appendChild(b);
+          });
+        });
+        socket.on('raidEnd', () => { const el = document.getElementById('cleanRaidBar'); if (el) el.style.display = 'none'; });
+
+        socket.on('heistSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('cleanHeistBar').style.display = 'flex';
+          document.getElementById('cHeistRound').textContent = '🏦 MEGA BANK HEIST (' + d.round + '/4)';
+          document.getElementById('cHeistTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          document.getElementById('cHeistLoot').textContent = '$' + d.loot.toLocaleString();
+          document.getElementById('cHeistHeat').textContent = d.heat + '%';
+          const box = document.getElementById('cHeistActions'); box.innerHTML = '';
+          if (d.acted) { box.innerHTML = '<span style="font-size:11px;color:#fde047;font-weight:bold;">✅ Choice locked!</span>'; return; }
+          [
+            { id: 'drill', label: '🔨 Drill (+$25k)', bg: '#047857' },
+            { id: 'guard', label: '🚓 Jam Cops (-20%)', bg: '#1d4ed8' },
+            { id: 'greed', label: '💰 Pocket (+$40k)', bg: '#b45309' }
+          ].forEach(m => {
+            const b = document.createElement('button');
+            b.style.cssText = 'background:' + m.bg + ';border:1px solid #fff;color:#fff;padding:5px 8px;border-radius:9px;font-weight:bold;font-size:10px;cursor:pointer;';
+            b.textContent = m.label; b.onclick = () => socket.emit('heistAct', m.id); box.appendChild(b);
+          });
+        });
+        socket.on('heistEnd', () => { const el = document.getElementById('cleanHeistBar'); if (el) el.style.display = 'none'; });
+
+        socket.on('bluffSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('cleanBluffBar').style.display = 'flex';
+          document.getElementById('cBluffTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          document.getElementById('cBluffPrompt').textContent = d.prompt;
+          const sub = document.getElementById('cBluffSub'), grid = document.getElementById('cBluffGrid'); grid.innerHTML = '';
+          if (d.phase === 'write') {
+            sub.innerHTML = d.submitted ? '<span style="color:#4ade80;font-weight:bold;">✅ Answer locked secretly!</span>' : '✍️ <b>Type your answer in chat now!</b>';
+          } else {
+            sub.innerHTML = '🗳️ <b>Tap the funniest answer!</b>';
+            d.entries.forEach((ent, idx) => {
+              const btn = document.createElement('button');
+              const isMine = (ent.authorId === socket.id);
+              btn.disabled = isMine || d.voted;
+              btn.style.cssText = 'background:' + (isMine ? '#334155' : '#1e1b4b') + ';border:1.5px solid #f472b6;color:#fff;padding:6px 8px;border-radius:9px;font-size:11px;font-weight:bold;cursor:pointer;text-align:left;';
+              btn.textContent = (idx + 1) + '. "' + ent.text + '"' + (isMine ? ' (Yours)' : '');
+              btn.onclick = () => socket.emit('bluffVote', ent.authorId);
+              grid.appendChild(btn);
+            });
+          }
+        });
+        socket.on('bluffEnd', () => { const el = document.getElementById('cleanBluffBar'); if (el) el.style.display = 'none'; });
+
+        socket.on('islandSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('cleanIslandBar').style.display = 'flex';
+          document.getElementById('cIslDay').textContent = '🏝️ CASTAWAY ISLAND (DAY ' + d.day + '/4)';
+          document.getElementById('cIslTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          document.getElementById('cIslFood').textContent = d.food + '%';
+          document.getElementById('cIslFire').textContent = d.fire + '%';
+          const box = document.getElementById('cIslActions'); box.innerHTML = '';
+          if (d.acted) { box.innerHTML = '<span style="font-size:11px;color:#6ee7b7;font-weight:bold;">✅ Choice locked!</span>'; return; }
+          [
+            { id: 'forage', label: '🥥 Gather Food (+22%)', bg: '#15803d' },
+            { id: 'fire', label: '🪵 Stoke Fire (+22%)', bg: '#c2410c' },
+            { id: 'steal', label: '🐍 Hoard Rations', bg: '#7e22ce' }
+          ].forEach(m => {
+            const b = document.createElement('button');
+            b.style.cssText = 'background:' + m.bg + ';border:1px solid #fff;color:#fff;padding:5px 8px;border-radius:9px;font-weight:bold;font-size:10px;cursor:pointer;';
+            b.textContent = m.label; b.onclick = () => socket.emit('islandAct', m.id); box.appendChild(b);
+          });
+        });
+        socket.on('islandEnd', () => { const el = document.getElementById('cleanIslandBar'); if (el) el.style.display = 'none'; });
+      }
+      window.addEventListener('DOMContentLoaded', () => { bootSocketPartyUI(); setTimeout(bootSocketPartyUI, 800); });
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('bootSocketPartyUI')) {
+                body = body.replace('</body>', SOCKET_UI_BOOT + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
     return OG_HOSTS;
       

@@ -1888,7 +1888,7 @@
 })();
 </script>
 <!-- === FULLSCREEN ZERO-LAG LIVE WALLPAPER v6 (PIECE 1/2) === -->
-<canvas id="liveWallpaperCanvas" style="position:fixed;inset:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;"></canvas>
+<canvas id="liveWallpaperCanvas" style="position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;"></canvas>
 <button id="wpToggleBtn" onclick="toggleLiveWallpaper()" style="position:fixed;top:8px;right:8px;width:auto !important;max-width:85px;display:inline-flex;align-items:center;gap:4px;z-index:99990;background:rgba(15,23,42,0.88);border:1px solid #38bdf8;color:#fff;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:bold;cursor:pointer;">🌌 WP</button>
 <script>
 (function() {
@@ -1913,12 +1913,11 @@
   resizeWp();
 
   // Remove the dark murky box behind chat so bubbles float directly over the full-screen wallpaper!
-  var style = document.createElement('style');
-  style.textContent =
-    'html, body { background: #04071d !important; } ' +
-    '#chatBox, #messages, .chat-messages, .chat-container, .arena-card { background: transparent !important; box-shadow: none !important; } ' +
-    'body.wp-active #chatBox, body.wp-active #messages, body.wp-active .chat-messages { background: transparent !important; }';
-  document.head.appendChild(style);
+    style.textContent =
+    'html, body { background: transparent !important; } ' +
+    'body > div:first-of-type, #app, .app-wrapper, .main-container { position: relative; z-index: 2; background: transparent !important; } ' +
+    '#chatBox, #messages, .chat-messages, .chat-container, .arena-card { background: transparent !important; box-shadow: none !important; }';
+
   if (wpEnabled) document.body.classList.add('wp-active');
 
   function getThemeKey() {

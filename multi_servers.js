@@ -3053,6 +3053,738 @@ module.exports = function initMultiServers(app, io) {
             else broadcastZombieState(srvId);
         });
     });
+    // === 🐉 DRAGON RAID BOSS (!boss) & 🏦 BANK HEIST (!heist) — PIECE 1/4 ===
+    const raidByServer = new Map();
+    const heistByServer = new Map();
+
+    function getFullRoomPlayers(srvId) {
+        syncArenaPlayers(srvId);
+        const arena = getArena(srvId);
+        const roomSockets = io.sockets.adapter.rooms.get(srvId) || new Set();
+        const all = [];
+        roomSockets.forEach(sid => {
+            const s = io.sockets.sockets.get(sid);
+            const ex = arena.players.find(p => p.id === sid);
+            if (ex) all.push(ex);
+            else if (s) all.push({ id: sid, username: s.username || 'Player_' + sid.slice(0, 4) });
+        });
+        return all;
+    }
+
+    const COOP_PARTY_UI = `
+    <div id="raidBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999998;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(49,16,66,0.96),rgba(15,23,42,0.96));border:2px solid #c084fc;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(192,132,252,0.5);backdrop-filter:blur(6px);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span id="raidTitle" style="font-weight:900;font-size:11px;color:#e879f9;">🐉 SHADOW DRAGON RAID</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="raidTimer" style="font-size:11px;color:#fde047;font-weight:900;">⏳ 12s</span>
+            <button onclick="document.getElementById('raidBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:6px;">
+          <div style="flex:1;background:#090d16;border:1px solid #4ade80;border-radius:8px;padding:4px;position:relative;overflow:hidden;">
+            <div id="raidTeamFill" style="position:absolute;inset:0;width:100%;background:rgba(74,222,128,0.28);transition:width 0.3s;"></div>
+            <span style="position:relative;">❤️ Squad HP: <b id="raidTeamHp" style="color:#4ade80;">100%</b></span>
+          </div>
+          <div style="flex:1;background:#090d16;border:1px solid #f43f5e;border-radius:8px;padding:4px;position:relative;overflow:hidden;">
+            <div id="raidBossFill" style="position:absolute;inset:0;width:100%;background:rgba(244,63,94,0.32);transition:width 0.3s;"></div>
+            <span style="position:relative;">🐉 Boss: <b id="raidBossHp" style="color:#fda4af;">3000</b></span>
+          </div>
+        </div>
+        <div id="raidActions" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+      </div>
+    </div>
+
+    <div id="heistBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999998;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(6,78,59,0.96),rgba(15,23,42,0.96));border:2px solid #facc15;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(250,204,21,0.45);backdrop-filter:blur(6px);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span id="heistRound" style="font-weight:900;font-size:11px;color:#fde047;">🏦 MEGA BANK HEIST (1/4)</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="heistTimer" style="font-size:11px;color:#38bdf8;font-weight:900;">⏳ 12s</span>
+            <button onclick="document.getElementById('heistBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:6px;">
+          <div style="flex:1;background:#090d16;border:1px solid #facc15;border-radius:8px;padding:4px;">💰 Vault Loot: <b id="heistLoot" style="color:#fde047;">$0</b></div>
+          <div style="flex:1;background:#090d16;border:1px solid #ef4444;border-radius:8px;padding:4px;">🚨 Police Heat: <b id="heistHeat" style="color:#f87171;">0%</b></div>
+        </div>
+        <div id="heistActions" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+      </div>
+    </div>
+    // === PIECE 2/4: CLIENT SCRIPT & INJECTION ===
+    <script>
+    (function() {
+      function injectCoopPartyBtns() {
+        const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /zombie outbreak|bomb royale|mafia party/i.test(b.textContent || ''));
+        if (!targetBtn || !targetBtn.parentElement) return;
+        if (!document.getElementById('btnLaunchRaid')) {
+          const b1 = targetBtn.cloneNode(true);
+          b1.id = 'btnLaunchRaid'; b1.removeAttribute('onclick');
+          b1.textContent = '30. 🐉 Dragon Raid';
+          b1.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!boss'); };
+          targetBtn.parentElement.appendChild(b1);
+        }
+        if (!document.getElementById('btnLaunchHeist')) {
+          const b2 = targetBtn.cloneNode(true);
+          b2.id = 'btnLaunchHeist'; b2.removeAttribute('onclick');
+          b2.textContent = '31. 🏦 Bank Heist';
+          b2.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!heist'); };
+          targetBtn.parentElement.appendChild(b2);
+        }
+      }
+      setInterval(injectCoopPartyBtns, 2200);
+
+      function bindCoopGames() {
+        if (typeof socket === 'undefined' || window._coopGamesBound) return;
+        window._coopGamesBound = true;
+
+        socket.on('raidSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('raidBar').style.display = 'flex';
+          document.getElementById('raidTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          document.getElementById('raidTeamHp').textContent = d.teamHp + '%';
+          document.getElementById('raidTeamFill').style.width = Math.max(0, d.teamHp) + '%';
+          document.getElementById('raidBossHp').textContent = d.bossHp;
+          document.getElementById('raidBossFill').style.width = Math.max(0, Math.round((d.bossHp / d.maxBossHp) * 100)) + '%';
+
+          const box = document.getElementById('raidActions');
+          box.innerHTML = '';
+          if (d.acted) {
+            box.innerHTML = '<span style="font-size:11px;color:#e879f9;font-weight:bold;">✅ Move locked! Waiting for squad...</span>';
+          } else {
+            const moves = [
+              { id: 'slash', label: '⚔️ Slash (-350)', bg: '#b91c1c' },
+              { id: 'fireball', label: '🔥 Meteor (-500 / Risk)', bg: '#7e22ce' },
+              { id: 'shield', label: '🛡️ Group Shield', bg: '#0369a1' },
+              { id: 'heal', label: '💖 Squad Heal (+22%)', bg: '#15803d' }
+            ];
+            moves.forEach(m => {
+              const btn = document.createElement('button');
+              btn.style.cssText = 'background:' + m.bg + ';border:1px solid #fff;color:#fff;padding:5px 8px;border-radius:9px;font-weight:bold;font-size:10px;cursor:pointer;';
+              btn.textContent = m.label;
+              btn.onclick = () => socket.emit('raidAct', m.id);
+              box.appendChild(btn);
+            });
+          }
+        });
+        socket.on('raidEnd', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('raidBar').style.display = 'none';
+        });
+
+        socket.on('heistSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('heistBar').style.display = 'flex';
+          document.getElementById('heistRound').textContent = '🏦 MEGA BANK HEIST (' + d.round + '/4)';
+          document.getElementById('heistTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          document.getElementById('heistLoot').textContent = '$' + d.loot.toLocaleString();
+          document.getElementById('heistHeat').textContent = d.heat + '%';
+
+          const box = document.getElementById('heistActions');
+          box.innerHTML = '';
+          if (d.acted) {
+            box.innerHTML = '<span style="font-size:11px;color:#fde047;font-weight:bold;">✅ Choice locked!</span>';
+          } else {
+            const moves = [
+              { id: 'drill', label: '🔨 Drill Vault (+$25k)', bg: '#047857' },
+              { id: 'guard', label: '🚓 Jam Cops (-20% Heat)', bg: '#1d4ed8' },
+              { id: 'greed', label: '💰 Secret Pocket (+$40k / +Heat)', bg: '#b45309' }
+            ];
+            moves.forEach(m => {
+              const btn = document.createElement('button');
+              btn.style.cssText = 'background:' + m.bg + ';border:1px solid #fff;color:#fff;padding:5px 8px;border-radius:9px;font-weight:bold;font-size:10px;cursor:pointer;';
+              btn.textContent = m.label;
+              btn.onclick = () => socket.emit('heistAct', m.id);
+              box.appendChild(btn);
+            });
+          }
+        });
+        socket.on('heistEnd', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('heistBar').style.display = 'none';
+        });
+      }
+      setInterval(bindCoopGames, 1200);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('raidBar')) {
+                body = body.replace('</body>', COOP_PARTY_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === PIECE 3/4: DRAGON RAID & BANK HEIST ENGINES ===
+    function broadcastRaid(srvId) {
+        const st = raidByServer.get(srvId);
+        if (!st) return;
+        st.players.forEach(p => {
+            io.to(p.id).emit('raidSync', {
+                timeLeft: st.timeLeft, teamHp: st.teamHp, bossHp: st.bossHp,
+                maxBossHp: st.maxBossHp, acted: st.acted.has(p.id), _serverId: srvId
+            });
+        });
+    }
+
+    function resolveRaidTurn(srvId) {
+        const st = raidByServer.get(srvId);
+        if (!st) return;
+        if (st.bossHp <= 0) {
+            clearInterval(st.interval);
+            raidByServer.delete(srvId);
+            io.to(srvId).emit('raidEnd', { _serverId: srvId });
+            const top = Object.entries(st.dmgMap).sort((a, b) => b[1] - a[1])[0];
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🎉🐉 **SHADOW DRAGON SLAIN!** The squad survived with **${st.teamHp}% HP**!\n👑 **Raid MVP:** **${top ? top[0] : 'Squad'}** (${top ? top[1] : 0} DMG)!`,
+                _serverId: srvId
+            });
+            return;
+        }
+        const rawBreath = Math.floor(Math.random() * 18) + 22;
+        const finalDmg = Math.max(5, rawBreath - st.shieldBonus);
+        st.teamHp = Math.max(0, st.teamHp - finalDmg);
+        st.shieldBonus = 0;
+        st.acted.clear();
+        st.timeLeft = 12;
+
+        if (st.teamHp <= 0) {
+            clearInterval(st.interval);
+            raidByServer.delete(srvId);
+            io.to(srvId).emit('raidEnd', { _serverId: srvId });
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `💀🔥 **WIPEOUT!** The Shadow Dragon roasted the entire squad with **${st.bossHp} HP** left!`,
+                _serverId: srvId
+            });
+            return;
+        }
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🐉 Dragon breathed fire for **-${finalDmg}% Squad HP**! (Squad: **${st.teamHp}%** | Boss: **${st.bossHp} HP**)`,
+            _serverId: srvId
+        });
+        broadcastRaid(srvId);
+    }
+
+    function broadcastHeist(srvId) {
+        const st = heistByServer.get(srvId);
+        if (!st) return;
+        st.players.forEach(p => {
+            io.to(p.id).emit('heistSync', {
+                round: st.round, timeLeft: st.timeLeft, loot: st.loot,
+                heat: st.heat, acted: st.acted.has(p.id), _serverId: srvId
+            });
+        });
+    }
+
+    function resolveHeistTurn(srvId) {
+        const st = heistByServer.get(srvId);
+        if (!st) return;
+        if (st.heat >= 100) {
+            clearInterval(st.interval);
+            heistByServer.delete(srvId);
+            io.to(srvId).emit('heistEnd', { _serverId: srvId });
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🚓🚨 **BUSTED!!** Police Heat hit **100%**! Everyone got arrested and lost **$${st.loot.toLocaleString()}**!`,
+                _serverId: srvId
+            });
+            return;
+        }
+        if (st.round >= 4) {
+            clearInterval(st.interval);
+            heistByServer.delete(srvId);
+            io.to(srvId).emit('heistEnd', { _serverId: srvId });
+            const share = Math.floor(st.loot / Math.max(1, st.players.length));
+            const topGreedy = Object.entries(st.personalLoot).sort((a, b) => b[1] - a[1])[0];
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🚁💰 **HEIST ESCAPE SUCCESS!** Total Stolen: **$${st.loot.toLocaleString()}** (**$${share.toLocaleString()}** each)!\n😈 **Sneakiest Pocket:** **${topGreedy ? topGreedy[0] : 'None'}** (+$${topGreedy ? topGreedy[1].toLocaleString() : 0} extra)!`,
+                _serverId: srvId
+            });
+            return;
+        }
+        st.round++;
+        st.acted.clear();
+        st.timeLeft = 12;
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🏦 **Round ${st.round}/4!** Vault Loot: **$${st.loot.toLocaleString()}** | Police Heat: **${st.heat}%** — Lock your move!`,
+            _serverId: srvId
+        });
+        broadcastHeist(srvId);
+    }
+    // === PIECE 4/4: SOCKET LISTENERS ===
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const txt = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof txt !== 'string') return;
+            const cmd = txt.trim().toLowerCase();
+
+            if (cmd === '!boss' && !raidByServer.has(srvId)) {
+                const players = getFullRoomPlayers(srvId);
+                if (players.length < 2) return io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **2 players** for **🐉 Dragon Raid**!', _serverId: srvId });
+                const maxBossHp = players.length * 1100;
+                const st = { players, teamHp: 100, bossHp: maxBossHp, maxBossHp, shieldBonus: 0, timeLeft: 12, acted: new Set(), dmgMap: {}, interval: null };
+                raidByServer.set(srvId, st);
+                st.interval = setInterval(() => {
+                    const c = raidByServer.get(srvId);
+                    if (!c) return;
+                    c.timeLeft--;
+                    if (c.timeLeft <= 0) resolveRaidTurn(srvId);
+                    else broadcastRaid(srvId);
+                }, 1000);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🐉⚔️ **DRAGON RAID STARTED!** (${players.length} Heroes vs **${maxBossHp} HP Dragon**) Coordinate attacks & heals in the top bar!`, _serverId: srvId });
+                broadcastRaid(srvId);
+            }
+
+            if (cmd === '!heist' && !heistByServer.has(srvId)) {
+                const players = getFullRoomPlayers(srvId);
+                if (players.length < 2) return io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **2 players** for **🏦 Bank Heist**!', _serverId: srvId });
+                const st = { players, round: 1, loot: 0, heat: 15, timeLeft: 12, acted: new Set(), personalLoot: {}, interval: null };
+                heistByServer.set(srvId, st);
+                st.interval = setInterval(() => {
+                    const c = heistByServer.get(srvId);
+                    if (!c) return;
+                    c.timeLeft--;
+                    if (c.timeLeft <= 0) resolveHeistTurn(srvId);
+                    else broadcastHeist(srvId);
+                }, 1000);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏦💰 **MEGA BANK HEIST STARTED!** Survive 4 rounds without Police Heat hitting **100%**!`, _serverId: srvId });
+                broadcastHeist(srvId);
+            }
+        });
+
+        socket.on('raidAct', (move) => {
+            const srvId = socket.activeServerId;
+            const st = srvId ? raidByServer.get(srvId) : null;
+            if (!st || st.acted.has(socket.id)) return;
+            st.acted.add(socket.id);
+            const uname = socket.username || 'Hero';
+            let dmg = 0;
+            if (move === 'slash') dmg = 350;
+            else if (move === 'fireball') { dmg = 500; st.teamHp = Math.max(1, st.teamHp - 6); }
+            else if (move === 'shield') st.shieldBonus += 14;
+            else if (move === 'heal') st.teamHp = Math.min(100, st.teamHp + 22);
+
+            if (dmg > 0) {
+                st.bossHp = Math.max(0, st.bossHp - dmg);
+                st.dmgMap[uname] = (st.dmgMap[uname] || 0) + dmg;
+            }
+            if (st.acted.size >= st.players.length || st.bossHp <= 0) resolveRaidTurn(srvId);
+            else broadcastRaid(srvId);
+        });
+
+        socket.on('heistAct', (move) => {
+            const srvId = socket.activeServerId;
+            const st = srvId ? heistByServer.get(srvId) : null;
+            if (!st || st.acted.has(socket.id)) return;
+            st.acted.add(socket.id);
+            const uname = socket.username || 'Robber';
+            if (move === 'drill') { st.loot += 25000; st.heat = Math.min(100, st.heat + 15); }
+            else if (move === 'guard') { st.heat = Math.max(0, st.heat - 20); }
+            else if (move === 'greed') {
+                st.loot += 40000;
+                st.heat = Math.min(100, st.heat + 28);
+                st.personalLoot[uname] = (st.personalLoot[uname] || 0) + 40000;
+            }
+            if (st.acted.size >= st.players.length || st.heat >= 100) resolveHeistTurn(srvId);
+            else broadcastHeist(srvId);
+        });
+    });
+    // === 🎭 BLUFF MASTER (!bluff) — CHAT-INPUT PARTY GAME (PIECE 1/3) ===
+    const bluffByServer = new Map();
+    const BLUFF_PROMPTS = [
+        "😂 Worst thing to say to your teacher during an exam?",
+        "💀 Excuse you give when you're 2 hours late?",
+        "🚨 What would get you banned from a zoo immediately?",
+        "👽 First thing you'd say to an alien landing in your room?",
+        "💍 Worst place to propose to someone?",
+        "👻 What a ghost in your house is secretly tired of watching you do?",
+        "🍕 Illegal pizza topping that should send someone to jail?",
+        "🦸‍♂️ Most useless superpower ever?",
+        "📱 Last search history item you'd die if your mom saw?",
+        "🎤 Terrible name for a Bollywood movie?"
+    ];
+
+    const BLUFF_UI = `
+    <div id="bluffBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999998;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(88,28,135,0.96),rgba(15,23,42,0.96));border:2px solid #f472b6;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(244,114,182,0.5);backdrop-filter:blur(6px);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:900;font-size:11px;color:#f9a8d4;">🎭 BLUFF MASTER (CHAT GAME)</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="bluffTimer" style="font-size:11px;color:#fde047;font-weight:900;">⏳ 20s</span>
+            <button onclick="document.getElementById('bluffBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div id="bluffPromptBox" style="background:rgba(244,114,182,0.2);border:1px solid #f472b6;border-radius:9px;padding:6px;margin-bottom:6px;font-size:12px;font-weight:900;color:#fde047;">Prompt loading...</div>
+        <div id="bluffSubBox" style="font-size:11px;color:#cbd5e1;">✍️ Type your funny answer in normal chat now! (Hidden until voting!)</div>
+        <div id="bluffVoteGrid" style="display:flex;flex-direction:column;gap:5px;margin-top:6px;max-height:140px;overflow-y:auto;"></div>
+      </div>
+    </div>
+    <script>
+    (function() {
+      function injectBluffBtn() {
+        const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /bank heist|dragon raid|zombie outbreak/i.test(b.textContent || ''));
+        if (targetBtn && targetBtn.parentElement && !document.getElementById('btnLaunchBluff')) {
+          const btn = targetBtn.cloneNode(true);
+          btn.id = 'btnLaunchBluff'; btn.removeAttribute('onclick');
+          btn.textContent = '32. 🎭 Bluff Master';
+          btn.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!bluff'); };
+          targetBtn.parentElement.appendChild(btn);
+        }
+      }
+      setInterval(injectBluffBtn, 2200);
+
+      function bindBluff() {
+        if (typeof socket === 'undefined' || window._bluffBound) return;
+        window._bluffBound = true;
+        socket.on('bluffSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('bluffBar').style.display = 'flex';
+          document.getElementById('bluffTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          document.getElementById('bluffPromptBox').textContent = d.prompt;
+          const sub = document.getElementById('bluffSubBox');
+          const grid = document.getElementById('bluffVoteGrid');
+          grid.innerHTML = '';
+
+          if (d.phase === 'write') {
+            sub.innerHTML = d.submitted
+              ? '<span style="color:#4ade80;font-weight:bold;">✅ Answer locked secretly! Waiting for others...</span>'
+              : '✍️ <b>Type your answer in chat!</b> (Hidden from chat so nobody knows it\'s yours!)';
+          } else {
+            sub.innerHTML = '🗳️ <b>Tap the funniest answer!</b> (You can\'t vote for yourself)';
+            d.entries.forEach((ent, idx) => {
+              const btn = document.createElement('button');
+              const isMine = (ent.authorId === socket.id);
+              btn.disabled = isMine || d.voted;
+              btn.style.cssText = 'background:' + (isMine ? '#334155' : '#1e1b4b') + ';border:1.5px solid #f472b6;color:#fff;padding:6px 8px;border-radius:9px;font-size:11px;font-weight:bold;cursor:pointer;text-align:left;';
+              btn.textContent = (idx + 1) + '. "' + ent.text + '"' + (isMine ? ' (Yours)' : '');
+              btn.onclick = () => socket.emit('bluffVote', ent.authorId);
+              grid.appendChild(btn);
+            });
+          }
+        });
+        socket.on('bluffEnd', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('bluffBar').style.display = 'none';
+        });
+      }
+      setInterval(bindBluff, 1200);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('bluffBar')) {
+                body = body.replace('</body>', BLUFF_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === PIECE 2/3: BLUFF MASTER ENGINE & SECRET CHAT CAPTURE ===
+    function broadcastBluff(srvId) {
+        const st = bluffByServer.get(srvId);
+        if (!st) return;
+        const entries = Array.from(st.answers.entries()).map(([authorId, obj]) => ({ authorId, text: obj.text }));
+        st.players.forEach(p => {
+            io.to(p.id).emit('bluffSync', {
+                phase: st.phase, timeLeft: st.timeLeft, prompt: st.prompt,
+                submitted: st.answers.has(p.id), voted: st.votes.has(p.id),
+                entries, _serverId: srvId
+            });
+        });
+    }
+
+    function startBluffVoting(srvId) {
+        const st = bluffByServer.get(srvId);
+        if (!st) return;
+        if (st.answers.size < 2) {
+            clearInterval(st.interval);
+            bluffByServer.delete(srvId);
+            io.to(srvId).emit('bluffEnd', { _serverId: srvId });
+            io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Bluff Master cancelled—not enough answers typed in time!', _serverId: srvId });
+            return;
+        }
+        st.phase = 'vote';
+        st.timeLeft = 15;
+        io.to(srvId).emit('message', { username: "Sammu's Bot", text: '🗳️ **TIME TO VOTE!** All answers are revealed in the top bar—vote for the funniest one!', _serverId: srvId });
+        broadcastBluff(srvId);
+    }
+
+    function finishBluffGame(srvId) {
+        const st = bluffByServer.get(srvId);
+        if (!st) return;
+        clearInterval(st.interval);
+        bluffByServer.delete(srvId);
+        io.to(srvId).emit('bluffEnd', { _serverId: srvId });
+
+        const tally = {};
+        for (const targetId of st.votes.values()) tally[targetId] = (tally[targetId] || 0) + 1;
+        const results = Array.from(st.answers.entries()).map(([id, obj]) => ({
+            name: obj.username, text: obj.text, votes: tally[id] || 0
+        })).sort((a, b) => b.votes - a.votes);
+
+        const lines = results.map((r, i) => `${i === 0 ? '👑' : '•'} **${r.name}** (${r.votes} votes): *"${r.text}"*`).join('\n');
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🎭 **BLUFF MASTER RESULTS!**\nPrompt: *${st.prompt}*\n${lines}`,
+            _serverId: srvId
+        });
+    }
+
+    io.on('connection', (socket) => {
+        // Intercept normal chat messages during Bluff writing phase so answers stay secret!
+        socket.use((packet, next) => {
+            if (packet && packet.at(0) === 'chatMessage' && socket.activeServerId) {
+                const st = bluffByServer.get(socket.activeServerId);
+                if (st && st.phase === 'write' && !st.answers.has(socket.id)) {
+                    const raw = packet.at(1);
+                    const txt = (typeof raw === 'object' && raw) ? raw.text : raw;
+                    if (typeof txt === 'string' && !txt.trim().startsWith('!') && !txt.trim().startsWith('/')) {
+                        st.answers.set(socket.id, { username: socket.username || 'Player', text: txt.trim().slice(0, 75) });
+                        socket.emit('message', { username: 'SYSTEM', text: `🤫 Secret answer locked: *"${txt.trim().slice(0, 75)}"*`, _serverId: socket.activeServerId });
+                        if (st.answers.size >= st.players.length) startBluffVoting(socket.activeServerId);
+                        else broadcastBluff(socket.activeServerId);
+                        return; // Hide message from public chat!
+                    }
+                }
+            }
+            next();
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const txt = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof txt !== 'string' || txt.trim().toLowerCase() !== '!bluff') return;
+            if (bluffByServer.has(srvId)) return;
+
+            const players = getFullRoomPlayers(srvId);
+            if (players.length < 2) return io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **2 players** for **🎭 Bluff Master**!', _serverId: srvId });
+
+            const prompt = BLUFF_PROMPTS[Math.floor(Math.random() * BLUFF_PROMPTS.length)];
+            const st = { players, prompt, phase: 'write', timeLeft: 20, answers: new Map(), votes: new Map(), interval: null };
+            bluffByServer.set(srvId, st);
+            st.interval = setInterval(() => {
+                const c = bluffByServer.get(srvId);
+                if (!c) return;
+                c.timeLeft--;
+                if (c.timeLeft <= 0) {
+                    if (c.phase === 'write') startBluffVoting(srvId);
+                    else finishBluffGame(srvId);
+                } else broadcastBluff(srvId);
+            }, 1000);
+
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🎭 **BLUFF MASTER STARTED!**\nPrompt: **${prompt}**\n*(Type your funniest reply in chat within 20s—it stays hidden until voting!)*`,
+                _serverId: srvId
+            });
+            broadcastBluff(srvId);
+        });
+
+        socket.on('bluffVote', (authorId) => {
+            const srvId = socket.activeServerId;
+            const st = srvId ? bluffByServer.get(srvId) : null;
+            if (!st || st.phase !== 'vote' || st.votes.has(socket.id) || authorId === socket.id) return;
+            st.votes.set(socket.id, authorId);
+            if (st.votes.size >= st.answers.size) finishBluffGame(srvId);
+            else broadcastBluff(srvId);
+        });
+    });
+    // === 🏝️ CASTAWAY ISLAND (!island) — SOCIAL SURVIVAL GAME (PIECE 3/3) ===
+    const islandByServer = new Map();
+    const ISLAND_EVENTS = [
+        { name: '⛈️ Monsoon Storm!', foodLoss: 15, fireLoss: 30 },
+        { name: '🐒 Hungry Monkey Raid!', foodLoss: 30, fireLoss: 10 },
+        { name: '🥶 Freezing Ocean Wind!', foodLoss: 10, fireLoss: 35 },
+        { name: '🐍 Jungle Snake Panic!', foodLoss: 25, fireLoss: 20 }
+    ];
+
+    const ISLAND_UI = `
+    <div id="islandBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999998;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(6,78,59,0.96),rgba(120,53,15,0.96));border:2px solid #34d399;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(52,211,153,0.45);backdrop-filter:blur(6px);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span id="islDay" style="font-weight:900;font-size:11px;color:#6ee7b7;">🏝️ CASTAWAY ISLAND (DAY 1/4)</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="islTimer" style="font-size:11px;color:#fde047;font-weight:900;">⏳ 14s</span>
+            <button onclick="document.getElementById('islandBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:6px;">
+          <div style="flex:1;background:#090d16;border:1px solid #4ade80;border-radius:8px;padding:4px;">🥥 Food: <b id="islFood" style="color:#4ade80;">60%</b></div>
+          <div style="flex:1;background:#090d16;border:1px solid #f97316;border-radius:8px;padding:4px;">🔥 Campfire: <b id="islFire" style="color:#fb923c;">60%</b></div>
+        </div>
+        <div id="islActions" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+      </div>
+    </div>
+    <script>
+    (function() {
+      function injectIslandBtn() {
+        const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /bluff master|bank heist|zombie outbreak/i.test(b.textContent || ''));
+        if (targetBtn && targetBtn.parentElement && !document.getElementById('btnLaunchIsland')) {
+          const btn = targetBtn.cloneNode(true);
+          btn.id = 'btnLaunchIsland'; btn.removeAttribute('onclick');
+          btn.textContent = '33. 🏝️ Castaway Island';
+          btn.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!island'); };
+          targetBtn.parentElement.appendChild(btn);
+        }
+      }
+      setInterval(injectIslandBtn, 2200);
+
+      function bindIsland() {
+        if (typeof socket === 'undefined' || window._islandBound) return;
+        window._islandBound = true;
+        socket.on('islandSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('islandBar').style.display = 'flex';
+          document.getElementById('islDay').textContent = '🏝️ CASTAWAY ISLAND (DAY ' + d.day + '/4)';
+          document.getElementById('islTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          document.getElementById('islFood').textContent = d.food + '%';
+          document.getElementById('islFire').textContent = d.fire + '%';
+          const box = document.getElementById('islActions');
+          box.innerHTML = '';
+          if (d.acted) {
+            box.innerHTML = '<span style="font-size:11px;color:#6ee7b7;font-weight:bold;">✅ Choice locked! Discuss in chat!</span>';
+          } else {
+            const moves = [
+              { id: 'forage', label: '🥥 Gather Food (+22%)', bg: '#15803d' },
+              { id: 'fire', label: '🪵 Stoke Fire (+22%)', bg: '#c2410c' },
+              { id: 'steal', label: '🐍 Hoard Rations (Greed)', bg: '#7e22ce' }
+            ];
+            moves.forEach(m => {
+              const btn = document.createElement('button');
+              btn.style.cssText = 'background:' + m.bg + ';border:1px solid #fff;color:#fff;padding:5px 8px;border-radius:9px;font-weight:bold;font-size:10px;cursor:pointer;';
+              btn.textContent = m.label;
+              btn.onclick = () => socket.emit('islandAct', m.id);
+              box.appendChild(btn);
+            });
+          }
+        });
+        socket.on('islandEnd', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('islandBar').style.display = 'none';
+        });
+      }
+      setInterval(bindIsland, 1200);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('islandBar')) {
+                body = body.replace('</body>', ISLAND_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    function broadcastIsland(srvId) {
+        const st = islandByServer.get(srvId);
+        if (!st) return;
+        st.players.forEach(p => {
+            io.to(p.id).emit('islandSync', {
+                day: st.day, timeLeft: st.timeLeft, food: st.food, fire: st.fire,
+                acted: st.acted.has(p.id), _serverId: srvId
+            });
+        });
+    }
+
+    function resolveIslandDay(srvId) {
+        const st = islandByServer.get(srvId);
+        if (!st) return;
+        const ev = ISLAND_EVENTS[Math.floor(Math.random() * ISLAND_EVENTS.length)];
+        st.food = Math.max(0, st.food - ev.foodLoss);
+        st.fire = Math.max(0, st.fire - ev.fireLoss);
+        st.acted.clear();
+
+        if (st.food <= 0 || st.fire <= 0) {
+            clearInterval(st.interval);
+            islandByServer.delete(srvId);
+            io.to(srvId).emit('islandEnd', { _serverId: srvId });
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `💀🏝️ **ISLAND WIPEOUT!** **${ev.name}** hit and ${st.food <= 0 ? 'everyone starved!' : 'the campfire went out!'} (Too many people hoarded rations!)`,
+                _serverId: srvId
+            });
+            return;
+        }
+        if (st.day >= 4) {
+            clearInterval(st.interval);
+            islandByServer.delete(srvId);
+            io.to(srvId).emit('islandEnd', { _serverId: srvId });
+            const rat = Object.entries(st.greedMap).sort((a, b) => b - a);
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🚁🎉 **RESCUE HELICOPTER ARRIVED!** The squad survived 4 days on Castaway Island!\n🐍 **Biggest Ration Hoarder:** **${rat ? rat : 'Nobody — Pure Teamwork!'}**`,
+                _serverId: srvId
+            });
+            return;
+        }
+        st.day++;
+        st.timeLeft = 14;
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `⚠️ **${ev.name}** struck! (-${ev.foodLoss}% Food, -${ev.fireLoss}% Fire) -> **Day ${st.day}/4** begins! Talk in chat so you don't run out!`,
+            _serverId: srvId
+        });
+        broadcastIsland(srvId);
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const txt = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof txt !== 'string' || txt.trim().toLowerCase() !== '!island') return;
+            if (islandByServer.has(srvId)) return;
+
+            const players = getFullRoomPlayers(srvId);
+            if (players.length < 2) return io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **2 players** for **🏝️ Castaway Island**!', _serverId: srvId });
+
+            const st = { players, day: 1, food: 65, fire: 65, timeLeft: 14, acted: new Set(), greedMap: {}, interval: null };
+            islandByServer.set(srvId, st);
+            st.interval = setInterval(() => {
+                const c = islandByServer.get(srvId);
+                if (!c) return;
+                c.timeLeft--;
+                if (c.timeLeft <= 0) resolveIslandDay(srvId);
+                else broadcastIsland(srvId);
+            }, 1000);
+
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🏝️🔥 **CASTAWAY ISLAND STARTED!** Survive 4 Days! Coordinate in chat who gathers **🥥 Food** and who tends the **🔥 Fire**—watch out for ration hoarders!`,
+                _serverId: srvId
+            });
+            broadcastIsland(srvId);
+        });
+
+        socket.on('islandAct', (move) => {
+            const srvId = socket.activeServerId;
+            const st = srvId ? islandByServer.get(srvId) : null;
+            if (!st || st.acted.has(socket.id)) return;
+            st.acted.add(socket.id);
+            const uname = socket.username || 'Survivor';
+            if (move === 'forage') st.food = Math.min(100, st.food + 22);
+            else if (move === 'fire') st.fire = Math.min(100, st.fire + 22);
+            else if (move === 'steal') {
+                st.food = Math.max(0, st.food - 12);
+                st.greedMap[uname] = (st.greedMap[uname] || 0) + 1;
+            }
+            if (st.acted.size >= st.players.length) resolveIslandDay(srvId);
+            else broadcastIsland(srvId);
+        });
+    });
 
     return OG_HOSTS;
       

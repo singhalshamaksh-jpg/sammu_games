@@ -2258,6 +2258,15 @@ module.exports = function initMultiServers(app, io) {
                 _serverId: socket.activeServerId
             });
         });
+        socket.on('phonkTrackSync', (data) => {
+            if (!socket.activeServerId || !data) return;
+            socket.to(socket.activeServerId).emit('incomingPhonkTrack', {
+                action: data.action,
+                style: data.style,
+                dj: socket.username || 'DJ',
+                _serverId: socket.activeServerId
+            });
+        });
 
         socket.on('dropAuraCard', (data) => {
             if (!socket.activeServerId || !data || !data.image) return;

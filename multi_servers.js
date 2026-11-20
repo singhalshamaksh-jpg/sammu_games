@@ -2747,7 +2747,294 @@ module.exports = function initMultiServers(app, io) {
             socket.onevent({ type: 2, nsp: '/', data: ['chatMessage', pick] });
         });
     });
-        
+           // === 🧟 ZOMBIE OUTBREAK SURVIVAL (BOSS: ZOROMON) ===
+    const zombieByServer = new Map();
+    const ZOMBIE_WAVES = [
+        { num: 1, name: '🧟 Wave 1: Shambling Walkers', hp: 1200, dmg: 22 },
+        { num: 2, name: '🏃‍♂️ Wave 2: Sprint Runners', hp: 1800, dmg: 30 },
+        { num: 3, name: '🧪 Wave 3: Acid Spitters', hp: 2500, dmg: 38 },
+        { num: 4, name: '🛡️ Wave 4: Armored Brutes', hp: 3400, dmg: 45 },
+        { num: 5, name: '👑🧟‍♂️ BOSS: ZOROMON (3-SWORD KING)', hp: 5000, dmg: 55 }
+    ];
+
+    const ZOMBIE_UI = `
+    <style>
+      @keyframes zbMarch { 0%,100% { transform: translateX(0) rotate(-3deg); } 50% { transform: translateX(-8px) rotate(3deg); } }
+      @keyframes zbShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+      @keyframes zbShot { 0% { left: 26%; opacity: 1; transform: scale(0.8); } 100% { left: 74%; opacity: 0; transform: scale(1.4); } }
+      .zb-march { display:inline-block; animation: zbMarch 0.8s infinite ease-in-out; }
+      .zb-hit-shake { animation: zbShake 0.35s ease; }
+      .zb-fx-fly { position:absolute; top:14px; font-size:15px; font-weight:900; pointer-events:none; animation: zbShot 0.55s forwards ease-out; }
+    </style>
+    <div id="zombieBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999998;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div id="zbCard" style="pointer-events:auto;background:linear-gradient(155deg,rgba(6,44,24,0.96),rgba(20,25,45,0.96));border:2px solid #22c55e;border-radius:16px;padding:10px 12px;width:100%;max-width:375px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(34,197,94,0.45);backdrop-filter:blur(6px);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span id="zbWaveTitle" style="font-weight:900;font-size:11px;color:#4ade80;">🧟 ZOMBIE OUTBREAK</span>
+          <span id="zbTimer" style="font-size:11px;color:#fde047;font-weight:900;">⏳ 15s</span>
+        </div>
+        <div id="zbBattleStage" style="position:relative;height:46px;background:linear-gradient(90deg,#0f172a 0%,#1e1b4b 55%,#450a0a 100%);border:1.5px solid #334155;border-radius:10px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span id="zbSquadSprites" style="font-size:20px;">🔫🩺</span>
+            <span id="zbWallSprite" style="font-size:22px;filter:drop-shadow(0 0 6px #38bdf8);">🧱</span>
+          </div>
+          <div style="font-size:10px;color:#94a3b8;font-weight:900;letter-spacing:1px;">⚔️ VS ⚔️</div>
+          <div id="zbHordeSprites" class="zb-march" style="font-size:24px;filter:drop-shadow(0 0 8px #ef4444);">🧟‍♂️🧟‍♀️</div>
+        </div>
+        <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:5px;">
+          <div style="flex:1;background:#0f172a;border:1px solid #38bdf8;border-radius:8px;padding:3px;position:relative;overflow:hidden;">
+            <div id="zbWallFill" style="position:absolute;inset:0;width:100%;background:rgba(56,189,248,0.28);transition:width 0.3s;"></div>
+            <span style="position:relative;">🧱 Wall: <b id="zbWallHp" style="color:#38bdf8;">100%</b></span>
+          </div>
+          <div style="flex:1;background:#0f172a;border:1px solid #ef4444;border-radius:8px;padding:3px;position:relative;overflow:hidden;">
+            <div id="zbBossFill" style="position:absolute;inset:0;width:100%;background:rgba(239,68,68,0.32);transition:width 0.3s;"></div>
+            <span style="position:relative;">👹 Horde: <b id="zbBossHp" style="color:#f87171;">1200</b></span>
+          </div>
+          <div style="background:#0f172a;border:1px solid #a855f7;border-radius:8px;padding:3px 6px;">👥 <b id="zbCounts" style="color:#e9d5ff;">0H/0Z</b></div>
+        </div>
+        <div id="zbRoleBanner" style="background:rgba(34,197,94,0.18);border:1px solid #4ade80;border-radius:8px;padding:4px 6px;margin-bottom:6px;font-size:11px;font-weight:900;color:#fde047;">Pick your class!</div>
+        <div id="zbActions" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+      </div>
+    </div>
+     <script>
+    (function() {
+      let lastHordeHp = null, lastWallHp = null, maxWaveHp = 1200;
+      function spawnBattleFx(icon, shake) {
+        const stage = document.getElementById('zbBattleStage'), card = document.getElementById('zbCard');
+        if (!stage) return;
+        const fx = document.createElement('span'); fx.className = 'zb-fx-fly'; fx.textContent = icon;
+        stage.appendChild(fx); setTimeout(() => fx.remove(), 600);
+        if (shake && card) { card.classList.remove('zb-hit-shake'); void card.offsetWidth; card.classList.add('zb-hit-shake'); }
+      }
+      function injectZombieHostBtn() {
+        const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /bomb royale|mafia party|word imposter/i.test(b.textContent || ''));
+        if (targetBtn && targetBtn.parentElement && !document.getElementById('btnLaunchZombie')) {
+          const btn = targetBtn.cloneNode(true); btn.id = 'btnLaunchZombie'; btn.removeAttribute('onclick');
+          btn.textContent = '29. 🧟 Zombie Outbreak';
+          btn.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!zombie'); };
+          targetBtn.parentElement.appendChild(btn);
+        }
+      }
+      setInterval(injectZombieHostBtn, 2000);
+      function bindZombie() {
+        if (typeof socket === 'undefined' || window._zombieBound) return;
+        window._zombieBound = true;
+        socket.on('zombieSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('zombieBar').style.display = 'flex';
+          document.getElementById('zbWaveTitle').textContent = d.waveName;
+          document.getElementById('zbTimer').textContent = '⏳ ' + d.timeLeft + 's';
+          if (lastHordeHp === null || d.hordeHp > lastHordeHp) maxWaveHp = d.hordeHp;
+          if (lastHordeHp !== null && d.hordeHp < lastHordeHp) spawnBattleFx('💥🔫', false);
+          if (lastWallHp !== null && d.wallHp < lastWallHp) spawnBattleFx('🩸🧟', true);
+          if (lastWallHp !== null && d.wallHp > lastWallHp) spawnBattleFx('✨🔨', false);
+          lastHordeHp = d.hordeHp; lastWallHp = d.wallHp;
+          const wallPct = Math.max(0, Math.min(100, d.wallHp));
+          const bossPct = Math.max(0, Math.min(100, Math.round((d.hordeHp / (maxWaveHp || 1)) * 100)));
+          document.getElementById('zbWallHp').textContent = wallPct + '%';
+          document.getElementById('zbWallFill').style.width = wallPct + '%';
+          document.getElementById('zbBossHp').textContent = Math.max(0, d.hordeHp);
+          document.getElementById('zbBossFill').style.width = bossPct + '%';
+          document.getElementById('zbCounts').textContent = d.humans + '😇/' + d.zombies + '🧟';
+          document.getElementById('zbWallSprite').textContent = wallPct > 60 ? '🧱' : (wallPct > 25 ? '🪵' : '🔥');
+          document.getElementById('zbHordeSprites').textContent = d.waveName.includes('ZOROMON') ? '👑🧟‍♂️⚔️' : (d.waveName.includes('Brutes') ? '🛡️🧟‍♂️' : '🧟‍♂️🧟‍♀️');
+          document.getElementById('zbSquadSprites').textContent = d.humans > 2 ? '🔫💣🩺' : '🔫🔨';
+          const banner = document.getElementById('zbRoleBanner'), box = document.getElementById('zbActions');
+          box.innerHTML = '';
+          if (d.isZombie) {
+            banner.style.borderColor = '#ef4444'; banner.style.background = 'rgba(239,68,68,0.25)';
+            banner.textContent = d.isPatientZero ? '🦠 SECRET INFECTED! Sabotage wall or bite humans!' : '🧟 YOU MUTATED INTO A ZOMBIE! Hunt humans!';
+            if (d.acted) { box.innerHTML = '<span style="font-size:11px;color:#fca5a5;font-weight:bold;">✅ Zombie attack locked!</span>'; }
+            else {
+              const b1 = document.createElement('button');
+              b1.style.cssText = 'background:#991b1b;border:1.5px solid #f87171;color:#fff;padding:6px 10px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;';
+              b1.textContent = '💥 Smash Wall (-22%)'; b1.onclick = () => socket.emit('zombieAct', { move: 'smash' });
+              const b2 = document.createElement('button');
+              b2.style.cssText = 'background:#6b21a8;border:1.5px solid #c084fc;color:#fff;padding:6px 10px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;';
+              b2.textContent = '🦷 Bite & Convert Human!'; b2.onclick = () => socket.emit('zombieAct', { move: 'bite' });
+              box.appendChild(b1); box.appendChild(b2);
+            }
+          } else {
+            banner.style.borderColor = '#4ade80'; banner.style.background = 'rgba(34,197,94,0.18)';
+            banner.textContent = '😇 SURVIVOR (' + (d.myClass || 'Commando') + ') — Defend Safe Zone!';
+            if (d.acted) { box.innerHTML = '<span style="font-size:11px;color:#86efac;font-weight:bold;">✅ Action locked! Coordinate in chat!</span>'; }
+            else {
+              const moves = [
+                { id: 'shoot', label: '🔫 Shoot (-420)', bg: '#0369a1', cls: 'Commando' },
+                { id: 'bomb', label: '💣 Grenade (-320 + Stun)', bg: '#b45309', cls: 'Grenadier' },
+                { id: 'repair', label: '🔨 Repair Wall (+28%)', bg: '#15803d', cls: 'Engineer' },
+                { id: 'heal', label: '🩺 Medic Boost (+20%)', bg: '#be185d', cls: 'Medic' }
+              ];
+              moves.forEach(m => {
+                const btn = document.createElement('button');
+                btn.style.cssText = 'background:' + m.bg + ';border:1px solid #fff;color:#fff;padding:5px 8px;border-radius:9px;font-weight:bold;font-size:10px;cursor:pointer;';
+                btn.textContent = m.label; btn.onclick = () => socket.emit('zombieAct', { move: m.id, cls: m.cls });
+                box.appendChild(btn);
+              });
+            }
+          }
+        });
+        socket.on('zombieEnd', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          lastHordeHp = null; lastWallHp = null; document.getElementById('zombieBar').style.display = 'none';
+        });
+      }
+      setInterval(bindZombie, 1200);
+    })();
+    </script>`;
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('zombieBar')) {
+                body = body.replace('</body>', ZOMBIE_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    function broadcastZombieState(srvId) {
+        const st = zombieByServer.get(srvId);
+        if (!st) return;
+        const w = ZOMBIE_WAVES.at(st.waveIdx);
+        let humans = 0, zombies = 0;
+        st.roles.forEach(r => { if (r.isZombie) zombies++; else humans++; });
+        st.roles.forEach((info, sid) => {
+            io.to(sid).emit('zombieSync', {
+                waveName: w.name, timeLeft: st.timeLeft, wallHp: st.wallHp, hordeHp: st.hordeHp,
+                humans, zombies, isZombie: info.isZombie, isPatientZero: info.isPatientZero,
+                myClass: info.cls, acted: st.acted.has(sid), _serverId: srvId
+            });
+        });
+    }
+
+    function endZombieGame(srvId, humansWon, summaryText) {
+        const st = zombieByServer.get(srvId);
+        if (!st) return;
+        if (st.interval) clearInterval(st.interval);
+        zombieByServer.delete(srvId);
+        io.to(srvId).emit('zombieEnd', { _serverId: srvId });
+        const winners = [];
+        st.roles.forEach((info) => {
+            if ((humansWon && !info.isZombie) || (!humansWon && info.isZombie)) winners.push(info.username);
+        });
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `${summaryText}\n🏆 **Winners (+10 MVP & 🧟 Zoromon Slayer Trophy):** ${winners.length ? winners.join(', ') : 'None'}!`,
+            _serverId: srvId
+        });
+    }
+
+    function resolveZombieWave(srvId) {
+        const st = zombieByServer.get(srvId);
+        if (!st) return;
+        const w = ZOMBIE_WAVES.at(st.waveIdx);
+        st.acted.clear();
+        const hordeStrike = Math.max(8, w.dmg - st.stunBonus);
+        st.stunBonus = 0;
+        st.wallHp = Math.max(0, st.wallHp - hordeStrike);
+        let humanCount = 0;
+        st.roles.forEach(r => { if (!r.isZombie) humanCount++; });
+
+        if (st.wallHp <= 0 || humanCount === 0) {
+            return endZombieGame(srvId, false, `💀🧟 **ZOROMON & THE HORDE OVERRAN THE SAFE ZONE!** All humans got infected!`);
+        }
+        if (st.hordeHp <= 0) {
+            if (st.waveIdx + 1 >= ZOMBIE_WAVES.length) {
+                return endZombieGame(srvId, true, `🎉🔥 **ZOROMON GOT DESTROYED!!** Even with 3 rusty zombie swords he got lost on the way to the wall! Humans win! 😂🏆`);
+            }
+            st.waveIdx++;
+            const nextW = ZOMBIE_WAVES.at(st.waveIdx);
+            st.hordeHp = nextW.hp;
+            const bossRoast = nextW.num === 5 ? `\n😂 *Warning: **ZOROMON** appeared holding 3 swords upside down and still got lost!*` : '';
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚔️ Wave cleared! Next up: **${nextW.name}** (HP: ${nextW.hp}) | Wall at **${st.wallHp}%**!${bossRoast}`,
+                _serverId: srvId
+            });
+        } else {
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🧟 Horde attacked the wall for **-${hordeStrike}%** (Wall: **${st.wallHp}%** | Horde HP left: **${st.hordeHp}**)! Keep fighting!`,
+                _serverId: srvId
+            });
+        }
+        st.timeLeft = 15;
+        broadcastZombieState(srvId);
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const txt = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof txt !== 'string' || txt.trim().toLowerCase() !== '!zombie') return;
+            if (zombieByServer.has(srvId)) return;
+            syncArenaPlayers(srvId);
+            const arena = getArena(srvId);
+            if (arena.players.length < 2) {
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **2 players in this server** to start **🧟 Zombie Outbreak**!', _serverId: srvId });
+                return;
+            }
+            const roles = new Map();
+            const shuffled = [...arena.players].sort(() => Math.random() - 0.5);
+            const hasSaboteur = shuffled.length >= 4;
+            shuffled.forEach((p, idx) => {
+                const isZero = hasSaboteur && idx === 0;
+                roles.set(p.id, { username: p.username, isZombie: isZero, isPatientZero: isZero, cls: 'Commando' });
+            });
+            const st = {
+                waveIdx: 0, hordeHp: ZOMBIE_WAVES.at(0).hp, wallHp: 100, stunBonus: 0,
+                timeLeft: 15, roles, acted: new Set(), interval: null
+            };
+            zombieByServer.set(srvId, st);
+            st.interval = setInterval(() => {
+                const cur = zombieByServer.get(srvId);
+                if (!cur) return;
+                cur.timeLeft--;
+                if (cur.timeLeft <= 0) resolveZombieWave(srvId);
+                else broadcastZombieState(srvId);
+            }, 1000);
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🧟🚨 **ZOMBIE OUTBREAK STARTED!** Survive 5 Waves & defeat **BOSS ZOROMON**! ${hasSaboteur ? '*(⚠️ 1 player is secretly Infected!)*' : ''}`,
+                _serverId: srvId
+            });
+            broadcastZombieState(srvId);
+        });
+
+        socket.on('zombieAct', ({ move, cls }) => {
+            const srvId = socket.activeServerId;
+            const st = srvId ? zombieByServer.get(srvId) : null;
+            if (!st || !st.roles.has(socket.id) || st.acted.has(socket.id)) return;
+            const actor = st.roles.get(socket.id);
+            st.acted.add(socket.id);
+            if (cls && !actor.isZombie) actor.cls = cls;
+            if (actor.isZombie) {
+                if (move === 'smash') {
+                    st.wallHp = Math.max(0, st.wallHp - 22);
+                    io.to(srvId).emit('message', { username: "Sammu's Bot", text: `💥 A Zombie clawed the Safe-Zone Wall for **-22%**! (Wall: **${st.wallHp}%**)`, _serverId: srvId });
+                } else if (move === 'bite') {
+                    const humanIds = [];
+                    st.roles.forEach((r, sid) => { if (!r.isZombie) humanIds.push(sid); });
+                    if (humanIds.length > 1) {
+                        const victimId = humanIds.at(Math.floor(Math.random() * humanIds.length));
+                        const victim = st.roles.get(victimId);
+                        victim.isZombie = true;
+                        io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🦷☣️ **INFECTION ALERT!** **${victim.username}** was bitten and mutated into a **🧟 ZOMBIE**!`, _serverId: srvId });
+                    } else {
+                        st.wallHp = Math.max(0, st.wallHp - 18);
+                    }
+                }
+            } else {
+                if (move === 'shoot') st.hordeHp = Math.max(0, st.hordeHp - 420);
+                else if (move === 'bomb') { st.hordeHp = Math.max(0, st.hordeHp - 320); st.stunBonus += 12; }
+                else if (move === 'repair') st.wallHp = Math.min(100, st.wallHp + 28);
+                else if (move === 'heal') st.wallHp = Math.min(100, st.wallHp + 20);
+            }
+            if (st.acted.size >= st.roles.size || st.hordeHp <= 0 || st.wallHp <= 0) resolveZombieWave(srvId);
+            else broadcastZombieState(srvId);
+        });
+    });
+
     return OG_HOSTS;
       
 };

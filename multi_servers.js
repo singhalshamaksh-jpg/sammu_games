@@ -262,7 +262,7 @@ module.exports = function initMultiServers(app, io) {
             const refCount = Array.isArray(s.referrals) ? s.referrals.length : 0;
             return {
                 id: s.id, name: s.name, owner: s.owner, theme: s.theme,
-                max: s.max || 20, count: activeCounts[s.id] || 0, type: s.type,
+                max: s.max || 20, count: (io.sockets.adapter.rooms.get(s.id) ? io.sockets.adapter.rooms.get(s.id).size : 0), type: s.type,
                 locked: s.type === 'secret' || Boolean(s.password), expired, permanent: Boolean(s.permanent),
                 daysLeft, refCount
             };

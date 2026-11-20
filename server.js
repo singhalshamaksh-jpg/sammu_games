@@ -245,6 +245,17 @@ io.use((socket, next) => {
 // =========================================================================
 
 
+// === CHAT PARTY GAMES: !BLUFF & !ISLAND ADDED HERE ===
+const BLUFF_PROMPTS = ["You are a banana who just discovered fire!", "Explain the meaning of life to a goldfish!"];
+const BLUFF_STATE = { prompt: null, answers: new Map(), voting: false, deadline: null, round: 0 };
+const ISLAND_STATE = { day: 1, food: 100, fire: 100, phase: 'choose', disaster: null, log: [] };
+function startBluffGame() { const prompt = BLUFF_PROMPTS[Math.floor(Math.random() * BLUFF_PROMPTS.length)]; BLUFF_STATE.prompt = prompt; BLUFF_STATE.answers.clear(); BLUFF_STATE.voting = false; BLUFF_STATE.round++; io.emit('message', { username: "Sammu's Bot", text: `🤥 **BLUFF MODE STARTED!** Prompt: ${prompt}
+Type your answer in chat! I'll secretly collect them for 20s...` }); const timer = setTimeout(() => { BLUFF_STATE.voting = true; const answers = Array.from(BLUFF_STATE.answers.entries()); io.emit('bluffAnswers', { prompt: BLUFF_STATE.prompt, answers }); }, 20000); BLUFF_STATE.deadline = timer; }
+function collectBluffAnswer(socket, text) { if (!BLUFF_STATE.prompt || !BLUFF_STATE.deadline) return; const name = socket.username || 'Player'; BLUFF_STATE.answers.set(name, text); }
+function voteBluff(socket, answerName) { if (!BLUFF_STATE.voting) return; }
+function startIslandGame() { ISLAND_STATE.day = 1; ISLAND_STATE.food = 100; ISLAND_STATE.fire = 100; ISLAND_STATE.phase = 'choose'; ISLAND_STATE.disaster = null; ISLAND_STATE.log = []; io.emit('islandState', ISLAND_STATE); }
+function islandChoose(socket, action) { if (ISLAND_STATE.phase !== 'choose') return; const name = socket.username || 'Player'; if (action === 'Forage') { ISLAND_STATE.food += 20; } if (action === 'Stoke Fire') { ISLAND_STATE.fire += 20; } if (action === 'Hoard Rations') { ISLAND_STATE.food += 10; } ISLAND_STATE.phase = 'waiting'; }
+// ... more code ...
 require('./multi_servers')(app, io);
 const MAKEUP_STUDIO_WIDGET = `
 <style>

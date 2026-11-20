@@ -2474,40 +2474,54 @@ module.exports = function initMultiServers(app, io) {
     });
     // === 🔪 MAFIA PARTY ARENA (ALL-PLAYERS CHAT GAME) ===
     const mafiaByServer = new Map();
-    const MAFIA_UI = `
-    <div id="mafiaModal" style="display:none;position:fixed;inset:0;background:rgba(7,11,25,0.94);z-index:999997;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(10px);">
-      <div style="background:linear-gradient(155deg,#1e1b4b,#450a0a);border:2px solid #ef4444;border-radius:22px;padding:16px;width:100%;max-width:390px;color:#fff;text-align:center;">
+        const MAFIA_UI = `
+    <button id="mafiaFloatingPill" onclick="document.getElementById('mafiaModal').style.display='flex'" style="display:none;position:fixed;top:12px;right:12px;z-index:999999;background:linear-gradient(90deg,#dc2626,#991b1b);color:#fff;border:2px solid #fca5a5;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(220,38,38,0.6);">🔪 Mafia Vote</button>
+    <div id="mafiaModal" style="display:none;position:fixed;inset:0;background:rgba(7,11,25,0.78);z-index:999998;align-items:flex-end;justify-content:center;padding:12px;backdrop-filter:blur(4px);">
+      <div style="background:linear-gradient(155deg,#1e1b4b,#450a0a);border:2px solid #ef4444;border-radius:20px;padding:13px;width:100%;max-width:360px;color:#fff;text-align:center;box-shadow:0 0 30px rgba(239,68,68,0.5);margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:900;font-size:15px;color:#fca5a5;">🔪 MAFIA PARTY ARENA</span>
-          <button onclick="document.getElementById('mafiaModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">Hide</button>
+          <span style="font-weight:900;font-size:14px;color:#fca5a5;">🔪 MAFIA PARTY</span>
+          <button onclick="document.getElementById('mafiaModal').style.display='none'" style="background:#334155;border:1px solid #94a3b8;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:bold;cursor:pointer;">💬 Hide to Chat</button>
         </div>
-        <div id="mafiaRoleBox" style="background:rgba(239,68,68,0.2);border:1.5px solid #f87171;border-radius:14px;padding:10px;margin:10px 0;font-size:15px;font-weight:900;color:#fde047;">Assigning roles...</div>
-        <div id="mafiaPrompt" style="font-size:12px;color:#cbd5e1;margin-bottom:8px;">Discuss in chat & tap a player:</div>
-        <div id="mafiaGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"></div>
-        <div id="mafiaStatus" style="font-size:12px;color:#38bdf8;font-weight:bold;"></div>
+        <div id="mafiaRoleBox" style="background:rgba(239,68,68,0.2);border:1.5px solid #f87171;border-radius:12px;padding:8px;margin:8px 0;font-size:13px;font-weight:900;color:#fde047;">Assigning roles...</div>
+        <div id="mafiaGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;max-height:170px;overflow-y:auto;"></div>
+        <div id="mafiaStatus" style="font-size:11px;color:#38bdf8;font-weight:bold;"></div>
       </div>
     </div>
     <script>
     (function() {
+      function injectMafiaHostBtn() {
+        const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /word imposter|hoop shootout/i.test(b.textContent || ''));
+        if (targetBtn && targetBtn.parentElement && !document.getElementById('btnLaunchMafia')) {
+          const btn = targetBtn.cloneNode(true);
+          btn.id = 'btnLaunchMafia';
+          btn.removeAttribute('onclick');
+          btn.textContent = '26. 🔪 Mafia Party';
+          btn.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!mafia'); };
+          targetBtn.parentElement.appendChild(btn);
+        }
+      }
+      setInterval(injectMafiaHostBtn, 2000);
+
       function bindMafia() {
         if (typeof socket === 'undefined' || window._mafiaBound) return;
         window._mafiaBound = true;
         socket.on('mafiaStart', (d) => {
           if (d._serverId && d._serverId !== window.selectedServerId) return;
           document.getElementById('mafiaModal').style.display = 'flex';
-          const roleMsg = d.role === 'MAFIA' ? '🔪 YOU ARE THE MAFIA!<br><span style="font-size:12px;color:#fca5a5;">Pick a target to eliminate & frame someone in chat!</span>'
-            : d.role === 'DOCTOR' ? '🩺 YOU ARE THE DOCTOR!<br><span style="font-size:12px;color:#86efac;">Pick 1 player to protect from the Mafia!</span>'
-            : '😇 YOU ARE A VILLAGER!<br><span style="font-size:12px;color:#93c5fd;">Discuss in chat & vote out the Mafia!</span>';
+          document.getElementById('mafiaFloatingPill').style.display = 'block';
+          const roleMsg = d.role === 'MAFIA' ? '🔪 YOU ARE THE MAFIA! Pick who to eliminate!'
+            : d.role === 'DOCTOR' ? '🩺 YOU ARE THE DOCTOR! Pick 1 player to save!'
+            : '😇 YOU ARE A VILLAGER! Vote out the Mafia!';
           document.getElementById('mafiaRoleBox').innerHTML = roleMsg;
           const grid = document.getElementById('mafiaGrid'); grid.innerHTML = '';
-          document.getElementById('mafiaStatus').textContent = 'Tap your choice below!';
+          document.getElementById('mafiaStatus').textContent = 'Tap 💬 Hide to Chat anytime — tap 🔪 Mafia Vote at top to return!';
           d.players.forEach(p => {
             const b = document.createElement('button');
-            b.style.cssText = 'background:#1e293b;border:1.5px solid #ef4444;color:#fff;padding:8px;border-radius:12px;font-weight:bold;font-size:12px;cursor:pointer;';
+            b.style.cssText = 'background:#1e293b;border:1.5px solid #ef4444;color:#fff;padding:7px;border-radius:10px;font-weight:bold;font-size:12px;cursor:pointer;';
             b.textContent = '🎯 ' + p.username;
             b.onclick = () => {
               socket.emit('mafiaAction', p.id);
-              document.getElementById('mafiaStatus').textContent = '✅ Locked choice: ' + p.username;
+              document.getElementById('mafiaStatus').textContent = '✅ Locked: ' + p.username + ' (Waiting for others...)';
               Array.from(grid.children).forEach(c => c.disabled = true);
             };
             grid.appendChild(b);
@@ -2516,11 +2530,13 @@ module.exports = function initMultiServers(app, io) {
         socket.on('mafiaEnd', (d) => {
           if (d._serverId && d._serverId !== window.selectedServerId) return;
           document.getElementById('mafiaModal').style.display = 'none';
+          document.getElementById('mafiaFloatingPill').style.display = 'none';
         });
       }
       setInterval(bindMafia, 1200);
     })();
     </script>`;
+
 
     app.use((req, res, next) => {
         const origSend = res.send;

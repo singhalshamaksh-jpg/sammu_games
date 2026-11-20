@@ -1887,122 +1887,105 @@
   }, 500);
 })();
 </script>
- <!-- === WHATSAPP-STYLE CHAT LIVE WALLPAPER v5 (PIECE 1/2) === -->
+<!-- === FULLSCREEN ZERO-LAG LIVE WALLPAPER v6 (PIECE 1/2) === -->
+<canvas id="liveWallpaperCanvas" style="position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;"></canvas>
 <button id="wpToggleBtn" onclick="toggleLiveWallpaper()" style="position:fixed;top:8px;right:8px;width:auto !important;max-width:85px;display:inline-flex;align-items:center;gap:4px;z-index:99990;background:rgba(15,23,42,0.88);border:1px solid #38bdf8;color:#fff;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:bold;cursor:pointer;">🌌 WP</button>
 <script>
 (function() {
   var wpEnabled = localStorage.getItem('sammu_wp_on') !== 'false';
-  var canvas = document.createElement('canvas');
-  canvas.id = 'liveWallpaperCanvas';
-  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;border-radius:inherit;';
-  var ctx = canvas.getContext('2d');
+  var canvas = document.getElementById('liveWallpaperCanvas');
+  var ctx = canvas ? canvas.getContext('2d', { alpha: false }) : null;
   var particles = [];
   var lastTheme = '';
-  var mountedBox = null;
 
   var vishnuImg = new Image();
   var vishnuLoaded = false;
   vishnuImg.onload = function() { vishnuLoaded = true; };
   vishnuImg.src = '/public_mahavishnu.jpg';
 
+  function resizeWp() {
+    if (!canvas) return;
+    // 0.6x internal resolution = 3x faster GPU rendering on mobile with zero lag!
+    canvas.width = Math.round(window.innerWidth * 0.6);
+    canvas.height = Math.round(window.innerHeight * 0.6);
+  }
+  window.addEventListener('resize', resizeWp);
+  resizeWp();
+
+  // Remove the dark murky box behind chat so bubbles float directly over the full-screen wallpaper!
   var style = document.createElement('style');
   style.textContent =
-    '.wp-chat-host { position: relative !important; overflow: hidden !important; } ' +
-    '.wp-chat-host > *:not(#liveWallpaperCanvas) { position: relative; z-index: 1; } ' +
-    '.wp-chat-host #chatBox, .wp-chat-host #messages, .wp-chat-host .chat-messages { background: transparent !important; }';
+    'html, body { background: #04071d !important; } ' +
+    '#chatBox, #messages, .chat-messages, .chat-container, .arena-card { background: transparent !important; box-shadow: none !important; } ' +
+    'body.wp-active #chatBox, body.wp-active #messages, body.wp-active .chat-messages { background: transparent !important; }';
   document.head.appendChild(style);
-
-  function mountInsideChatBox() {
-    var msgBox = document.getElementById('chatBox') || document.getElementById('messages') || document.querySelector('.chat-messages');
-    // Pick the non-scrolling wrapper around the message list so the wallpaper stays still while messages scroll!
-    var target = (msgBox && msgBox.parentElement && msgBox.parentElement !== document.body) ? msgBox.parentElement : msgBox;
-    if (!target) {
-      if (canvas.parentElement !== document.body) {
-        canvas.style.position = 'fixed';
-        document.body.prepend(canvas);
-      }
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      return;
-    }
-    if (mountedBox !== target) {
-      mountedBox = target;
-      target.classList.add('wp-chat-host');
-      canvas.style.position = 'absolute';
-      target.insertBefore(canvas, target.firstChild);
-    }
-    var rect = target.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      if (canvas.width !== Math.round(rect.width)) canvas.width = Math.round(rect.width);
-      if (canvas.height !== Math.round(rect.height)) canvas.height = Math.round(rect.height);
-    }
-  }
-  setInterval(mountInsideChatBox, 1000);
+  if (wpEnabled) document.body.classList.add('wp-active');
 
   function getThemeKey() {
     var srv = (window.selectedServerId || '').toLowerCase();
-    if (srv === 'srv_samaksh') return 'samaksh_vishnu';
-    if (srv === 'srv_heer') return 'heer_bhaijaan';
-    if (srv === 'srv_sarah') return 'sarah_princess';
-    if (srv === 'srv_ishika') return 'ishika_brosis';
-    if (srv === 'srv_moon') return 'moon_doctor';
-    if (srv === 'srv_milly') return 'milly_yt';
-    if (srv === 'srv_izzan') return 'izzan_football';
-    if (srv === 'srv_zoro') return 'anime_vibe';
-    if (srv === 'srv_zaira') return 'zaira_cats';
+    var pageTxt = (document.body.innerText || '').slice(0, 350).toLowerCase();
+    if (srv === 'srv_samaksh' || pageTxt.includes('samaksh')) return 'samaksh_vishnu';
+    if (srv === 'srv_heer' || pageTxt.includes('heer')) return 'heer_bhaijaan';
+    if (srv === 'srv_sarah' || pageTxt.includes('sarah')) return 'sarah_princess';
+    if (srv === 'srv_ishika' || pageTxt.includes('ishika')) return 'ishika_brosis';
+    if (srv === 'srv_moon' || pageTxt.includes('moon')) return 'moon_doctor';
+    if (srv === 'srv_milly' || pageTxt.includes('milly')) return 'milly_yt';
+    if (srv === 'srv_izzan' || pageTxt.includes('izzan')) return 'izzan_football';
+    if (srv === 'srv_zoro' || pageTxt.includes('zoro')) return 'anime_vibe';
+    if (srv === 'srv_zaira' || pageTxt.includes('zaira')) return 'zaira_cats';
     return 'cosmic_default';
   }
 
   function buildParticles(theme) {
     particles = [];
-    var w = canvas.width || 340, h = canvas.height || 420;
+    var w = canvas.width || 220, h = canvas.height || 420;
 
     if (theme === 'samaksh_vishnu') {
       var maxDist = Math.hypot(w * 0.55, h * 0.55);
-      for (var i = 0; i < 65; i++) {
+      for (var i = 0; i < 45; i++) {
         particles.push({
           type: 'brahmanda',
           angle: Math.random() * Math.PI * 2,
-          maxR: (0.25 + Math.random() * 0.75) * maxDist,
-          baseSize: Math.random() * 6 + 3,
+          maxR: (0.2 + Math.random() * 0.8) * maxDist,
+          baseSize: Math.random() * 4.5 + 2.2,
           phaseOffset: Math.random() * Math.PI * 2,
-          hue: (i * 19) % 360,
-          hasGalaxy: (i % 3 === 0)
+          color: 'hsl(' + ((i * 23) % 360) + ', 90%, 68%)'
         });
       }
     } else if (theme === 'heer_bhaijaan') {
-      var bhaiIcons = ['🕶️', '🐅', '👑', '🎬', '💪', '💖', '✨'];
-      for (var i = 0; i < 28; i++) particles.push({ type: i < 15 ? 'emoji' : 'gold', icon: bhaiIcons[i % bhaiIcons.length], x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2.2 + 1, vx: (Math.random() - 0.5) * 0.45, vy: -(Math.random() * 0.45 + 0.15) });
+      var bhaiIcons = ['🕶️', '🐅', '👑', '🎬', '💪', '💖'];
+      for (var i = 0; i < 20; i++) particles.push({ type: i < 12 ? 'emoji' : 'gold', icon: bhaiIcons[i % bhaiIcons.length], x: Math.random() * w, y: Math.random() * h, r: 2, vx: (Math.random() - 0.5) * 0.35, vy: -(Math.random() * 0.35 + 0.1) });
     } else if (theme === 'sarah_princess') {
-      var prinIcons = ['👸', '👑', '🏰', '🦋', '💎', '🌸', '✨'];
-      for (var i = 0; i < 28; i++) particles.push({ type: i < 15 ? 'emoji' : 'sparkle', icon: prinIcons[i % prinIcons.length], x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2 + 1, vx: (Math.random() - 0.5) * 0.35, vy: -(Math.random() * 0.4 + 0.12) });
+      var prinIcons = ['👸', '👑', '🏰', '🦋', '💎', '🌸'];
+      for (var i = 0; i < 20; i++) particles.push({ type: i < 12 ? 'emoji' : 'sparkle', icon: prinIcons[i % prinIcons.length], x: Math.random() * w, y: Math.random() * h, r: 2, vx: (Math.random() - 0.5) * 0.3, vy: -(Math.random() * 0.3 + 0.1) });
     } else if (theme === 'ishika_brosis') {
-      var broSisIcons = ['🤝', '💖', '🧵', '👧', '👦', '✨', '🫶'];
-      for (var i = 0; i < 26; i++) particles.push({ type: i < 14 ? 'emoji' : 'gold', icon: broSisIcons[i % broSisIcons.length], x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2 + 1, vx: (Math.random() - 0.5) * 0.4, vy: -(Math.random() * 0.45 + 0.15) });
+      var broSisIcons = ['🤝', '💖', '🧵', '👧', '👦', '🫶'];
+      for (var i = 0; i < 20; i++) particles.push({ type: i < 12 ? 'emoji' : 'gold', icon: broSisIcons[i % broSisIcons.length], x: Math.random() * w, y: Math.random() * h, r: 2, vx: (Math.random() - 0.5) * 0.3, vy: -(Math.random() * 0.35 + 0.1) });
     } else if (theme === 'moon_doctor') {
-      var medIcons = ['🩺', '💊', '🧬', '🩹', '💖', '✨', '🌙'];
-      for (var i = 0; i < 32; i++) particles.push({ type: i < 14 ? 'emoji' : 'star', icon: medIcons[i % medIcons.length], x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.8 + 0.6, vx: (Math.random() - 0.5) * 0.25, vy: -(Math.random() * 0.35 + 0.1) });
+      var medIcons = ['🩺', '💊', '🧬', '🩹', '💖', '🌙'];
+      for (var i = 0; i < 24; i++) particles.push({ type: i < 12 ? 'emoji' : 'star', icon: medIcons[i % medIcons.length], x: Math.random() * w, y: Math.random() * h, r: 1.5, vx: (Math.random() - 0.5) * 0.2, vy: -(Math.random() * 0.25 + 0.1) });
     } else if (theme === 'milly_yt') {
-      var ytIcons = ['▶️', '🎬', '👑', '🎥', '🔔', '✨', '💖'];
-      for (var i = 0; i < 26; i++) particles.push({ type: i < 14 ? 'emoji' : 'gold', icon: ytIcons[i % ytIcons.length], x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2 + 1, vx: (Math.random() - 0.5) * 0.4, vy: -(Math.random() * 0.45 + 0.15) });
+      var ytIcons = ['▶️', '🎬', '👑', '🎥', '🔔', '💖'];
+      for (var i = 0; i < 20; i++) particles.push({ type: i < 12 ? 'emoji' : 'gold', icon: ytIcons[i % ytIcons.length], x: Math.random() * w, y: Math.random() * h, r: 2, vx: (Math.random() - 0.5) * 0.3, vy: -(Math.random() * 0.35 + 0.1) });
     } else if (theme === 'izzan_football') {
       var fbIcons = ['⚽', '🏆', '🥅', '🔥', '👟'];
-      for (var i = 0; i < 22; i++) particles.push({ type: i < 14 ? 'emoji' : 'star', icon: fbIcons[i % fbIcons.length], x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2 + 1, vx: (Math.random() - 0.5) * 0.85, vy: (Math.random() - 0.5) * 0.85 });
+      for (var i = 0; i < 18; i++) particles.push({ type: i < 12 ? 'emoji' : 'star', icon: fbIcons[i % fbIcons.length], x: Math.random() * w, y: Math.random() * h, r: 1.5, vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6 });
     } else if (theme === 'anime_vibe') {
-      var aniIcons = ['🌸', '⚔️', '🌀', '⚡', '🪐', '✨'];
-      for (var i = 0; i < 28; i++) particles.push({ type: i < 14 ? 'emoji' : 'petal', icon: aniIcons[i % aniIcons.length], x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2.6 + 1.3, vx: (Math.random() - 0.3) * 0.6, vy: Math.random() * 0.6 + 0.2 });
+      var aniIcons = ['🌸', '⚔️', '🌀', '⚡', '🪐'];
+      for (var i = 0; i < 22; i++) particles.push({ type: i < 12 ? 'emoji' : 'petal', icon: aniIcons[i % aniIcons.length], x: Math.random() * w, y: Math.random() * h, r: 2.2, vx: (Math.random() - 0.3) * 0.45, vy: Math.random() * 0.45 + 0.15 });
     } else if (theme === 'zaira_cats') {
-      var catIcons = ['🐱', '🐈', '🐾', '🧶', '🐟', '😻', '💖'];
-      for (var i = 0; i < 30; i++) particles.push({ type: i < 16 ? 'emoji' : 'sparkle', icon: catIcons[i % catIcons.length], x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2.2 + 1.1, vx: (Math.random() - 0.5) * 0.45, vy: -(Math.random() * 0.4 + 0.15) });
+      var catIcons = ['🐱', '🐈', '🐾', '🧶', '🐟', '😻'];
+      for (var i = 0; i < 22; i++) particles.push({ type: i < 14 ? 'emoji' : 'sparkle', icon: catIcons[i % catIcons.length], x: Math.random() * w, y: Math.random() * h, r: 2, vx: (Math.random() - 0.5) * 0.35, vy: -(Math.random() * 0.3 + 0.1) });
     } else {
-      for (var i = 0; i < 32; i++) particles.push({ type: 'star', x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.8 + 0.6, vx: 0, vy: -0.15 });
+      for (var i = 0; i < 25; i++) particles.push({ type: 'star', x: Math.random() * w, y: Math.random() * h, r: 1.4, vx: 0, vy: -0.12 });
     }
   }
-<!-- === WHATSAPP-STYLE CHAT LIVE WALLPAPER v5 (PIECE 2/2) === -->
+<!-- === FULLSCREEN ZERO-LAG LIVE WALLPAPER v6 (PIECE 2/2) === -->
   window.toggleLiveWallpaper = function(forceState) {
     wpEnabled = (typeof forceState === 'boolean') ? forceState : !wpEnabled;
     localStorage.setItem('sammu_wp_on', wpEnabled ? 'true' : 'false');
     if (canvas) canvas.style.display = wpEnabled ? 'block' : 'none';
+    document.body.classList.toggle('wp-active', wpEnabled);
     var btn = document.getElementById('wpToggleBtn');
     if (btn) btn.textContent = wpEnabled ? '🌌 WP' : '🌑 OFF';
   };
@@ -2023,133 +2006,109 @@
   function animateWallpaper(ts) {
     requestAnimationFrame(animateWallpaper);
     if (!wpEnabled || !ctx || !canvas) return;
-    if (ts - lastFrame < 33) return;
+    if (ts - lastFrame < 40) return; // Smooth 25fps lock = zero phone lag
     lastFrame = ts;
 
-    mountInsideChatBox();
     var theme = getThemeKey();
     if (theme !== lastTheme) { lastTheme = theme; buildParticles(theme); }
 
     var w = canvas.width, h = canvas.height;
-    if (w <= 0 || h <= 0) return;
-    ctx.clearRect(0, 0, w, h);
-
     var grad = ctx.createLinearGradient(0, 0, 0, h);
-    if (theme === 'samaksh_vishnu') { grad.addColorStop(0, '#04071d'); grad.addColorStop(0.5, '#0c194a'); grad.addColorStop(1, '#1e1b4b'); }
-    else if (theme === 'heer_bhaijaan') { grad.addColorStop(0, '#2a0612'); grad.addColorStop(0.5, '#580c24'); grad.addColorStop(1, '#1c1017'); }
-    else if (theme === 'sarah_princess') { grad.addColorStop(0, '#2e0827'); grad.addColorStop(0.5, '#4c0d3d'); grad.addColorStop(1, '#1e1035'); }
-    else if (theme === 'ishika_brosis') { grad.addColorStop(0, '#271206'); grad.addColorStop(0.5, '#451a03'); grad.addColorStop(1, '#1e1b4b'); }
-    else if (theme === 'moon_doctor') { grad.addColorStop(0, '#070b24'); grad.addColorStop(0.5, '#131c42'); grad.addColorStop(1, '#082f49'); }
-    else if (theme === 'milly_yt') { grad.addColorStop(0, '#1f0812'); grad.addColorStop(0.5, '#3b0d22'); grad.addColorStop(1, '#1c1917'); }
-    else if (theme === 'izzan_football') { grad.addColorStop(0, '#052e16'); grad.addColorStop(0.5, '#064e3b'); grad.addColorStop(1, '#090d16'); }
-    else if (theme === 'anime_vibe') { grad.addColorStop(0, '#1e1035'); grad.addColorStop(0.5, '#2e1065'); grad.addColorStop(1, '#0f172a'); }
-    else if (theme === 'zaira_cats') { grad.addColorStop(0, '#1e1035'); grad.addColorStop(0.5, '#3b154a'); grad.addColorStop(1, '#0f172a'); }
+    if (theme === 'samaksh_vishnu') { grad.addColorStop(0, '#040824'); grad.addColorStop(0.5, '#0e1f5c'); grad.addColorStop(1, '#1e1b4b'); }
+    else if (theme === 'heer_bhaijaan') { grad.addColorStop(0, '#360717'); grad.addColorStop(0.5, '#6b0f2d'); grad.addColorStop(1, '#1c1017'); }
+    else if (theme === 'sarah_princess') { grad.addColorStop(0, '#3b0a32'); grad.addColorStop(0.5, '#61104e'); grad.addColorStop(1, '#1e1035'); }
+    else if (theme === 'ishika_brosis') { grad.addColorStop(0, '#331707'); grad.addColorStop(0.5, '#592204'); grad.addColorStop(1, '#1e1b4b'); }
+    else if (theme === 'moon_doctor') { grad.addColorStop(0, '#070e2e'); grad.addColorStop(0.5, '#162454'); grad.addColorStop(1, '#083344'); }
+    else if (theme === 'milly_yt') { grad.addColorStop(0, '#2b0a18'); grad.addColorStop(0.5, '#4c112b'); grad.addColorStop(1, '#1c1917'); }
+    else if (theme === 'izzan_football') { grad.addColorStop(0, '#063b1c'); grad.addColorStop(0.5, '#065f46'); grad.addColorStop(1, '#090d16'); }
+    else if (theme === 'anime_vibe') { grad.addColorStop(0, '#251342'); grad.addColorStop(0.5, '#3b147a'); grad.addColorStop(1, '#0f172a'); }
+    else if (theme === 'zaira_cats') { grad.addColorStop(0, '#271342'); grad.addColorStop(0.5, '#4c1a5e'); grad.addColorStop(1, '#0f172a'); }
     else { grad.addColorStop(0, '#070b19'); grad.addColorStop(1, '#111827'); }
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
     if (theme === 'samaksh_vishnu') {
-      var cx = w * 0.5, cy = h * 0.5;
-      var breathCycle = (Math.sin(ts * 0.0007) + 1) * 0.5;
+      var cx = w * 0.5, cy = h * 0.48;
+      var breath = (Math.sin(ts * 0.0008) + 1) * 0.5;
 
       if (vishnuLoaded) {
         ctx.save();
-        var imgW = Math.min(w * 0.85, 340);
+        var imgW = Math.min(w * 0.9, 260);
         var imgH = imgW * (vishnuImg.height / vishnuImg.width);
-        ctx.globalAlpha = 0.55 + breathCycle * 0.1;
+        ctx.globalAlpha = 0.78;
         ctx.drawImage(vishnuImg, cx - imgW / 2, cy - imgH / 2, imgW, imgH);
-        var vig = ctx.createRadialGradient(cx, cy, imgW * 0.18, cx, cy, imgW * 0.54);
-        vig.addColorStop(0, 'rgba(6, 12, 38, 0)');
-        vig.addColorStop(1, 'rgba(6, 12, 38, 0.9)');
-        ctx.fillStyle = vig;
-        ctx.fillRect(cx - imgW / 2, cy - imgH / 2, imgW, imgH);
         ctx.restore();
       }
 
+      // Spinning Sudarshana Chakra
       ctx.save();
-      ctx.translate(cx + 10, cy - 75);
+      ctx.translate(cx + 8, cy - 55);
       ctx.rotate(ts * 0.004);
-      ctx.strokeStyle = 'rgba(253, 224, 71, 0.55)';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
-      for (var k = 0; k < 12; k++) {
-        var ang = (k * Math.PI * 2) / 12;
+      ctx.strokeStyle = 'rgba(253, 224, 71, 0.75)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.stroke();
+      for (var k = 0; k < 10; k++) {
+        var ang = (k * Math.PI * 2) / 10;
         ctx.beginPath();
-        ctx.moveTo(Math.cos(ang) * 22, Math.sin(ang) * 22);
-        ctx.lineTo(Math.cos(ang + 0.2) * 30, Math.sin(ang + 0.2) * 30);
-        ctx.lineTo(Math.cos(ang + 0.4) * 22, Math.sin(ang + 0.4) * 22);
+        ctx.moveTo(Math.cos(ang) * 18, Math.sin(ang) * 18);
+        ctx.lineTo(Math.cos(ang + 0.25) * 24, Math.sin(ang + 0.25) * 24);
+        ctx.lineTo(Math.cos(ang + 0.5) * 18, Math.sin(ang + 0.5) * 18);
         ctx.stroke();
       }
       ctx.restore();
 
+      // Exhale & Inhale Brahmanda Universes
       for (var i = 0; i < particles.length; i++) {
         var p = particles[i];
-        var localBreath = (Math.sin(ts * 0.0007 + p.phaseOffset * 0.18) + 1) * 0.5;
-        var dist = localBreath * p.maxR;
-        var swirl = p.angle + localBreath * 0.65;
+        var localB = (Math.sin(ts * 0.0008 + p.phaseOffset * 0.2) + 1) * 0.5;
+        var dist = localB * p.maxR;
+        var swirl = p.angle + localB * 0.6;
         var bx = cx + Math.cos(swirl) * dist;
         var by = cy + Math.sin(swirl) * dist;
-        var radius = p.baseSize * (0.25 + localBreath * 0.95);
+        var r = p.baseSize * (0.3 + localB * 0.9);
 
-        ctx.save();
-        ctx.globalAlpha = 0.25 + localBreath * 0.5;
-        var bGrad = ctx.createRadialGradient(bx - radius * 0.3, by - radius * 0.3, radius * 0.1, bx, by, radius);
-        bGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-        bGrad.addColorStop(0.55, 'hsla(' + p.hue + ', 85%, 65%, 0.5)');
-        bGrad.addColorStop(1, 'rgba(56, 189, 248, 0.1)');
-        ctx.fillStyle = bGrad;
-        ctx.beginPath(); ctx.arc(bx, by, radius, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = 'rgba(253, 224, 71, 0.45)'; ctx.lineWidth = 0.8; ctx.stroke();
-        if (p.hasGalaxy && radius > 4.5) {
-          ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(bx, by, radius * 0.25, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.restore();
+        ctx.globalAlpha = 0.35 + localB * 0.55;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#fde047'; ctx.lineWidth = 0.6; ctx.stroke();
       }
       ctx.globalAlpha = 1;
       return;
     }
 
     if (theme === 'heer_bhaijaan') {
-      var hx = w * 0.5, hy = h * 0.5;
-      ctx.save();
-      ctx.strokeStyle = 'rgba(226, 232, 240, 0.35)';
-      ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.ellipse(hx, hy, 50, 30, -0.25, 0, Math.PI * 2); ctx.stroke();
-      ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 22;
-      ctx.fillStyle = 'rgba(6, 182, 212, 0.55)';
-      ctx.beginPath(); ctx.ellipse(hx, hy, 16, 11, -0.25, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.restore();
+      var hx = w * 0.5, hy = h * 0.48;
+      ctx.strokeStyle = 'rgba(226, 232, 240, 0.5)'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.ellipse(hx, hy, 34, 20, -0.25, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(6, 182, 212, 0.85)';
+      ctx.beginPath(); ctx.ellipse(hx, hy, 11, 7, -0.25, 0, Math.PI * 2); ctx.fill();
     }
 
     if (theme === 'moon_doctor') {
-      ctx.save(); ctx.shadowColor = '#bae6fd'; ctx.shadowBlur = 24; ctx.fillStyle = '#fef08a';
-      ctx.beginPath(); ctx.arc(w - 52, 55, 24, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#0b1330'; ctx.beginPath(); ctx.arc(w - 42, 48, 20, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-      ctx.save(); ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)'; ctx.lineWidth = 2; ctx.beginPath();
-      var midY = h * 0.5, pulseX = ((ts * 0.12) % (w + 120)) - 60;
-      ctx.moveTo(0, midY); ctx.lineTo(pulseX - 25, midY); ctx.lineTo(pulseX - 15, midY - 22);
-      ctx.lineTo(pulseX - 5, midY + 26); ctx.lineTo(pulseX + 7, midY - 34);
-      ctx.lineTo(pulseX + 18, midY + 14); ctx.lineTo(pulseX + 26, midY); ctx.lineTo(w, midY); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath(); ctx.arc(w - 38, 38, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#070e2e';
+      ctx.beginPath(); ctx.arc(w - 31, 33, 15, 0, Math.PI * 2); ctx.fill();
     }
 
-    ctx.font = '18px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '14px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
       p.x += p.vx || 0; p.y += p.vy || 0;
-      if (p.x < -20) p.x = w + 20; if (p.x > w + 20) p.x = -20;
-      if (p.y < -20) p.y = h + 20; if (p.y > h + 20) p.y = -20;
-      if (p.type === 'emoji') { ctx.globalAlpha = 0.6; ctx.fillText(p.icon, p.x, p.y); }
-      else if (p.type === 'petal' || p.type === 'sparkle') { ctx.globalAlpha = 0.65; ctx.fillStyle = (p.type === 'sparkle') ? '#f9a8d4' : '#f472b6'; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r * 1.5, p.r, 0.5, 0, Math.PI * 2); ctx.fill(); }
-      else if (p.type === 'gold') { ctx.globalAlpha = 0.55 + Math.sin(ts * 0.005 + i) * 0.3; ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
-      else { ctx.globalAlpha = 0.4 + Math.abs(Math.sin(ts * 0.003 + i)) * 0.6; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
+      if (p.x < -15) p.x = w + 15; if (p.x > w + 15) p.x = -15;
+      if (p.y < -15) p.y = h + 15; if (p.y > h + 15) p.y = -15;
+      if (p.type === 'emoji') { ctx.globalAlpha = 0.85; ctx.fillText(p.icon, p.x, p.y); }
+      else if (p.type === 'petal' || p.type === 'sparkle') { ctx.globalAlpha = 0.8; ctx.fillStyle = '#f472b6'; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r * 1.4, p.r, 0.5, 0, Math.PI * 2); ctx.fill(); }
+      else if (p.type === 'gold') { ctx.globalAlpha = 0.8; ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
+      else { ctx.globalAlpha = 0.8; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
     }
     ctx.globalAlpha = 1;
   }
   requestAnimationFrame(animateWallpaper);
 })();
 </script>
-               
+ 
+
  
 
 

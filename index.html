@@ -1913,10 +1913,20 @@
   resizeWp();
 
   // Remove the dark murky box behind chat so bubbles float directly over the full-screen wallpaper!
-    style.textContent =
-    'html, body { background: transparent !important; } ' +
-    'body > div:first-of-type, #app, .app-wrapper, .main-container { position: relative; z-index: 2; background: transparent !important; } ' +
-    '#chatBox, #messages, .chat-messages, .chat-container, .arena-card { background: transparent !important; box-shadow: none !important; }';
+      setInterval(function() {
+    if (!wpEnabled) return;
+    document.documentElement.style.background = 'transparent';
+    document.body.style.background = 'transparent';
+    document.querySelectorAll('body > div').forEach(function(el) {
+      if (el.id !== 'srvBrowserOverlay' && !el.id.includes('Modal') && getComputedStyle(el).position !== 'fixed') {
+        el.style.position = 'relative';
+        el.style.zIndex = '2';
+        el.style.background = 'transparent';
+      }
+    });
+    var cb = document.getElementById('chatBox') || document.getElementById('messages');
+    if (cb) cb.style.background = 'transparent';
+  }, 1000);
 
   if (wpEnabled) document.body.classList.add('wp-active');
 

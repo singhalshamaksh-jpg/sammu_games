@@ -1930,20 +1930,34 @@
 
   if (wpEnabled) document.body.classList.add('wp-active');
 
+  
+
+  window._liveWpSrv = '';
+  var _bindWpSrv = setInterval(function() {
+    if (typeof socket === 'undefined') return;
+    clearInterval(_bindWpSrv);
+    socket.on('serverAccessGranted', function(srv) {
+      if (srv && srv.id) {
+        window.selectedServerId = srv.id;
+        window._liveWpSrv = srv.id.toLowerCase();
+      }
+    });
+  }, 500);
+
   function getThemeKey() {
-    var srv = (window.selectedServerId || '').toLowerCase();
-    var pageTxt = (document.body.innerText || '').slice(0, 350).toLowerCase();
-    if (srv === 'srv_samaksh' || pageTxt.includes('samaksh')) return 'samaksh_vishnu';
-    if (srv === 'srv_heer' || pageTxt.includes('heer')) return 'heer_bhaijaan';
-    if (srv === 'srv_sarah' || pageTxt.includes('sarah')) return 'sarah_princess';
-    if (srv === 'srv_ishika' || pageTxt.includes('ishika')) return 'ishika_brosis';
-    if (srv === 'srv_moon' || pageTxt.includes('moon')) return 'moon_doctor';
-    if (srv === 'srv_milly' || pageTxt.includes('milly')) return 'milly_yt';
-    if (srv === 'srv_izzan' || pageTxt.includes('izzan')) return 'izzan_football';
-    if (srv === 'srv_zoro' || pageTxt.includes('zoro')) return 'anime_vibe';
-    if (srv === 'srv_zaira' || pageTxt.includes('zaira')) return 'zaira_cats';
+    var srv = (window._liveWpSrv || window.selectedServerId || '').toLowerCase();
+    if (srv === 'srv_samaksh') return 'samaksh_vishnu';
+    if (srv === 'srv_heer') return 'heer_bhaijaan';
+    if (srv === 'srv_sarah') return 'sarah_princess';
+    if (srv === 'srv_ishika') return 'ishika_brosis';
+    if (srv === 'srv_moon') return 'moon_doctor';
+    if (srv === 'srv_milly') return 'milly_yt';
+    if (srv === 'srv_izzan') return 'izzan_football';
+    if (srv === 'srv_zoro') return 'anime_vibe';
+    if (srv === 'srv_zaira') return 'zaira_cats';
     return 'cosmic_default';
   }
+
 
   function buildParticles(theme) {
     particles = [];

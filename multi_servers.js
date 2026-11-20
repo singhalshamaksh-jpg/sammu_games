@@ -2472,6 +2472,119 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
+    // === 🔪 MAFIA PARTY ARENA (ALL-PLAYERS CHAT GAME) ===
+    const mafiaByServer = new Map();
+    const MAFIA_UI = `
+    <div id="mafiaModal" style="display:none;position:fixed;inset:0;background:rgba(7,11,25,0.94);z-index:999997;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(10px);">
+      <div style="background:linear-gradient(155deg,#1e1b4b,#450a0a);border:2px solid #ef4444;border-radius:22px;padding:16px;width:100%;max-width:390px;color:#fff;text-align:center;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:15px;color:#fca5a5;">🔪 MAFIA PARTY ARENA</span>
+          <button onclick="document.getElementById('mafiaModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">Hide</button>
+        </div>
+        <div id="mafiaRoleBox" style="background:rgba(239,68,68,0.2);border:1.5px solid #f87171;border-radius:14px;padding:10px;margin:10px 0;font-size:15px;font-weight:900;color:#fde047;">Assigning roles...</div>
+        <div id="mafiaPrompt" style="font-size:12px;color:#cbd5e1;margin-bottom:8px;">Discuss in chat & tap a player:</div>
+        <div id="mafiaGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"></div>
+        <div id="mafiaStatus" style="font-size:12px;color:#38bdf8;font-weight:bold;"></div>
+      </div>
+    </div>
+    <script>
+    (function() {
+      function bindMafia() {
+        if (typeof socket === 'undefined' || window._mafiaBound) return;
+        window._mafiaBound = true;
+        socket.on('mafiaStart', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('mafiaModal').style.display = 'flex';
+          const roleMsg = d.role === 'MAFIA' ? '🔪 YOU ARE THE MAFIA!<br><span style="font-size:12px;color:#fca5a5;">Pick a target to eliminate & frame someone in chat!</span>'
+            : d.role === 'DOCTOR' ? '🩺 YOU ARE THE DOCTOR!<br><span style="font-size:12px;color:#86efac;">Pick 1 player to protect from the Mafia!</span>'
+            : '😇 YOU ARE A VILLAGER!<br><span style="font-size:12px;color:#93c5fd;">Discuss in chat & vote out the Mafia!</span>';
+          document.getElementById('mafiaRoleBox').innerHTML = roleMsg;
+          const grid = document.getElementById('mafiaGrid'); grid.innerHTML = '';
+          document.getElementById('mafiaStatus').textContent = 'Tap your choice below!';
+          d.players.forEach(p => {
+            const b = document.createElement('button');
+            b.style.cssText = 'background:#1e293b;border:1.5px solid #ef4444;color:#fff;padding:8px;border-radius:12px;font-weight:bold;font-size:12px;cursor:pointer;';
+            b.textContent = '🎯 ' + p.username;
+            b.onclick = () => {
+              socket.emit('mafiaAction', p.id);
+              document.getElementById('mafiaStatus').textContent = '✅ Locked choice: ' + p.username;
+              Array.from(grid.children).forEach(c => c.disabled = true);
+            };
+            grid.appendChild(b);
+          });
+        });
+        socket.on('mafiaEnd', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('mafiaModal').style.display = 'none';
+        });
+      }
+      setInterval(bindMafia, 1200);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('mafiaModal')) {
+                body = body.replace('</body>', MAFIA_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const txt = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (typeof txt === 'string' && txt.trim().toLowerCase() === '!mafia' && srvId) {
+                syncArenaPlayers(srvId);
+                const arena = getArena(srvId);
+                if (arena.players.length < 3) {
+                    io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **3 players in this server** to start **🔪 Mafia Party**!', _serverId: srvId });
+                    return;
+                }
+                const shuffled = [...arena.players].sort(() => Math.random() - 0.5);
+                const mafia = shuffled.at(0), doctor = shuffled.at(1);
+                mafiaByServer.set(srvId, { mafiaId: mafia.id, mafiaName: mafia.username, doctorId: doctor.id, picks: new Map(), total: arena.players.length });
+                const plist = arena.players.map(p => ({ id: p.id, username: p.username }));
+                arena.players.forEach(p => {
+                    const role = p.id === mafia.id ? 'MAFIA' : (p.id === doctor.id ? 'DOCTOR' : 'VILLAGER');
+                    io.to(p.id).emit('mafiaStart', { role, players: plist, _serverId: srvId });
+                });
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: '🔪 **MAFIA PARTY STARTED!** Everyone got a secret role (**Mafia**, **Doctor**, or **Villager**)! Argue in chat & lock your choice in the popup! 👀', _serverId: srvId });
+            }
+        });
+
+        socket.on('mafiaAction', (targetId) => {
+            const srvId = socket.activeServerId;
+            if (!srvId || !mafiaByServer.has(srvId)) return;
+            const st = mafiaByServer.get(srvId);
+            st.picks.set(socket.id, targetId);
+            if (st.picks.size >= st.total) {
+                mafiaByServer.delete(srvId);
+                const tally = {};
+                for (const [uid, tid] of st.picks.entries()) {
+                    if (uid !== st.mafiaId && uid !== st.doctorId) tally[tid] = (tally[tid] || 0) + 1;
+                }
+                let votedId = null, maxV = -1;
+                for (const [id, c] of Object.entries(tally)) { if (c > maxV) { maxV = c; votedId = id; } }
+                const mafiaTarget = st.picks.get(st.mafiaId);
+                const docSave = st.picks.get(st.doctorId);
+                const caught = (votedId === st.mafiaId);
+                const saved = (mafiaTarget && mafiaTarget === docSave);
+                io.to(srvId).emit('mafiaEnd', { _serverId: srvId });
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: caught
+                        ? `🎉 **VILLAGERS WIN!** You voted out the Mafia **${st.mafiaName}**! 🏆`
+                        : (saved ? `🩺 **DOCTOR CLUTCH SAVE!** The Doctor saved the Mafia's target, and **${st.mafiaName}** survived! 🔥`
+                                 : `🔪 **MAFIA WINS!** **${st.mafiaName}** eliminated their target and fooled the village! 💀`),
+                    _serverId: srvId
+                });
+            }
+        });
+    });
 
     return OG_HOSTS;
       

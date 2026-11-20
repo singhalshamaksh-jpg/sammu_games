@@ -1910,7 +1910,7 @@ module.exports = function initMultiServers(app, io) {
           } else if (sound === 'bass808' || sound === 'kick') {
             const osc = ctx.createOscillator(), gain = ctx.createGain();
             osc.type = 'sine';
-            const startF = (sound === 'bass808') ? 135 : 165, endF = (sound === 'bass808') ? 35 : 45, dur = (sound === 'bass808') ? 0.62 : 0.24;
+            const startF = (sound === 'bass808') ? 170 : 185, endF = (sound === 'bass808') ? 28 : 40, dur = (sound === 'bass808') ? 0.55 : 0.22;
             osc.frequency.setValueAtTime(startF, now); osc.frequency.exponentialRampToValueAtTime(endF, now + dur);
             gain.gain.setValueAtTime(0.85, now); gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
             osc.connect(gain); gain.connect(ctx.destination);

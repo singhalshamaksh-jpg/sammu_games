@@ -3111,7 +3111,7 @@ module.exports = function initMultiServers(app, io) {
         <div id="heistActions" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
       </div>
     </div>
-    // === PIECE 2/4: CLIENT SCRIPT & INJECTION ===
+    
     <script>
     (function() {
       function injectCoopPartyBtns() {

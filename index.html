@@ -2204,7 +2204,123 @@
 })();
 </script>
 
- 
+ <div id="moonBakeryModal" style="display:none;position:fixed;inset:0;background:rgba(10,8,28,0.94);z-index:999999;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(10px);">
+  <div style="background:linear-gradient(160deg,#1e1b4b,#4c1d95,#78350f);border:2px solid #fbbf24;border-radius:22px;padding:15px;width:100%;max-width:385px;color:#fff;text-align:center;box-shadow:0 0 35px rgba(251,191,36,0.45);">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:900;font-size:14px;color:#fde047;">🍪🌙 DR. MOON'S GALACTIC BAKERY</span>
+      <button onclick="closeMoonBakery()" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:3px 9px;font-weight:bold;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:11px;color:#e9d5ff;margin:4px 0;">✨ Dedicated to Moon Didi! Pick a cookie flavor & pull the tray out in the <b>GOLDEN ZONE</b>!</div>
+    <div id="mbScoreHud" style="font-size:13px;font-weight:900;color:#67e8f9;margin-bottom:6px;">Baked Score: 0 / 15 pts</div>
+    <div id="mbFlavors" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+      <button onclick="startCookieBake('🍫 Choco-Chip Moon Cookie')" style="background:#451a03;border:1.5px solid #fbbf24;color:#fff;padding:7px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;">🍫 Choco-Chip Moon</button>
+      <button onclick="startCookieBake('🌺 Kesar-Badam Glow Cookie')" style="background:#713f12;border:1.5px solid #fde047;color:#fff;padding:7px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;">🌺 Kesar-Badam Glow</button>
+      <button onclick="startCookieBake('🌹 Rosewater & Pistachio Biscuit')" style="background:#831843;border:1.5px solid #f472b6;color:#fff;padding:7px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;">🌹 Rose-Pista Biscuit</button>
+      <button onclick="startCookieBake('🍵 Matcha-Honey Skin Cookie')" style="background:#064e3b;border:1.5px solid #34d399;color:#fff;padding:7px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;">🍵 Matcha-Honey Glow</button>
+    </div>
+    <div id="mbOvenBox" style="background:#090d16;border:2px solid #f59e0b;border-radius:14px;padding:10px;margin-bottom:8px;">
+      <div id="mbBakingLabel" style="font-size:12px;font-weight:bold;color:#fde047;margin-bottom:6px;">👆 Tap a flavor above to put cookies in the oven!</div>
+      <div style="width:100%;height:26px;background:#1e293b;border-radius:13px;position:relative;overflow:hidden;border:1px solid #475569;">
+        <div style="position:absolute;left:70%;width:18%;height:100%;background:rgba(34,197,94,0.45);border-left:2px dashed #4ade80;border-right:2px dashed #4ade80;"></div>
+        <div id="mbHeatBar" style="width:0%;height:100%;background:linear-gradient(90deg,#38bdf8,#facc15,#ef4444);transition:width 0.04s linear;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:3px;">
+        <span>🥶 Raw</span><span style="color:#4ade80;font-weight:bold;">✨ GOLDEN (70-88%)</span><span>🔥 Burnt</span>
+      </div>
+    </div>
+    <button id="mbPullBtn" onclick="pullCookieTray()" disabled style="width:100%;padding:10px;border:none;border-radius:12px;background:#334155;color:#94a3b8;font-weight:900;font-size:13px;cursor:pointer;">🧤 PULL TRAY FROM OVEN!</button>
+  </div>
+</div>
+<script>
+(function() {
+  let bakeTimer = null, heatPct = 0, currentFlavor = '', myBakeryPts = 0;
+
+  // Add button inside Moon's Galaxy server
+  setInterval(() => {
+    if (window.selectedServerId !== 'srv_moon') return;
+    const anchor = Array.from(document.querySelectorAll('button')).find(b => /castaway island|bluff master|hoop shootout/i.test(b.textContent || ''));
+    if (anchor && anchor.parentElement && !document.getElementById('btnMoonBakery')) {
+      const btn = anchor.cloneNode(true);
+      btn.id = 'btnMoonBakery'; btn.removeAttribute('onclick');
+      btn.textContent = "34. 🍪 Dr. Moon's Bakery";
+      btn.onclick = () => {
+        if (typeof socket !== 'undefined') socket.emit('chatMessage', '!moonbakery');
+      };
+      anchor.parentElement.appendChild(btn);
+    }
+  }, 2500);
+
+  window.closeMoonBakery = function() {
+    if (bakeTimer) { clearInterval(bakeTimer); bakeTimer = null; }
+    document.getElementById('moonBakeryModal').style.display = 'none';
+  };
+
+  window.startCookieBake = function(flavor) {
+    if (bakeTimer) clearInterval(bakeTimer);
+    currentFlavor = flavor;
+    heatPct = 0;
+    document.getElementById('mbBakingLabel').textContent = '🔥 Baking: ' + flavor + '... Watch the heat!';
+    const pullBtn = document.getElementById('mbPullBtn');
+    pullBtn.disabled = false;
+    pullBtn.style.background = 'linear-gradient(90deg,#f59e0b,#10b981)';
+    pullBtn.style.color = '#fff';
+
+    bakeTimer = setInterval(() => {
+      heatPct += 1.8;
+      if (heatPct >= 100) {
+        heatPct = 100;
+        clearInterval(bakeTimer); bakeTimer = null;
+        document.getElementById('mbHeatBar').style.width = '100%';
+        document.getElementById('mbBakingLabel').textContent = '💀 BURNT! Too slow (-2 pts)! Pick another flavor!';
+        myBakeryPts = Math.max(0, myBakeryPts - 2);
+        document.getElementById('mbScoreHud').textContent = 'Baked Score: ' + myBakeryPts + ' / 15 pts';
+        pullBtn.disabled = true; pullBtn.style.background = '#334155';
+      } else {
+        document.getElementById('mbHeatBar').style.width = heatPct + '%';
+      }
+    }, 45);
+  };
+
+  window.pullCookieTray = function() {
+    if (!bakeTimer) return;
+    clearInterval(bakeTimer); bakeTimer = null;
+    const pullBtn = document.getElementById('mbPullBtn');
+    pullBtn.disabled = true; pullBtn.style.background = '#334155';
+
+    if (heatPct >= 70 && heatPct <= 88) {
+      myBakeryPts += 5;
+      document.getElementById('mbBakingLabel').textContent = '🍪✨ GOLDEN PERFECTION! +5 pts for ' + currentFlavor + '!';
+    } else if (heatPct < 70) {
+      document.getElementById('mbBakingLabel').textContent = '🥶 Still raw dough (' + Math.round(heatPct) + '%)! 0 pts!';
+    } else {
+      myBakeryPts = Math.max(0, myBakeryPts - 2);
+      document.getElementById('mbBakingLabel').textContent = '🔥 Overbaked (' + Math.round(heatPct) + '%)! -2 pts!';
+    }
+    document.getElementById('mbScoreHud').textContent = 'Baked Score: ' + myBakeryPts + ' / 15 pts';
+
+    if (myBakeryPts >= 15 && typeof socket !== 'undefined') {
+      socket.emit('chatMessage', '🍪👑 I just baked a Golden Tray of ' + currentFlavor + ' (15/15 pts) in Dr. Moon\'s Galactic Bakery! ✨');
+      myBakeryPts = 0;
+      closeMoonBakery();
+    }
+  };
+
+  // Trigger via chat message '!moonbakery' inside srv_moon
+  const waitMoonSock = setInterval(() => {
+    if (typeof socket !== 'undefined') {
+      clearInterval(waitMoonSock);
+      socket.on('message', (m) => {
+        if (window.selectedServerId === 'srv_moon' && m && typeof m.text === 'string' && m.text.trim().toLowerCase() === '!moonbakery') {
+          myBakeryPts = 0;
+          document.getElementById('mbScoreHud').textContent = 'Baked Score: 0 / 15 pts';
+          document.getElementById('moonBakeryModal').style.display = 'flex';
+        }
+      });
+    }
+  }, 600);
+})();
+</script>
+
 
 
 

@@ -19,6 +19,8 @@ module.exports = function initMultiServers(app, io) {
         srv_zaira:  { id: 'srv_zaira',  name: "🪐 zaira's Orbit",    owner: "zaira",  theme: "cyber",   max: 20, type: "official" },
         srv_shubhi:  { id: 'srv_shubhi',  name: "💖 Shubhi's Castle",   owner: "shubhi",  theme: "crimson", max: 20, type: "official" },
         srv_sid:     { id: 'srv_sid',     name: "🦁 Sid's Kingdom",     owner: "sid",     theme: "gold",    max: 20, type: "official" },
+        srv_antim:   { id: 'srv_antim',   name: "⚡ Antim's PokéArena", owner: "antim",   theme: "pokemon", max: 20, type: "official" },
+
         srv_diamond: { 
             id: 'srv_diamond', 
             name: "💠 DIAMOND SERVER (OG Hosts Only)", 
@@ -69,7 +71,7 @@ module.exports = function initMultiServers(app, io) {
     const activeCounts = {};
     const OG_HOSTS = new Set([
         "sammu", "samaksh", "zoro", "milly", "moon", "heer", "izzan", "ishika", "sus",
-        "sarah", "advait", "ruwii", "zaira", "shubhi", "sid"
+        "sarah", "advait", "ruwii", "zaira", "shubhi", "sid" , "antim"
     ]);
     const MASTER_KEYS = new Set(["#bhaibahencharaontop", "#universalbrother"]);
     const arenas = new Map();
@@ -4216,7 +4218,93 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
-        
+          if (global.OG_HOSTS) global.OG_HOSTS.add("antim");
+    if (Array.isArray(global.AI_BLUFF_BANK)) {
+        const p = global.AI_BLUFF_BANK.push.bind(global.AI_BLUFF_BANK);
+        global.AI_BLUFF_BANK.forEach(x => { if (!BLUFF_PROMPTS.includes(x)) BLUFF_PROMPTS.push(x); });
+        global.AI_BLUFF_BANK.push = (...a) => { a.forEach(x => { if (!BLUFF_PROMPTS.includes(x)) BLUFF_PROMPTS.push(x); }); return p(...a); };
+    }
+    if (Array.isArray(global.AI_IMPOSTER_BANK)) {
+        const p = global.AI_IMPOSTER_BANK.push.bind(global.AI_IMPOSTER_BANK);
+        global.AI_IMPOSTER_BANK.forEach(x => { if (!IMPOSTER_WORDS.includes(x)) IMPOSTER_WORDS.push(x); });
+        global.AI_IMPOSTER_BANK.push = (...a) => { a.forEach(x => { if (!IMPOSTER_WORDS.includes(x)) IMPOSTER_WORDS.push(x); }); return p(...a); };
+    }
+    if (Array.isArray(global.AI_MULTI_ANIME_BANK)) {
+        const p = global.AI_MULTI_ANIME_BANK.push.bind(global.AI_MULTI_ANIME_BANK);
+        global.AI_MULTI_ANIME_BANK.forEach(x => EXTRA_ANIME_QUIZ.push(x));
+        global.AI_MULTI_ANIME_BANK.push = (...a) => { a.forEach(x => EXTRA_ANIME_QUIZ.push(x)); return p(...a); };
+    }
+
+    const SERVER_WP_PACK = `
+    <style>
+      .srv-card.pokemon { border-color:#facc15; background:linear-gradient(90deg,rgba(220,38,38,0.35),rgba(250,204,21,0.25)); box-shadow:0 0 15px rgba(250,204,21,0.4); }
+      body.wp-pokemon { background: radial-gradient(circle at 50% 18%, #dc2626 0%, #991b1b 32%, #f8fafc 33%, #f8fafc 36%, #1e293b 37%, #090d16 100%) !important; }
+      body.wp-cute-babies { background: linear-gradient(160deg, #fbcfe8 0%, #ddd6fe 50%, #bae6fd 100%) !important; }
+      body.wp-royal-queen { background: radial-gradient(circle at top, #831843 0%, #4c0519 45%, #1e1b4b 100%) !important; }
+      body.wp-cyber-aurora { background: radial-gradient(circle at 20% 20%, #0e7490 0%, #1e1b4b 50%, #090d16 100%) !important; }
+      body.wp-golden-empire { background: linear-gradient(155deg, #422006 0%, #713f12 45%, #0f172a 100%) !important; }
+      body.wp-emerald-matrix { background: radial-gradient(circle at center, #064e3b 0%, #022c22 55%, #050a08 100%) !important; }
+      body.wp-crimson-dragon { background: linear-gradient(160deg, #7f1d1d 0%, #450a0a 50%, #0f172a 100%) !important; }
+      body.wp-diamond-frost { background: linear-gradient(145deg, #083344 0%, #1d4ed8 45%, #311042 100%) !important; }
+      #wpFloatingBadge { position:fixed; bottom:54px; right:12px; z-index:99990; background:rgba(15,23,42,0.85); border:1.5px solid #38bdf8; color:#fff; padding:5px 10px; border-radius:999px; font-size:11px; font-weight:bold; pointer-events:none; display:none; }
+    </style>
+    <div id="wpFloatingBadge"></div>
+    <script>
+    (function() {
+      const WP_CLASSES = ['wp-pokemon','wp-cute-babies','wp-royal-queen','wp-cyber-aurora','wp-golden-empire','wp-emerald-matrix','wp-crimson-dragon','wp-diamond-frost'];
+      const MAP = {
+        srv_antim:   { cls: 'wp-pokemon',        label: '⚡ Pokémon Arena WP' },
+        srv_shubhi:  { cls: 'wp-cute-babies',    label: '🍼 Cute Babies Pastel WP' },
+        srv_sus:     { cls: 'wp-royal-queen',    label: '👑 Royal Queen & Princess WP' },
+        srv_samaksh: { cls: 'wp-diamond-frost',  label: '💎 Diamond Frost WP' },
+        srv_advait:  { cls: 'wp-diamond-frost',  label: '⚡ Lightning Citadel WP' },
+        srv_zoro:    { cls: 'wp-emerald-matrix', label: '⚔️ Dojo Emerald WP' },
+        srv_milly:   { cls: 'wp-golden-empire',  label: '👑 Royal Gold Palace WP' },
+        srv_ishika:  { cls: 'wp-golden-empire',  label: '✨ Golden Lounge WP' },
+        srv_ruwii:   { cls: 'wp-golden-empire',  label: '🌺 Sunset Garden WP' },
+        srv_sid:     { cls: 'wp-golden-empire',  label: '🦁 Lion Kingdom WP' },
+        srv_moon:    { cls: 'wp-cyber-aurora',   label: '🌙 Cosmic Galaxy WP' },
+        srv_sarah:   { cls: 'wp-cyber-aurora',   label: '🦋 Butterfly Aurora WP' },
+        srv_zaira:   { cls: 'wp-cyber-aurora',   label: '🪐 Nebula Orbit WP' },
+        srv_heer:    { cls: 'wp-crimson-dragon', label: '🌸 Cherry Crimson WP' },
+        srv_izzan:   { cls: 'wp-crimson-dragon', label: '🔥 Infernal Fortress WP' }
+      };
+      let wpOn = false;
+      function setSrvWp(on) {
+        if (typeof on === 'boolean') wpOn = on;
+        WP_CLASSES.forEach(c => document.body.classList.remove(c));
+        const badge = document.getElementById('wpFloatingBadge');
+        if (!wpOn) { if (badge) badge.style.display = 'none'; return; }
+        const cfg = MAP[window.selectedServerId] || { cls: 'wp-cyber-aurora', label: '🌌 Cosmic Aurora WP' };
+        document.body.classList.add(cfg.cls);
+        if (badge) { badge.textContent = cfg.label; badge.style.display = 'block'; }
+      }
+      setInterval(() => {
+        const btn = Array.from(document.querySelectorAll('button')).find(b => /🌌\s*wp|\bwp\b/i.test(b.textContent || ''));
+        if (btn && !btn.dataset.srvWp) {
+          btn.dataset.srvWp = '1';
+          btn.addEventListener('click', () => setSrvWp(!wpOn));
+        }
+      }, 2500);
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          if (typeof socket !== 'undefined') socket.on('serverAccessGranted', (s) => { window.selectedServerId = s.id; setSrvWp(true); });
+        }, 800);
+      });
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('wpFloatingBadge')) {
+                body = body.replace('</body>', SERVER_WP_PACK + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+  
     return OG_HOSTS;
       
 };

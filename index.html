@@ -2725,29 +2725,55 @@
 </script>
 
 <script>
-setInterval(function() {
-  if (typeof socket !== 'undefined' && !window._svAllBooted) {
+(function() {
+  function bootSvListener() {
+    if (typeof socket === 'undefined' || window._svAllBooted) return;
     window._svAllBooted = true;
+
     socket.on('svDeliverAll', function(pkg) {
       if (!document.getElementById('svModal')) {
-        const d = document.createElement('div'); d.innerHTML = pkg.html; document.body.appendChild(d);
+        const d = document.createElement('div');
+        d.innerHTML = pkg.html;
+        document.body.appendChild(d);
         new Function(pkg.js)();
       }
+      if (window._svOpenWhenReady && typeof window.openSammuVerseModal === 'function') {
+        window._svOpenWhenReady = false;
+        window.openSammuVerseModal();
+      }
     });
-  }
-  if (!document.getElementById('svDiscoBanner')) {
-    const old = document.getElementById('svGuaranteedBtn'); if (old) old.remove();
-    const disco = Array.from(document.querySelectorAll('button')).find(b => /disco mode/i.test(b.textContent || ''));
-    if (disco && disco.parentElement && disco.parentElement.parentNode) {
-      const bar = document.createElement('div'); bar.id = 'svDiscoBanner';
-      bar.innerHTML = '<div><b style="font-size:13px;color:#fde047;">⚔️ SAMMUVERSE PVP & GRIND ARENA</b><br><span style="font-size:10px;color:#e9d5ff;">21 Powers • BloxFruits Cutscenes • Dojo • Pets</span></div><span style="background:#facc15;color:#111;font-weight:900;font-size:11px;padding:5px 11px;border-radius:10px;">PLAY ⚡</span>';
-      bar.onclick = function() { if (typeof openSammuVerseModal === 'function') openSammuVerseModal(); };
-      disco.parentElement.parentNode.insertBefore(bar, disco.parentElement.nextSibling);
-    }
-  }
-}, 1000);
-</script>
 
+    // Ask server immediately for the SammuVerse UI (don't wait for joinRoom!)
+    socket.emit('svRequestBundle');
+  }
+
+  setInterval(function() {
+    bootSvListener();
+    if (!document.getElementById('svDiscoBanner')) {
+      const old = document.getElementById('svGuaranteedBtn');
+      if (old) old.remove();
+      const disco = Array.from(document.querySelectorAll('button')).find(b => /disco mode/i.test(b.textContent || ''));
+      if (disco && disco.parentElement && disco.parentElement.parentNode) {
+        const bar = document.createElement('div');
+        bar.id = 'svDiscoBanner';
+        bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:linear-gradient(90deg,#3b0764,#701a75,#1e1b4b);border:2px solid #facc15;border-radius:14px;padding:7px 12px;margin:6px auto;max-width:440px;width:96%;color:#fff;box-shadow:0 0 16px rgba(250,204,21,0.4);cursor:pointer;';
+        bar.innerHTML = '<div><b style="font-size:13px;color:#fde047;">⚔️ SAMMUVERSE PVP & GRIND ARENA</b><br><span style="font-size:10px;color:#e9d5ff;">21 Powers  • Dojo • Pets</span></div><span style="background:#facc15;color:#111;font-weight:900;font-size:11px;padding:5px 11px;border-radius:10px;">PLAY ⚡</span>';
+        bar.onclick = function() {
+          if (typeof window.openSammuVerseModal === 'function') {
+            window.openSammuVerseModal();
+          } else if (typeof socket !== 'undefined') {
+            window._svOpenWhenReady = true;
+            socket.emit('svRequestBundle');
+          } else {
+            alert('Connecting to server... tap PLAY again in 1 second!');
+          }
+        };
+        disco.parentElement.parentNode.insertBefore(bar, disco.parentElement.nextSibling);
+      }
+    }
+  }, 500);
+})();
+</script>
 
 
 

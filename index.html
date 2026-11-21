@@ -2318,191 +2318,334 @@
       });
     }
   }, 600);
-})();
-</script>
-<!-- === ⚔️ SAMMUVERSE PVP ARENA — HTML PIECE 1A/2 (STYLES & MODAL) === -->
-<style>
-  #svModal { display:none; position:fixed; inset:0; background:rgba(6,8,18,0.94); z-index:999999; align-items:center; justify-content:center; padding:10px; backdrop-filter:blur(10px); font-family:inherit; }
-  #svCard { background:linear-gradient(155deg,#0f172a,#1e1b4b,#311042); border:2px solid #a855f7; border-radius:22px; padding:14px; width:100%; max-width:420px; max-height:92vh; overflow-y:auto; color:#fff; box-shadow:0 0 38px rgba(168,85,247,0.55); text-align:center; }
-  .sv-tabs { display:flex; gap:6px; margin:8px 0; }
-  .sv-tab { flex:1; padding:7px; border-radius:10px; border:1px solid #a855f7; background:#1e1b4b; color:#fff; font-weight:bold; font-size:11px; cursor:pointer; }
-  .sv-tab.active { background:#a855f7; color:#fff; }
-  .sv-powers { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0; }
-  .sv-pwr-btn { background:rgba(255,255,255,0.07); border:1.5px solid #475569; border-radius:12px; padding:8px 6px; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; text-align:left; transition:0.15s; }
-  .sv-pwr-btn.selected { border-color:#facc15; background:rgba(250,204,21,0.2); box-shadow:0 0 12px rgba(250,204,21,0.35); }
-  .sv-hp-wrap { background:#090d16; border:1px solid #475569; border-radius:10px; padding:6px; margin-bottom:6px; text-align:left; }
-  .sv-hp-bar { height:10px; border-radius:6px; background:linear-gradient(90deg,#22c55e,#4ade80); transition:width 0.3s; }
-  .sv-skills { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; }
-  .sv-skill-btn { background:linear-gradient(145deg,#3b0764,#1e1b4b); border:1.5px solid #c084fc; border-radius:12px; padding:9px 7px; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; text-align:left; }
-  .sv-skill-btn:disabled { opacity:0.45; cursor:not-allowed; }
-  .sv-skill-btn.ult { border-color:#facc15; background:linear-gradient(145deg,#713f12,#4c0519); }
-  .sv-log-item { background:rgba(255,255,255,0.06); border-left:3px solid #facc15; border-radius:8px; padding:6px 8px; margin-bottom:5px; font-size:11px; text-align:left; }
-</style>
-
-<div id="svModal">
-  <div id="svCard">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-weight:900;font-size:16px;color:#e879f9;">⚔️ SAMMUVERSE PVP</span>
-      <button onclick="document.getElementById('svModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕</button>
-    </div>
-
-    <div id="svLobbyView">
-      <div class="sv-tabs">
-        <button class="sv-tab active" id="svTabFight" onclick="switchSvTab('fight')">⚡ Powers & Challenge</button>
-        <button class="sv-tab" id="svTabLogs" onclick="switchSvTab('logs')">📜 PvP Battle Logs</button>
-      </div>
-
-      <div id="svFightPanel">
-        <div style="font-size:11px;color:#cbd5e1;margin-bottom:4px;">1️⃣ Pick Your Cosmic / Elemental Power:</div>
-        <div class="sv-powers" id="svPowerGrid"></div>
-        <div id="svPowerPreview" style="background:rgba(168,85,247,0.16);border:1px solid #c084fc;border-radius:10px;padding:6px;font-size:11px;color:#fde047;margin-bottom:8px;">Select a power to inspect its 4 skills!</div>
-
-        <div style="font-size:11px;color:#cbd5e1;margin-bottom:4px;">2️⃣ Choose Opponent in Lobby:</div>
-        <div style="display:flex;gap:6px;margin-bottom:6px;">
-          <select id="svOpponentSelect" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:12px;">
-            <option value="BOT_SENSEI">🤖 Bot Sensei (Solo Training +40🪙)</option>
-          </select>
-          <button onclick="sendSvChallenge()" style="padding:8px 14px;border:none;border-radius:10px;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">⚔️ FIGHT!</button>
-        </div>
-        <div id="svIncomingBox" style="display:none;background:rgba(250,204,21,0.2);border:1.5px solid #facc15;border-radius:12px;padding:8px;margin-top:6px;"></div>
-      </div>
-
-      <div id="svLogsPanel" style="display:none;max-height:310px;overflow-y:auto;">
-        <div id="svLogList" style="font-size:11px;color:#94a3b8;">Loading PvP Battle Register...</div>
-      </div>
-    </div>
-
-    <div id="svBattleView" style="display:none;margin-top:8px;">
-      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;color:#38bdf8;margin-bottom:6px;">
-        <span id="svTurnBadge">Turn 1</span>
-        <span id="svBattleTimer" style="color:#fde047;">⏳ 15s</span>
-      </div>
-
-      <div class="sv-hp-wrap">
-        <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;margin-bottom:3px;">
-          <span id="svOppLabel" style="color:#f87171;">Opponent</span>
-          <span id="svOppHpText">200 / 200 HP</span>
-        </div>
-        <div class="sv-hp-bar" id="svOppHpBar" style="width:100%;background:linear-gradient(90deg,#dc2626,#f87171);"></div>
-      </div>
-
-      <div class="sv-hp-wrap">
-        <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;margin-bottom:3px;">
-          <span id="svMeLabel" style="color:#4ade80;">You</span>
-          <span id="svMeHpText">200 / 200 HP</span>
-        </div>
-        <div class="sv-hp-bar" id="svMeHpBar" style="width:100%;"></div>
-      </div>
-
-      <div id="svCombatFeed" style="background:#090d16;border:1px solid #334155;border-radius:10px;padding:7px;font-size:11px;color:#e2e8f0;min-height:46px;margin:6px 0;">Choose your skill below!</div>
-      <div class="sv-skills" id="svSkillButtons"></div>
-    </div>
-  </div>
-</div>
-<!-- === ⚔️ SAMMUVERSE PVP ARENA — HTML PIECE 1B/2 (CLIENT SCRIPT) === -->
+})
+<!-- === ⚔️ SAMMUVERSE CLIENT SCRIPT — PIECE 1/5 (POWERS & PETS) === -->
 <script>
 (function() {
   const SV_POWERS = {
-    fire:       { icon: '🔥', name: 'Fire Inferno',    skills: ['Fireball (28 DMG)', 'Flame Tornado (42 DMG)', 'Heat Shield (Block 70%)', '☀️ Solar Flare ULT (68 DMG)'] },
-    water:      { icon: '🌊', name: 'Water Tsunami',   skills: ['Hydro Whip (26 DMG)', 'Whirlpool Trap (35 DMG + Slow)', 'Water Mirror (Reflect 50%)', '🌊 Abyssal Wave ULT (65 DMG)'] },
-    rubber:     { icon: '👒', name: 'Rubber Gear 5',   skills: ['Gum-Gum Pistol (29 DMG)', 'Gatling Barrage (44 DMG)', 'Elastic Bounce (Dodge +15 HP)', '👊 Bajrang Fist ULT (72 DMG)'] },
-    space:      { icon: '🌌', name: 'Space Warp',      skills: ['Spatial Slash (30 DMG)', 'Void Rift (40 DMG)', 'Teleport Dodge (Evade Hit)', '🌌 Dimension Collapse ULT (68 DMG)'] },
-    time:       { icon: '⏳', name: 'Time Chrono',     skills: ['Chrono Strike (25 DMG)', 'Age Decay (36 DMG)', 'Rewind Heal (+35 HP)', '⏸️ Time Stop ULT (55 DMG + Stun)'] },
-    gravity:    { icon: '🪐', name: 'Gravity Force',   skills: ['Crush Slam (30 DMG)', 'Meteor Drop (45 DMG)', 'Gravity Repulse (Block 75%)', '☄️ Planetary Devastation ULT (70 DMG)'] },
-    blackhole:  { icon: '🕳️', name: 'Black Hole',      skills: ['Dark Pull (27 DMG)', 'Event Horizon (38 DMG + Drain)', 'Matter Absorb (+25 HP & Shield)', '🕳️ Supermassive Crunch ULT (72 DMG)'] },
-    antimatter: { icon: '⚛️', name: 'Anti-Matter',     skills: ['Positron Beam (32 DMG)', 'Chain Annihilation (48 DMG)', 'Phase Shift (Evade Hit)', '💥 Big Bang Erasure ULT (78 DMG)'] },
-    lightning:  { icon: '⚡', name: 'Lightning Raijin', skills: ['Thunder Bolt (30 DMG)', 'Speed Blitz (43 DMG)', 'Static Armor (Block 65%)', '🐉 Kirin Sky Dragon ULT (69 DMG)'] },
-    ice:        { icon: '❄️', name: 'Absolute Ice',    skills: ['Ice Lance (27 DMG)', 'Frostbite (36 DMG)', 'Glacier Wall (Block 80%)', '🧊 Ice Age Freeze ULT (58 DMG + Stun)'] }
+    fire:       { icon: '🔥', name: 'Fire Inferno',     skills: ['Fireball (28 DMG)', 'Flame Tornado (42 DMG)', 'Heat Shield (Block 70%)', '☀️ Solar Flare ULT (68 DMG)'] },
+    water:      { icon: '🌊', name: 'Water Tsunami',    skills: ['Hydro Whip (26 DMG)', 'Whirlpool Trap (35 DMG)', 'Water Mirror (Reflect 50%)', '🌊 Abyssal Wave ULT (65 DMG)'] },
+    rubber:     { icon: '👒', name: 'Rubber Gear 5',    skills: ['Gum-Gum Pistol (29 DMG)', 'Gatling Barrage (44 DMG)', 'Elastic Bounce (Dodge +15 HP)', '👊 Bajrang Fist ULT (72 DMG)'] },
+    space:      { icon: '🌌', name: 'Space Warp',       skills: ['Spatial Slash (30 DMG)', 'Void Rift (40 DMG)', 'Teleport Dodge (Evade Hit)', '🌌 Dimension Collapse ULT (68 DMG)'] },
+    time:       { icon: '⏳', name: 'Time Chrono',      skills: ['Chrono Strike (25 DMG)', 'Age Decay (36 DMG)', 'Rewind Heal (+35 HP)', '⏸️ Time Stop ULT (55 DMG + Stun)'] },
+    gravity:    { icon: '🪐', name: 'Gravity Force',    skills: ['Crush Slam (30 DMG)', 'Meteor Drop (45 DMG)', 'Gravity Repulse (Block 75%)', '☄️ Planetary Devastation ULT (70 DMG)'] },
+    blackhole:  { icon: '🕳️', name: 'Black Hole',       skills: ['Dark Pull (27 DMG)', 'Event Horizon (38 DMG + Drain)', 'Matter Absorb (+25 HP & Shield)', '🕳️ Supermassive Crunch ULT (72 DMG)'] },
+    antimatter: { icon: '⚛️', name: 'Anti-Matter',      skills: ['Positron Beam (32 DMG)', 'Chain Annihilation (48 DMG)', 'Phase Shift (Evade Hit)', '💥 Big Bang Erasure ULT (78 DMG)'] },
+    lightning:  { icon: '⚡', name: 'Lightning Raijin',  skills: ['Thunder Bolt (30 DMG)', 'Speed Blitz (43 DMG)', 'Static Armor (Block 65%)', '🐉 Kirin Sky Dragon ULT (69 DMG)'] },
+    ice:        { icon: '❄️', name: 'Absolute Ice',     skills: ['Ice Lance (27 DMG)', 'Frostbite (36 DMG)', 'Glacier Wall (Block 80%)', '🧊 Ice Age Freeze ULT (58 DMG + Stun)'] },
+    blood:      { icon: '🩸', name: 'Blood Demon',      skills: ['Crimson Slash (29 DMG)', 'Vampire Bite (34 DMG + 18 HP)', 'Blood Mist (Evade Hit)', '🌕 Moonlit Massacre ULT (70 DMG)'] },
+    shadow:     { icon: '🌑', name: 'Shadow Monarch',   skills: ['Shadow Dagger (31 DMG)', 'Arise Army (45 DMG)', 'Umbral Dodge (Evade Hit)', '👑 Monarch Domain ULT (74 DMG)'] },
+    sun:        { icon: '☀️', name: 'Sun God Nika',     skills: ['Dawn Whip (30 DMG)', 'Sun Gatling (44 DMG)', 'Drum Heartbeat (+30 HP)', '🔥 Bajrang Dawn ULT (75 DMG)'] },
+    venom:      { icon: '☠️', name: 'Venom Hydra',      skills: ['Acid Spit (28 DMG)', 'Toxic Fang (42 DMG)', 'Shed Skin (+25 HP & Shield)', '🐍 Hydra Plague ULT (69 DMG)'] },
+    storm:      { icon: '🌪️', name: 'Storm Dragon',     skills: ['Gale Blade (29 DMG)', 'Tornado Slam (43 DMG)', 'Wind Wall (Block 75%)', '⚡ Tempest Roar ULT (71 DMG)'] },
+    zoro:       { cost: 2000, icon: '⚔️', name: 'Zoro (3-Sword King)',       skills: ['Oni Giri (38 DMG)', 'Dragon Twister (54 DMG)', 'King Haki Parry (Block 80%)', '👹 Ashura 9-Sword ULT (90 DMG)'] },
+    sus:        { cost: 2000, icon: '👀', name: 'Sus (Shadow Imposter)',     skills: ['Vent Ambush (38 DMG)', 'Sabotage Strike (52 DMG)', 'Fake Task Evade (+30 HP)', '🚨 Emergency Eject ULT (88 DMG + Stun)'] },
+    moon:       { cost: 4000, icon: '🌙', name: 'Dr. Moon (Lunar Empress)',  skills: ['🌙 Lunar Scalpel (42 DMG)', '🌿 Sanjeevani Surge (56 DMG + 15 HP)', '🩺 Doctor Elixir (Evade +60 HP)', '🌕 Full Moon Eclipse ULT (95 DMG + Stun)'] },
+    mahavishnu: { secret: true, icon: '🔱', name: 'Sammu/Samaksh (MahaVishnu)', skills: ['🪈 Prem Bansuri (50 DMG + Stun)', '☸️ Sudarshana Chakra (75 True DMG)', '🛡️ Vaikuntha Kavach (Evade +55 HP)', '🌌 Vishwaroopa ULT (140 DMG + Stun)'] },
+    millyyt:    { secret: true, icon: '🎬', name: 'Milly (YouTube Queen)',      skills: ['🔔 Subscribe Strike (38 DMG)', '📈 Viral Algorithm (54 DMG)', '🚫 Demonetize (Reflect 80% DMG)', '▶️ Golden Play Button ULT (90 DMG)'] },
+    ishikastar: { secret: true, icon: '✨', name: 'Ishika (Celestial Empress)', skills: ['💫 Starfall Beam (38 DMG)', '💥 Supernova Burst (54 DMG)', '🌸 Astral Blessing (Evade +35 HP)', '🌠 Empress Meteor ULT (90 DMG)'] }
   };
 
-  let selectedPower = 'fire';
-  let latestPlayers = [];
+  const SV_PETS = [
+    { id: 'mochi',    name: '🐱 Mochi Spirit',      desc: 'Scratches foe for +10 DMG/turn', cost: 200 },
+    { id: 'tommy',    name: '🐶 Tommy Guardian',    desc: 'Heals you for +10 HP/turn',     cost: 200 },
+    { id: 'garuda',   name: '🦅 Garuda Eagle',      desc: 'Strikes for +22 DMG/turn',      cost: 500 },
+    { id: 'sheshnag', name: '🐍 Sheshnag Serpent',  desc: '15% Block + 18 Poison/turn',    cost: 2500 }
+  ];
 
-  function injectSammuVerseBtn() {
-    if (document.getElementById('openSammuVerseBtn')) return;
-    const anchor = document.getElementById('openPhonkDjBtn') || document.getElementById('openChefBtn') || document.getElementById('openMakeupBtn') ||
-      Array.from(document.querySelectorAll('button, a, div[onclick]')).find(el => el.children.length === 0 && /jam|🎹|dj/i.test(el.textContent || ''));
-    if (anchor && anchor.parentNode) {
-      const btn = anchor.cloneNode(true);
-      btn.id = 'openSammuVerseBtn';
-      btn.removeAttribute('onclick');
-      btn.textContent = '⚔️ SammuVerse';
-      btn.onclick = function(e) {
-        e.preventDefault(); e.stopPropagation();
-        openSammuVerseModal();
-      };
-      anchor.parentNode.insertBefore(btn, anchor.nextSibling);
-    }
+  let selectedPower = 'fire', latestPlayers = [], sfxMuted = false, svAudio = null;
+  let cutAnimId = null, cutTimeout = null;
+  let myProfile = { coins: 150, atkLv: 0, hpLv: 0, wins: 0, streak: 0, hasStone: false, unlockedPowers: [], ownedPets: [], activePet: null };
+  // === PIECE 2/5: ZERO-FILE WEB AUDIO SFX ===
+  window.toggleSvSfx = function() {
+    sfxMuted = !sfxMuted;
+    const btn = document.getElementById('svMuteBtn');
+    if (btn) btn.textContent = sfxMuted ? '🔇' : '🔊';
+  };
+
+  function playSvSfx(type) {
+    if (sfxMuted) return;
+    try {
+      if (!svAudio) svAudio = new (window.AudioContext || window.webkitAudioContext)();
+      if (svAudio.state === 'suspended') svAudio.resume();
+      const now = svAudio.currentTime;
+      if (type === 'flute') {
+        [523.25, 587.33, 659.25, 783.99, 880.00].forEach((freq, i) => {
+          const o = svAudio.createOscillator(), g = svAudio.createGain();
+          o.type = 'sine'; o.frequency.setValueAtTime(freq, now + i * 0.09);
+          g.gain.setValueAtTime(0.01, now + i * 0.09);
+          g.gain.linearRampToValueAtTime(0.18, now + i * 0.09 + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.22);
+          o.connect(g); g.connect(svAudio.destination); o.start(now + i * 0.09); o.stop(now + i * 0.09 + 0.23);
+        });
+      } else if (type === 'ult' || type === 'awaken') {
+        const o = svAudio.createOscillator(), g = svAudio.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(type === 'awaken' ? 220 : 140, now);
+        o.frequency.exponentialRampToValueAtTime(type === 'awaken' ? 880 : 35, now + 0.55);
+        g.gain.setValueAtTime(0.28, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
+        o.connect(g); g.connect(svAudio.destination); o.start(now); o.stop(now + 0.6);
+      } else if (type === 'shield') {
+        const o = svAudio.createOscillator(), g = svAudio.createGain();
+        o.type = 'triangle'; o.frequency.setValueAtTime(660, now); o.frequency.exponentialRampToValueAtTime(990, now + 0.25);
+        g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        o.connect(g); g.connect(svAudio.destination); o.start(now); o.stop(now + 0.3);
+      } else if (type === 'win') {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+          const o = svAudio.createOscillator(), g = svAudio.createGain();
+          o.type = 'triangle'; o.frequency.setValueAtTime(f, now + i * 0.08);
+          g.gain.setValueAtTime(0.2, now + i * 0.08); g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.25);
+          o.connect(g); g.connect(svAudio.destination); o.start(now + i * 0.08); o.stop(now + i * 0.08 + 0.26);
+        });
+      } else {
+        const o = svAudio.createOscillator(), g = svAudio.createGain();
+        o.type = 'square'; o.frequency.setValueAtTime(320, now); o.frequency.exponentialRampToValueAtTime(65, now + 0.16);
+        g.gain.setValueAtTime(0.22, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        o.connect(g); g.connect(svAudio.destination); o.start(now); o.stop(now + 0.19);
+      }
+    } catch (e) {}
   }
-  setInterval(injectSammuVerseBtn, 1400);
+  // === PIECE 3/5: BLOX FRUITS GLOBAL CUTSCENE ENGINE + SKIP ===
+  window.skipSvCutscene = function() {
+    if (cutAnimId) { cancelAnimationFrame(cutAnimId); cutAnimId = null; }
+    if (cutTimeout) { clearTimeout(cutTimeout); cutTimeout = null; }
+    const ov = document.getElementById('svCutsceneOverlay');
+    if (ov) ov.style.display = 'none';
+  };
+
+  function playBloxFruitCutscene(data) {
+    window.skipSvCutscene();
+    const ov = document.getElementById('svCutsceneOverlay');
+    const c = document.getElementById('svCutsceneCanvas');
+    const cap = document.getElementById('svCutsceneCaption');
+    if (!ov || !c) return;
+
+    ov.style.display = 'flex';
+    cap.textContent = data.caption || '⚡ ULTIMATE TECHNIQUE!';
+    playSvSfx(data.sfx || 'ult');
+
+    const ctx = c.getContext('2d');
+    let frame = 0;
+    const theme = data.theme || 'cosmic';
+
+    function drawFrame() {
+      frame++;
+      ctx.clearRect(0, 0, 400, 230);
+
+      // Background colors by power theme
+      const bgMap = {
+        chakra: ['#1e1b4b', '#b45309'],
+        bansuri: ['#064e3b', '#0284c7'],
+        vishwaroopa: ['#090d16', '#7e22ce'],
+        moon: ['#0f172a', '#be123c'],
+        zoro: ['#022c22', '#15803d'],
+        awaken: ['#422006', '#dc2626'],
+        cosmic: ['#1e1b4b', '#9333ea']
+      };
+      const pair = bgMap[theme] || bgMap.cosmic;
+      const grad = ctx.createRadialGradient(200, 115, 15, 200, 115, 210);
+      grad.addColorStop(0, pair[1]); grad.addColorStop(1, pair);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 400, 230);
+
+      // Anime manga radial speed lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 24; i++) {
+        const ang = (i * Math.PI / 12) + (frame * 0.04);
+        ctx.beginPath();
+        ctx.moveTo(200 + Math.cos(ang) * 45, 115 + Math.sin(ang) * 45);
+        ctx.lineTo(200 + Math.cos(ang) * 230, 115 + Math.sin(ang) * 230);
+        ctx.stroke();
+      }
+
+      // Custom Signature Animations
+      if (theme === 'chakra') {
+        ctx.save();
+        ctx.translate(200, 115);
+        ctx.rotate(frame * 0.28);
+        ctx.strokeStyle = '#fde047'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(0, 0, 48 + Math.sin(frame * 0.2) * 5, 0, Math.PI * 2); ctx.stroke();
+        for (let k = 0; k < 12; k++) {
+          const a = (k * Math.PI) / 6;
+          ctx.beginPath(); ctx.moveTo(Math.cos(a) * 48, Math.sin(a) * 48); ctx.lineTo(Math.cos(a + 0.2) * 68, Math.sin(a + 0.2) * 68); ctx.stroke();
+        }
+        ctx.restore();
+        ctx.font = '44px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('☸️', 200, 115);
+      } else if (theme === 'zoro') {
+        ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(40, 30); ctx.lineTo(360, 200); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(360, 30); ctx.lineTo(40, 200); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(20, 115); ctx.lineTo(380, 115); ctx.stroke();
+        ctx.font = '48px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('👹⚔️', 200, 115);
+      } else if (theme === 'moon') {
+        ctx.fillStyle = frame > 45 ? '#f43f5e' : '#fef08a';
+        ctx.beginPath(); ctx.arc(200, 105, 52, 0, Math.PI * 2); ctx.fill();
+        ctx.font = '44px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🌙🩺', 200, 115);
+      } else {
+        ctx.font = '56px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const scale = 1 + Math.sin(frame * 0.25) * 0.15;
+        ctx.save(); ctx.translate(200, 110); ctx.scale(scale, scale);
+        ctx.fillText(data.emoji || '⚡', 0, 0);
+        ctx.restore();
+      }
+
+      // Impact Flash Frame on hit
+      if (frame === 48 || frame === 49) {
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillRect(0, 0, 400, 230);
+      }
+
+      // Big Manga Banner Text
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 4;
+      ctx.font = '900 18px Impact, sans-serif'; ctx.textAlign = 'center';
+      const title = (data.title || 'COSMIC IMPACT!').toUpperCase();
+      ctx.strokeText(title, 200, 208);
+      ctx.fillText(title, 200, 208);
+
+      cutAnimId = requestAnimationFrame(drawFrame);
+    }
+    drawFrame();
+    cutTimeout = setTimeout(window.skipSvCutscene, 2300);
+  }
+  // === PIECE 4/5: HERO BANNER, DOJO SHOP & POWER RENDERER ===
+  function injectHeroBanner() {
+    if (document.getElementById('svHeroLauncher')) return;
+    const chatBox = document.querySelector('#chatBox, #messages, .chat-messages, [id*="chat"]');
+    if (!chatBox || !chatBox.parentNode) return;
+    const banner = document.createElement('div');
+    banner.id = 'svHeroLauncher';
+    banner.innerHTML =
+      '<div style="text-align:left;">' +
+        '<div style="font-weight:900;font-size:13px;color:#fde047;">⚔️ SAMMUVERSE PVP & GRIND ARENA</div>' +
+        '<div style="font-size:10px;color:#e9d5ff;">21 Powers • BloxFruits Cutscenes • Dojo • Pets</div>' +
+      '</div>' +
+      '<span style="background:#facc15;color:#111;font-weight:900;font-size:11px;padding:5px 10px;border-radius:10px;">PLAY ⚡</span>';
+    banner.onclick = openSammuVerseModal;
+    chatBox.parentNode.insertBefore(banner, chatBox);
+  }
+  setInterval(injectHeroBanner, 1200);
 
   window.openSammuVerseModal = function() {
     document.getElementById('svModal').style.display = 'flex';
-    renderSvPowers();
-    refreshOpponentDropdown();
-    if (typeof socket !== 'undefined') socket.emit('svRequestLogs');
+    renderSvPowers(); renderDojoShop(); refreshOpponentDropdown();
+    if (typeof socket !== 'undefined') { socket.emit('svGetStats'); socket.emit('svRequestLogs'); }
   };
 
   window.switchSvTab = function(tab) {
-    document.getElementById('svTabFight').classList.toggle('active', tab === 'fight');
-    document.getElementById('svTabLogs').classList.toggle('active', tab === 'logs');
-    document.getElementById('svFightPanel').style.display = tab === 'fight' ? 'block' : 'none';
-    document.getElementById('svLogsPanel').style.display = tab === 'logs' ? 'block' : 'none';
+    ['fight', 'dojo', 'logs'].forEach(t => {
+      document.getElementById('svTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', tab === t);
+      document.getElementById('sv' + t.charAt(0).toUpperCase() + t.slice(1) + 'Panel').style.display = tab === t ? 'block' : 'none';
+    });
     if (tab === 'logs' && typeof socket !== 'undefined') socket.emit('svRequestLogs');
+    if (tab === 'dojo') renderDojoShop();
   };
+
+  function getRankTitle(wins) {
+    if (wins >= 50) return '🔱 Supreme Avatar';
+    if (wins >= 30) return '👑 Dimensional Emperor';
+    if (wins >= 15) return '🔥 Cosmic Warlord';
+    if (wins >= 5)  return '⚔️ Rogue Shinobi';
+    return '🌱 Academy Rookie';
+  }
 
   function renderSvPowers() {
     const grid = document.getElementById('svPowerGrid');
     if (!grid) return;
     grid.innerHTML = '';
+    const unlocked = myProfile.unlockedPowers || [];
     Object.entries(SV_POWERS).forEach(([key, p]) => {
+      if (p.secret && !unlocked.includes(key)) return;
+      const isCoinLocked = p.cost && !unlocked.includes(key);
       const b = document.createElement('button');
-      b.className = 'sv-pwr-btn' + (selectedPower === key ? ' selected' : '');
-      b.textContent = p.icon + ' ' + p.name;
+      b.className = 'sv-pwr-btn' + (selectedPower === key ? ' selected' : '') + (isCoinLocked ? ' locked-coin' : '');
+      if (p.secret) b.style.borderColor = '#facc15';
+      b.textContent = isCoinLocked ? ('🔒 ' + p.icon + ' ' + p.name + ' (' + p.cost + '🪙)') : (p.icon + ' ' + p.name);
       b.onclick = () => {
-        selectedPower = key;
-        renderSvPowers();
+        if (isCoinLocked) {
+          if (confirm('Unlock ' + p.icon + ' ' + p.name + ' permanently for ' + p.cost + ' Coins?')) socket.emit('svBuyPower', key);
+          return;
+        }
+        selectedPower = key; renderSvPowers();
       };
       grid.appendChild(b);
     });
-    const cur = SV_POWERS[selectedPower];
+    const cur = SV_POWERS[selectedPower] || SV_POWERS.fire;
     document.getElementById('svPowerPreview').innerHTML =
-      '<b>' + cur.icon + ' ' + cur.name + ' Skills:</b><br>' + cur.skills.join(' • ');
+      '<b>' + cur.icon + ' ' + cur.name + ' (+' + (myProfile.atkLv * 5) + ' ATK | +' + (myProfile.hpLv * 25) + ' HP):</b><br>' + cur.skills.join(' • ');
   }
 
+  function renderDojoShop() {
+    const hc = document.getElementById('svHeaderCoins');
+    if (hc) hc.textContent = '🪙 ' + myProfile.coins;
+    const rb = document.getElementById('svRankBanner');
+    if (rb) rb.textContent = 'Rank: ' + getRankTitle(myProfile.wins) + ' | Wins: ' + myProfile.wins + ' | Streak: ' + myProfile.streak + '🔥';
+    document.getElementById('svAtkDesc').textContent = 'Lv.' + myProfile.atkLv + '/15 (+' + (myProfile.atkLv * 5) + ' Bonus DMG)';
+    document.getElementById('svBuyAtkBtn').textContent = myProfile.atkLv >= 15 ? 'MAX' : '150🪙';
+    document.getElementById('svHpDesc').textContent = 'Lv.' + myProfile.hpLv + '/15 (+' + (myProfile.hpLv * 25) + ' Bonus HP)';
+    document.getElementById('svBuyHpBtn').textContent = myProfile.hpLv >= 15 ? 'MAX' : '150🪙';
+    document.getElementById('svBuyStoneBtn').textContent = myProfile.hasStone ? 'OWNED ✅' : '1000🪙';
+    document.getElementById('svBuyStoneBtn').disabled = myProfile.hasStone;
+
+    const petBox = document.getElementById('svPetShopList');
+    if (!petBox) return;
+    petBox.innerHTML = '';
+    SV_PETS.forEach(pet => {
+      const owned = (myProfile.ownedPets || []).includes(pet.id);
+      const active = myProfile.activePet === pet.id;
+      const row = document.createElement('div');
+      row.className = 'sv-shop-card';
+      row.innerHTML = '<div><b>' + pet.name + '</b><br><span style="color:#cbd5e1;">' + pet.desc + '</span></div>';
+      const btn = document.createElement('button');
+      btn.style.cssText = 'background:' + (active ? '#16a34a' : (owned ? '#0284c7' : '#7c3aed')) + ';border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;';
+      btn.textContent = active ? 'EQUIPPED ✅' : (owned ? 'EQUIP' : pet.cost + '🪙');
+      btn.onclick = () => socket.emit('svPetAction', pet.id);
+      row.appendChild(btn); petBox.appendChild(row);
+    });
+  }
+  // === PIECE 5/5: SOCKET BINDINGS & CLOSING SCRIPT ===
   function refreshOpponentDropdown() {
     const sel = document.getElementById('svOpponentSelect');
     if (!sel) return;
     const prev = sel.value;
-    sel.innerHTML = '<option value="BOT_SENSEI">🤖 Bot Sensei (Solo Training +40🪙)</option>';
+    sel.innerHTML =
+      '<option value="BOT_DUMMY">🥊 Wooden Dummy (Easy +35🪙)</option>' +
+      '<option value="BOT_SENSEI">🤖 Bot Sensei (Medium +60🪙)</option>' +
+      '<option value="BOT_DEMON">👹 Demon Overlord (Boss +130🪙)</option>';
     latestPlayers.forEach(p => {
       if (typeof socket !== 'undefined' && p.id === socket.id) return;
       const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = '🥷 ' + p.username;
+      opt.value = p.id; opt.textContent = '🥷 ' + p.username + ' (PvP +150🪙)';
       sel.appendChild(opt);
     });
     if (Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
   }
 
-  window.sendSvChallenge = function() {
-    if (typeof socket === 'undefined') return;
-    const oppId = document.getElementById('svOpponentSelect').value;
-    socket.emit('svChallenge', { targetId: oppId, power: selectedPower });
+  window.buySvItem = (item) => { if (typeof socket !== 'undefined') socket.emit('svUpgradeStat', item); };
+  window.spinRandomSvPower = () => { if (typeof socket !== 'undefined') socket.emit('svRandomSpin', document.getElementById('svOpponentSelect').value); };
+  window.sendSvChallenge = () => { if (typeof socket !== 'undefined') socket.emit('svChallenge', { targetId: document.getElementById('svOpponentSelect').value, power: selectedPower }); };
+  window.redeemSvSecretCode = () => {
+    const inp = document.getElementById('svSecretCodeInput');
+    if (inp && inp.value.trim() && typeof socket !== 'undefined') { socket.emit('svUnlockCode', inp.value.trim()); inp.value = ''; }
   };
 
   const waitSvSocket = setInterval(function() {
     if (typeof socket === 'undefined') return;
     clearInterval(waitSvSocket);
 
-    socket.on('updatePlayers', function(list) {
-      if (Array.isArray(list)) {
-        latestPlayers = list;
-        refreshOpponentDropdown();
-      }
+    socket.on('svCutscene', (d) => {
+      if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
+      playBloxFruitCutscene(d);
     });
 
-    socket.on('svIncomingChallenge', function(d) {
+    socket.on('svStatsSync', (st) => { if (st) { myProfile = st; renderDojoShop(); renderSvPowers(); } });
+    socket.on('svNotice', (msg) => { playSvSfx('win'); alert(msg); });
+    socket.on('updatePlayers', (list) => { if (Array.isArray(list)) { latestPlayers = list; refreshOpponentDropdown(); } });
+
+    socket.on('svIncomingChallenge', (d) => {
       if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
       document.getElementById('svModal').style.display = 'flex';
       switchSvTab('fight');
@@ -2513,59 +2656,69 @@
         '<button onclick="acceptSvChallenge(\'' + d.fromId + '\')" style="background:#16a34a;border:none;color:#fff;padding:7px 14px;border-radius:9px;font-weight:900;font-size:12px;cursor:pointer;">🔥 Accept with Selected Power!</button>';
     });
 
-    window.acceptSvChallenge = function(fromId) {
+    window.acceptSvChallenge = (fromId) => {
       document.getElementById('svIncomingBox').style.display = 'none';
       socket.emit('svAccept', { challengerId: fromId, power: selectedPower });
     };
 
-    socket.on('svBattleSync', function(b) {
+    socket.on('svBattleSync', (b) => {
       if (b._serverId && window.selectedServerId && b._serverId !== window.selectedServerId) return;
+      if (b.sfx) playSvSfx(b.sfx);
       document.getElementById('svModal').style.display = 'flex';
       document.getElementById('svLobbyView').style.display = 'none';
       document.getElementById('svBattleView').style.display = 'block';
 
-      document.getElementById('svTurnBadge').textContent = 'Turn ' + b.turn;
+      document.getElementById('svTurnBadge').textContent = 'Turn ' + b.turn + (b.me.awakened ? ' ⚡ AWAKENED!' : '');
       document.getElementById('svBattleTimer').textContent = '⏳ ' + b.timeLeft + 's';
       document.getElementById('svMeLabel').textContent = b.me.icon + ' ' + b.me.name + ' (' + b.me.powerName + ')';
       document.getElementById('svMeHpText').textContent = b.me.hp + ' / ' + b.me.maxHp + ' HP';
-      document.getElementById('svMeHpBar').style.width = Math.max(0, Math.round((b.me.hp / b.me.maxHp) * 100)) + '%';
+      const meBar = document.getElementById('svMeHpBar');
+      meBar.style.width = Math.max(0, Math.round((b.me.hp / b.me.maxHp) * 100)) + '%';
+      meBar.classList.toggle('awakened', Boolean(b.me.awakened));
 
       document.getElementById('svOppLabel').textContent = b.opp.icon + ' ' + b.opp.name + ' (' + b.opp.powerName + ')';
       document.getElementById('svOppHpText').textContent = b.opp.hp + ' / ' + b.opp.maxHp + ' HP';
-      document.getElementById('svOppHpBar').style.width = Math.max(0, Math.round((b.opp.hp / b.opp.maxHp) * 100)) + '%';
+      const oppBar = document.getElementById('svOppHpBar');
+      oppBar.style.width = Math.max(0, Math.round((b.opp.hp / b.opp.maxHp) * 100)) + '%';
+      oppBar.classList.toggle('awakened', Boolean(b.opp.awakened));
 
       document.getElementById('svCombatFeed').innerHTML = b.logText;
 
       const skBox = document.getElementById('svSkillButtons');
       skBox.innerHTML = '';
-      b.me.skills.forEach(function(sk, idx) {
+      b.me.skills.forEach((sk, idx) => {
         const btn = document.createElement('button');
         btn.className = 'sv-skill-btn' + (idx === 3 ? ' ult' : '');
         const onCd = (idx === 3 && b.me.ultCd > 0);
         btn.disabled = b.me.locked || b.me.stunned || onCd;
         btn.textContent = onCd ? (sk + ' [CD: ' + b.me.ultCd + 't]') : (b.me.stunned ? '❄️ STUNNED!' : sk);
-        btn.onclick = function() { socket.emit('svUseSkill', idx); };
+        btn.onclick = () => {
+          playSvSfx(idx === 3 ? 'ult' : (idx === 2 ? 'shield' : (b.me.powerKey === 'mahavishnu' && idx === 0 ? 'flute' : 'atk')));
+          socket.emit('svUseSkill', idx);
+        };
         skBox.appendChild(btn);
       });
     });
 
-    socket.on('svBattleEnd', function(res) {
+    socket.on('svBattleEnd', (res) => {
       if (res._serverId && window.selectedServerId && res._serverId !== window.selectedServerId) return;
+      if (res.won) playSvSfx('win');
       document.getElementById('svBattleView').style.display = 'none';
       document.getElementById('svLobbyView').style.display = 'block';
+      socket.emit('svGetStats');
       switchSvTab('logs');
     });
 
-    socket.on('svLogsUpdate', function(logs) {
+    socket.on('svLogsUpdate', (logs) => {
       const box = document.getElementById('svLogList');
       if (!box) return;
       if (!Array.isArray(logs) || logs.length === 0) {
         box.innerHTML = '<div style="padding:12px;color:#94a3b8;">No SammuVerse battles registered yet! Be the first champion! ⚔️</div>';
         return;
       }
-      box.innerHTML = logs.map(function(l) {
-        return '<div class="sv-log-item">🏆 <b>' + l.winner + '</b> (' + l.winPower + ') defeated <b>' + l.loser + '</b> (' + l.losePower + ') <span style="color:#94a3b8;float:right;">' + l.time + '</span></div>';
-      }).join('');
+      box.innerHTML = logs.map(l =>
+        '<div class="sv-log-item">🏆 <b>' + l.winner + '</b> (' + l.winPower + ') defeated <b>' + l.loser + '</b> (' + l.losePower + ') <span style="color:#94a3b8;float:right;">' + l.time + '</span></div>'
+      ).join('');
     });
   }, 500);
 })();

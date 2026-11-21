@@ -4970,36 +4970,45 @@ module.exports = function initMultiServers(app, io) {
         io.to(srvId).emit('svLogsUpdate', svBattleLogs.filter(l => l.srvId === srvId));
     }
     // === ⚔️ SAMMUVERSE RPG — BACKEND PIECE 2/5 (21 POWERS & CUTSCENE DATA) ===
-    const SV_DEFS = {
+        const SV_DEFS = {
+        // === TIER 1: 4 FREE STARTER POWERS ===
         fire:       { icon: '🔥', name: 'Fire Inferno',     hp: 200, strong: ['ice'],    moves: [{ label: 'Fireball (28 DMG)', dmg: 28 }, { label: 'Flame Tornado (42 DMG)', dmg: 42 }, { label: 'Heat Shield (Block 70%)', block: 0.70 }, { label: '☀️ Solar Flare ULT (68 DMG)', dmg: 68, cut: { theme: 'cosmic', emoji: '☀️🔥', title: 'SOLAR FLARE!' } }] },
         water:      { icon: '🌊', name: 'Water Tsunami',    hp: 200, strong: ['fire'],   moves: [{ label: 'Hydro Whip (26 DMG)', dmg: 26 }, { label: 'Whirlpool Trap (35 DMG)', dmg: 35 }, { label: 'Water Mirror (Reflect 50%)', block: 0.50, reflect: 0.50 }, { label: '🌊 Abyssal Wave ULT (65 DMG)', dmg: 65, cut: { theme: 'cosmic', emoji: '🌊🐉', title: 'ABYSSAL TSUNAMI!' } }] },
-        rubber:     { icon: '👒', name: 'Rubber Gear 5',    hp: 210, strong: ['lightning'], moves: [{ label: 'Gum-Gum Pistol (29 DMG)', dmg: 29 }, { label: 'Gatling Barrage (44 DMG)', dmg: 44 }, { label: 'Elastic Bounce (Evade +15 HP)', evade: true, heal: 15 }, { label: '👊 Bajrang Fist ULT (72 DMG)', dmg: 72, cut: { theme: 'cosmic', emoji: '👒👊', title: 'GEAR 5: BAJRANG GUN!' } }] },
-        space:      { icon: '🌌', name: 'Space Warp',       hp: 200, strong: ['time'],   moves: [{ label: 'Spatial Slash (30 DMG)', dmg: 30 }, { label: 'Void Rift (40 DMG)', dmg: 40 }, { label: 'Teleport Dodge (Evade Hit)', evade: true }, { label: '🌌 Dimension Collapse ULT (68 DMG)', dmg: 68, cut: { theme: 'cosmic', emoji: '🌌💥', title: 'DIMENSION COLLAPSE!' } }] },
-        time:       { icon: '⏳', name: 'Time Chrono',      hp: 200, strong: ['space'],  moves: [{ label: 'Chrono Strike (25 DMG)', dmg: 25 }, { label: 'Age Decay (36 DMG)', dmg: 36 }, { label: 'Rewind Heal (+35 HP)', heal: 35 }, { label: '⏸️ Time Stop ULT (55 DMG + Stun)', dmg: 55, stun: true, cut: { theme: 'cosmic', emoji: '⏳⏸️', title: 'CHRONO TIME STOP!' } }] },
-        gravity:    { icon: '🪐', name: 'Gravity Force',    hp: 205, strong: ['rubber'], moves: [{ label: 'Crush Slam (30 DMG)', dmg: 30 }, { label: 'Meteor Drop (45 DMG)', dmg: 45 }, { label: 'Gravity Repulse (Block 75%)', block: 0.75 }, { label: '☄️ Planetary Devastation ULT (70 DMG)', dmg: 70, cut: { theme: 'cosmic', emoji: '☄️🪐', title: 'PLANETARY DEVASTATION!' } }] },
-        blackhole:  { icon: '🕳️', name: 'Black Hole',       hp: 205, strong: ['antimatter', 'gravity'], moves: [{ label: 'Dark Pull (27 DMG)', dmg: 27 }, { label: 'Event Horizon (38 DMG + Drain)', dmg: 38, heal: 12 }, { label: 'Matter Absorb (+25 HP & Shield)', block: 0.50, heal: 25 }, { label: '🕳️ Supermassive Crunch ULT (72 DMG)', dmg: 72, cut: { theme: 'cosmic', emoji: '🕳️🌌', title: 'SUPERMASSIVE SINGULARITY!' } }] },
-        antimatter: { icon: '⚛️', name: 'Anti-Matter',      hp: 200, strong: ['blackhole'], moves: [{ label: 'Positron Beam (32 DMG)', dmg: 32 }, { label: 'Chain Annihilation (48 DMG)', dmg: 48 }, { label: 'Phase Shift (Evade Hit)', evade: true }, { label: '💥 Big Bang Erasure ULT (78 DMG)', dmg: 78, cut: { theme: 'cosmic', emoji: '⚛️💥', title: 'BIG BANG ERASURE!' } }] },
         lightning:  { icon: '⚡', name: 'Lightning Raijin',  hp: 200, strong: ['water'],  moves: [{ label: 'Thunder Bolt (30 DMG)', dmg: 30 }, { label: 'Speed Blitz (43 DMG)', dmg: 43 }, { label: 'Static Armor (Block 65%)', block: 0.65 }, { label: '🐉 Kirin Sky Dragon ULT (69 DMG)', dmg: 69, cut: { theme: 'cosmic', emoji: '⚡🐉', title: 'KIRIN THUNDER DRAGON!' } }] },
         ice:        { icon: '❄️', name: 'Absolute Ice',     hp: 200, strong: ['storm'],  moves: [{ label: 'Ice Lance (27 DMG)', dmg: 27 }, { label: 'Frostbite (36 DMG)', dmg: 36 }, { label: 'Glacier Wall (Block 80%)', block: 0.80 }, { label: '🧊 Ice Age Freeze ULT (58 DMG + Stun)', dmg: 58, stun: true, cut: { theme: 'cosmic', emoji: '❄️🧊', title: 'ABSOLUTE ZERO ICE AGE!' } }] },
-        blood:      { icon: '🩸', name: 'Blood Demon',      hp: 205, strong: ['sun'],    moves: [{ label: 'Crimson Slash (29 DMG)', dmg: 29 }, { label: 'Vampire Bite (34 DMG + 18 HP)', dmg: 34, heal: 18 }, { label: 'Blood Mist (Evade Hit)', evade: true }, { label: '🌕 Moonlit Massacre ULT (70 DMG)', dmg: 70, cut: { theme: 'cosmic', emoji: '🩸🌕', title: 'MOONLIT DEMON ART!' } }] },
-        shadow:     { icon: '🌑', name: 'Shadow Monarch',   hp: 210, strong: ['blood'],  moves: [{ label: 'Shadow Dagger (31 DMG)', dmg: 31 }, { label: 'Arise Army (45 DMG)', dmg: 45 }, { label: 'Umbral Dodge (Evade Hit)', evade: true }, { label: '👑 Monarch Domain ULT (74 DMG)', dmg: 74, cut: { theme: 'cosmic', emoji: '🌑👑', title: 'ARISE: SHADOW DOMAIN!' } }] },
-        sun:        { icon: '☀️', name: 'Sun God Nika',     hp: 210, strong: ['shadow', 'ice'], moves: [{ label: 'Dawn Whip (30 DMG)', dmg: 30 }, { label: 'Sun Gatling (44 DMG)', dmg: 44 }, { label: 'Drum Heartbeat (+30 HP)', heal: 30 }, { label: '🔥 Bajrang Dawn ULT (75 DMG)', dmg: 75, cut: { theme: 'cosmic', emoji: '☀️🥁', title: 'DRUMS OF LIBERATION!' } }] },
-        venom:      { icon: '☠️', name: 'Venom Hydra',      hp: 205, strong: ['water'],  moves: [{ label: 'Acid Spit (28 DMG)', dmg: 28 }, { label: 'Toxic Fang (42 DMG)', dmg: 42 }, { label: 'Shed Skin (+25 HP & Shield)', block: 0.50, heal: 25 }, { label: '🐍 Hydra Plague ULT (69 DMG)', dmg: 69, cut: { theme: 'cosmic', emoji: '☠️🐍', title: 'HYDRA VENOM APOCALYPSE!' } }] },
-        storm:      { icon: '🌪️', name: 'Storm Dragon',     hp: 205, strong: ['water'],  moves: [{ label: 'Gale Blade (29 DMG)', dmg: 29 }, { label: 'Tornado Slam (43 DMG)', dmg: 43 }, { label: 'Wind Wall (Block 75%)', block: 0.75 }, { label: '⚡ Tempest Roar ULT (71 DMG)', dmg: 71, cut: { theme: 'cosmic', emoji: '🌪️⚡', title: 'TEMPEST DRAGON ROAR!' } }] },
-        zoro:       { cost: 2000, icon: '⚔️', name: 'Zoro (3-Sword King)',      hp: 235, passiveRed: 0.10, strong: ['blood', 'venom'], moves: [{ label: 'Oni Giri (38 DMG)', dmg: 38 }, { label: 'Dragon Twister (54 DMG)', dmg: 54 }, { label: 'King Haki Parry (Block 80%)', block: 0.80 }, { label: '👹 Ashura 9-Sword ULT (90 DMG)', dmg: 90, cut: { theme: 'zoro', emoji: '👹⚔️', title: 'ASHURA: 9-SWORD STYLE!' } }] },
-        sus:        { cost: 2000, icon: '👀', name: 'Sus (Shadow Imposter)',    hp: 230, passiveRed: 0.10, strong: ['shadow'], moves: [{ label: 'Vent Ambush (38 DMG)', dmg: 38 }, { label: 'Sabotage Strike (52 DMG)', dmg: 52 }, { label: 'Fake Task Evade (+30 HP)', evade: true, heal: 30 }, { label: '🚨 Emergency Eject ULT (88 DMG + Stun)', dmg: 88, stun: true, cut: { theme: 'cosmic', emoji: '🚨👀', title: 'IMPOSTER EJECTION!' } }] },
-        moon:       { cost: 4000, icon: '🌙', name: 'Dr. Moon (Lunar Empress)', hp: 255, passiveRed: 0.15, strong: ['blood', 'venom', 'shadow'], moves: [{ label: '🌙 Lunar Scalpel (42 DMG)', dmg: 42 }, { label: '🌿 Sanjeevani Surge (56 DMG + 15 HP)', dmg: 56, heal: 15 }, { label: '🩺 Doctor Elixir (Evade +60 HP)', evade: true, heal: 60 }, { label: '🌕 Full Moon Eclipse ULT (95 DMG + Stun)', dmg: 95, stun: true, cut: { theme: 'moon', emoji: '🌙🩺', title: 'DR. MOON: LUNAR ECLIPSE!' } }] },
-        mahavishnu: { secret: true, icon: '🔱', name: 'Sammu/Samaksh (MahaVishnu)', hp: 350, passiveRed: 0.35, strong: ['blood', 'shadow', 'venom', 'antimatter'], moves: [{ label: '🪈 Prem Bansuri (50 DMG + Stun)', dmg: 50, stunChance: 0.65, cut: { theme: 'bansuri', emoji: '🪈🦚', title: 'PREM BANSURI MELODY!', sfx: 'flute' } }, { label: '☸️ Sudarshana Chakra (75 True DMG)', dmg: 75, trueDmg: true, cut: { theme: 'chakra', emoji: '☸️🔥', title: 'SUDARSHANA CHAKRA!' } }, { label: '🛡️ Vaikuntha Kavach (Evade +55 HP)', evade: true, heal: 55 }, { label: '🌌 Vishwaroopa ULT (140 DMG + Stun)', dmg: 140, stun: true, cut: { theme: 'vishwaroopa', emoji: '🔱🌌', title: 'VISHWAROOPA COSMIC FORM!' } }] },
-        millyyt:    { secret: true, icon: '🎬', name: 'Milly (YouTube Queen)',     hp: 240, passiveRed: 0.15, strong: ['fire', 'lightning'], moves: [{ label: '🔔 Subscribe Strike (38 DMG)', dmg: 38 }, { label: '📈 Viral Algorithm (54 DMG)', dmg: 54 }, { label: '🚫 Demonetize (Reflect 80% DMG)', block: 0.80, reflect: 0.80 }, { label: '▶️ Golden Play Button ULT (90 DMG)', dmg: 90, cut: { theme: 'cosmic', emoji: '▶️👑', title: '100M GOLDEN PLAY BUTTON!' } }] },
-        ishikastar: { secret: true, icon: '✨', name: 'Ishika (Celestial Empress)', hp: 240, passiveRed: 0.15, strong: ['space', 'time'], moves: [{ label: '💫 Starfall Beam (38 DMG)', dmg: 38 }, { label: '💥 Supernova Burst (54 DMG)', dmg: 54 }, { label: '🌸 Astral Blessing (Evade +35 HP)', evade: true, heal: 35 }, { label: '🌠 Empress Meteor ULT (90 DMG)', dmg: 90, cut: { theme: 'cosmic', emoji: '🌠✨', title: 'CELESTIAL EMPRESS METEOR!' } }] }
+        // === TIER 2: RARE (300 COINS) ===
+        storm:      { cost: 300, icon: '🌪️', name: 'Storm Dragon',     hp: 205, strong: ['water'],  moves: [{ label: 'Gale Blade (29 DMG)', dmg: 29 }, { label: 'Tornado Slam (43 DMG)', dmg: 43 }, { label: 'Wind Wall (Block 75%)', block: 0.75 }, { label: '⚡ Tempest Roar ULT (71 DMG)', dmg: 71, cut: { theme: 'cosmic', emoji: '🌪️⚡', title: 'TEMPEST DRAGON ROAR!' } }] },
+        venom:      { cost: 300, icon: '☠️', name: 'Venom Hydra',      hp: 205, strong: ['water'],  moves: [{ label: 'Acid Spit (28 DMG)', dmg: 28 }, { label: 'Toxic Fang (42 DMG)', dmg: 42 }, { label: 'Shed Skin (+25 HP & Shield)', block: 0.50, heal: 25 }, { label: '🐍 Hydra Plague ULT (69 DMG)', dmg: 69, cut: { theme: 'cosmic', emoji: '☠️🐍', title: 'HYDRA VENOM APOCALYPSE!' } }] },
+        rubber:     { cost: 300, icon: '👒', name: 'Rubber Gear 5',    hp: 210, strong: ['lightning'], moves: [{ label: 'Gum-Gum Pistol (29 DMG)', dmg: 29 }, { label: 'Gatling Barrage (44 DMG)', dmg: 44 }, { label: 'Elastic Bounce (Evade +15 HP)', evade: true, heal: 15 }, { label: '👊 Bajrang Fist ULT (72 DMG)', dmg: 72, cut: { theme: 'cosmic', emoji: '👒👊', title: 'GEAR 5: BAJRANG GUN!' } }] },
+        blood:      { cost: 300, icon: '🩸', name: 'Blood Demon',      hp: 205, strong: ['sun'],    moves: [{ label: 'Crimson Slash (29 DMG)', dmg: 29 }, { label: 'Vampire Bite (34 DMG + 18 HP)', dmg: 34, heal: 18 }, { label: 'Blood Mist (Evade Hit)', evade: true }, { label: '🌕 Moonlit Massacre ULT (70 DMG)', dmg: 70, cut: { theme: 'cosmic', emoji: '🩸🌕', title: 'MOONLIT DEMON ART!' } }] },
+        // === TIER 3: EPIC (750 COINS) ===
+        gravity:    { cost: 750, icon: '🪐', name: 'Gravity Force',    hp: 210, strong: ['rubber'], moves: [{ label: 'Crush Slam (31 DMG)', dmg: 31 }, { label: 'Meteor Drop (46 DMG)', dmg: 46 }, { label: 'Gravity Repulse (Block 75%)', block: 0.75 }, { label: '☄️ Planetary Devastation ULT (74 DMG)', dmg: 74, cut: { theme: 'cosmic', emoji: '☄️🪐', title: 'PLANETARY DEVASTATION!' } }] },
+        space:      { cost: 750, icon: '🌌', name: 'Space Warp',       hp: 210, strong: ['time'],   moves: [{ label: 'Spatial Slash (32 DMG)', dmg: 32 }, { label: 'Void Rift (44 DMG)', dmg: 44 }, { label: 'Teleport Dodge (Evade Hit)', evade: true }, { label: '🌌 Dimension Collapse ULT (74 DMG)', dmg: 74, cut: { theme: 'cosmic', emoji: '🌌💥', title: 'DIMENSION COLLAPSE!' } }] },
+        time:       { cost: 750, icon: '⏳', name: 'Time Chrono',      hp: 210, strong: ['space'],  moves: [{ label: 'Chrono Strike (28 DMG)', dmg: 28 }, { label: 'Age Decay (40 DMG)', dmg: 40 }, { label: 'Rewind Heal (+40 HP)', heal: 40 }, { label: '⏸️ Time Stop ULT (62 DMG + Stun)', dmg: 62, stun: true, cut: { theme: 'cosmic', emoji: '⏳⏸️', title: 'CHRONO TIME STOP!' } }] },
+        sun:        { cost: 750, icon: '☀️', name: 'Sun God Nika',     hp: 215, strong: ['shadow', 'ice'], moves: [{ label: 'Dawn Whip (32 DMG)', dmg: 32 }, { label: 'Sun Gatling (46 DMG)', dmg: 46 }, { label: 'Drum Heartbeat (+35 HP)', heal: 35 }, { label: '🔥 Bajrang Dawn ULT (78 DMG)', dmg: 78, cut: { theme: 'cosmic', emoji: '☀️🥁', title: 'DRUMS OF LIBERATION!' } }] },
+        // === TIER 4: LEGENDARY (1,500 COINS) ===
+        shadow:     { cost: 1500, icon: '🌑', name: 'Shadow Monarch',  hp: 225, strong: ['blood'],  moves: [{ label: 'Shadow Dagger (35 DMG)', dmg: 35 }, { label: 'Arise Army (49 DMG)', dmg: 49 }, { label: 'Umbral Dodge (Evade Hit)', evade: true }, { label: '👑 Monarch Domain ULT (82 DMG)', dmg: 82, cut: { theme: 'cosmic', emoji: '🌑👑', title: 'ARISE: SHADOW DOMAIN!' } }] },
+        blackhole:  { cost: 1500, icon: '🕳️', name: 'Black Hole',      hp: 225, strong: ['antimatter', 'gravity'], moves: [{ label: 'Dark Pull (33 DMG)', dmg: 33 }, { label: 'Event Horizon (44 DMG + Drain)', dmg: 44, heal: 15 }, { label: 'Matter Absorb (+30 HP & Shield)', block: 0.55, heal: 30 }, { label: '🕳️ Supermassive Crunch ULT (82 DMG)', dmg: 82, cut: { theme: 'cosmic', emoji: '🕳️🌌', title: 'SUPERMASSIVE SINGULARITY!' } }] },
+        antimatter: { cost: 1500, icon: '⚛️', name: 'Anti-Matter',     hp: 220, strong: ['blackhole'], moves: [{ label: 'Positron Beam (36 DMG)', dmg: 36 }, { label: 'Chain Annihilation (52 DMG)', dmg: 52 }, { label: 'Phase Shift (Evade Hit)', evade: true }, { label: '💥 Big Bang Erasure ULT (86 DMG)', dmg: 86, cut: { theme: 'cosmic', emoji: '⚛️💥', title: 'BIG BANG ERASURE!' } }] },
+        // === TIER 5: COIN PRESTIGE (2,000 - 4,000 COINS) ===
+        zoro:       { cost: 2000, icon: '⚔️', name: 'Zoro (3-Sword King)',      hp: 245, passiveRed: 0.12, strong: ['blood', 'venom'], moves: [{ label: 'Oni Giri (40 DMG)', dmg: 40 }, { label: 'Dragon Twister (56 DMG)', dmg: 56 }, { label: 'King Haki Parry (Block 80%)', block: 0.80 }, { label: '👹 Ashura 9-Sword ULT (94 DMG)', dmg: 94, cut: { theme: 'zoro', emoji: '👹⚔️', title: 'ASHURA: 9-SWORD STYLE!' } }] },
+        sus:        { cost: 2000, icon: '👀', name: 'Sus (Shadow Imposter)',    hp: 240, passiveRed: 0.12, strong: ['shadow'], moves: [{ label: 'Vent Ambush (40 DMG)', dmg: 40 }, { label: 'Sabotage Strike (54 DMG)', dmg: 54 }, { label: 'Fake Task Evade (+35 HP)', evade: true, heal: 35 }, { label: '🚨 Emergency Eject ULT (92 DMG + Stun)', dmg: 92, stun: true, cut: { theme: 'cosmic', emoji: '🚨👀', title: 'IMPOSTER EJECTION!' } }] },
+        moon:       { cost: 4000, icon: '🌙', name: 'Dr. Moon (Lunar Empress)', hp: 270, passiveRed: 0.18, strong: ['blood', 'venom', 'shadow'], moves: [{ label: '🌙 Lunar Scalpel (44 DMG)', dmg: 44 }, { label: '🌿 Sanjeevani Surge (58 DMG + 18 HP)', dmg: 58, heal: 18 }, { label: '🩺 Doctor Elixir (Evade +65 HP)', evade: true, heal: 65 }, { label: '🌕 Full Moon Eclipse ULT (98 DMG + Stun)', dmg: 98, stun: true, cut: { theme: 'moon', emoji: '🌙🩺', title: 'DR. MOON: LUNAR ECLIPSE!' } }] },
+        // === TIER 6: CODE-ONLY OP++ MYTHICS ===
+        mahavishnu: { secret: true, icon: '🔱', name: 'Sammu/Samaksh (MahaVishnu)', hp: 360, passiveRed: 0.35, strong: ['blood', 'shadow', 'venom', 'antimatter'], moves: [{ label: '🪈 Prem Bansuri (52 DMG + Stun)', dmg: 52, stunChance: 0.65, cut: { theme: 'bansuri', emoji: '🪈🦚', title: 'PREM BANSURI MELODY!', sfx: 'flute' } }, { label: '☸️ Sudarshana Chakra (78 True DMG)', dmg: 78, trueDmg: true, cut: { theme: 'chakra', emoji: '☸️🔥', title: 'SUDARSHANA CHAKRA!' } }, { label: '🛡️ Vaikuntha Kavach (Evade +60 HP)', evade: true, heal: 60 }, { label: '🌌 Vishwaroopa ULT (145 DMG + Stun)', dmg: 145, stun: true, cut: { theme: 'vishwaroopa', emoji: '🔱🌌', title: 'VISHWAROOPA COSMIC FORM!' } }] },
+        millyyt:    { secret: true, icon: '🎬', name: 'Milly (YouTube Queen)',     hp: 295, passiveRed: 0.22, strong: ['fire', 'lightning', 'space', 'time'], moves: [{ label: '🔔 Subscribe Smash (46 DMG + Stun)', dmg: 46, stunChance: 0.50 }, { label: '📈 10M Viral Surge (64 DMG + 20 HP)', dmg: 64, heal: 20 }, { label: '💎 Diamond Shield (Evade +50 HP)', evade: true, heal: 50 }, { label: '▶️ Golden Play Button ULT (115 True DMG)', dmg: 115, trueDmg: true, stun: true, cut: { theme: 'milly', emoji: '▶️👑', title: 'MILLY: GOLDEN PLAY BUTTON!' } }] },
+        ishikastar: { secret: true, icon: '✨', name: 'Ishika (Celestial Empress)', hp: 265, passiveRed: 0.18, strong: ['space', 'time'], moves: [{ label: '💫 Starfall Beam (42 DMG)', dmg: 42 }, { label: '💥 Supernova Burst (58 DMG)', dmg: 58 }, { label: '🌸 Astral Blessing (Evade +45 HP)', evade: true, heal: 45 }, { label: '🌠 Empress Meteor ULT (96 DMG)', dmg: 96, cut: { theme: 'cosmic', emoji: '🌠✨', title: 'CELESTIAL EMPRESS METEOR!' } }] }
     };
+
     // === ⚔️ SAMMUVERSE RPG — BACKEND PIECE 3/5 (COMBAT RESOLVER & AWAKENING) ===
+     // === ⚔️ SAMMUVERSE RPG — BACKEND PIECE 3/5 (COMBAT RESOLVER & AWAKENING) ===
     const svBattles = new Map();
     const svPending = new Map();
 
-    function broadcastSvCutscene(srvId, cutObj) {
-        if (!srvId || !cutObj) return;
-        io.to(srvId).emit('svCutscene', { ...cutObj, _serverId: srvId });
+    function broadcastSvCutscene(battle, cutObj) {
+        if (!battle || !cutObj) return;
+        if (!battle.p1.isBot) io.to(battle.p1.id).emit('svCutscene', { ...cutObj, _serverId: battle.srvId });
+        if (!battle.p2.isBot) io.to(battle.p2.id).emit('svCutscene', { ...cutObj, _serverId: battle.srvId });
     }
 
     function syncSvBattle(battle, sfx) {
@@ -5008,12 +5017,12 @@ module.exports = function initMultiServers(app, io) {
             io.to(me.id).emit('svBattleSync', {
                 turn: battle.turn, timeLeft: battle.timeLeft, logText: battle.lastLog, sfx: sfx || null,
                 me: {
-                    name: me.name, icon: me.def.icon, powerName: me.def.name, powerKey: me.pKey,
+                    name: me.name, icon: me.def.icon, powerName: me.def.name + (me.isV2 ? ' [V2]' : ''), powerKey: me.pKey,
                     hp: me.hp, maxHp: me.maxHp, ultCd: me.ultCd, awakened: me.awakened,
                     locked: me.choice !== null, stunned: me.stunned,
                     skills: me.def.moves.map(m => m.label)
                 },
-                opp: { name: opp.name, icon: opp.def.icon, powerName: opp.def.name, hp: opp.hp, maxHp: opp.maxHp, awakened: opp.awakened },
+                opp: { name: opp.name, icon: opp.def.icon, powerName: opp.def.name + (opp.isV2 ? ' [V2]' : ''), hp: opp.hp, maxHp: opp.maxHp, awakened: opp.awakened },
                 _serverId: battle.srvId
             });
         };
@@ -5048,14 +5057,15 @@ module.exports = function initMultiServers(app, io) {
             if (!atkMove) { logs.push(`❄️ <b>${atk.name}</b> was stunned and skipped!`); return; }
             if (atkMove.cut) queuedCutscene = { ...atkMove.cut, caption: `${atk.def.icon} ${atk.name.toUpperCase()} — ${atkMove.cut.title}` };
             if (atkMove.heal) atk.hp = Math.min(atk.maxHp, atk.hp + atkMove.heal);
-            if (!atkMove.dmg) { turnSfx = 'shield'; logs.push(`${atk.def.icon} <b>${atk.name}</b> used <b>${atkMove.label.split(' (')}</b>!`); return; }
+            if (!atkMove.dmg) { turnSfx = 'shield'; logs.push(`${atk.def.icon} <b>${atk.name}</b> used <b>${atkMove.label.split(' (')[0]}</b>!`); return; }
 
             let dmg = atkMove.dmg + atk.bonusAtk + Math.floor(Math.random() * 6);
+            if (atk.isV2) dmg = Math.round(dmg * 1.15);
             if (atk.awakened) dmg = Math.round(dmg * 1.25);
             if (atk.def.strong && atk.def.strong.includes(def.pKey)) dmg = Math.round(dmg * 1.22);
 
             if (!atkMove.trueDmg && defMove && defMove.evade) {
-                logs.push(`${atk.def.icon} <b>${atk.name}</b> used <b>${atkMove.label.split(' (')}</b>, but <b>${def.name}</b> EVADED! 💨`);
+                logs.push(`${atk.def.icon} <b>${atk.name}</b> used <b>${atkMove.label.split(' (')[0]}</b>, but <b>${def.name}</b> EVADED! 💨`);
                 return;
             }
             if (!atkMove.trueDmg && defMove && defMove.block) {
@@ -5069,7 +5079,7 @@ module.exports = function initMultiServers(app, io) {
             def.hp = Math.max(0, def.hp - dmg);
             if ((atkMove.stun || (atkMove.stunChance && Math.random() < atkMove.stunChance)) && def.hp > 0) def.stunned = true;
             if (atkMove.trueDmg) turnSfx = 'ult';
-            logs.push(`${atk.def.icon} <b>${atk.name}</b> hit <b>${atkMove.label.split(' (')}</b> for <b>-${dmg} HP</b>!`);
+            logs.push(`${atk.def.icon} <b>${atk.name}</b> hit <b>${atkMove.label.split(' (')[0]}</b> for <b>-${dmg} HP</b>!`);
         };
 
         applyClash(b.p1, m1, b.p2, m2);
@@ -5091,7 +5101,7 @@ module.exports = function initMultiServers(app, io) {
             }
         });
 
-        if (queuedCutscene) broadcastSvCutscene(b.srvId, queuedCutscene);
+        if (queuedCutscene) broadcastSvCutscene(b, queuedCutscene);
         b.lastLog = logs.join('<br>');
 
         if (b.p1.hp <= 0 || b.p2.hp <= 0) {
@@ -5105,6 +5115,11 @@ module.exports = function initMultiServers(app, io) {
             if (!winner.isBot) {
                 const wProf = getSvProfile(winner.name);
                 wProf.wins++; wProf.streak++;
+                if (!wProf.powerWins) wProf.powerWins = {};
+                wProf.powerWins[winner.pKey] = (wProf.powerWins[winner.pKey] || 0) + 1;
+                if (wProf.powerWins[winner.pKey] === 5) {
+                    io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `🔥⚡ **V2 EVOLUTION!** **${winner.name}** mastered **${winner.def.icon} ${winner.def.name}** (5 Wins) and unlocked **V2 AWAKENED (+15% Permanent DMG)**!`, _serverId: b.srvId });
+                }
                 reward = Math.round(reward * (wProf.streak >= 5 ? 2 : (wProf.streak >= 3 ? 1.5 : 1)));
                 addCoins(winner.name, reward);
                 saveSvStats();
@@ -5117,10 +5132,12 @@ module.exports = function initMultiServers(app, io) {
             }
             if (!loser.isBot) { getSvProfile(loser.name).streak = 0; saveSvStats(); }
 
-            recordSvLog(b.srvId, winner.name, `${winner.def.icon} ${winner.def.name}`, loser.name, `${loser.def.icon} ${loser.def.name}`);
+            const winTag = `${winner.def.icon} ${winner.def.name}${winner.isV2 ? ' [V2]' : ''}`;
+            const loseTag = `${loser.def.icon} ${loser.def.name}${loser.isV2 ? ' [V2]' : ''}`;
+            recordSvLog(b.srvId, winner.name, winTag, loser.name, loseTag);
             if (!b.p1.isBot) io.to(b.p1.id).emit('svBattleEnd', { won: winner === b.p1, _serverId: b.srvId });
             if (!b.p2.isBot) io.to(b.p2.id).emit('svBattleEnd', { won: winner === b.p2, _serverId: b.srvId });
-            io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `⚔️🔥 **SAMMUVERSE:** **${winner.name}** (${winner.def.icon} ${winner.def.name}) defeated **${loser.name}** and won **+${reward}🪙**! 🏆`, _serverId: b.srvId });
+            io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `⚔️🔥 **SAMMUVERSE:** **${winner.name}** (${winTag}) defeated **${loser.name}** and won **+${reward}🪙**! 🏆`, _serverId: b.srvId });
             return;
         }
 
@@ -5129,12 +5146,15 @@ module.exports = function initMultiServers(app, io) {
         b.p2.choice = b.p2.isBot ? (b.p2.ultCd === 0 ? 3 : Math.floor(Math.random() * 3)) : (b.p2.stunned ? -1 : null);
         syncSvBattle(b, turnSfx);
     }
-    // === ⚔️ SAMMUVERSE RPG — BACKEND PIECE 4/5 (MATCH LAUNCHER & CODES) ===
+
+                
+        // === ⚔️ SAMMUVERSE RPG — BACKEND PIECE 4/5 (MATCH LAUNCHER & V2 CHECK) ===
     const PET_COSTS = { mochi: 200, tommy: 200, garuda: 500, sheshnag: 2500 };
 
     function startSvMatch(srvId, sock1, pow1Key, sock2, pow2Key, isSpin1 = false) {
         const d1 = SV_DEFS[pow1Key] || SV_DEFS.fire;
         const prof1 = getSvProfile(sock1.username);
+        const isV2_1 = Boolean(prof1.powerWins && prof1.powerWins[pow1Key] >= 5);
         let p2Obj = null;
 
         if (typeof sock2 === 'string') {
@@ -5147,15 +5167,16 @@ module.exports = function initMultiServers(app, io) {
             const dBot = SV_DEFS[botCfg.pKey] || SV_DEFS.fire;
             p2Obj = {
                 id: sock2, name: botCfg.name, pKey: botCfg.pKey, def: dBot, hp: botCfg.hp, maxHp: botCfg.hp, bonusAtk: botCfg.atk,
-                ultCd: 0, choice: Math.floor(Math.random() * 3), stunned: false, isBot: true, hasStone: false, awakened: false, pet: null, baseReward: botCfg.reward
+                ultCd: 0, choice: Math.floor(Math.random() * 3), stunned: false, isBot: true, isV2: false, hasStone: false, awakened: false, pet: null, baseReward: botCfg.reward
             };
         } else {
             const d2 = SV_DEFS[pow2Key] || SV_DEFS.water;
             const prof2 = getSvProfile(sock2.username);
             const maxHp2 = d2.hp + (prof2.hpLv * 25);
+            const isV2_2 = Boolean(prof2.powerWins && prof2.powerWins[pow2Key] >= 5);
             p2Obj = {
                 id: sock2.id, name: sock2.username || 'Fighter 2', pKey: pow2Key, def: d2, hp: maxHp2, maxHp: maxHp2, bonusAtk: prof2.atkLv * 5,
-                ultCd: 0, choice: null, stunned: false, isBot: false, hasStone: prof2.hasStone, awakened: false, pet: prof2.activePet, baseReward: 150
+                ultCd: 0, choice: null, stunned: false, isBot: false, isV2: isV2_2, hasStone: prof2.hasStone, awakened: false, pet: prof2.activePet, baseReward: 150
             };
         }
 
@@ -5163,7 +5184,7 @@ module.exports = function initMultiServers(app, io) {
         const battleId = 'sv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
         const battle = {
             id: battleId, srvId, turn: 1, timeLeft: 15, lastLog: `⚔️ Battle started! Pick your skill before time runs out!`,
-            p1: { id: sock1.id, name: sock1.username || 'Fighter 1', pKey: pow1Key, def: d1, hp: maxHp1, maxHp: maxHp1, bonusAtk: prof1.atkLv * 5, ultCd: 0, choice: null, stunned: false, isBot: false, hasStone: prof1.hasStone, awakened: false, pet: prof1.activePet, isSpin: isSpin1, baseReward: 150 },
+            p1: { id: sock1.id, name: sock1.username || 'Fighter 1', pKey: pow1Key, def: d1, hp: maxHp1, maxHp: maxHp1, bonusAtk: prof1.atkLv * 5, ultCd: 0, choice: null, stunned: false, isBot: false, isV2: isV2_1, hasStone: prof1.hasStone, awakened: false, pet: prof1.activePet, isSpin: isSpin1, baseReward: 150 },
             p2: p2Obj, interval: null
         };
 
@@ -5184,6 +5205,7 @@ module.exports = function initMultiServers(app, io) {
         }
         return null;
     }
+
 
     // === ⚔️ SAMMUVERSE RPG — BACKEND PIECE 5A/5 (CODES & DOJO SHOP) ===
     io.on('connection', (socket) => {
@@ -5358,30 +5380,31 @@ module.exports = function initMultiServers(app, io) {
             });
         });
     });
-    // === ⚔️ SAMMUVERSE SOCKET DELIVERY — PIECE 1/3 (POWERS & SFX SCRIPT) ===
+    
+        // === ⚔️ SAMMUVERSE SOCKET DELIVERY — PIECE 1/3 (POWERS & SFX SCRIPT) ===
     const SV_CLIENT_SCRIPT_PART1 = `
       const SV_POWERS = {
         fire:       { icon: '🔥', name: 'Fire Inferno',     skills: ['Fireball (28 DMG)', 'Flame Tornado (42 DMG)', 'Heat Shield (Block 70%)', '☀️ Solar Flare ULT (68 DMG)'] },
         water:      { icon: '🌊', name: 'Water Tsunami',    skills: ['Hydro Whip (26 DMG)', 'Whirlpool Trap (35 DMG)', 'Water Mirror (Reflect 50%)', '🌊 Abyssal Wave ULT (65 DMG)'] },
-        rubber:     { icon: '👒', name: 'Rubber Gear 5',    skills: ['Gum-Gum Pistol (29 DMG)', 'Gatling Barrage (44 DMG)', 'Elastic Bounce (Dodge +15 HP)', '👊 Bajrang Fist ULT (72 DMG)'] },
-        space:      { icon: '🌌', name: 'Space Warp',       skills: ['Spatial Slash (30 DMG)', 'Void Rift (40 DMG)', 'Teleport Dodge (Evade Hit)', '🌌 Dimension Collapse ULT (68 DMG)'] },
-        time:       { icon: '⏳', name: 'Time Chrono',      skills: ['Chrono Strike (25 DMG)', 'Age Decay (36 DMG)', 'Rewind Heal (+35 HP)', '⏸️ Time Stop ULT (55 DMG + Stun)'] },
-        gravity:    { icon: '🪐', name: 'Gravity Force',    skills: ['Crush Slam (30 DMG)', 'Meteor Drop (45 DMG)', 'Gravity Repulse (Block 75%)', '☄️ Planetary Devastation ULT (70 DMG)'] },
-        blackhole:  { icon: '🕳️', name: 'Black Hole',       skills: ['Dark Pull (27 DMG)', 'Event Horizon (38 DMG + Drain)', 'Matter Absorb (+25 HP & Shield)', '🕳️ Supermassive Crunch ULT (72 DMG)'] },
-        antimatter: { icon: '⚛️', name: 'Anti-Matter',      skills: ['Positron Beam (32 DMG)', 'Chain Annihilation (48 DMG)', 'Phase Shift (Evade Hit)', '💥 Big Bang Erasure ULT (78 DMG)'] },
         lightning:  { icon: '⚡', name: 'Lightning Raijin',  skills: ['Thunder Bolt (30 DMG)', 'Speed Blitz (43 DMG)', 'Static Armor (Block 65%)', '🐉 Kirin Sky Dragon ULT (69 DMG)'] },
         ice:        { icon: '❄️', name: 'Absolute Ice',     skills: ['Ice Lance (27 DMG)', 'Frostbite (36 DMG)', 'Glacier Wall (Block 80%)', '🧊 Ice Age Freeze ULT (58 DMG + Stun)'] },
-        blood:      { icon: '🩸', name: 'Blood Demon',      skills: ['Crimson Slash (29 DMG)', 'Vampire Bite (34 DMG + 18 HP)', 'Blood Mist (Evade Hit)', '🌕 Moonlit Massacre ULT (70 DMG)'] },
-        shadow:     { icon: '🌑', name: 'Shadow Monarch',   skills: ['Shadow Dagger (31 DMG)', 'Arise Army (45 DMG)', 'Umbral Dodge (Evade Hit)', '👑 Monarch Domain ULT (74 DMG)'] },
-        sun:        { icon: '☀️', name: 'Sun God Nika',     skills: ['Dawn Whip (30 DMG)', 'Sun Gatling (44 DMG)', 'Drum Heartbeat (+30 HP)', '🔥 Bajrang Dawn ULT (75 DMG)'] },
-        venom:      { icon: '☠️', name: 'Venom Hydra',      skills: ['Acid Spit (28 DMG)', 'Toxic Fang (42 DMG)', 'Shed Skin (+25 HP & Shield)', '🐍 Hydra Plague ULT (69 DMG)'] },
-        storm:      { icon: '🌪️', name: 'Storm Dragon',     skills: ['Gale Blade (29 DMG)', 'Tornado Slam (43 DMG)', 'Wind Wall (Block 75%)', '⚡ Tempest Roar ULT (71 DMG)'] },
-        zoro:       { cost: 2000, icon: '⚔️', name: 'Zoro (3-Sword King)',       skills: ['Oni Giri (38 DMG)', 'Dragon Twister (54 DMG)', 'King Haki Parry (Block 80%)', '👹 Ashura 9-Sword ULT (90 DMG)'] },
-        sus:        { cost: 2000, icon: '👀', name: 'Sus (Shadow Imposter)',     skills: ['Vent Ambush (38 DMG)', 'Sabotage Strike (52 DMG)', 'Fake Task Evade (+30 HP)', '🚨 Emergency Eject ULT (88 DMG + Stun)'] },
-        moon:       { cost: 4000, icon: '🌙', name: 'Dr. Moon (Lunar Empress)',  skills: ['🌙 Lunar Scalpel (42 DMG)', '🌿 Sanjeevani Surge (56 DMG + 15 HP)', '🩺 Doctor Elixir (Evade +60 HP)', '🌕 Full Moon Eclipse ULT (95 DMG + Stun)'] },
-        mahavishnu: { secret: true, icon: '🔱', name: 'Sammu/Samaksh (MahaVishnu)', skills: ['🪈 Prem Bansuri (50 DMG + Stun)', '☸️ Sudarshana Chakra (75 True DMG)', '🛡️ Vaikuntha Kavach (Evade +55 HP)', '🌌 Vishwaroopa ULT (140 DMG + Stun)'] },
-        millyyt:    { secret: true, icon: '🎬', name: 'Milly (YouTube Queen)',      skills: ['🔔 Subscribe Strike (38 DMG)', '📈 Viral Algorithm (54 DMG)', '🚫 Demonetize (Reflect 80% DMG)', '▶️ Golden Play Button ULT (90 DMG)'] },
-        ishikastar: { secret: true, icon: '✨', name: 'Ishika (Celestial Empress)', skills: ['💫 Starfall Beam (38 DMG)', '💥 Supernova Burst (54 DMG)', '🌸 Astral Blessing (Evade +35 HP)', '🌠 Empress Meteor ULT (90 DMG)'] }
+        storm:      { cost: 300, icon: '🌪️', name: 'Storm Dragon',     skills: ['Gale Blade (29 DMG)', 'Tornado Slam (43 DMG)', 'Wind Wall (Block 75%)', '⚡ Tempest Roar ULT (71 DMG)'] },
+        venom:      { cost: 300, icon: '☠️', name: 'Venom Hydra',      skills: ['Acid Spit (28 DMG)', 'Toxic Fang (42 DMG)', 'Shed Skin (+25 HP & Shield)', '🐍 Hydra Plague ULT (69 DMG)'] },
+        rubber:     { cost: 300, icon: '👒', name: 'Rubber Gear 5',    skills: ['Gum-Gum Pistol (29 DMG)', 'Gatling Barrage (44 DMG)', 'Elastic Bounce (Dodge +15 HP)', '👊 Bajrang Fist ULT (72 DMG)'] },
+        blood:      { cost: 300, icon: '🩸', name: 'Blood Demon',      skills: ['Crimson Slash (29 DMG)', 'Vampire Bite (34 DMG + 18 HP)', 'Blood Mist (Evade Hit)', '🌕 Moonlit Massacre ULT (70 DMG)'] },
+        gravity:    { cost: 750, icon: '🪐', name: 'Gravity Force',    skills: ['Crush Slam (31 DMG)', 'Meteor Drop (46 DMG)', 'Gravity Repulse (Block 75%)', '☄️ Planetary Devastation ULT (74 DMG)'] },
+        space:      { cost: 750, icon: '🌌', name: 'Space Warp',       skills: ['Spatial Slash (32 DMG)', 'Void Rift (44 DMG)', 'Teleport Dodge (Evade Hit)', '🌌 Dimension Collapse ULT (74 DMG)'] },
+        time:       { cost: 750, icon: '⏳', name: 'Time Chrono',      skills: ['Chrono Strike (28 DMG)', 'Age Decay (40 DMG)', 'Rewind Heal (+40 HP)', '⏸️ Time Stop ULT (62 DMG + Stun)'] },
+        sun:        { cost: 750, icon: '☀️', name: 'Sun God Nika',     skills: ['Dawn Whip (32 DMG)', 'Sun Gatling (46 DMG)', 'Drum Heartbeat (+35 HP)', '🔥 Bajrang Dawn ULT (78 DMG)'] },
+        shadow:     { cost: 1500, icon: '🌑', name: 'Shadow Monarch',  skills: ['Shadow Dagger (35 DMG)', 'Arise Army (49 DMG)', 'Umbral Dodge (Evade Hit)', '👑 Monarch Domain ULT (82 DMG)'] },
+        blackhole:  { cost: 1500, icon: '🕳️', name: 'Black Hole',      skills: ['Dark Pull (33 DMG)', 'Event Horizon (44 DMG + Drain)', 'Matter Absorb (+30 HP & Shield)', '🕳️ Supermassive Crunch ULT (82 DMG)'] },
+        antimatter: { cost: 1500, icon: '⚛️', name: 'Anti-Matter',     skills: ['Positron Beam (36 DMG)', 'Chain Annihilation (52 DMG)', 'Phase Shift (Evade Hit)', '💥 Big Bang Erasure ULT (86 DMG)'] },
+        zoro:       { cost: 2000, icon: '⚔️', name: 'Zoro (3-Sword King)',      skills: ['Oni Giri (40 DMG)', 'Dragon Twister (56 DMG)', 'King Haki Parry (Block 80%)', '👹 Ashura 9-Sword ULT (94 DMG)'] },
+        sus:        { cost: 2000, icon: '👀', name: 'Sus (Shadow Imposter)',    skills: ['Vent Ambush (40 DMG)', 'Sabotage Strike (54 DMG)', 'Fake Task Evade (+35 HP)', '🚨 Emergency Eject ULT (92 DMG + Stun)'] },
+        moon:       { cost: 4000, icon: '🌙', name: 'Dr. Moon (Lunar Empress)', skills: ['🌙 Lunar Scalpel (44 DMG)', '🌿 Sanjeevani Surge (58 DMG + 18 HP)', '🩺 Doctor Elixir (Evade +65 HP)', '🌕 Full Moon Eclipse ULT (98 DMG + Stun)'] },
+        mahavishnu: { secret: true, icon: '🔱', name: 'Sammu/Samaksh (MahaVishnu)', skills: ['🪈 Prem Bansuri (52 DMG + Stun)', '☸️ Sudarshana Chakra (78 True DMG)', '🛡️ Vaikuntha Kavach (Evade +60 HP)', '🌌 Vishwaroopa ULT (145 DMG + Stun)'] },
+        millyyt:    { secret: true, icon: '🎬', name: 'Milly (YouTube Queen)',     skills: ['🔔 Subscribe Smash (46 DMG + Stun)', '📈 10M Viral Surge (64 DMG + 20 HP)', '💎 Diamond Shield (Evade +50 HP)', '▶️ Golden Play Button ULT (115 True DMG)'] },
+        ishikastar: { secret: true, icon: '✨', name: 'Ishika (Celestial Empress)', skills: ['💫 Starfall Beam (42 DMG)', '💥 Supernova Burst (58 DMG)', '🌸 Astral Blessing (Evade +45 HP)', '🌠 Empress Meteor ULT (96 DMG)'] }
       };
       const SV_PETS = [
         { id: 'mochi', name: '🐱 Mochi Spirit', desc: 'Scratches foe for +10 DMG/turn', cost: 200 },
@@ -5390,7 +5413,7 @@ module.exports = function initMultiServers(app, io) {
         { id: 'sheshnag', name: '🐍 Sheshnag Serpent', desc: '15% Block + 18 Poison/turn', cost: 2500 }
       ];
       let selectedPower = 'fire', latestPlayers = [], sfxMuted = false, svAudio = null, cutAnimId = null, cutTimeout = null;
-      let myProfile = { coins: 150, atkLv: 0, hpLv: 0, wins: 0, streak: 0, hasStone: false, unlockedPowers: [], ownedPets: [], activePet: null };
+      let myProfile = { coins: 150, atkLv: 0, hpLv: 0, wins: 0, streak: 0, hasStone: false, unlockedPowers: [], ownedPets: [], activePet: null, powerWins: {} };
 
       window.toggleSvSfx = function() { sfxMuted = !sfxMuted; const b = document.getElementById('svMuteBtn'); if (b) b.textContent = sfxMuted ? '🔇' : '🔊'; };
       function playSvSfx(type) {
@@ -5427,8 +5450,8 @@ module.exports = function initMultiServers(app, io) {
         } catch (e) {}
       }
     `;
-    // === ⚔️ SAMMUVERSE SOCKET DELIVERY — PIECE 2/3 (CUTSCENES & UI LOGIC) ===
-    const SV_CLIENT_SCRIPT_PART2 = `
+     // === ⚔️ SAMMUVERSE SOCKET DELIVERY — PIECE 2A/3 (CUTSCENES & TABS) ===
+    const SV_CLIENT_SCRIPT_PART2A = `
       window.skipSvCutscene = function() {
         if (cutAnimId) { cancelAnimationFrame(cutAnimId); cutAnimId = null; }
         if (cutTimeout) { clearTimeout(cutTimeout); cutTimeout = null; }
@@ -5442,11 +5465,10 @@ module.exports = function initMultiServers(app, io) {
         const ctx = c.getContext('2d'); let frame = 0; const theme = data.theme || 'cosmic';
         function drawFrame() {
           frame++; ctx.clearRect(0, 0, 400, 230);
-          const bgMap = { chakra: ['#1e1b4b', '#b45309'], bansuri: ['#064e3b', '#0284c7'], vishwaroopa: ['#090d16', '#7e22ce'], moon: ['#0f172a', '#be123c'], zoro: ['#022c22', '#15803d'], awaken: ['#422006', '#dc2626'], cosmic: ['#1e1b4b', '#9333ea'] };
+          const bgMap = { chakra: ['#1e1b4b', '#b45309'], bansuri: ['#064e3b', '#0284c7'], vishwaroopa: ['#090d16', '#7e22ce'], moon: ['#0f172a', '#be123c'], zoro: ['#022c22', '#15803d'], milly: ['#450a0a', '#eab308'], awaken: ['#422006', '#dc2626'], cosmic: ['#1e1b4b', '#9333ea'] };
           const pair = bgMap[theme] || bgMap.cosmic;
-                    const grad = ctx.createRadialGradient(200, 115, 15, 200, 115, 210);
+          const grad = ctx.createRadialGradient(200, 115, 15, 200, 115, 210);
           grad.addColorStop(0, pair[0]); grad.addColorStop(1, pair[1]);
-
           ctx.fillStyle = grad; ctx.fillRect(0, 0, 400, 230);
           ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 2;
           for (let i = 0; i < 24; i++) {
@@ -5464,6 +5486,10 @@ module.exports = function initMultiServers(app, io) {
           } else if (theme === 'moon') {
             ctx.fillStyle = frame > 45 ? '#f43f5e' : '#fef08a'; ctx.beginPath(); ctx.arc(200, 105, 52, 0, Math.PI * 2); ctx.fill();
             ctx.font = '44px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🌙🩺', 200, 115);
+          } else if (theme === 'milly') {
+            ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.roundRect(140, 68, 120, 84, 18); ctx.fill();
+            ctx.strokeStyle = '#fde047'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.moveTo(188, 92); ctx.lineTo(222, 110); ctx.lineTo(188, 128); ctx.closePath(); ctx.fill();
           } else {
             ctx.font = '56px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             const scale = 1 + Math.sin(frame * 0.25) * 0.15; ctx.save(); ctx.translate(200, 110); ctx.scale(scale, scale); ctx.fillText(data.emoji || '⚡', 0, 0); ctx.restore();
@@ -5478,8 +5504,8 @@ module.exports = function initMultiServers(app, io) {
 
       window.openSammuVerseModal = function() {
         document.getElementById('svModal').style.display = 'flex';
-        renderSvPowers(); renderDojoShop(); refreshOpponentDropdown();
-        if (typeof socket !== 'undefined') { socket.emit('svGetStats'); socket.emit('svRequestLogs'); }
+        ensureExpansionBars(); renderSvPowers(); renderDojoShop(); refreshOpponentDropdown();
+        if (typeof socket !== 'undefined') { socket.emit('svGetStats'); socket.emit('svRequestLogs'); socket.emit('svGetChampion'); }
       };
       window.switchSvTab = function(tab) {
         ['fight', 'dojo', 'logs'].forEach(t => {
@@ -5489,29 +5515,68 @@ module.exports = function initMultiServers(app, io) {
         if (tab === 'logs' && typeof socket !== 'undefined') socket.emit('svRequestLogs');
         if (tab === 'dojo') renderDojoShop();
       };
+    `;
+
+       // === ⚔️ SAMMUVERSE SOCKET DELIVERY — PIECE 2B/3 (CHAMPION, QUESTS & SHOP UI) ===
+    const SV_CLIENT_SCRIPT_PART2B = `
       function getRankTitle(w) { return w >= 50 ? '🔱 Supreme Avatar' : w >= 30 ? '👑 Dimensional Emperor' : w >= 15 ? '🔥 Cosmic Warlord' : w >= 5 ? '⚔️ Rogue Shinobi' : '🌱 Academy Rookie'; }
+      function ensureExpansionBars() {
+        const fightP = document.getElementById('svFightPanel');
+        if (fightP && !document.getElementById('svChampBar')) {
+          const cb = document.createElement('div'); cb.id = 'svChampBar';
+          cb.style.cssText = 'display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,#713f12,#92400e);border:1.5px solid #facc15;border-radius:10px;padding:6px 8px;margin-bottom:6px;font-size:11px;';
+          cb.innerHTML = '<span id="svChampText" style="font-weight:900;color:#fef08a;">👑 Throne Empty! Claim it!</span><button onclick="socket.emit(\\'svChallengeChampion\\',{power:selectedPower})" style="background:#facc15;color:#111;border:none;border-radius:7px;padding:4px 8px;font-weight:900;font-size:10px;cursor:pointer;">⚔️ Title Match</button>';
+          fightP.insertBefore(cb, fightP.firstChild);
+        }
+        const row = document.getElementById('svOpponentSelect')?.parentElement;
+        if (row && !document.getElementById('svCoopBtn')) {
+          const b = document.createElement('button'); b.id = 'svCoopBtn';
+          b.style.cssText = 'padding:7px 8px;border:1px solid #38bdf8;border-radius:10px;background:#0c4a6e;color:#7dd3fc;font-weight:900;font-size:11px;cursor:pointer;';
+          b.textContent = '🤝 2P Boss'; b.title = 'Invite selected player for 2-Player Co-Op Boss Raid!';
+          b.onclick = () => socket.emit('svCoopInvite', { partnerId: document.getElementById('svOpponentSelect').value, power: selectedPower });
+          row.appendChild(b);
+        }
+        const dojoP = document.getElementById('svDojoPanel');
+        if (dojoP && !document.getElementById('svQuestBox')) {
+          const qb = document.createElement('div'); qb.id = 'svQuestBox'; qb.style.marginBottom = '8px';
+          dojoP.insertBefore(qb, dojoP.children[1]);
+        }
+      }
+
       function renderSvPowers() {
         const grid = document.getElementById('svPowerGrid'); if (!grid) return; grid.innerHTML = '';
-        const unlocked = myProfile.unlockedPowers || [];
+        const unlocked = myProfile.unlockedPowers || [], pWins = myProfile.powerWins || {};
         Object.entries(SV_POWERS).forEach(([key, p]) => {
           if (p.secret && !unlocked.includes(key)) return;
-          const isCoinLocked = p.cost && !unlocked.includes(key);
+          const isCoinLocked = p.cost && !unlocked.includes(key), isV2 = (pWins[key] || 0) >= 5;
           const b = document.createElement('button');
           b.className = 'sv-pwr-btn' + (selectedPower === key ? ' selected' : '') + (isCoinLocked ? ' locked-coin' : '');
-          if (p.secret) b.style.borderColor = '#facc15';
-          b.textContent = isCoinLocked ? ('🔒 ' + p.icon + ' ' + p.name + ' (' + p.cost + '🪙)') : (p.icon + ' ' + p.name);
+          if (p.secret || isV2) b.style.borderColor = '#facc15';
+          b.textContent = isCoinLocked ? ('🔒 ' + p.icon + ' ' + p.name + ' (' + p.cost + '🪙)') : (p.icon + ' ' + p.name + (isV2 ? ' [V2]' : ''));
           b.onclick = () => {
             if (isCoinLocked) { if (confirm('Unlock ' + p.icon + ' ' + p.name + ' for ' + p.cost + ' Coins?')) socket.emit('svBuyPower', key); return; }
             selectedPower = key; renderSvPowers();
           };
           grid.appendChild(b);
         });
-        const cur = SV_POWERS[selectedPower] || SV_POWERS.fire;
-        document.getElementById('svPowerPreview').innerHTML = '<b>' + cur.icon + ' ' + cur.name + ' (+' + (myProfile.atkLv * 5) + ' ATK | +' + (myProfile.hpLv * 25) + ' HP):</b><br>' + cur.skills.join(' • ');
+        const cur = SV_POWERS[selectedPower] || SV_POWERS.fire, curWins = pWins[selectedPower] || 0;
+        const v2Tag = curWins >= 5 ? ' 🔥 [V2 +15% DMG]' : (' (' + curWins + '/5 wins to V2)');
+        document.getElementById('svPowerPreview').innerHTML = '<b>' + cur.icon + ' ' + cur.name + v2Tag + ':</b><br>' + cur.skills.join(' • ');
       }
+
       function renderDojoShop() {
+        ensureExpansionBars();
         const hc = document.getElementById('svHeaderCoins'); if (hc) hc.textContent = '🪙 ' + myProfile.coins;
         const rb = document.getElementById('svRankBanner'); if (rb) rb.textContent = 'Rank: ' + getRankTitle(myProfile.wins) + ' | Wins: ' + myProfile.wins + ' | Streak: ' + myProfile.streak + '🔥';
+        const qb = document.getElementById('svQuestBox');
+        if (qb && Array.isArray(myProfile.quests)) {
+          qb.innerHTML = '<div style="font-size:11px;font-weight:900;color:#fde047;text-align:left;margin-bottom:4px;">📜 LIVE GRIND QUESTS:</div>' +
+            myProfile.quests.map(q => {
+              const ready = q.prog >= q.goal;
+              return '<div class="sv-shop-card" style="border-color:' + (ready ? '#4ade80' : '#475569') + ';"><div><b>' + q.label + '</b> (' + q.prog + '/' + q.goal + ')</div>' +
+                '<button onclick="socket.emit(\\'svClaimQuest\\',\\'' + q.id + '\\')" ' + (ready ? '' : 'disabled') + ' style="background:' + (ready ? '#16a34a' : '#334155') + ';border:none;color:#fff;padding:5px 9px;border-radius:7px;font-weight:900;cursor:pointer;">' + (ready ? ('Claim ' + q.reward + '🪙') : (q.reward + '🪙')) + '</button></div>';
+            }).join('');
+        }
         document.getElementById('svAtkDesc').textContent = 'Lv.' + myProfile.atkLv + '/15 (+' + (myProfile.atkLv * 5) + ' Bonus DMG)';
         document.getElementById('svBuyAtkBtn').textContent = myProfile.atkLv >= 15 ? 'MAX' : '150🪙';
         document.getElementById('svHpDesc').textContent = 'Lv.' + myProfile.hpLv + '/15 (+' + (myProfile.hpLv * 25) + ' Bonus HP)';
@@ -5541,22 +5606,37 @@ module.exports = function initMultiServers(app, io) {
       window.sendSvChallenge = () => { if (typeof socket !== 'undefined') socket.emit('svChallenge', { targetId: document.getElementById('svOpponentSelect').value, power: selectedPower }); };
       window.redeemSvSecretCode = () => { const inp = document.getElementById('svSecretCodeInput'); if (inp && inp.value.trim() && typeof socket !== 'undefined') { socket.emit('svUnlockCode', inp.value.trim()); inp.value = ''; } };
     `;
-    // === ⚔️ SAMMUVERSE SOCKET DELIVERY — PIECE 3/3 (SOCKET BINDINGS & EMITTER) ===
+     // === ⚔️ SAMMUVERSE SOCKET DELIVERY — PIECE 3/3 (ALL SOCKET LISTENERS & EMITTER) ===
     const SV_CLIENT_SCRIPT_PART3 = `
       socket.on('svCutscene', (d) => { if (!d._serverId || !window.selectedServerId || d._serverId === window.selectedServerId) playBloxFruitCutscene(d); });
       socket.on('svStatsSync', (st) => { if (st) { myProfile = st; renderDojoShop(); renderSvPowers(); } });
       socket.on('svNotice', (msg) => { playSvSfx('win'); alert(msg); });
       socket.on('updatePlayers', (list) => { if (Array.isArray(list)) { latestPlayers = list; refreshOpponentDropdown(); } });
-            socket.on('svIncomingChallenge', (d) => {
+
+      socket.on('svChampionSync', (d) => {
+        if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
+        const el = document.getElementById('svChampText'); if (!el) return;
+        el.textContent = d.champ ? ('👑 CHAMP: ' + d.champ.name + ' (' + d.champ.defenses + 'x Def)') : '👑 Throne Empty! Claim it!';
+      });
+
+      socket.on('svIncomingChallenge', (d) => {
         if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
         document.getElementById('svModal').style.display = 'flex'; switchSvTab('fight');
         const box = document.getElementById('svIncomingBox'); box.style.display = 'block';
         box.innerHTML = '<div style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:6px;">⚔️ ' + d.fromName + ' (' + d.fromPowerLabel + ') challenged you!</div>' +
           '<button id="svAcceptBtnNow" style="background:#16a34a;border:none;color:#fff;padding:7px 14px;border-radius:9px;font-weight:900;font-size:12px;cursor:pointer;">🔥 Accept with Selected Power!</button>';
-        document.getElementById('svAcceptBtnNow').onclick = () => acceptSvChallenge(d.fromId);
+        document.getElementById('svAcceptBtnNow').onclick = () => { box.style.display = 'none'; socket.emit('svAccept', { challengerId: d.fromId, power: selectedPower }); };
       });
 
-      window.acceptSvChallenge = (fromId) => { document.getElementById('svIncomingBox').style.display = 'none'; socket.emit('svAccept', { challengerId: fromId, power: selectedPower }); };
+      socket.on('svCoopIncoming', (d) => {
+        if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
+        document.getElementById('svModal').style.display = 'flex'; switchSvTab('fight');
+        const box = document.getElementById('svIncomingBox'); box.style.display = 'block';
+        box.innerHTML = '<div style="font-size:12px;font-weight:900;color:#7dd3fc;margin-bottom:6px;">🤝 ' + d.fromName + ' invited you to 2P Co-Op Boss Raid!</div>' +
+          '<button id="svCoopAccBtn" style="background:#0284c7;border:none;color:#fff;padding:7px 14px;border-radius:9px;font-weight:900;font-size:12px;cursor:pointer;">⚔️ Join Co-Op Raid!</button>';
+        document.getElementById('svCoopAccBtn').onclick = () => { box.style.display = 'none'; socket.emit('svCoopAccept', { hostId: d.fromId, power: selectedPower }); };
+      });
+
       socket.on('svBattleSync', (b) => {
         if (b._serverId && window.selectedServerId && b._serverId !== window.selectedServerId) return;
         if (b.sfx) playSvSfx(b.sfx);
@@ -5582,6 +5662,33 @@ module.exports = function initMultiServers(app, io) {
           skBox.appendChild(btn);
         });
       });
+
+      socket.on('svCoopSync', (r) => {
+        if (r._serverId && window.selectedServerId && r._serverId !== window.selectedServerId) return;
+        if (r.sfx) playSvSfx(r.sfx);
+        document.getElementById('svModal').style.display = 'flex';
+        document.getElementById('svLobbyView').style.display = 'none';
+        document.getElementById('svBattleView').style.display = 'block';
+        document.getElementById('svTurnBadge').textContent = '🤝 CO-OP Turn ' + r.turn;
+        document.getElementById('svBattleTimer').textContent = '⏳ ' + r.timeLeft + 's';
+        document.getElementById('svOppLabel').textContent = r.boss.name;
+        document.getElementById('svOppHpText').textContent = r.boss.hp + ' / ' + r.boss.maxHp + ' HP';
+        document.getElementById('svOppHpBar').style.width = Math.max(0, Math.round((r.boss.hp / r.boss.maxHp) * 100)) + '%';
+        document.getElementById('svMeLabel').textContent = r.me.icon + ' ' + r.me.name + ' & ' + r.mate.icon + ' ' + r.mate.name + ' (' + r.mate.hp + ' HP)';
+        document.getElementById('svMeHpText').textContent = r.me.hp + ' / ' + r.me.maxHp + ' HP';
+        document.getElementById('svMeHpBar').style.width = Math.max(0, Math.round((r.me.hp / r.me.maxHp) * 100)) + '%';
+        document.getElementById('svCombatFeed').innerHTML = r.logText;
+        const skBox = document.getElementById('svSkillButtons'); skBox.innerHTML = '';
+        r.me.skills.forEach((sk, idx) => {
+          const btn = document.createElement('button'); btn.className = 'sv-skill-btn' + (idx === 3 ? ' ult' : '');
+          const onCd = (idx === 3 && r.me.ultCd > 0);
+          btn.disabled = r.me.locked || r.me.hp <= 0 || onCd;
+          btn.textContent = onCd ? (sk + ' [CD: ' + r.me.ultCd + 't]') : (r.me.hp <= 0 ? '💀 DOWNED' : sk);
+          btn.onclick = () => { playSvSfx(idx === 3 ? 'ult' : 'atk'); socket.emit('svCoopSkill', idx); };
+          skBox.appendChild(btn);
+        });
+      });
+
       socket.on('svBattleEnd', (res) => {
         if (res._serverId && window.selectedServerId && res._serverId !== window.selectedServerId) return;
         if (res.won) playSvSfx('win');
@@ -5589,12 +5696,256 @@ module.exports = function initMultiServers(app, io) {
         document.getElementById('svLobbyView').style.display = 'block';
         socket.emit('svGetStats'); switchSvTab('logs');
       });
+
+      socket.on('svCoopEnd', (res) => {
+        if (res._serverId && window.selectedServerId && res._serverId !== window.selectedServerId) return;
+        if (res.won) playSvSfx('win');
+        document.getElementById('svBattleView').style.display = 'none';
+        document.getElementById('svLobbyView').style.display = 'block';
+        socket.emit('svGetStats'); switchSvTab('dojo');
+      });
+
       socket.on('svLogsUpdate', (logs) => {
         const box = document.getElementById('svLogList'); if (!box) return;
         if (!Array.isArray(logs) || logs.length === 0) { box.innerHTML = '<div style="padding:12px;color:#94a3b8;">No SammuVerse battles registered yet! Be the first champion! ⚔️</div>'; return; }
         box.innerHTML = logs.map(l => '<div class="sv-log-item">🏆 <b>' + l.winner + '</b> (' + l.winPower + ') defeated <b>' + l.loser + '</b> (' + l.losePower + ') <span style="color:#94a3b8;float:right;">' + l.time + '</span></div>').join('');
       });
     `;
+
+    io.on('connection', (socket) => {
+        const sendSvBundle = () => {
+            socket.emit('svDeliverAll', {
+                html: SV_FULL_BUNDLE,
+                js: SV_CLIENT_SCRIPT_PART1 + '\n' + SV_CLIENT_SCRIPT_PART2A + '\n' + SV_CLIENT_SCRIPT_PART2B + '\n' + SV_CLIENT_SCRIPT_PART3
+            });
+        };
+        socket.on('svRequestBundle', sendSvBundle);
+        socket.on('joinRoom', () => setTimeout(sendSvBundle, 500));
+    });
+    // === ⚔️ SAMMUVERSE EXPANSION — PIECE 1/3 (QUESTS & CHAMPION BELT) ===
+    const svChampions = new Map();
+    const svCoopPending = new Map();
+    const svCoopBattles = new Map();
+
+    const SV_QUEST_POOL = [
+        { id: 'q_win2',   label: 'Win 2 SammuVerse Battles',    goal: 2, reward: 120, type: 'wins' },
+        { id: 'q_ult3',   label: 'Unleash 3 Ultimate Moves',    goal: 3, reward: 100, type: 'ults' },
+        { id: 'q_demon1', label: 'Defeat Demon Overlord Boss',  goal: 1, reward: 200, type: 'demon' },
+        { id: 'q_coop1',  label: 'Win a 2-Player Co-Op Raid',   goal: 1, reward: 250, type: 'coop' },
+        { id: 'q_pvp1',   label: 'Win a 1v1 PvP Duel',          goal: 1, reward: 180, type: 'pvp' }
+    ];
+
+    function ensurePlayerQuests(prof) {
+        if (!Array.isArray(prof.quests) || prof.quests.length < 3) {
+            const shuffled = [...SV_QUEST_POOL].sort(() => Math.random() - 0.5).slice(0, 3);
+            prof.quests = shuffled.map(q => ({ ...q, prog: 0, claimed: false }));
+        }
+        return prof.quests;
+    }
+
+    function advanceSvQuest(uname, qType, amount = 1) {
+        if (!uname) return;
+        const prof = getSvProfile(uname);
+        ensurePlayerQuests(prof).forEach(q => {
+            if (!q.claimed && q.type === qType) {
+                q.prog = Math.min(q.goal, (q.prog || 0) + amount);
+            }
+        });
+        saveSvStats();
+    }
+
+    function broadcastChampion(srvId) {
+        if (!srvId) return;
+        const champ = svChampions.get(srvId) || null;
+        io.to(srvId).emit('svChampionSync', { champ, _serverId: srvId });
+    }
+
+    const _origGetSvProfile = getSvProfile;
+    getSvProfile = function(uname) {
+        const p = _origGetSvProfile(uname);
+        ensurePlayerQuests(p);
+        return p;
+    };
+    // === ⚔️ SAMMUVERSE EXPANSION — PIECE 2/3 (2-PLAYER CO-OP BOSS ENGINE) ===
+    function syncCoopRaid(raid, sfx) {
+        [raid.p1, raid.p2].forEach(me => {
+            const mate = me === raid.p1 ? raid.p2 : raid.p1;
+            io.to(me.id).emit('svCoopSync', {
+                turn: raid.turn, timeLeft: raid.timeLeft, logText: raid.lastLog, sfx: sfx || null,
+                boss: { name: raid.boss.name, hp: raid.boss.hp, maxHp: raid.boss.maxHp },
+                me: { name: me.name, icon: me.def.icon, powerName: me.def.name, hp: me.hp, maxHp: me.maxHp, ultCd: me.ultCd, locked: me.choice !== null, stunned: me.stunned, skills: me.def.moves.map(m => m.label) },
+                mate: { name: mate.name, icon: mate.def.icon, hp: mate.hp, maxHp: mate.maxHp },
+                _serverId: raid.srvId
+            });
+        });
+    }
+
+    function resolveCoopTurn(raidId) {
+        const r = svCoopBattles.get(raidId);
+        if (!r) return;
+        const logs = [];
+        let turnSfx = 'atk', cutToPlay = null;
+
+        [r.p1, r.p2].forEach(hero => {
+            if (hero.hp <= 0) return;
+            const mate = hero === r.p1 ? r.p2 : r.p1;
+            const idx = (hero.choice !== null && hero.choice >= 0) ? hero.choice : 0;
+            const mv = hero.def.moves[idx];
+            if (hero.ultCd > 0) hero.ultCd--;
+            if (idx === 3) { hero.ultCd = 3; advanceSvQuest(hero.name, 'ults', 1); }
+
+            if (mv.cut) cutToPlay = { ...mv.cut, caption: `${hero.def.icon} ${hero.name.toUpperCase()} — ${mv.cut.title}` };
+            if (mv.heal) {
+                hero.hp = Math.min(hero.maxHp, hero.hp + mv.heal);
+                if (mate.hp > 0) mate.hp = Math.min(mate.maxHp, mate.hp + Math.round(mv.heal * 0.6));
+                logs.push(`💖 <b>${hero.name}</b> healed the squad (+${mv.heal} HP)!`);
+            }
+            if (mv.evade || mv.block) hero.shielded = true;
+            if (mv.dmg) {
+                let dmg = mv.dmg + hero.bonusAtk + Math.floor(Math.random() * 8);
+                if (hero.isV2) dmg = Math.round(dmg * 1.15);
+                r.boss.hp = Math.max(0, r.boss.hp - dmg);
+                logs.push(`${hero.def.icon} <b>${hero.name}</b> blasted <b>${r.boss.name}</b> for <b>-${dmg} HP</b>!`);
+            }
+        });
+
+        if (r.boss.hp > 0) {
+            const bossMove = Math.random() < 0.35 ? '☄️ APOCALYPSE NOVA (AoE)' : '👹 SHADOW CLEAVE';
+            const baseBossDmg = bossMove.includes('AoE') ? 44 : 34;
+            [r.p1, r.p2].forEach(hero => {
+                if (hero.hp <= 0) return;
+                let taken = hero.shielded ? Math.round(baseBossDmg * 0.25) : baseBossDmg;
+                if (hero.def.passiveRed) taken = Math.round(taken * (1 - hero.def.passiveRed));
+                hero.shielded = false;
+                hero.hp = Math.max(0, hero.hp - taken);
+            });
+            logs.push(`👹 <b>${r.boss.name}</b> used <b>${bossMove}</b> on the squad (-${baseBossDmg} Base DMG)!`);
+        }
+
+        if (cutToPlay) {
+            io.to(r.p1.id).emit('svCutscene', { ...cutToPlay, _serverId: r.srvId });
+            io.to(r.p2.id).emit('svCutscene', { ...cutToPlay, _serverId: r.srvId });
+        }
+
+        r.lastLog = logs.join('<br>');
+
+        if (r.boss.hp <= 0 || (r.p1.hp <= 0 && r.p2.hp <= 0)) {
+            clearInterval(r.interval);
+            svCoopBattles.delete(raidId);
+            const won = r.boss.hp <= 0;
+            [r.p1, r.p2].forEach(h => {
+                io.to(h.id).emit('svCoopEnd', { won, _serverId: r.srvId });
+                if (won) {
+                    addCoins(h.name, 220);
+                    advanceSvQuest(h.name, 'wins', 1);
+                    advanceSvQuest(h.name, 'coop', 1);
+                }
+            });
+            io.to(r.srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: won
+                    ? `🎉👹 **CO-OP RAID VICTORY!** **${r.p1.name} & ${r.p2.name}** slayed **${r.boss.name}** and earned **+220🪙 EACH**! 🏆`
+                    : `💀👹 **CO-OP RAID FAILED!** **${r.boss.name}** wiped out **${r.p1.name} & ${r.p2.name}**!`,
+                _serverId: r.srvId
+            });
+            return;
+        }
+
+        r.turn++; r.timeLeft = 15;
+        r.p1.choice = r.p1.hp > 0 ? null : -1;
+        r.p2.choice = r.p2.hp > 0 ? null : -1;
+        syncCoopRaid(r, turnSfx);
+    }
+    // === ⚔️ SAMMUVERSE EXPANSION — PIECE 3/3 (SOCKET LISTENERS) ===
+    io.on('connection', (socket) => {
+        socket.on('svGetChampion', () => {
+            if (socket.activeServerId) broadcastChampion(socket.activeServerId);
+        });
+
+        socket.on('svClaimQuest', (qId) => {
+            const uname = socket.username || 'Player';
+            const prof = getSvProfile(uname);
+            const q = ensurePlayerQuests(prof).find(x => x.id === qId);
+            if (!q || q.claimed || q.prog < q.goal) return;
+            q.claimed = true;
+            addCoins(uname, q.reward);
+            const usedIds = new Set(prof.quests.map(x => x.id));
+            const nextPool = SV_QUEST_POOL.filter(x => !usedIds.has(x.id));
+            const nextQ = nextPool[Math.floor(Math.random() * nextPool.length)] || SV_QUEST_POOL[0];
+            prof.quests = prof.quests.map(x => x.id === qId ? { ...nextQ, prog: 0, claimed: false } : x);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svNotice', `🎉 Quest Complete! Claimed +${q.reward}🪙!`);
+        });
+
+        socket.on('svChallengeChampion', ({ power }) => {
+            const srvId = socket.activeServerId, uname = socket.username || 'Player';
+            if (!srvId || findPlayerActiveSvBattle(socket.id)) return;
+            const champ = svChampions.get(srvId);
+            if (!champ) {
+                svChampions.set(srvId, { id: socket.id, name: uname, power, defenses: 0 });
+                broadcastChampion(srvId);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `👑🔥 **NEW SAMMUVERSE CHAMPION!** **${uname}** claimed the empty Champion Throne! Challenge them for **+300🪙**!`, _serverId: srvId });
+                return;
+            }
+            if (champ.id === socket.id) return socket.emit('svNotice', '👑 You are already the reigning Champion!');
+            socket.onevent({ type: 2, nsp: '/', data: ['svChallenge', { targetId: champ.id, power, isTitleMatch: true }] });
+        });
+
+        socket.on('svCoopInvite', ({ partnerId, power }) => {
+            const srvId = socket.activeServerId, uname = socket.username || 'Player';
+            if (!srvId || !partnerId || partnerId.startsWith('BOT_')) return socket.emit('svNotice', '⚠️ Select a real player in the dropdown to invite for 2-Player Co-Op Boss Raid!');
+            const partnerSock = io.sockets.sockets.get(partnerId);
+            if (!partnerSock || partnerSock.activeServerId !== srvId) return socket.emit('svNotice', '⚠️ Partner is offline!');
+            svCoopPending.set(socket.id, { partnerId, power, srvId, expires: Date.now() + 45000 });
+            io.to(partnerId).emit('svCoopIncoming', { fromId: socket.id, fromName: uname, _serverId: srvId });
+            socket.emit('svNotice', `🤝 Co-Op Boss Raid invite sent to ${partnerSock.username || 'Partner'}!`);
+        });
+
+        socket.on('svCoopAccept', ({ hostId, power }) => {
+            const srvId = socket.activeServerId, req = svCoopPending.get(hostId);
+            if (!srvId || !req || req.partnerId !== socket.id || Date.now() > req.expires) return;
+            svCoopPending.delete(hostId);
+            const s1 = io.sockets.sockets.get(hostId);
+            if (!s1 || s1.activeServerId !== srvId) return;
+
+            const d1 = SV_DEFS[req.power] || SV_DEFS.fire, p1Prof = getSvProfile(s1.username);
+            const d2 = SV_DEFS[power] || SV_DEFS.water, p2Prof = getSvProfile(socket.username);
+            const hp1 = d1.hp + (p1Prof.hpLv * 25), hp2 = d2.hp + (p2Prof.hpLv * 25);
+            const raidId = 'coop_' + Date.now();
+            const raid = {
+                id: raidId, srvId, turn: 1, timeLeft: 15, lastLog: '👹 **RAID BOSS: MADARA SIX PATHS (900 HP)** appeared! Team up!',
+                boss: { name: '👹 Madara Six Paths', hp: 900, maxHp: 900 },
+                p1: { id: s1.id, name: s1.username || 'Hero 1', def: d1, hp: hp1, maxHp: hp1, bonusAtk: p1Prof.atkLv * 5, ultCd: 0, choice: null, isV2: (p1Prof.powerWins?.[req.power] || 0) >= 5 },
+                p2: { id: socket.id, name: socket.username || 'Hero 2', def: d2, hp: hp2, maxHp: hp2, bonusAtk: p2Prof.atkLv * 5, ultCd: 0, choice: null, isV2: (p2Prof.powerWins?.[power] || 0) >= 5 },
+                interval: null
+            };
+            svCoopBattles.set(raidId, raid);
+            raid.interval = setInterval(() => {
+                const c = svCoopBattles.get(raidId);
+                if (!c) return;
+                c.timeLeft--;
+                if (c.timeLeft <= 0) resolveCoopTurn(raidId);
+                else syncCoopRaid(c, null);
+            }, 1000);
+            syncCoopRaid(raid, 'ult');
+        });
+
+        socket.on('svCoopSkill', (idx) => {
+            for (const [rId, r] of svCoopBattles.entries()) {
+                if (r.p1.id === socket.id || r.p2.id === socket.id) {
+                    const me = r.p1.id === socket.id ? r.p1 : r.p2;
+                    if (me.choice === null && me.hp > 0 && !(Number(idx) === 3 && me.ultCd > 0)) {
+                        me.choice = Number(idx);
+                        if ((r.p1.choice !== null || r.p1.hp <= 0) && (r.p2.choice !== null || r.p2.hp <= 0)) resolveCoopTurn(rId);
+                        else syncCoopRaid(r, null);
+                    }
+                    break;
+                }
+            }
+        });
+    });
+
      // === ⚔️ SV_FULL_BUNDLE — PIECE 1/2 (STYLES & CUTSCENE OVERLAY) ===
     const SV_FULL_BUNDLE_PART1 = `
     <style>

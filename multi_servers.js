@@ -4928,6 +4928,410 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // === ⚔️ SAMMUVERSE PVP ENGINE — PART 2A/2 (POWERS, COMBAT MATH & LOGS) ===
+    const SV_LOG_FILE = path.join(__dirname, 'sammuverse_logs.json');
+    let svBattleLogs = [];
+    if (fs.existsSync(SV_LOG_FILE)) {
+        try { svBattleLogs = JSON.parse(fs.readFileSync(SV_LOG_FILE, 'utf8')); } catch (e) {}
+    }
+
+    function recordSvLog(srvId, winner, winPower, loser, losePower) {
+        const entry = {
+            srvId,
+            winner,
+            winPower,
+            loser,
+            losePower,
+            time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+        };
+        svBattleLogs.unshift(entry);
+        if (svBattleLogs.length > 40) svBattleLogs.pop();
+        try { fs.writeFileSync(SV_LOG_FILE, JSON.stringify(svBattleLogs, null, 2)); } catch (e) {}
+        io.to(srvId).emit('svLogsUpdate', svBattleLogs.filter(l => l.srvId === srvId));
+    }
+
+    const SV_DEFS = {
+        fire: {
+            icon: '🔥', name: 'Fire Inferno',
+            moves: [
+                { label: 'Fireball (28 DMG)', type: 'atk', dmg: 28 },
+                { label: 'Flame Tornado (42 DMG)', type: 'atk', dmg: 42 },
+                { label: 'Heat Shield (Block 70%)', type: 'def', block: 0.70 },
+                { label: '☀️ Solar Flare ULT (68 DMG)', type: 'ult', dmg: 68 }
+            ]
+        },
+        water: {
+            icon: '🌊', name: 'Water Tsunami',
+            moves: [
+                { label: 'Hydro Whip (26 DMG)', type: 'atk', dmg: 26 },
+                { label: 'Whirlpool Trap (35 DMG)', type: 'atk', dmg: 35 },
+                { label: 'Water Mirror (Reflect 50%)', type: 'def', block: 0.50, reflect: 0.50 },
+                { label: '🌊 Abyssal Wave ULT (65 DMG)', type: 'ult', dmg: 65 }
+            ]
+        },
+        rubber: {
+            icon: '👒', name: 'Rubber Gear 5',
+            moves: [
+                { label: 'Gum-Gum Pistol (29 DMG)', type: 'atk', dmg: 29 },
+                { label: 'Gatling Barrage (44 DMG)', type: 'atk', dmg: 44 },
+                { label: 'Elastic Bounce (Evade +15 HP)', type: 'def', evade: true, heal: 15 },
+                { label: '👊 Bajrang Fist ULT (72 DMG)', type: 'ult', dmg: 72 }
+            ]
+        },
+        space: {
+            icon: '🌌', name: 'Space Warp',
+            moves: [
+                { label: 'Spatial Slash (30 DMG)', type: 'atk', dmg: 30 },
+                { label: 'Void Rift (40 DMG)', type: 'atk', dmg: 40 },
+                { label: 'Teleport Dodge (Evade Hit)', type: 'def', evade: true },
+                { label: '🌌 Dimension Collapse ULT (68 DMG)', type: 'ult', dmg: 68 }
+            ]
+        },
+        time: {
+            icon: '⏳', name: 'Time Chrono',
+            moves: [
+                { label: 'Chrono Strike (25 DMG)', type: 'atk', dmg: 25 },
+                { label: 'Age Decay (36 DMG)', type: 'atk', dmg: 36 },
+                { label: 'Rewind Heal (+35 HP)', type: 'def', heal: 35 },
+                { label: '⏸️ Time Stop ULT (55 DMG + Stun)', type: 'ult', dmg: 55, stun: true }
+            ]
+        },
+        gravity: {
+            icon: '🪐', name: 'Gravity Force',
+            moves: [
+                { label: 'Crush Slam (30 DMG)', type: 'atk', dmg: 30 },
+                { label: 'Meteor Drop (45 DMG)', type: 'atk', dmg: 45 },
+                { label: 'Gravity Repulse (Block 75%)', type: 'def', block: 0.75 },
+                { label: '☄️ Planetary Devastation ULT (70 DMG)', type: 'ult', dmg: 70 }
+            ]
+        },
+        blackhole: {
+            icon: '🕳️', name: 'Black Hole',
+            moves: [
+                { label: 'Dark Pull (27 DMG)', type: 'atk', dmg: 27 },
+                { label: 'Event Horizon (38 DMG + Drain)', type: 'atk', dmg: 38, heal: 12 },
+                { label: 'Matter Absorb (+25 HP & Shield)', type: 'def', block: 0.50, heal: 25 },
+                { label: '🕳️ Supermassive Crunch ULT (72 DMG)', type: 'ult', dmg: 72 }
+            ]
+        },
+        antimatter: {
+            icon: '⚛️', name: 'Anti-Matter',
+            moves: [
+                { label: 'Positron Beam (32 DMG)', type: 'atk', dmg: 32 },
+                { label: 'Chain Annihilation (48 DMG)', type: 'atk', dmg: 48 },
+                { label: 'Phase Shift (Evade Hit)', type: 'def', evade: true },
+                { label: '💥 Big Bang Erasure ULT (78 DMG)', type: 'ult', dmg: 78 }
+            ]
+        },
+        lightning: {
+            icon: '⚡', name: 'Lightning Raijin',
+            moves: [
+                { label: 'Thunder Bolt (30 DMG)', type: 'atk', dmg: 30 },
+                { label: 'Speed Blitz (43 DMG)', type: 'atk', dmg: 43 },
+                { label: 'Static Armor (Block 65%)', type: 'def', block: 0.65 },
+                { label: '🐉 Kirin Sky Dragon ULT (69 DMG)', type: 'ult', dmg: 69 }
+            ]
+        },
+        ice: {
+            icon: '❄️', name: 'Absolute Ice',
+            moves: [
+                { label: 'Ice Lance (27 DMG)', type: 'atk', dmg: 27 },
+                { label: 'Frostbite (36 DMG)', type: 'atk', dmg: 36 },
+                { label: 'Glacier Wall (Block 80%)', type: 'def', block: 0.80 },
+                { label: '🧊 Ice Age Freeze ULT (58 DMG + Stun)', type: 'ult', dmg: 58, stun: true }
+            ]
+        }
+    };
+
+    const svBattles = new Map();
+    const svPending = new Map();
+
+    function syncSvBattle(battle) {
+        const sendView = (me, opp) => {
+            if (me.isBot) return;
+            io.to(me.id).emit('svBattleSync', {
+                turn: battle.turn,
+                timeLeft: battle.timeLeft,
+                logText: battle.lastLog,
+                me: {
+                    name: me.name, icon: me.def.icon, powerName: me.def.name,
+                    hp: me.hp, maxHp: me.maxHp, ultCd: me.ultCd,
+                    locked: me.choice !== null, stunned: me.stunned,
+                    skills: me.def.moves.map(m => m.label)
+                },
+                opp: {
+                    name: opp.name, icon: opp.def.icon, powerName: opp.def.name,
+                    hp: opp.hp, maxHp: opp.maxHp
+                },
+                _serverId: battle.srvId
+            });
+        };
+        sendView(battle.p1, battle.p2);
+        sendView(battle.p2, battle.p1);
+    }
+
+    function resolveSvTurn(battleId) {
+        const b = svBattles.get(battleId);
+        if (!b) return;
+
+        const pickAuto = (f) => {
+            if (f.stunned) return null;
+            if (f.choice !== null) return f.choice;
+            return f.ultCd === 0 && Math.random() < 0.35 ? 3 : Math.floor(Math.random() * 3);
+        };
+
+        const c1 = pickAuto(b.p1);
+        const c2 = pickAuto(b.p2);
+        const m1 = c1 !== null ? b.p1.def.moves[c1] : null;
+        const m2 = c2 !== null ? b.p2.def.moves[c2] : null;
+
+        b.p1.stunned = false;
+        b.p2.stunned = false;
+        if (b.p1.ultCd > 0) b.p1.ultCd--;
+        if (b.p2.ultCd > 0) b.p2.ultCd--;
+        if (c1 === 3) b.p1.ultCd = 3;
+        if (c2 === 3) b.p2.ultCd = 3;
+
+        const applyClash = (attacker, atkMove, defender, defMove) => {
+            if (!atkMove) return `${attacker.name} was frozen and couldn't move!`;
+            if (atkMove.heal) attacker.hp = Math.min(attacker.maxHp, attacker.hp + atkMove.heal);
+            if (!atkMove.dmg) return `${attacker.def.icon} <b>${attacker.name}</b> used <b>${atkMove.label.split(' (')[0]}</b>!`;
+
+            let dmg = atkMove.dmg + Math.floor(Math.random() * 6);
+            if (defMove && defMove.evade) {
+                return `${attacker.def.icon} <b>${attacker.name}</b> used <b>${atkMove.label.split(' (')[0]}</b>, but <b>${defender.name}</b> EVADED it! 💨`;
+            }
+            if (defMove && defMove.block) {
+                const blocked = Math.round(dmg * defMove.block);
+                dmg -= blocked;
+                if (defMove.reflect) {
+                    const ref = Math.round(blocked * defMove.reflect);
+                    attacker.hp = Math.max(0, attacker.hp - ref);
+                }
+            }
+            defender.hp = Math.max(0, defender.hp - dmg);
+            if (atkMove.stun && defender.hp > 0) defender.stunned = true;
+            return `${attacker.def.icon} <b>${attacker.name}</b> hit <b>${atkMove.label.split(' (')[0]}</b> for <b>-${dmg} HP</b>!`;
+        };
+
+        const line1 = applyClash(b.p1, m1, b.p2, m2);
+        const line2 = applyClash(b.p2, m2, b.p1, m1);
+        b.lastLog = `${line1}<br>${line2}`;
+
+        if (b.p1.hp <= 0 || b.p2.hp <= 0) {
+            clearInterval(b.interval);
+            svBattles.delete(battleId);
+            const winner = b.p1.hp > b.p2.hp ? b.p1 : b.p2;
+            const loser = winner === b.p1 ? b.p2 : b.p1;
+            const reward = loser.isBot ? 40 : 120;
+
+            if (!winner.isBot) addCoins(winner.name, reward);
+            recordSvLog(b.srvId, winner.name, `${winner.def.icon} ${winner.def.name}`, loser.name, `${loser.def.icon} ${loser.def.name}`);
+
+            if (!b.p1.isBot) io.to(b.p1.id).emit('svBattleEnd', { _serverId: b.srvId });
+            if (!b.p2.isBot) io.to(b.p2.id).emit('svBattleEnd', { _serverId: b.srvId });
+
+            io.to(b.srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚔️🔥 **SAMMUVERSE RESULT:** **${winner.name}** (${winner.def.icon} ${winner.def.name}) defeated **${loser.name}** (${loser.def.icon} ${loser.def.name}) and earned **+${reward}🪙**! 🏆`,
+                _serverId: b.srvId
+            });
+            return;
+        }
+
+        b.turn++;
+        b.timeLeft = 15;
+        b.p1.choice = b.p1.stunned ? -1 : null;
+        b.p2.choice = b.p2.isBot ? (b.p2.ultCd === 0 ? 3 : Math.floor(Math.random() * 3)) : (b.p2.stunned ? -1 : null);
+        syncSvBattle(b);
+    }
+    // === ⚔️ SAMMUVERSE PVP ENGINE — PART 2B/2 (SOCKET LISTENERS & CHAT COMMANDS) ===
+    function startSvMatch(srvId, sock1, pow1Key, sock2, pow2Key) {
+        const d1 = SV_DEFS[pow1Key] || SV_DEFS.fire;
+        const isBot = !sock2;
+        const botKeys = Object.keys(SV_DEFS);
+        const d2 = isBot
+            ? SV_DEFS[botKeys[Math.floor(Math.random() * botKeys.length)]]
+            : (SV_DEFS[pow2Key] || SV_DEFS.water);
+
+        const battleId = 'sv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        const battle = {
+            id: battleId,
+            srvId,
+            turn: 1,
+            timeLeft: 15,
+            lastLog: `⚔️ Battle started! Pick your move before time runs out!`,
+            p1: {
+                id: sock1.id,
+                name: sock1.username || 'Fighter 1',
+                def: d1,
+                hp: 200,
+                maxHp: 200,
+                ultCd: 0,
+                choice: null,
+                stunned: false,
+                isBot: false
+            },
+            p2: {
+                id: isBot ? 'BOT_SENSEI' : sock2.id,
+                name: isBot ? 'Bot Sensei' : (sock2.username || 'Fighter 2'),
+                def: d2,
+                hp: 200,
+                maxHp: 200,
+                ultCd: 0,
+                choice: isBot ? Math.floor(Math.random() * 3) : null,
+                stunned: false,
+                isBot
+            },
+            interval: null
+        };
+
+        svBattles.set(battleId, battle);
+        battle.interval = setInterval(() => {
+            const cur = svBattles.get(battleId);
+            if (!cur) return;
+            cur.timeLeft--;
+            if (cur.timeLeft <= 0) {
+                resolveSvTurn(battleId);
+            } else {
+                syncSvBattle(cur);
+            }
+        }, 1000);
+
+        syncSvBattle(battle);
+    }
+
+    function findPlayerActiveSvBattle(socketId) {
+        for (const [bId, b] of svBattles.entries()) {
+            if (b.p1.id === socketId || b.p2.id === socketId) return { bId, b };
+        }
+        return null;
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('svRequestLogs', () => {
+            const srvId = socket.activeServerId;
+            if (!srvId) return;
+            socket.emit('svLogsUpdate', svBattleLogs.filter(l => l.srvId === srvId));
+        });
+
+        socket.on('svChallenge', ({ targetId, power }) => {
+            const srvId = socket.activeServerId;
+            if (!srvId || findPlayerActiveSvBattle(socket.id)) return;
+            const pKey = SV_DEFS[power] ? power : 'fire';
+
+            if (targetId === 'BOT_SENSEI') {
+                startSvMatch(srvId, socket, pKey, null, null);
+                return;
+            }
+
+            const targetSock = io.sockets.sockets.get(targetId);
+            if (!targetSock || targetSock.activeServerId !== srvId || findPlayerActiveSvBattle(targetId)) {
+                socket.emit('message', {
+                    username: "Sammu's Bot",
+                    text: `⚠️ Opponent is offline or already in a SammuVerse battle!`,
+                    _serverId: srvId
+                });
+                return;
+            }
+
+            const fromName = socket.username || 'Challenger';
+            const def = SV_DEFS[pKey];
+            svPending.set(socket.id, { targetId, power: pKey, srvId, expires: Date.now() + 45000 });
+
+            io.to(targetId).emit('svIncomingChallenge', {
+                fromId: socket.id,
+                fromName,
+                fromPowerLabel: `${def.icon} ${def.name}`,
+                _serverId: srvId
+            });
+
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚔️ **SAMMUVERSE CHALLENGE!** **${fromName}** (${def.icon} ${def.name}) challenged **${targetSock.username || 'Opponent'}** to a PvP duel!`,
+                _serverId: srvId
+            });
+        });
+
+        socket.on('svAccept', ({ challengerId, power }) => {
+            const srvId = socket.activeServerId;
+            const req = svPending.get(challengerId);
+            if (!srvId || !req || req.targetId !== socket.id || req.srvId !== srvId || Date.now() > req.expires) return;
+            svPending.delete(challengerId);
+
+            const challengerSock = io.sockets.sockets.get(challengerId);
+            if (!challengerSock || challengerSock.activeServerId !== srvId) return;
+            if (findPlayerActiveSvBattle(socket.id) || findPlayerActiveSvBattle(challengerId)) return;
+
+            const p2Key = SV_DEFS[power] ? power : 'water';
+            startSvMatch(srvId, challengerSock, req.power, socket, p2Key);
+        });
+
+        socket.on('svUseSkill', (skillIdx) => {
+            const found = findPlayerActiveSvBattle(socket.id);
+            if (!found) return;
+            const { bId, b } = found;
+            const idx = Number(skillIdx);
+            if (isNaN(idx) || idx < 0 || idx > 3) return;
+
+            const fighter = b.p1.id === socket.id ? b.p1 : b.p2;
+            if (fighter.choice !== null || fighter.stunned) return;
+            if (idx === 3 && fighter.ultCd > 0) return;
+
+            fighter.choice = idx;
+            if (b.p1.choice !== null && b.p2.choice !== null) {
+                resolveSvTurn(bId);
+            } else {
+                syncSvBattle(b);
+            }
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const low = raw.trim().toLowerCase();
+
+            if (low === '!pvplogs' || low === '!svlogs') {
+                const recent = svBattleLogs.filter(l => l.srvId === srvId).slice(0, 5);
+                const msg = recent.length
+                    ? recent.map((l, i) => `#${i + 1} 🏆 **${l.winner}** (${l.winPower}) beat **${l.loser}** (${l.losePower})`).join('\n')
+                    : '📜 No SammuVerse battles logged yet! Click **⚔️ SammuVerse** to fight!';
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `📜 **SAMMUVERSE BATTLE REGISTER:**\n${msg}`, _serverId: srvId });
+            } else if (low.startsWith('!pvp ')) {
+                const targetName = raw.trim().slice(5).replace('@', '').trim().toLowerCase();
+                const arena = getArena(srvId);
+                const targetPlayer = arena.players.find(p => p.id !== socket.id && p.username.toLowerCase().startsWith(targetName));
+                if (targetPlayer) {
+                    const keys = Object.keys(SV_DEFS);
+                    const randPow = keys[Math.floor(Math.random() * keys.length)];
+                    socket.onevent({ type: 2, nsp: '/', data: ['svChallenge', { targetId: targetPlayer.id, power: randPow }] });
+                } else {
+                    socket.emit('message', { username: "Sammu's Bot", text: `⚠️ Player not found! Click **⚔️ SammuVerse** to pick your power & opponent!`, _serverId: srvId });
+                }
+            }
+        });
+
+        socket.on('disconnect', () => {
+            const found = findPlayerActiveSvBattle(socket.id);
+            if (!found) return;
+            const { bId, b } = found;
+            clearInterval(b.interval);
+            svBattles.delete(bId);
+            const winner = b.p1.id === socket.id ? b.p2 : b.p1;
+            const loser = b.p1.id === socket.id ? b.p1 : b.p2;
+            if (!winner.isBot) {
+                addCoins(winner.name, 80);
+                io.to(winner.id).emit('svBattleEnd', { _serverId: b.srvId });
+            }
+            recordSvLog(b.srvId, winner.name, `${winner.def.icon} ${winner.def.name}`, `${loser.name} (Fled)`, `${loser.def.icon} ${loser.def.name}`);
+            io.to(b.srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🏃‍♂️💨 **${loser.name}** fled the SammuVerse arena! **${winner.name}** wins by forfeit (+80🪙)!`,
+                _serverId: b.srvId
+            });
+        });
+    });
 
     return OG_HOSTS;
       

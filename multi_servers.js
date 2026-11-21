@@ -4643,6 +4643,291 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // === ⚖️ #35 COURTROOM CHAOS — PART 1/2 (CASES & UI) ===
+    const courtByServer = new Map();
+    const COURT_CASES = [
+        "stealing the Host's Wi-Fi and still blaming 'lag' after losing in 2 seconds!",
+        "eating everyone's Biryani in the lobby and blaming Tommy the Dog!",
+        "faking a low-battery disconnect right before losing a 1v1 duel!",
+        "using a calculator during Math Blitz and still getting the wrong answer!",
+        "camping in a corner during 3D Survive the Killer for 60 seconds straight!",
+        "secretly simping in chat while pretending to be a Sigma Chad!",
+        "putting a fake bounty on their own best friend just to start drama!",
+        "stealing Mochi the Cat's golden crown and hiding it under the sofa!",
+        "typing 'EZ' in chat after getting carried by their teammate!",
+        "hoarding all the coconuts on Castaway Island while everyone starved!",
+        "opening 5 Mystery Boxes and getting cursed with Clown Mode every time!",
+        "claiming to be the Pro of the server with a 0% win streak!",
+        "bribery of the Judge with a virtual samosa before the match started!",
+        "forgetting to pass the bomb in Bomb Pass because they were busy flexing cards!",
+        "starting a fake rumor in Word Imposter to get an innocent player voted out!"
+    ];
+
+    const COURT_UI = `
+    <div id="courtBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(69,26,3,0.97),rgba(15,23,42,0.97));border:2px solid #f59e0b;border-radius:16px;padding:10px 12px;width:100%;max-width:385px;color:#fff;text-align:center;box-shadow:0 6px 26px rgba(245,158,11,0.55);backdrop-filter:blur(6px);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:900;font-size:11px;color:#fbbf24;">⚖️ SAMMU SUPREME COURT</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="courtTimer" style="font-size:11px;color:#38bdf8;font-weight:900;">⏳ 30s</span>
+            <button onclick="document.getElementById('courtBar').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+          </div>
+        </div>
+        <div id="courtMatchup" style="font-size:11px;font-weight:bold;color:#fde047;margin-bottom:4px;">😈 Accused vs 🕵️ Prosecutor</div>
+        <div id="courtCharge" style="background:rgba(245,158,11,0.18);border:1px solid #fbbf24;border-radius:8px;padding:5px 7px;margin-bottom:6px;font-size:11px;color:#fef3c7;">Charge loading...</div>
+        <div id="courtControls" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+      </div>
+    </div>
+    <script>
+    (function() {
+      function injectCourtBtn() {
+        const anchor = Array.from(document.querySelectorAll('button')).find(b => /castaway island|bluff master|bank heist|hoop shootout/i.test(b.textContent || ''));
+        if (anchor && anchor.parentElement && !document.getElementById('btnLaunchCourt35')) {
+          const btn = anchor.cloneNode(true);
+          btn.id = 'btnLaunchCourt35';
+          btn.removeAttribute('onclick');
+          btn.textContent = '35. ⚖️ Courtroom Chaos';
+          btn.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!court'); };
+          anchor.parentElement.appendChild(btn);
+        }
+      }
+      setInterval(injectCourtBtn, 1800);
+
+      function bindCourt() {
+        if (typeof socket === 'undefined' || window._courtBound) return;
+        window._courtBound = true;
+
+        socket.on('courtSync', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('courtBar').style.display = 'flex';
+          document.getElementById('courtTimer').textContent = (d.phase === 'debate' ? '🗣️ ' : '🗳️ ') + d.timeLeft + 's';
+          document.getElementById('courtMatchup').innerHTML = '😈 <span style="color:#f87171;">' + d.accusedName + '</span> vs 🕵️ <span style="color:#38bdf8;">' + d.prosecutorName + '</span> | 👨‍⚖️ ' + d.judgeName;
+          document.getElementById('courtCharge').textContent = '📜 CHARGE: ' + d.charge;
+
+          const box = document.getElementById('courtControls');
+          box.innerHTML = '';
+
+          if (d.myRole === 'JUDGE') {
+            if (d.phase === 'debate') {
+              [
+                { act: 'gavel', label: '🔨 ORDER! (+10s)', bg: '#b45309' },
+                { act: 'objection', label: '🚨 OBJECTION! (-30🪙)', bg: '#dc2626' },
+                { act: 'voteNow', label: '⚖️ Open Jury Vote', bg: '#15803d' }
+              ].forEach(c => {
+                const b = document.createElement('button');
+                b.style.cssText = 'background:' + c.bg + ';border:1px solid #fff;color:#fff;padding:5px 8px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;';
+                b.textContent = c.label;
+                b.onclick = () => socket.emit('judgeAction', c.act);
+                box.appendChild(b);
+              });
+            } else {
+              box.innerHTML = '<span style="font-size:11px;color:#fde047;font-weight:bold;">👨‍⚖️ Jury is voting (' + d.voteCount + ' votes cast)...</span>';
+            }
+          } else if (d.phase === 'debate') {
+            if (d.myRole === 'ACCUSED') {
+              box.innerHTML = '<span style="font-size:11px;color:#fca5a5;font-weight:bold;">😈 DEFEND YOURSELF IN CHAT NOW! Prove you are innocent!</span>';
+            } else if (d.myRole === 'PROSECUTOR') {
+              box.innerHTML = '<span style="font-size:11px;color:#7dd3fc;font-weight:bold;">🕵️ ROAST & EXPOSE THEM IN CHAT! Convince the Jury!</span>';
+            } else {
+              box.innerHTML = '<span style="font-size:11px;color:#cbd5e1;">👥 You are the JURY! Listen to both sides in chat before voting!</span>';
+            }
+          } else {
+            if (d.myRole === 'ACCUSED' || d.myRole === 'PROSECUTOR') {
+              box.innerHTML = '<span style="font-size:11px;color:#fde047;font-weight:bold;">⏳ Jury is deciding your fate...</span>';
+            } else if (d.voted) {
+              box.innerHTML = '<span style="font-size:11px;color:#4ade80;font-weight:bold;">✅ Verdict cast! Waiting for final count...</span>';
+            } else {
+              const bInn = document.createElement('button');
+              bInn.style.cssText = 'background:#16a34a;border:1.5px solid #fff;color:#fff;padding:6px 12px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;';
+              bInn.textContent = '😇 INNOCENT';
+              bInn.onclick = () => socket.emit('courtVote', 'INNOCENT');
+
+              const bGui = document.createElement('button');
+              bGui.style.cssText = 'background:#dc2626;border:1.5px solid #fff;color:#fff;padding:6px 12px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;';
+              bGui.textContent = '😈 GUILTY';
+              bGui.onclick = () => socket.emit('courtVote', 'GUILTY');
+
+              box.appendChild(bInn);
+              box.appendChild(bGui);
+            }
+          }
+        });
+
+        socket.on('courtEnd', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          document.getElementById('courtBar').style.display = 'none';
+        });
+      }
+      setInterval(bindCourt, 1200);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('courtBar')) {
+                body = body.replace('</body>', COURT_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === ⚖️ #35 COURTROOM CHAOS — PART 2/2 (ENGINE & SOCKET EVENTS) ===
+    function broadcastCourt(srvId) {
+        const st = courtByServer.get(srvId);
+        if (!st) return;
+        st.players.forEach(p => {
+            let myRole = 'JURY';
+            if (p.id === st.judge.id) myRole = 'JUDGE';
+            else if (p.id === st.accused.id) myRole = 'ACCUSED';
+            else if (p.id === st.prosecutor.id) myRole = 'PROSECUTOR';
+
+            io.to(p.id).emit('courtSync', {
+                phase: st.phase,
+                timeLeft: st.timeLeft,
+                charge: st.charge,
+                judgeName: st.judge.username,
+                accusedName: st.accused.username,
+                prosecutorName: st.prosecutor.username,
+                myRole,
+                voted: st.votes.has(p.id),
+                voteCount: st.votes.size,
+                _serverId: srvId
+            });
+        });
+    }
+
+    function finishCourt(srvId) {
+        const st = courtByServer.get(srvId);
+        if (!st) return;
+        clearInterval(st.interval);
+        courtByServer.delete(srvId);
+        io.to(srvId).emit('courtEnd', { _serverId: srvId });
+
+        let guilty = 0, innocent = 0;
+        for (const v of st.votes.values()) {
+            if (v === 'GUILTY') guilty++;
+            else innocent++;
+        }
+
+        const isGuilty = guilty > innocent;
+        const winner = isGuilty ? st.prosecutor.username : st.accused.username;
+        const newBal = addCoins(winner, 150);
+
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🔨⚖️ **COURT VERDICT IS IN!** (Guilty: **${guilty}** vs Innocent: **${innocent}**)\n` +
+                  (isGuilty
+                      ? `🚨 **GUILTY!!** Prosecutor **${st.prosecutor.username}** destroyed **${st.accused.username}** in court and won **+150🪙** (Total: **${newBal}🪙**)! ⛓️😂`
+                      : `😇 **NOT GUILTY!!** **${st.accused.username}** talked their way out of jail and won **+150🪙** (Total: **${newBal}🪙**)! 🏆🔥`),
+            _serverId: srvId
+        });
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const txt = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof txt !== 'string' || txt.trim().toLowerCase() !== '!court') return;
+            if (courtByServer.has(srvId)) return;
+
+            const roomPlayers = getFullRoomPlayers(srvId);
+            if (roomPlayers.length < 3) {
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: '⚠️ Need at least **3 players** (Judge, Accused, Prosecutor/Jury) for **⚖️ Courtroom Chaos**!',
+                    _serverId: srvId
+                });
+                return;
+            }
+
+            const arena = getArena(srvId);
+            const judge = roomPlayers.find(p => p.id === arena.hostId || p.isHost) || roomPlayers[0];
+            const others = roomPlayers.filter(p => p.id !== judge.id).sort(() => Math.random() - 0.5);
+            const accused = others[0];
+            const prosecutor = others[1];
+            const charge = COURT_CASES[Math.floor(Math.random() * COURT_CASES.length)];
+
+            const st = {
+                players: roomPlayers,
+                judge,
+                accused,
+                prosecutor,
+                charge,
+                phase: 'debate',
+                timeLeft: 30,
+                votes: new Map(),
+                interval: null
+            };
+            courtByServer.set(srvId, st);
+
+            st.interval = setInterval(() => {
+                const c = courtByServer.get(srvId);
+                if (!c) return;
+                c.timeLeft--;
+                if (c.timeLeft <= 0) {
+                    if (c.phase === 'debate') {
+                        c.phase = 'vote';
+                        c.timeLeft = 15;
+                        io.to(srvId).emit('message', {
+                            username: "Sammu's Bot",
+                            text: '🗳️ **DEBATE OVER! JURY VOTING OPEN!** Tap **😇 INNOCENT** or **😈 GUILTY** in the top bar!',
+                            _serverId: srvId
+                        });
+                        broadcastCourt(srvId);
+                    } else {
+                        finishCourt(srvId);
+                    }
+                } else {
+                    broadcastCourt(srvId);
+                }
+            }, 1000);
+
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚖️🔨 **COURT IS IN SESSION!**\n👨‍⚖️ **Judge:** **${judge.username}**\n😈 **Accused:** **${accused.username}** (Charged with *${charge}*)\n🕵️ **Prosecutor:** **${prosecutor.username}**\n🗣️ Argue in chat for 30s—everyone else is the Jury!`,
+                _serverId: srvId
+            });
+            broadcastCourt(srvId);
+        });
+
+        socket.on('judgeAction', (act) => {
+            const srvId = socket.activeServerId;
+            const st = srvId ? courtByServer.get(srvId) : null;
+            if (!st || socket.id !== st.judge.id) return;
+
+            if (act === 'gavel') {
+                st.timeLeft += 10;
+                io.to(srvId).emit('message', { username: "👨‍⚖️ Judge " + st.judge.username, text: '🔨 **ORDER IN THE COURT!** Judge added **+10 seconds** to the debate!', _serverId: srvId });
+                broadcastCourt(srvId);
+            } else if (act === 'objection') {
+                const target = Math.random() < 0.5 ? st.accused : st.prosecutor;
+                addCoins(target.username, -30);
+                io.to(srvId).emit('message', { username: "👨‍⚖️ Judge " + st.judge.username, text: `🚨 **OBJECTION SUSTAINED!** **${target.username}** was fined **-30🪙** for Contempt of Court! 😂`, _serverId: srvId });
+            } else if (act === 'voteNow' && st.phase === 'debate') {
+                st.phase = 'vote';
+                st.timeLeft = 15;
+                io.to(srvId).emit('message', { username: "👨‍⚖️ Judge " + st.judge.username, text: '⚖️ **SILENCE!** Judge closed the debate early—**JURY VOTE NOW!**', _serverId: srvId });
+                broadcastCourt(srvId);
+            }
+        });
+
+        socket.on('courtVote', (choice) => {
+            const srvId = socket.activeServerId;
+            const st = srvId ? courtByServer.get(srvId) : null;
+            if (!st || st.phase !== 'vote') return;
+            if (socket.id === st.accused.id || socket.id === st.prosecutor.id) return;
+            if (st.votes.has(socket.id)) return;
+
+            st.votes.set(socket.id, choice === 'GUILTY' ? 'GUILTY' : 'INNOCENT');
+            const eligibleVoters = st.players.filter(p => p.id !== st.accused.id && p.id !== st.prosecutor.id).length;
+            if (st.votes.size >= eligibleVoters) {
+                finishCourt(srvId);
+            } else {
+                broadcastCourt(srvId);
+            }
+        });
+    });
 
     return OG_HOSTS;
       

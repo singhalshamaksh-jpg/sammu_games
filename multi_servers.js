@@ -5444,8 +5444,9 @@ module.exports = function initMultiServers(app, io) {
           frame++; ctx.clearRect(0, 0, 400, 230);
           const bgMap = { chakra: ['#1e1b4b', '#b45309'], bansuri: ['#064e3b', '#0284c7'], vishwaroopa: ['#090d16', '#7e22ce'], moon: ['#0f172a', '#be123c'], zoro: ['#022c22', '#15803d'], awaken: ['#422006', '#dc2626'], cosmic: ['#1e1b4b', '#9333ea'] };
           const pair = bgMap[theme] || bgMap.cosmic;
-          const grad = ctx.createRadialGradient(200, 115, 15, 200, 115, 210);
-          grad.addColorStop(0, pair); grad.addColorStop(1, pair);
+                    const grad = ctx.createRadialGradient(200, 115, 15, 200, 115, 210);
+          grad.addColorStop(0, pair[0]); grad.addColorStop(1, pair[1]);
+
           ctx.fillStyle = grad; ctx.fillRect(0, 0, 400, 230);
           ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 2;
           for (let i = 0; i < 24; i++) {

@@ -2134,6 +2134,75 @@
 })();
 </script>
  
+<style>
+  .srv-card.pokemon { border-color:#facc15 !important; background:linear-gradient(90deg,rgba(220,38,38,0.35),rgba(250,204,21,0.25)) !important; box-shadow:0 0 15px rgba(250,204,21,0.4) !important; }
+  html.wp-pokemon, html.wp-pokemon body { background: radial-gradient(circle at 50% 18%, #dc2626 0%, #991b1b 32%, #f8fafc 33%, #f8fafc 36%, #1e293b 37%, #090d16 100%) fixed !important; }
+  html.wp-cute-babies, html.wp-cute-babies body { background: linear-gradient(160deg, #fbcfe8 0%, #ddd6fe 50%, #bae6fd 100%) fixed !important; }
+  html.wp-royal-queen, html.wp-royal-queen body { background: radial-gradient(circle at top, #831843 0%, #4c0519 45%, #1e1b4b 100%) fixed !important; }
+  html.wp-cyber-aurora, html.wp-cyber-aurora body { background: radial-gradient(circle at 20% 20%, #0e7490 0%, #1e1b4b 50%, #090d16 100%) fixed !important; }
+  html.wp-golden-empire, html.wp-golden-empire body { background: linear-gradient(155deg, #422006 0%, #713f12 45%, #0f172a 100%) fixed !important; }
+  html.wp-emerald-matrix, html.wp-emerald-matrix body { background: radial-gradient(circle at center, #064e3b 0%, #022c22 55%, #050a08 100%) fixed !important; }
+  html.wp-crimson-dragon, html.wp-crimson-dragon body { background: linear-gradient(160deg, #7f1d1d 0%, #450a0a 50%, #0f172a 100%) fixed !important; }
+  html.wp-diamond-frost, html.wp-diamond-frost body { background: linear-gradient(145deg, #083344 0%, #1d4ed8 45%, #311042 100%) fixed !important; }
+  #wpFloatingBadge { position:fixed; bottom:54px; right:12px; z-index:99990; background:rgba(15,23,42,0.88); border:1.5px solid #38bdf8; color:#fff; padding:5px 10px; border-radius:999px; font-size:11px; font-weight:bold; pointer-events:none; display:none; }
+</style>
+<div id="wpFloatingBadge"></div>
+<script>
+(function() {
+  const WP_CLASSES = ['wp-pokemon','wp-cute-babies','wp-royal-queen','wp-cyber-aurora','wp-golden-empire','wp-emerald-matrix','wp-crimson-dragon','wp-diamond-frost'];
+  const MAP = {
+    srv_antim:   { cls: 'wp-pokemon',        label: '⚡ Pokémon Arena WP' },
+    srv_shubhi:  { cls: 'wp-cute-babies',    label: '🍼 Cute Babies Pastel WP' },
+    srv_sus:     { cls: 'wp-royal-queen',    label: '👑 Royal Queen & Princess WP' },
+    srv_samaksh: { cls: 'wp-diamond-frost',  label: '💎 Diamond Frost WP' },
+    srv_advait:  { cls: 'wp-diamond-frost',  label: '⚡ Lightning Citadel WP' },
+    srv_zoro:    { cls: 'wp-emerald-matrix', label: '⚔️ Dojo Emerald WP' },
+    srv_milly:   { cls: 'wp-golden-empire',  label: '👑 Royal Gold Palace WP' },
+    srv_ishika:  { cls: 'wp-golden-empire',  label: '✨ Golden Lounge WP' },
+    srv_ruwii:   { cls: 'wp-golden-empire',  label: '🌺 Sunset Garden WP' },
+    srv_sid:     { cls: 'wp-golden-empire',  label: '🦁 Lion Kingdom WP' },
+    srv_moon:    { cls: 'wp-cyber-aurora',   label: '🌙 Cosmic Galaxy WP' },
+    srv_sarah:   { cls: 'wp-cyber-aurora',   label: '🦋 Butterfly Aurora WP' },
+    srv_zaira:   { cls: 'wp-cyber-aurora',   label: '🪐 Nebula Orbit WP' },
+    srv_heer:    { cls: 'wp-crimson-dragon', label: '🌸 Cherry Crimson WP' },
+    srv_izzan:   { cls: 'wp-crimson-dragon', label: '🔥 Infernal Fortress WP' }
+  };
+
+  let srvWpActive = false;
+
+  function applyServerWp(enable) {
+    if (typeof enable === 'boolean') srvWpActive = enable;
+    WP_CLASSES.forEach(c => document.documentElement.classList.remove(c));
+    const badge = document.getElementById('wpFloatingBadge');
+    if (!srvWpActive) {
+      if (badge) badge.style.display = 'none';
+      return;
+    }
+    const cfg = MAP[window.selectedServerId] || { cls: 'wp-cyber-aurora', label: '🌌 Cosmic Aurora WP' };
+    document.documentElement.classList.add(cfg.cls);
+    if (badge) { badge.textContent = cfg.label; badge.style.display = 'block'; }
+  }
+
+  // Hook into your existing 🌌 WP button clicks
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (btn && /🌌\s*wp|\bwp\b/i.test(btn.textContent || '')) {
+      applyServerWp(!srvWpActive);
+    }
+  });
+
+  // Auto-activate when entering any server
+  const waitSock = setInterval(() => {
+    if (typeof socket !== 'undefined') {
+      clearInterval(waitSock);
+      socket.on('serverAccessGranted', (s) => {
+        window.selectedServerId = s.id;
+        applyServerWp(true);
+      });
+    }
+  }, 500);
+})();
+</script>
 
  
 

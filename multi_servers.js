@@ -5592,17 +5592,18 @@ module.exports = function initMultiServers(app, io) {
         box.innerHTML = logs.map(l => '<div class="sv-log-item">🏆 <b>' + l.winner + '</b> (' + l.winPower + ') defeated <b>' + l.loser + '</b> (' + l.losePower + ') <span style="color:#94a3b8;float:right;">' + l.time + '</span></div>').join('');
       });
     `;
-
     io.on('connection', (socket) => {
-        socket.on('joinRoom', () => {
-            setTimeout(() => {
-                socket.emit('svDeliverAll', {
-                    html: SV_FULL_BUNDLE,
-                    js: SV_CLIENT_SCRIPT_PART1 + '\n' + SV_CLIENT_SCRIPT_PART2 + '\n' + SV_CLIENT_SCRIPT_PART3
-                });
-            }, 900);
-        });
+        const sendSvBundle = () => {
+            socket.emit('svDeliverAll', {
+                html: SV_FULL_BUNDLE,
+                js: SV_CLIENT_SCRIPT_PART1 + '\n' + SV_CLIENT_SCRIPT_PART2 + '\n' + SV_CLIENT_SCRIPT_PART3
+            });
+        };
+        socket.on('svRequestBundle', sendSvBundle);
+        socket.on('joinRoom', () => setTimeout(sendSvBundle, 500));
     });
+
+    
 
     return OG_HOSTS;
       

@@ -4304,6 +4304,221 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
+    // === 🃏 PIECE 1/2: TRADING CARD GACHA & BOUNTY HUNT CORE ===
+    const CARD_POOL = [
+        { name: "⚡ Pikachu Spark", tier: "COMMON", power: 72, c1: "#854d0e", c2: "#facc15", emoji: "⚡🐭" },
+        { name: "🍥 Naruto Rasengan", tier: "COMMON", power: 78, c1: "#9a3412", c2: "#fb923c", emoji: "🍥🦊" },
+        { name: "🔥 Charmander Blaze", tier: "COMMON", power: 74, c1: "#7f1d1d", c2: "#f87171", emoji: "🔥🦎" },
+        { name: "🗡️ Tanjiro Water Slash", tier: "COMMON", power: 79, c1: "#065f46", c2: "#34d399", emoji: "🌊🗡️" },
+        { name: "⚔️ 3-Sword Roronoa Zoro", tier: "EPIC", power: 91, c1: "#064e3b", c2: "#10b981", emoji: "⚔️🐉" },
+        { name: "🤞 Gojo Unlimited Void", tier: "EPIC", power: 94, c1: "#1e1b4b", c2: "#38bdf8", emoji: "🤞🌌" },
+        { name: "🐉 Mega Charizard X", tier: "EPIC", power: 93, c1: "#1e293b", c2: "#3b82f6", emoji: "🐉🔥" },
+        { name: "👁️ Itachi Tsukuyomi", tier: "EPIC", power: 92, c1: "#450a0a", c2: "#ef4444", emoji: "👁️🦅" },
+        { name: "👒 Gear 5 Sun God Luffy", tier: "MYTHIC", power: 99, c1: "#581c87", c2: "#facc15", emoji: "👒⚡" },
+        { name: "👑 Shadow Monarch Jinwoo", tier: "MYTHIC", power: 98, c1: "#090d16", c2: "#a855f7", emoji: "👑🗡️" },
+        { name: "⚡ Mewtwo Cosmic Psy", tier: "MYTHIC", power: 97, c1: "#311042", c2: "#f472b6", emoji: "🧬🔮" },
+        { name: "💎 OG Host: Sammu Supreme", tier: "MYTHIC", power: 100, c1: "#083344", c2: "#67e8f9", emoji: "💎👑" },
+        { name: "🌿 OG Host: Dr. Moon Vaidya", tier: "MYTHIC", power: 100, c1: "#064e3b", c2: "#fde047", emoji: "🌙🌿" },
+        { name: "⚡ OG Host: Antim PokéKing", tier: "MYTHIC", power: 100, c1: "#7f1d1d", c2: "#facc15", emoji: "⚡🏆" }
+    ];
+
+    const playerWallet = new Map();
+    const playerCards = new Map();
+    const activeBounties = new Map();
+    const serverWinStreaks = new Map();
+
+    function getCoins(uname) {
+        const k = uname.toLowerCase();
+        if (!playerWallet.has(k)) playerWallet.set(k, 150);
+        return playerWallet.get(k);
+    }
+    function addCoins(uname, amt) {
+        const k = uname.toLowerCase();
+        playerWallet.set(k, Math.max(0, getCoins(k) + amt));
+        return playerWallet.get(k);
+    }
+
+    const GACHA_FLEX_SCRIPT = `
+    <script>
+    (function() {
+      const waitGacha = setInterval(() => {
+        if (typeof socket === 'undefined') return;
+        clearInterval(waitGacha);
+        socket.on('renderFlexCard', (d) => {
+          if (d._serverId && d._serverId !== window.selectedServerId) return;
+          if (d.ownerSocket !== socket.id) return;
+          const c = document.createElement('canvas');
+          c.width = 300; c.height = 175;
+          const ctx = c.getContext('2d');
+          const g = ctx.createLinearGradient(0, 0, 300, 175);
+          g.addColorStop(0, d.card.c1); g.addColorStop(1, d.card.c2);
+          ctx.fillStyle = g; ctx.fillRect(0, 0, 300, 175);
+          ctx.strokeStyle = d.card.tier === 'MYTHIC' ? '#fde047' : '#38bdf8';
+          ctx.lineWidth = 5; ctx.strokeRect(4, 4, 292, 167);
+          ctx.fillStyle = '#fde047'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('★ ' + d.card.tier + ' TRADING CARD ★', 150, 24);
+          ctx.font = '42px serif'; ctx.fillText(d.card.emoji, 150, 74);
+          ctx.fillStyle = '#ffffff'; ctx.font = '900 16px sans-serif';
+          ctx.fillText(d.card.name, 150, 114);
+          ctx.fillStyle = '#67e8f9'; ctx.font = 'bold 13px sans-serif';
+          ctx.fillText('POWER: ' + d.card.power + '  |  OWNER: ' + d.ownerName.toUpperCase(), 150, 144);
+          socket.emit('postArenaMeme', { image: c.toDataURL('image/jpeg', 0.85) });
+        });
+      }, 600);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('renderFlexCard')) {
+                body = body.replace('</body>', GACHA_FLEX_SCRIPT + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // === 🚨 PIECE 2/2: BOUNTY PAYOUTS & CHAT COMMANDS ===
+    const _prevIoEmit = io.emit.bind(io);
+    io.emit = function(event, ...args) {
+        const payload = args.at(0);
+        if (event === 'announceWinner' && payload && typeof payload === 'object' && payload.winner) {
+            const srvId = payload._serverId || lastActiveServerId;
+            const winRaw = String(payload.winner);
+            const arena = srvId ? getArena(srvId) : null;
+            const matchedPlayer = (arena && Array.isArray(arena.players))
+                ? arena.players.find(p => winRaw.toLowerCase().includes(p.username.toLowerCase()))
+                : null;
+            if (matchedPlayer && srvId) {
+                const wName = matchedPlayer.username;
+                const wKey = wName.toLowerCase();
+                const bal = addCoins(wName, 50);
+
+                const opp = (arena.captainA && arena.captainA.username.toLowerCase() === wKey) ? arena.captainB : arena.captainA;
+                if (opp && activeBounties.has(opp.username.toLowerCase())) {
+                    const reward = activeBounties.get(opp.username.toLowerCase());
+                    activeBounties.delete(opp.username.toLowerCase());
+                    const newBal = addCoins(wName, reward);
+                    setTimeout(() => {
+                        io.to(srvId).emit('message', {
+                            username: "Sammu's Bot",
+                            text: `💀💰 **BOUNTY CLAIMED!!** **${wName}** defeated **${opp.username}** and stole the **+${reward}🪙 Bounty**! (Balance: **${newBal}🪙**)`,
+                            _serverId: srvId
+                        });
+                    }, 600);
+                }
+
+                const st = (serverWinStreaks.get(wKey) || 0) + 1;
+                serverWinStreaks.set(wKey, st);
+                if (opp) serverWinStreaks.set(opp.username.toLowerCase(), 0);
+
+                if (st === 3 && !activeBounties.has(wKey)) {
+                    activeBounties.set(wKey, 200);
+                    setTimeout(() => {
+                        io.to(srvId).emit('message', {
+                            username: "Sammu's Bot",
+                            text: `🚨🔥 **AUTO-BOUNTY!** **${wName}** hit a **3x Win Streak**! **200🪙 Bounty** placed on their head!`,
+                            _serverId: srvId
+                        });
+                    }, 800);
+                } else {
+                    setTimeout(() => {
+                        io.to(srvId).emit('message', {
+                            username: "Sammu's Bot",
+                            text: `🪙 **${wName}** earned **+50 Coins** (Total: **${bal}🪙**)! Type \`!pack\` to open cards!`,
+                            _serverId: srvId
+                        });
+                    }, 550);
+                }
+            }
+        }
+        return _prevIoEmit(event, ...args);
+    };
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const clean = raw.trim();
+            const low = clean.toLowerCase();
+            const sender = socket.username || (payload && payload.username) || 'Player';
+            const sKey = sender.toLowerCase();
+
+            if (low === '!pack') {
+                const bal = getCoins(sender);
+                if (bal < 100) {
+                    socket.emit('message', { username: "Sammu's Bot", text: `🪙 Need **100 Coins** (You have **${bal}🪙**). Win matches to earn +50🪙!`, _serverId: srvId });
+                    return;
+                }
+                const left = addCoins(sender, -100);
+                const roll = Math.random();
+                const tier = roll < 0.14 ? 'MYTHIC' : (roll < 0.48 ? 'EPIC' : 'COMMON');
+                const pool = CARD_POOL.filter(c => c.tier === tier);
+                const pulled = pool[Math.floor(Math.random() * pool.length)];
+
+                if (!playerCards.has(sKey)) playerCards.set(sKey, []);
+                playerCards.get(sKey).push(pulled);
+
+                const badge = tier === 'MYTHIC' ? '🌈✨ **MYTHIC PULL!!**' : (tier === 'EPIC' ? '💜🔥 **EPIC PULL!**' : '🃏 **Card Pulled:**');
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `${badge} **${sender}** unboxed **${pulled.emoji} ${pulled.name}** (PWR **${pulled.power}**)! (${left}🪙 left) — Type \`!flex\`!`,
+                    _serverId: srvId
+                });
+            }
+
+            if (low === '!cards') {
+                const deck = playerCards.get(sKey) || [];
+                const bal = getCoins(sender);
+                if (deck.length === 0) {
+                    socket.emit('message', { username: "Sammu's Bot", text: `🃏 **${sender}** has **0 cards** (${bal}🪙). Type \`!pack\` (100🪙)!`, _serverId: srvId });
+                } else {
+                    const list = deck.slice(-8).map(c => `${c.emoji} **${c.name}** [${c.tier}]`).join(' • ');
+                    socket.emit('message', { username: "Sammu's Bot", text: `🃏 **${sender}'s Deck (${deck.length} | ${bal}🪙):**\n${list}\n*(Type \`!flex\` to show your best card!)*`, _serverId: srvId });
+                }
+            }
+
+            if (low === '!flex') {
+                const deck = playerCards.get(sKey) || [];
+                if (deck.length === 0) {
+                    socket.emit('message', { username: "Sammu's Bot", text: `⚠️ Open a pack with \`!pack\` first!`, _serverId: srvId });
+                    return;
+                }
+                const best = [...deck].sort((a, b) => b.power - a.power)[0];
+                io.to(srvId).emit('renderFlexCard', { card: best, ownerName: sender, ownerSocket: socket.id, _serverId: srvId });
+            }
+
+            if (low.startsWith('!bounty ')) {
+                const parts = clean.slice(8).replace('@', '').trim().split(/\s+/);
+                const targetName = parts[0];
+                const amt = Math.max(50, Math.min(1000, parseInt(parts[1], 10) || 100));
+                if (!targetName || targetName.toLowerCase() === sKey) return;
+                if (getCoins(sender) < amt) {
+                    socket.emit('message', { username: "Sammu's Bot", text: `🪙 Not enough coins! Balance: **${getCoins(sender)}🪙**.`, _serverId: srvId });
+                    return;
+                }
+                addCoins(sender, -amt);
+                const tKey = targetName.toLowerCase();
+                const totalBounty = (activeBounties.get(tKey) || 0) + amt;
+                activeBounties.set(tKey, totalBounty);
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🚨💀 **BOUNTY PLACED!** **${sender}** put **${amt}🪙** on **${targetName}**! (Total: **${totalBounty}🪙**) Beat them in 1v1 to steal it!`,
+                    _serverId: srvId
+                });
+            }
+
+            if (low === '!bounties') {
+                if (activeBounties.size === 0) {
+                    socket.emit('message', { username: "Sammu's Bot", text: `📜 No active bounties! Type \`!bounty <name> 100\` to hunt someone!`, _serverId: srvId });
+                } else {
+                    const list = Array.from(activeBounties.entries()).map(([n, c]) => `💀 **${n.toUpperCase()}**: **${c}🪙**`).join(' | ');
+                    io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🚨 **WANTED BOARD:** ${list}`, _serverId: srvId });
+                }
+            }
+        });
+    });
   
     return OG_HOSTS;
       

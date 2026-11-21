@@ -5546,13 +5546,15 @@ module.exports = function initMultiServers(app, io) {
       socket.on('svStatsSync', (st) => { if (st) { myProfile = st; renderDojoShop(); renderSvPowers(); } });
       socket.on('svNotice', (msg) => { playSvSfx('win'); alert(msg); });
       socket.on('updatePlayers', (list) => { if (Array.isArray(list)) { latestPlayers = list; refreshOpponentDropdown(); } });
-      socket.on('svIncomingChallenge', (d) => {
+            socket.on('svIncomingChallenge', (d) => {
         if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
         document.getElementById('svModal').style.display = 'flex'; switchSvTab('fight');
         const box = document.getElementById('svIncomingBox'); box.style.display = 'block';
         box.innerHTML = '<div style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:6px;">⚔️ ' + d.fromName + ' (' + d.fromPowerLabel + ') challenged you!</div>' +
-          '<button onclick="acceptSvChallenge(\\'' + d.fromId + '\\')" style="background:#16a34a;border:none;color:#fff;padding:7px 14px;border-radius:9px;font-weight:900;font-size:12px;cursor:pointer;">🔥 Accept with Selected Power!</button>';
+          '<button id="svAcceptBtnNow" style="background:#16a34a;border:none;color:#fff;padding:7px 14px;border-radius:9px;font-weight:900;font-size:12px;cursor:pointer;">🔥 Accept with Selected Power!</button>';
+        document.getElementById('svAcceptBtnNow').onclick = () => acceptSvChallenge(d.fromId);
       });
+
       window.acceptSvChallenge = (fromId) => { document.getElementById('svIncomingBox').style.display = 'none'; socket.emit('svAccept', { challengerId: fromId, power: selectedPower }); };
       socket.on('svBattleSync', (b) => {
         if (b._serverId && window.selectedServerId && b._serverId !== window.selectedServerId) return;
@@ -5592,6 +5594,97 @@ module.exports = function initMultiServers(app, io) {
         box.innerHTML = logs.map(l => '<div class="sv-log-item">🏆 <b>' + l.winner + '</b> (' + l.winPower + ') defeated <b>' + l.loser + '</b> (' + l.losePower + ') <span style="color:#94a3b8;float:right;">' + l.time + '</span></div>').join('');
       });
     `;
+     // === ⚔️ SV_FULL_BUNDLE — PIECE 1/2 (STYLES & CUTSCENE OVERLAY) ===
+    const SV_FULL_BUNDLE_PART1 = `
+    <style>
+      #svDiscoBanner { display:flex; align-items:center; justify-content:space-between; background:linear-gradient(90deg,#3b0764,#701a75,#1e1b4b); border:2px solid #facc15; border-radius:14px; padding:7px 12px; margin:6px auto; max-width:440px; width:96%; color:#fff; box-shadow:0 0 16px rgba(250,204,21,0.4); cursor:pointer; }
+      #svModal { display:none; position:fixed; inset:0; background:rgba(5,7,16,0.95); z-index:999995; align-items:center; justify-content:center; padding:10px; backdrop-filter:blur(10px); font-family:inherit; }
+      #svCard { background:linear-gradient(155deg,#0f172a,#1e1b4b,#311042); border:2px solid #a855f7; border-radius:22px; padding:13px; width:100%; max-width:430px; max-height:93vh; overflow-y:auto; color:#fff; box-shadow:0 0 40px rgba(168,85,247,0.55); text-align:center; }
+      .sv-tabs { display:flex; gap:5px; margin:8px 0; }
+      .sv-tab { flex:1; padding:6px 4px; border-radius:10px; border:1px solid #a855f7; background:#1e1b4b; color:#fff; font-weight:bold; font-size:11px; cursor:pointer; }
+      .sv-tab.active { background:#a855f7; color:#fff; }
+      .sv-powers { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0; max-height:200px; overflow-y:auto; }
+      .sv-pwr-btn { background:rgba(255,255,255,0.07); border:1.5px solid #475569; border-radius:11px; padding:7px 6px; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; text-align:left; }
+      .sv-pwr-btn.selected { border-color:#facc15; background:rgba(250,204,21,0.22); }
+      .sv-pwr-btn.locked-coin { border-color:#38bdf8; background:rgba(56,189,248,0.1); }
+      .sv-hp-wrap { background:#090d16; border:1px solid #475569; border-radius:10px; padding:5px 6px; margin-bottom:5px; text-align:left; }
+      .sv-hp-bar { height:9px; border-radius:6px; background:linear-gradient(90deg,#22c55e,#4ade80); transition:width 0.3s; }
+      .sv-hp-bar.awakened { background:linear-gradient(90deg,#f59e0b,#facc15,#fef08a) !important; box-shadow:0 0 12px #facc15; }
+      .sv-skills { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:7px; }
+      .sv-skill-btn { background:linear-gradient(145deg,#3b0764,#1e1b4b); border:1.5px solid #c084fc; border-radius:12px; padding:8px 7px; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; text-align:left; }
+      .sv-skill-btn:disabled { opacity:0.45; cursor:not-allowed; }
+      .sv-skill-btn.ult { border-color:#facc15; background:linear-gradient(145deg,#713f12,#4c0519); }
+      .sv-shop-card { background:rgba(255,255,255,0.06); border:1px solid #475569; border-radius:11px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; text-align:left; font-size:11px; }
+      .sv-log-item { background:rgba(255,255,255,0.06); border-left:3px solid #facc15; border-radius:8px; padding:6px 8px; margin-bottom:5px; font-size:11px; text-align:left; }
+      #svCutsceneOverlay { display:none; position:fixed; inset:0; z-index:9999999; background:rgba(4,6,15,0.88); backdrop-filter:blur(6px); align-items:center; justify-content:center; flex-direction:column; padding:12px; }
+      #svCutsceneBox { position:relative; width:100%; max-width:420px; border:2.5px solid #facc15; border-radius:20px; overflow:hidden; background:#050814; box-shadow:0 0 45px rgba(250,204,21,0.65); text-align:center; }
+      #svCutsceneCanvas { width:100%; height:230px; display:block; }
+      #svSkipCutsceneBtn { position:absolute; top:10px; right:10px; z-index:10; background:rgba(15,23,42,0.9); border:1.5px solid #facc15; color:#fde047; border-radius:999px; padding:5px 12px; font-size:11px; font-weight:900; cursor:pointer; }
+    </style>
+    <div id="svCutsceneOverlay" onclick="if(event.target===this)skipSvCutscene()">
+      <div id="svCutsceneBox">
+        <button id="svSkipCutsceneBtn" onclick="skipSvCutscene()">⏭️ Skip</button>
+        <canvas id="svCutsceneCanvas" width="400" height="230"></canvas>
+        <div id="svCutsceneCaption" style="padding:8px 10px;background:linear-gradient(90deg,#3b0764,#713f12);font-weight:900;font-size:13px;color:#fef08a;">ULTIMATE AWAKENING!</div>
+      </div>
+    </div>`;
+    // === ⚔️ SV_FULL_BUNDLE — PIECE 2/2 (MODAL HTML & COMBINER) ===
+    const SV_FULL_BUNDLE_PART2 = `
+    <div id="svModal">
+      <div id="svCard">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:15px;color:#e879f9;">⚔️ SAMMUVERSE RPG</span>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span id="svHeaderCoins" style="background:#090d16;border:1px solid #facc15;color:#fde047;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:900;">🪙 150</span>
+            <button id="svMuteBtn" onclick="toggleSvSfx()" style="background:#1e293b;border:1px solid #38bdf8;color:#fff;border-radius:8px;padding:3px 7px;font-size:11px;cursor:pointer;">🔊</button>
+            <button onclick="document.getElementById('svModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕</button>
+          </div>
+        </div>
+        <div id="svLobbyView">
+          <div class="sv-tabs">
+            <button class="sv-tab active" id="svTabFight" onclick="switchSvTab('fight')">⚔️ Arena (21)</button>
+            <button class="sv-tab" id="svTabDojo" onclick="switchSvTab('dojo')">💪 Dojo & Pets</button>
+            <button class="sv-tab" id="svTabLogs" onclick="switchSvTab('logs')">📜 PvP Logs</button>
+          </div>
+          <div id="svFightPanel">
+            <div style="display:flex;gap:5px;margin-bottom:6px;">
+              <input id="svSecretCodeInput" placeholder="🔑 Secret / Coin Code..." style="flex:1;padding:6px 8px;border-radius:9px;border:1px solid #facc15;background:#090d16;color:#fff;font-size:11px;">
+              <button onclick="redeemSvSecretCode()" style="background:linear-gradient(90deg,#f59e0b,#d97706);border:none;color:#111;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer;">🔓 Redeem</button>
+            </div>
+            <div class="sv-powers" id="svPowerGrid"></div>
+            <div id="svPowerPreview" style="background:rgba(168,85,247,0.16);border:1px solid #c084fc;border-radius:10px;padding:6px;font-size:11px;color:#fde047;margin-bottom:7px;">Select a power to inspect its 4 skills!</div>
+            <div style="display:flex;gap:5px;margin-bottom:6px;">
+              <select id="svOpponentSelect" style="flex:1;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
+                <option value="BOT_DUMMY">🥊 Wooden Dummy (+35🪙)</option>
+              </select>
+              <button onclick="spinRandomSvPower()" style="padding:7px 9px;border:1px solid #facc15;border-radius:10px;background:#311042;color:#fde047;font-weight:900;font-size:11px;cursor:pointer;">🎲 75🪙</button>
+              <button onclick="sendSvChallenge()" style="padding:7px 12px;border:none;border-radius:10px;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">⚔️ FIGHT</button>
+            </div>
+            <div id="svIncomingBox" style="display:none;background:rgba(250,204,21,0.2);border:1.5px solid #facc15;border-radius:12px;padding:8px;margin-top:6px;"></div>
+          </div>
+          <div id="svDojoPanel" style="display:none;max-height:330px;overflow-y:auto;">
+            <div id="svRankBanner" style="background:rgba(168,85,247,0.2);border:1px solid #c084fc;border-radius:10px;padding:6px;font-size:11px;font-weight:bold;color:#e879f9;margin-bottom:7px;">Rank: 🌱 Academy Rookie | Wins: 0</div>
+            <div class="sv-shop-card"><div><b style="color:#f87171;">⚔️ Attack Power Boost</b><br><span id="svAtkDesc" style="color:#cbd5e1;">Lv.0/15 (+0 Bonus DMG)</span></div><button id="svBuyAtkBtn" onclick="buySvItem('atk')" style="background:#dc2626;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">150🪙</button></div>
+            <div class="sv-shop-card"><div><b style="color:#4ade80;">❤️ Max Health Boost</b><br><span id="svHpDesc" style="color:#cbd5e1;">Lv.0/15 (+0 Bonus HP)</span></div><button id="svBuyHpBtn" onclick="buySvItem('hp')" style="background:#16a34a;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">150🪙</button></div>
+            <div class="sv-shop-card" style="border-color:#facc15;"><div><b style="color:#fde047;">💎 Awakening Stone</b><br><span id="svStoneDesc" style="color:#cbd5e1;">Below 40% HP: +25% ATK & +40 HP!</span></div><button id="svBuyStoneBtn" onclick="buySvItem('stone')" style="background:#d97706;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">1000🪙</button></div>
+            <div style="font-size:11px;font-weight:900;color:#38bdf8;text-align:left;margin:6px 0 4px;">🐾 COMPANION SPIRITS:</div>
+            <div id="svPetShopList"></div>
+          </div>
+          <div id="svLogsPanel" style="display:none;max-height:330px;overflow-y:auto;">
+            <div id="svLogList" style="font-size:11px;color:#94a3b8;">Loading PvP Battle Register...</div>
+          </div>
+        </div>
+        <div id="svBattleView" style="display:none;margin-top:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;color:#38bdf8;margin-bottom:4px;"><span id="svTurnBadge">Turn 1</span><span id="svBattleTimer" style="color:#fde047;">⏳ 15s</span></div>
+          <div class="sv-hp-wrap"><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;margin-bottom:2px;"><span id="svOppLabel" style="color:#f87171;">Opponent</span><span id="svOppHpText">200 / 200 HP</span></div><div class="sv-hp-bar" id="svOppHpBar" style="width:100%;background:linear-gradient(90deg,#dc2626,#f87171);"></div></div>
+          <div class="sv-hp-wrap"><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;margin-bottom:2px;"><span id="svMeLabel" style="color:#4ade80;">You</span><span id="svMeHpText">200 / 200 HP</span></div><div class="sv-hp-bar" id="svMeHpBar" style="width:100%;"></div></div>
+          <div id="svCombatFeed" style="background:#090d16;border:1px solid #334155;border-radius:10px;padding:6px;font-size:11px;color:#e2e8f0;min-height:44px;margin:5px 0;">Choose your skill below!</div>
+          <div class="sv-skills" id="svSkillButtons"></div>
+        </div>
+      </div>
+    </div>`;
+    const SV_FULL_BUNDLE = SV_FULL_BUNDLE_PART1 + '\n' + SV_FULL_BUNDLE_PART2;
+
     io.on('connection', (socket) => {
         const sendSvBundle = () => {
             socket.emit('svDeliverAll', {

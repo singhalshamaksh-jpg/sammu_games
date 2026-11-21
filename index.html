@@ -2724,10 +2724,23 @@
 })();
 </script>
 
-<!-- === GUARANTEED SAMMUVERSE LAUNCH BUTTON === -->
-<button id="svGuaranteedBtn" onclick="openSammuVerseModal()" style="position:fixed;bottom:68px;left:12px;z-index:999989;background:linear-gradient(90deg,#3b0764,#be185d);border:2px solid #facc15;color:#fde047;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 0 18px rgba(250,204,21,0.55);">
-  ⚔️ SammuVerse
-</button>
+<script>
+setInterval(function() {
+  if (document.getElementById('svDiscoBanner')) return;
+  const oldBtn = document.getElementById('svGuaranteedBtn');
+  if (oldBtn) oldBtn.remove();
+  const discoBtn = Array.from(document.querySelectorAll('button')).find(b => /disco mode/i.test(b.textContent || ''));
+  if (discoBtn && discoBtn.parentElement && discoBtn.parentElement.parentNode) {
+    const bar = document.createElement('div');
+    bar.id = 'svDiscoBanner';
+    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:linear-gradient(90deg,#3b0764,#701a75,#1e1b4b);border:2px solid #facc15;border-radius:14px;padding:7px 12px;margin:6px auto;max-width:440px;width:96%;color:#fff;box-shadow:0 0 16px rgba(250,204,21,0.4);cursor:pointer;';
+    bar.innerHTML = '<div><b style="font-size:13px;color:#fde047;">⚔️ SAMMUVERSE PVP & GRIND ARENA</b><br><span style="font-size:10px;color:#e9d5ff;">21 Powers • BloxFruits Cutscenes • Dojo • Pets</span></div><span style="background:#facc15;color:#111;font-weight:900;font-size:11px;padding:5px 11px;border-radius:10px;">PLAY ⚡</span>';
+    bar.onclick = function() { if (typeof openSammuVerseModal === 'function') openSammuVerseModal(); };
+    discoBtn.parentElement.parentNode.insertBefore(bar, discoBtn.parentElement.nextSibling);
+  }
+}, 1000);
+</script>
+
 
 
 

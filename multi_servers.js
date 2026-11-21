@@ -4519,7 +4519,131 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
-  
+    // === 📅 PIECE 1/2: DAILY STREAK (!daily) & CARD DUEL (!duelcard) ===
+    const dailyClaims = new Map();
+    const pendingCardDuels = new Map();
+
+    function resolveCardClash(srvId, p1Name, p2Name, bet) {
+        const d1 = [...(playerCards.get(p1Name.toLowerCase()) || [])].sort((a, b) => b.power - a.power).slice(0, 3);
+        const d2 = [...(playerCards.get(p2Name.toLowerCase()) || [])].sort((a, b) => b.power - a.power).slice(0, 3);
+
+        let w1 = 0, w2 = 0;
+        const lines = [];
+        for (let i = 0; i < 3; i++) {
+            const c1 = d1[i] || { emoji: "🃏", name: "Rookie Recruit", power: 50 };
+            const c2 = d2[i] || { emoji: "🃏", name: "Rookie Recruit", power: 50 };
+            const roll1 = c1.power + Math.floor(Math.random() * 14);
+            const roll2 = c2.power + Math.floor(Math.random() * 14);
+            if (roll1 >= roll2) {
+                w1++;
+                lines.push(`R${i + 1}: ${c1.emoji} **${c1.name}** (${roll1}) ⚔️ beats ${c2.emoji} ${c2.name} (${roll2})`);
+            } else {
+                w2++;
+                lines.push(`R${i + 1}: ${c2.emoji} **${c2.name}** (${roll2}) ⚔️ beats ${c1.emoji} ${c1.name} (${roll1})`);
+            }
+        }
+
+        const champ = w1 > w2 ? p1Name : p2Name;
+        const totalPot = bet * 2;
+        const newBal = addCoins(champ, totalPot);
+
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🃏⚔️ **CARD BATTLE RESULTS (${p1Name} vs ${p2Name}):**\n${lines.join('\n')}\n🏆 **WINNER:** **${champ}** won **+${totalPot}🪙**! (Balance: **${newBal}🪙**)`,
+            _serverId: srvId
+        });
+    }
+      // === ⚔️ PIECE 2/2: DAILY & CARD BATTLE LISTENERS ===
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const clean = raw.trim();
+            const low = clean.toLowerCase();
+            const sender = socket.username || (payload && payload.username) || 'Player';
+            const sKey = sender.toLowerCase();
+
+            // 1. Daily Streak Reward (!daily)
+            if (low === '!daily') {
+                const now = Date.now();
+                const dayMs = 24 * 60 * 60 * 1000;
+                const rec = dailyClaims.get(sKey) || { last: 0, streak: 0 };
+
+                if (now - rec.last < dayMs) {
+                    const hrsLeft = Math.ceil((dayMs - (now - rec.last)) / (60 * 60 * 1000));
+                    socket.emit('message', { username: "Sammu's Bot", text: `⏳ **${sender}**, you already claimed your Daily! Come back in **${hrsLeft}h** (Current Streak: **${rec.streak}🔥**).`, _serverId: srvId });
+                    return;
+                }
+
+                const streak = (now - rec.last < dayMs * 2) ? (rec.streak % 7) + 1 : 1;
+                dailyClaims.set(sKey, { last: now, streak });
+                const reward = 100 + (streak * 25);
+                const bal = addCoins(sender, reward);
+
+                if (streak === 7) {
+                    const mythics = CARD_POOL.filter(c => c.tier === 'MYTHIC');
+                    const bonusCard = mythics[Math.floor(Math.random() * mythics.length)];
+                    if (!playerCards.has(sKey)) playerCards.set(sKey, []);
+                    playerCards.get(sKey).push(bonusCard);
+                    io.to(srvId).emit('message', {
+                        username: "Sammu's Bot",
+                        text: `🎉🔥 **DAY 7 MEGA STREAK!!** **${sender}** claimed **+${reward}🪙** (${bal}🪙 total) PLUS a **FREE MYTHIC CARD: ${bonusCard.emoji} ${bonusCard.name}**! 🌈👑`,
+                        _serverId: srvId
+                    });
+                } else {
+                    io.to(srvId).emit('message', {
+                        username: "Sammu's Bot",
+                        text: `📅🔥 **DAILY REWARD (Day ${streak}/7)!** **${sender}** claimed **+${reward}🪙**! (Balance: **${bal}🪙** | Hit Day 7 for a FREE Mythic Card!)`,
+                        _serverId: srvId
+                    });
+                }
+            }
+
+            // 2. Challenge Someone to a 3-Card Battle (!duelcard <name> [bet])
+            if (low.startsWith('!duelcard ')) {
+                const parts = clean.slice(10).replace('@', '').trim().split(/\s+/);
+                const targetName = parts;
+                const bet = Math.max(50, Math.min(500, parseInt(parts, 10) || 100));
+                if (!targetName || targetName.toLowerCase() === sKey) return;
+
+                if ((playerCards.get(sKey) || []).length === 0) {
+                    socket.emit('message', { username: "Sammu's Bot", text: `⚠️ Open at least 1 pack with \`!pack\` before battling!`, _serverId: srvId });
+                    return;
+                }
+                if (getCoins(sender) < bet) {
+                    socket.emit('message', { username: "Sammu's Bot", text: `🪙 Need **${bet}🪙** to start this Card Duel (You have **${getCoins(sender)}🪙**).`, _serverId: srvId });
+                    return;
+                }
+
+                pendingCardDuels.set(targetName.toLowerCase(), { challenger: sender, bet, srvId, expires: Date.now() + 45000 });
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🃏⚔️ **CARD DUEL CHALLENGE!** **${sender}** challenged **${targetName}** to a 3-Round Deck Battle for **${bet}🪙**!\n👉 **${targetName}**, type \`!acceptcard\` within 45s to fight!`,
+                    _serverId: srvId
+                });
+            }
+
+            // 3. Accept Card Battle (!acceptcard)
+            if (low === '!acceptcard') {
+                const duel = pendingCardDuels.get(sKey);
+                if (!duel || duel.srvId !== srvId || Date.now() > duel.expires) {
+                    socket.emit('message', { username: "Sammu's Bot", text: `⚠️ No active Card Duel challenge for you right now!`, _serverId: srvId });
+                    return;
+                }
+                if (getCoins(sender) < duel.bet || getCoins(duel.challenger) < duel.bet) {
+                    pendingCardDuels.delete(sKey);
+                    socket.emit('message', { username: "Sammu's Bot", text: `🪙 One of the players no longer has **${duel.bet}🪙** for the wager!`, _serverId: srvId });
+                    return;
+                }
+                pendingCardDuels.delete(sKey);
+                addCoins(duel.challenger, -duel.bet);
+                addCoins(sender, -duel.bet);
+                resolveCardClash(srvId, duel.challenger, sender, duel.bet);
+            }
+        });
+    });
+
     return OG_HOSTS;
       
 };

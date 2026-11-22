@@ -6522,6 +6522,256 @@ io.on('connection', (socket) => {
 
     console.log(`☁️ Cloud Restore: ${restoredUsers} Profiles (${totalPowers} Unlocked Powers) & ${restoredWallets} Wallets loaded!`);
 })();
+// ============================================================================
+// 🚀 FEATURE PACK — PART 1/3: P2P COIN & CARD TRADING (!pay, !giftcard, !richest)
+// ============================================================================
+io.on('connection', (socket) => {
+    socket.on('chatMessage', (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        const srvId = socket.activeServerId;
+        if (!srvId || typeof raw !== 'string') return;
+        const clean = raw.trim();
+        const low = clean.toLowerCase();
+        const sender = socket.username || (payload && payload.username) || 'Player';
+        const sKey = sender.toLowerCase();
+
+        // 1. Send Coins to Another Player (!pay @user 500)
+        if (low.startsWith('!pay ')) {
+            const parts = clean.slice(5).replace('@', '').trim().split(/\s+/);
+            const targetName = parts[0];
+            const amt = Math.floor(Number(parts[1]));
+            if (!targetName || isNaN(amt) || amt < 10) {
+                return socket.emit('message', { username: "Sammu's Bot", text: '⚠️ Usage: `!pay @username 500` (Min 10🪙)', _serverId: srvId });
+            }
+            if (targetName.toLowerCase() === sKey) {
+                return socket.emit('message', { username: "Sammu's Bot", text: '😂 You cannot pay yourself!', _serverId: srvId });
+            }
+            if (getCoins(sender) < amt) {
+                return socket.emit('message', { username: "Sammu's Bot", text: `🪙 Not enough coins! Your balance: **${getCoins(sender).toLocaleString()}🪙**`, _serverId: srvId });
+            }
+            const senderLeft = addCoins(sender, -amt);
+            const targetNew = addCoins(targetName, amt);
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `💸🤝 **COIN TRANSFER!** **${sender}** sent **${amt.toLocaleString()}🪙** to **${targetName}**! (${sender}: **${senderLeft.toLocaleString()}🪙** | ${targetName}: **${targetNew.toLocaleString()}🪙**)`,
+                _serverId: srvId
+            });
+            for (const [, s] of io.sockets.sockets) {
+                if (s && s.username && (s.username.toLowerCase() === sKey || s.username.toLowerCase() === targetName.toLowerCase())) {
+                    s.emit('svStatsSync', getSvProfile(s.username));
+                }
+            }
+        }
+
+        // 2. Gift Your Latest/Duplicate Trading Card (!giftcard @user)
+        if (low.startsWith('!giftcard ')) {
+            const targetName = clean.slice(10).replace('@', '').trim().split(/\s+/)[0];
+            if (!targetName || targetName.toLowerCase() === sKey) return;
+            const deck = playerCards.get(sKey) || [];
+            if (deck.length === 0) {
+                return socket.emit('message', { username: "Sammu's Bot", text: '🃏 You have no cards to gift! Type `!pack` first.', _serverId: srvId });
+            }
+            const gifted = deck.pop();
+            playerCards.set(sKey, deck);
+            const tKey = targetName.toLowerCase();
+            if (!playerCards.has(tKey)) playerCards.set(tKey, []);
+            playerCards.get(tKey).push(gifted);
+            saveEconomyDB();
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🎁🃏 **CARD GIFT!** **${sender}** gifted **${gifted.emoji} ${gifted.name}** [${gifted.tier}] to **${targetName}**!`,
+                _serverId: srvId
+            });
+        }
+
+        // 3. Richest Players Board (!richest)
+        if (low === '!richest') {
+            const top = Array.from(playerWallet.entries())
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([n, c], i) => `${i === 0 ? '👑' : `#${i + 1}`} **${n.toUpperCase()}**: **${c.toLocaleString()}🪙**`)
+                .join(' | ');
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `💰 **RICHEST PLAYERS:** ${top || 'No wallets yet!'}`,
+                _serverId: srvId
+            });
+        }
+    });
+});
+// ============================================================================
+// 🚀 FEATURE PACK — PART 2/3: 2ND COMPANION PET SLOT (25 MINI-GAMES TASK)
+// ============================================================================
+const _prevStartForPet2 = startSvMatch;
+startSvMatch = function(srvId, sock1, pow1Key, sock2, pow2Key, isSpin1 = false) {
+    _prevStartForPet2(srvId, sock1, pow1Key, sock2, pow2Key, isSpin1);
+    for (const b of svBattles.values()) {
+        if (b.p1.id === sock1.id) {
+            const pr1 = getSvProfile(sock1.username);
+            if ((pr1.minigamesPlayed || 0) >= 25 || pr1.powerMakerUnlocked) {
+                b.p1.pet2 = pr1.activePet2 || null;
+            }
+            if (!b.p2.isBot && sock2 && sock2.username) {
+                const pr2 = getSvProfile(sock2.username);
+                if ((pr2.minigamesPlayed || 0) >= 25 || pr2.powerMakerUnlocked) {
+                    b.p2.pet2 = pr2.activePet2 || null;
+                }
+            }
+        }
+    }
+};
+
+const _prevResolveForPet2 = resolveSvTurn;
+resolveSvTurn = function(battleId) {
+    _prevResolveForPet2(battleId);
+    const after = svBattles.get(battleId);
+    if (!after) return;
+
+    const petLogs = [];
+    [[after.p1, after.p2], [after.p2, after.p1]].forEach(([me, opp]) => {
+        if (me.hp <= 0 || !me.pet2 || me.pet2 === me.pet) return;
+        if (me.pet2 === 'mochi' && opp.hp > 0) { opp.hp = Math.max(0, opp.hp - 10); petLogs.push(`🐱 [Slot 2] Mochi scratched ${opp.name} (-10)!`); }
+        if (me.pet2 === 'tommy') { me.hp = Math.min(me.maxHp, me.hp + 10); petLogs.push(`🐶 [Slot 2] Tommy healed ${me.name} (+10 HP)!`); }
+        if (me.pet2 === 'garuda' && opp.hp > 0) { opp.hp = Math.max(0, opp.hp - 22); petLogs.push(`🦅 [Slot 2] Garuda struck ${opp.name} (-22)!`); }
+        if (me.pet2 === 'sheshnag' && opp.hp > 0) { opp.hp = Math.max(0, opp.hp - 18); petLogs.push(`🐍 [Slot 2] Sheshnag poisoned ${opp.name} (-18)!`); }
+    });
+
+    if (petLogs.length > 0) {
+        after.lastLog += '<br>' + petLogs.join('<br>');
+        syncSvBattle(after, null);
+    }
+};
+
+io.on('connection', (socket) => {
+    socket.on('chatMessage', (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        const srvId = socket.activeServerId;
+        if (!srvId || typeof raw !== 'string') return;
+        const low = raw.trim().toLowerCase();
+
+        // Equip 2nd Pet Command: !pet2 <mochi|tommy|garuda|sheshnag|off>
+        if (low.startsWith('!pet2 ')) {
+            const uname = socket.username || 'Player';
+            const prof = getSvProfile(uname);
+            const played = prof.minigamesPlayed || 0;
+            if (played < 25 && !prof.powerMakerUnlocked) {
+                return socket.emit('message', { username: "Sammu's Bot", text: `🔒 **2nd Pet Slot Locked!** Play **25 Arena Mini-Games** to unlock (${played}/25)!`, _serverId: srvId });
+            }
+            const choice = low.slice(6).trim();
+            if (choice === 'off' || choice === 'none') {
+                prof.activePet2 = null;
+                saveSvStats();
+                return socket.emit('message', { username: "Sammu's Bot", text: `🐾 **${uname}** unequipped 2nd Companion Pet.`, _serverId: srvId });
+            }
+            if (!Array.isArray(prof.ownedPets) || !prof.ownedPets.includes(choice)) {
+                return socket.emit('message', { username: "Sammu's Bot", text: `⚠️ You don't own **${choice}**! Buy pets in SammuVerse Dojo first (\`mochi\`, \`tommy\`, \`garuda\`, \`sheshnag\`).`, _serverId: srvId });
+            }
+            prof.activePet2 = choice;
+            saveSvStats();
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🐾✨ **DUAL PET ACTIVE!** **${uname}** equipped **${choice.toUpperCase()}** in their **2nd Companion Pet Slot**!`,
+                _serverId: srvId
+            });
+        }
+    });
+});
+// ============================================================================
+// 🚀 FEATURE PACK — PART 3/3: 3V3 SQUAD TAG-TEAM WARS (!squadwar)
+// ============================================================================
+const squadWarsByServer = new Map();
+
+function advanceSquadWarMatch(srvId) {
+    const war = squadWarsByServer.get(srvId);
+    if (!war) return;
+
+    // Filter out disconnected fighters
+    war.teamA = war.teamA.filter(f => io.sockets.sockets.has(f.id));
+    war.teamB = war.teamB.filter(f => io.sockets.sockets.has(f.id));
+
+    if (war.teamA.length === 0 || war.teamB.length === 0) {
+        squadWarsByServer.delete(srvId);
+        const winners = war.teamA.length > 0 ? war.teamA : war.teamB;
+        const winLabel = war.teamA.length > 0 ? '🔴 RED SQUAD' : '🔵 BLUE SQUAD';
+        winners.forEach(w => addCoins(w.username, 300));
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🏆🔥 **${winLabel} WINS THE 3v3 SQUAD WAR!** Survivors (${winners.map(w => w.username).join(', ') || 'Squad'}) won **+300🪙 EACH**!`,
+            _serverId: srvId
+        });
+        return;
+    }
+
+    const fA = war.teamA[0];
+    const fB = war.teamB[0];
+    const sA = io.sockets.sockets.get(fA.id);
+    const sB = io.sockets.sockets.get(fB.id);
+    if (!sA || !sB) return;
+
+    const getBestPow = (uname) => {
+        const pr = getSvProfile(uname);
+        if (pr.customPower && pr.customPower.id) return pr.customPower.id;
+        const unlocked = pr.unlockedPowers || [];
+        return unlocked.length > 0 ? unlocked[unlocked.length - 1] : 'fire';
+    };
+
+    war.currentA = fA.username.toLowerCase();
+    war.currentB = fB.username.toLowerCase();
+
+    io.to(srvId).emit('message', {
+        username: "Sammu's Bot",
+        text: `⚔️ **TAG-TEAM ROUND #${war.round++}!**\n🔴 **${fA.username}** (${war.teamA.length} left) vs 🔵 **${fB.username}** (${war.teamB.length} left) — FIGHTING NOW!`,
+        _serverId: srvId
+    });
+
+    startSvMatch(srvId, sA, getBestPow(fA.username), sB, getBestPow(fB.username), false);
+}
+
+// Hook into SammuVerse battle logs so Squad Wars auto-advance when a fighter falls!
+const _prevRecordSvLog = recordSvLog;
+recordSvLog = function(srvId, winner, winPower, loser, losePower) {
+    _prevRecordSvLog(srvId, winner, winPower, loser, losePower);
+    const war = squadWarsByServer.get(srvId);
+    if (!war) return;
+
+    const loseClean = String(loser || '').replace(' (Fled)', '').trim().toLowerCase();
+    if (war.currentA === loseClean) war.teamA.shift();
+    else if (war.currentB === loseClean) war.teamB.shift();
+    else return;
+
+    setTimeout(() => advanceSquadWarMatch(srvId), 2500);
+};
+
+io.on('connection', (socket) => {
+    socket.on('chatMessage', (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        const srvId = socket.activeServerId;
+        if (!srvId || typeof raw !== 'string') return;
+        const low = raw.trim().toLowerCase();
+
+        if (low === '!squadwar') {
+            if (squadWarsByServer.has(srvId)) {
+                return socket.emit('message', { username: "Sammu's Bot", text: '⚠️ A 3v3 Squad War is already active in this server!', _serverId: srvId });
+            }
+            const players = getFullRoomPlayers(srvId);
+            if (players.length < 4) {
+                return io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least **4 players** (2v2 or 3v3) in this server for **⚔️ Squad Tag-Team War**!', _serverId: srvId });
+            }
+            const shuffled = [...players].sort(() => Math.random() - 0.5).slice(0, 6);
+            const mid = Math.ceil(shuffled.length / 2);
+            const teamA = shuffled.slice(0, mid);
+            const teamB = shuffled.slice(mid);
+
+            squadWarsByServer.set(srvId, { teamA, teamB, round: 1, currentA: null, currentB: null });
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🔥⚔️ **SAMMUVERSE SQUAD TAG-TEAM WAR STARTED!**\n🔴 **RED SQUAD:** ${teamA.map(p => p.username).join(', ')}\n🔵 **BLUE SQUAD:** ${teamB.map(p => p.username).join(', ')}\n*(Automatically uses your strongest unlocked/custom power!)*`,
+                _serverId: srvId
+            });
+            setTimeout(() => advanceSquadWarMatch(srvId), 2000);
+        }
+    });
+});
 
 
 

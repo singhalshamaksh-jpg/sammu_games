@@ -8538,6 +8538,62 @@ io.on('connection', (socket) => {
         }
     });
 });
+// ============================================================================
+// 🔧 UNIFIED #SAMMUCREATOR & V3 / CUSTOM POWER MAKER UNLOCK FIX
+// ============================================================================
+io.on('connection', (socket) => {
+    const prevListeners = socket.listeners('svUnlockCode').slice();
+    socket.removeAllListeners('svUnlockCode');
+
+    socket.on('svUnlockCode', (rawCode) => {
+        const code = String(rawCode || '').trim().toLowerCase();
+        if (code === '#sammucreator' || code === '#v3unlock') {
+            const uname = socket.username || 'Player';
+            const prof = getSvProfile(uname);
+
+            prof.unlockedPowers = Object.keys(SV_DEFS);
+            prof.ownedPets = new Array('mochi', 'tommy', 'garuda', 'sheshnag');
+            prof.activePet = 'sheshnag';
+            prof.ownedRelics = new Array('excalibur', 'aegis', 'vampfang');
+            prof.activeRelic = 'excalibur';
+            prof.hasStone = true;
+            prof.atkLv = 15;
+            prof.hpLv = 15;
+            prof.minigamesPlayed = Math.max(50, prof.minigamesPlayed || 0);
+            prof.powerMakerUnlocked = true;
+
+            // Set 100 Wins on EVERY power to unlock V3 [V3 👑]!
+            if (!prof.powerWins) prof.powerWins = {};
+            Object.keys(SV_DEFS).forEach(k => {
+                prof.powerWins[k] = Math.max(100, prof.powerWins[k] || 0);
+            });
+
+            if (typeof SV_TITLES !== 'undefined' && Array.isArray(SV_TITLES)) {
+                prof.unlockedTitles = SV_TITLES.map(t => t.id);
+                prof.activeTitle = 'sovereign';
+            }
+            prof.bounty = 30000000;
+            prof.lineage = 'celestial';
+            prof.lineageStage = 3;
+            prof.maxTowerFloor = Math.max(100, prof.maxTowerFloor || 1);
+            prof.towerCheckpoint = 100;
+            prof.reforgeTokens = (prof.reforgeTokens || 0) + 10;
+
+            if (typeof ENCHANT_POOL !== 'undefined' && Array.isArray(ENCHANT_POOL)) {
+                if (!prof.enchants) prof.enchants = {};
+                prof.enchants.mahavishnu = ENCHANT_POOL.at(-1);
+            }
+
+            addCoins(uname, 999999);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svNotice', '👑🔱 V3 ASCENSION (100 WINS), CUSTOM POWER MAKER & ALL TITLES UNLOCKED!');
+            return;
+        }
+        // Pass all other codes (#mahavishnu, #didi4000, etc.) to existing handlers
+        prevListeners.forEach(fn => fn.call(socket, rawCode));
+    });
+});
 
  return OG_HOSTS;
       

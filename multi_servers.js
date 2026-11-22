@@ -8421,6 +8421,64 @@ io.on('connection', (socket) => {
         }, 1100);
     });
 });
+// ============================================================================
+// 💖 MAHAVISHNU 5TH SKILL: PREM SAMARPAN (SURRENDER TO LOVE) — PART 1/2
+// ============================================================================
+io.on('connection', (socket) => {
+    socket.on('svSurrenderToLove', () => {
+        const found = findPlayerActiveSvBattle(socket.id);
+        if (!found) return;
+        const { bId, b } = found;
+
+        const me = b.p1.id === socket.id ? b.p1 : b.p2;
+        const opp = me === b.p1 ? b.p2 : b.p1;
+
+        // Only usable in real PvP when wielding MahaVishnu or a MahaVishnu Fusion
+        const isVishnu = me.pKey === 'mahavishnu' || (me.def && String(me.def.icon || '').includes('🔱'));
+        if (!isVishnu) {
+            return socket.emit('svNotice', '🔱 Only MahaVishnu wielders can use 💖 Prem Samarpan!');
+        }
+        if (opp.isBot) {
+            return socket.emit('svNotice', '😂 You cannot surrender to love against a Bot—save it for your Sister or Brother!');
+        }
+
+        clearInterval(b.interval);
+        svBattles.delete(bId);
+
+        // Play Prem Bansuri Cutscene for both siblings
+        broadcastSvCutscene(b, {
+            theme: 'bansuri',
+            emoji: '🪈💖',
+            title: 'PREM SAMARPAN: SURRENDER TO LOVE!',
+            caption: `💖🪈 ${me.name.toUpperCase()} BOWED IN LOVE TO ${opp.name.toUpperCase()}! (#BhaiBahencharaOnTop)`,
+            sfx: 'flute'
+        });
+
+        // Grant sibling victory, +1 Win toward V2/V3, and +250 Coins gift
+        const oppProf = getSvProfile(opp.name);
+        oppProf.wins = (oppProf.wins || 0) + 1;
+        oppProf.streak = (oppProf.streak || 0) + 1;
+        if (!oppProf.powerWins) oppProf.powerWins = {};
+        oppProf.powerWins[opp.pKey] = (oppProf.powerWins[opp.pKey] || 0) + 1;
+        addCoins(opp.name, 250);
+        syncPlayerTitlesAndBounty(opp.name);
+        saveSvStats();
+
+        const oppSock = io.sockets.sockets.get(opp.id);
+        if (oppSock) oppSock.emit('svStatsSync', getSvProfile(opp.name));
+
+        recordSvLog(b.srvId, `${opp.name} 💖`, `${opp.def.icon} ${opp.def.name}`, `${me.name} (Surrendered to Love)`, `${me.def.icon} ${me.def.name}`);
+
+        io.to(me.id).emit('svBattleEnd', { won: false, _serverId: b.srvId });
+        io.to(opp.id).emit('svBattleEnd', { won: true, _serverId: b.srvId });
+
+        io.to(b.srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `💖🪈 **PREM SAMARPAN (SURRENDER TO LOVE)!** **${me.name}** laid down the Sudarshana Chakra out of pure love for **${opp.name}**! **${opp.name}** wins the match + **+250🪙 Sibling Blessing**! 👑❤️`,
+            _serverId: b.srvId
+        });
+    });
+});
 
  return OG_HOSTS;
       

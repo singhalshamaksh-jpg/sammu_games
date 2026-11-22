@@ -2774,6 +2774,145 @@
   }, 500);
 })();
 </script>
+<!-- 🚀 SAMMUVERSE MEGA-UPDATE (INDEX.HTML) — PART 1/2 -->
+<script>
+(function() {
+  const initSammuMegaHTML = setInterval(() => {
+    if (typeof socket === 'undefined' || typeof SV_POWERS === 'undefined' || !document.getElementById('svDojoPanel')) return;
+    clearInterval(initSammuMegaHTML);
+
+    // 1. Register New Secret Mythics & Preset V2 Fusion Powers
+    Object.assign(SV_POWERS, {
+      zoroking:    { secret: true, icon: '⚔️', name: 'Zoro (King of Hell)',      skills: ['Enma Purgatory (52 DMG)', 'Three-Sword Dragon (72 DMG)', 'Conqueror Haki (Evade +45 HP)', '👹 Dragon Damnation ULT (132 DMG)'] },
+      antimpoke:   { secret: true, icon: '⚡', name: 'Antim (Arceus & Rayquaza)', skills: ['Dragon Ascent (50 DMG)', 'Judgment Beam (70 True DMG)', 'Multitype Plate (Block 85%)', '🐉 Mega Rayquaza ULT (130 DMG)'] },
+      mahadev:     { secret: true, icon: '🔱', name: 'Mahadev (Tandava Destroyer)', skills: ['Trishul Pierce (56 DMG)', 'Damru Cosmic Beat (74 DMG + Stun)', 'Kailash Meditation (+65 HP)', '🔥 Third Eye Tandava ULT (140 True DMG)'] },
+      plasma:      { fused: true, icon: '⚛️🔥', name: 'Plasma Emperor',    skills: ['Plasma Lance (48 DMG)', 'Supernova Arc (64 DMG)', 'Ion Barrier (Block 80%)', '☀️ STAR COLLAPSE ULT (108 DMG)'] },
+      leviathan:   { fused: true, icon: '🐉🌊', name: 'Steam Leviathan',   skills: ['Scalding Geyser (46 DMG)', 'Boil Tsunami (62 DMG + 18 HP)', 'Mist Mirage (Evade +28 HP)', '🐉 OCEAN BOIL ULT (105 DMG)'] },
+      chronovoid:  { fused: true, icon: '⏳🌌', name: 'Chrono Void God',   skills: ['Reality Tear (50 DMG)', 'Paradox Loop (58 DMG + Stun)', 'Time Rewind (Evade +50 HP)', '🌌 BIG CRUNCH ULT (112 True DMG)'] },
+      eclipsenika: { fused: true, icon: '🌑☀️', name: 'Eclipse Sun God',   skills: ['Dawn Eclipse Fist (52 DMG)', 'Shadow Liberation (68 DMG)', 'Drum Pulse (Block 70% + 35 HP)', '🌑☀️ TOTAL ECLIPSE ULT (116 DMG + Stun)'] }
+    });
+
+    // 2. Add "🏆 Top 10" Leaderboard Tab
+    const tabs = document.querySelector('#svLobbyView .sv-tabs');
+    if (tabs && !document.getElementById('svTabTop')) {
+      const tBtn = document.createElement('button');
+      tBtn.className = 'sv-tab';
+      tBtn.id = 'svTabTop';
+      tBtn.textContent = '🏆 Top 10';
+      tBtn.onclick = () => {
+        ['Fight', 'Dojo', 'Logs'].forEach(x => {
+          document.getElementById('svTab' + x).classList.remove('active');
+          document.getElementById('sv' + x + 'Panel').style.display = 'none';
+        });
+        tBtn.classList.add('active');
+        document.getElementById('svTopPanel').style.display = 'block';
+        socket.emit('svGetLeaderboard');
+      };
+      tabs.appendChild(tBtn);
+
+      const topP = document.createElement('div');
+      topP.id = 'svTopPanel';
+      topP.style.cssText = 'display:none;max-height:330px;overflow-y:auto;';
+      topP.innerHTML = '<div id="svTopList" style="font-size:11px;color:#fde047;">Loading Global Ranks...</div>';
+      document.getElementById('svLobbyView').appendChild(topP);
+    }
+
+    // 3. Add How-To-Fuse Guide Banner in Arena Tab
+    const fightP = document.getElementById('svFightPanel');
+    if (fightP && !document.getElementById('svGuideBanner')) {
+      const guide = document.createElement('div');
+      guide.id = 'svGuideBanner';
+      guide.style.cssText = 'background:rgba(56,189,248,0.12);border:1px solid #38bdf8;border-radius:10px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:#e0f2fe;text-align:left;line-height:1.35;';
+      guide.innerHTML = '📖 <b>HOW TO FUSE POWERS (Open 💪 Dojo & Pets):</b><br>• <b>Custom Power Maker:</b> Play <b>50 Arena Mini-Games</b> + gather <b>50,000🪙</b> to fuse any 2 powers!<br>• <b>Preset Fusions:</b> Win <b>5 battles</b> with two base powers to reach <b>[V2]</b> & fuse them!';
+      fightP.insertBefore(guide, fightP.firstChild);
+    }
+
+    // 4. Add Custom Power Maker, Preset V2 Fusions & Relics inside Dojo & Pets
+    const dojo = document.getElementById('svDojoPanel');
+    if (dojo && !document.getElementById('svCustomMakerBox')) {
+      const box = document.createElement('div');
+      box.id = 'svCustomMakerBox';
+      box.innerHTML = `
+        <div style="background:linear-gradient(145deg,#311042,#1e1b4b);border:2px solid #facc15;border-radius:12px;padding:9px;margin-top:8px;text-align:left;font-size:11px;">
+          <div style="font-weight:900;color:#fde047;margin-bottom:3px;">⚗️ CUSTOM POWER MAKER (50,000🪙)</div>
+          <div id="svMakerStatus" style="color:#cbd5e1;margin-bottom:6px;">🔒 <b>How to Unlock:</b> Play <b>50 Arena Mini-Games</b> & gather <b>50,000🪙</b> to fuse any 2 powers!</div>
+          <div id="svMakerControls" style="display:none;">
+            <input id="svCustomPwrName" maxlength="24" placeholder="Name your new power..." style="width:100%;padding:6px;border-radius:8px;border:1px solid #facc15;background:#090d16;color:#fff;margin-bottom:5px;box-sizing:border-box;font-size:11px;">
+            <div style="display:flex;gap:5px;margin-bottom:6px;">
+              <select id="svFuseSlot1" style="flex:1;padding:6px;border-radius:8px;background:#090d16;color:#fff;border:1px solid #38bdf8;font-size:11px;"></select>
+              <select id="svFuseSlot2" style="flex:1;padding:6px;border-radius:8px;background:#090d16;color:#fff;border:1px solid #38bdf8;font-size:11px;"></select>
+            </div>
+            <button onclick="forgeMyCustomPower()" style="width:100%;padding:7px;border:none;border-radius:9px;background:linear-gradient(90deg,#f59e0b,#ec4899);color:#fff;font-weight:900;cursor:pointer;">🔥 FUSE 2 POWERS (50,000🪙)</button>
+          </div>
+        </div>
+        <div style="font-size:11px;font-weight:900;color:#f472b6;text-align:left;margin:8px 0 4px;">⚗️ PRESET V2 FUSIONS (Win 5 fights with each base power):</div>
+        <div class="sv-shop-card"><div><b>⚛️🔥 Plasma Emperor</b><br><span style="color:#cbd5e1;">Fire [V2] + Lightning [V2]</span></div><button onclick="socket.emit('svFusePower','plasma')" style="background:#db2777;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">500🪙</button></div>
+        <div class="sv-shop-card"><div><b>🐉🌊 Steam Leviathan</b><br><span style="color:#cbd5e1;">Fire [V2] + Water [V2]</span></div><button onclick="socket.emit('svFusePower','leviathan')" style="background:#0284c7;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">500🪙</button></div>
+        <div class="sv-shop-card"><div><b>⏳🌌 Chrono Void God</b><br><span style="color:#cbd5e1;">Space [V2] + Time [V2]</span></div><button onclick="socket.emit('svFusePower','chronovoid')" style="background:#7c3aed;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">800🪙</button></div>
+        <div class="sv-shop-card" style="border-color:#facc15;"><div><b>🌑☀️ Eclipse Sun God</b><br><span style="color:#fde047;">Sun [V2] + Shadow [V2]</span></div><button onclick="socket.emit('svFusePower','eclipsenika')" style="background:#d97706;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">1000🪙</button></div>
+
+        <div style="font-size:11px;font-weight:900;color:#fbbf24;text-align:left;margin:8px 0 4px;">🗡️ BATTLE RELICS:</div>
+        <div class="sv-shop-card"><div><b>🗡️ Excalibur Blade</b><br><span style="color:#cbd5e1;">+20% Crit Strike</span></div><button onclick="socket.emit('svBuyRelic','excalibur')" style="background:#b45309;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">600🪙</button></div>
+        <div class="sv-shop-card"><div><b>🛡️ Aegis Shield</b><br><span style="color:#cbd5e1;">-15% Damage Taken</span></div><button onclick="socket.emit('svBuyRelic','aegis')" style="background:#1d4ed8;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">600🪙</button></div>
+        <div class="sv-shop-card"><div><b>🧛 Vampire Fang</b><br><span style="color:#cbd5e1;">+20% Lifesteal</span></div><button onclick="socket.emit('svBuyRelic','vampfang')" style="background:#991b1b;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">750🪙</button></div>
+      `;
+      dojo.appendChild(box);
+    }
+
+    window.forgeMyCustomPower = function() {
+      const p1 = document.getElementById('svFuseSlot1').value;
+      const p2 = document.getElementById('svFuseSlot2').value;
+      const customName = document.getElementById('svCustomPwrName').value;
+      socket.emit('svForgeCustomPower', { p1, p2, customName });
+    };
+
+    function syncMegaProfileUI(st) {
+      if (!st) return;
+      if (st.customPower && st.customPower.id) {
+        SV_POWERS[st.customPower.id] = {
+          fused: true,
+          icon: st.customPower.def.icon,
+          name: st.customPower.def.name,
+          skills: st.customPower.def.moves.map(m => m.label)
+        };
+      }
+      if (typeof renderSvPowers === 'function') renderSvPowers();
+
+      const played = st.minigamesPlayed || 0;
+      const unlocked = st.powerMakerUnlocked || played >= 50;
+      const statEl = document.getElementById('svMakerStatus');
+      const ctrlEl = document.getElementById('svMakerControls');
+      if (!statEl || !ctrlEl) return;
+
+      if (st.customPower) {
+        statEl.innerHTML = '✅ <b>Forged:</b> ' + st.customPower.def.icon + ' ' + st.customPower.def.name + ' (Equip in ⚔️ Arena!)';
+        ctrlEl.style.display = 'none';
+      } else if (unlocked) {
+        statEl.innerHTML = '🔓 <b>Task Complete (' + played + '/50)!</b> Gather <b>50,000🪙</b> & pick any 2 owned powers to fuse:';
+        ctrlEl.style.display = 'block';
+        const ownedKeys = ['fire', 'water', 'lightning', 'ice', ...(st.unlockedPowers || [])];
+        const opts = ownedKeys.map(k => '<option value="' + k + '">' + k.toUpperCase() + '</option>').join('');
+        document.getElementById('svFuseSlot1').innerHTML = opts;
+        document.getElementById('svFuseSlot2').innerHTML = opts;
+      } else {
+        statEl.innerHTML = '🔒 <b>How to Unlock:</b> Play <b>50 Arena Mini-Games</b> (Progress: <b>' + played + '/50</b>) & gather <b>50,000🪙</b>!';
+        ctrlEl.style.display = 'none';
+      }
+    }
+
+    socket.on('svStatsSync', syncMegaProfileUI);
+    if (typeof myProfile !== 'undefined') syncMegaProfileUI(myProfile);
+
+    socket.on('svLeaderboardSync', (list) => {
+      const el = document.getElementById('svTopList');
+      if (!el) return;
+      el.innerHTML = list.map((p, i) =>
+        '<div class="sv-log-item"><b>#' + (i + 1) + ' ' + p.name + '</b> — 🏆 ' + p.wins + ' Wins | 🪙 ' + p.coins.toLocaleString() + ' | ⚡ ' + p.powers + ' Powers</div>'
+      ).join('') || 'No fighters ranked yet!';
+    });
+  }, 500);
+})();
+</script>
 
 
 

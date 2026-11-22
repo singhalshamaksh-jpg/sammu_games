@@ -7165,9 +7165,7 @@ io.on('connection', (socket) => {
         }
     });
 });
-// ============================================================================
-// 🔥 SAMMUVERSE MEGA UPDATE — PART 1/6 (LINEAGES, V3 100-WINS & TITLES)
-// ============================================================================
+/*
 const SV_LINEAGES = {
     human:     { icon: '🧑', name: 'Mortal Explorer',        stage3: '👑 Ascendant Hero',      hpTurn: 0,  dmgMult: 1.00, steal: 0,    absorb: 0,    stunImmune: false },
     slime:     { icon: '🟢', name: 'Primordial Void Slime',  stage3: '🟢 Void Sovereign Slime', hpTurn: 14, dmgMult: 1.05, steal: 0,    absorb: 0.12, stunImmune: false },
@@ -7246,7 +7244,7 @@ io.to = function(room) {
     const origEmit = broadcaster.emit.bind(broadcaster);
     broadcaster.emit = function(ev, payload, ...rest) {
         if (ev === 'message' && payload && typeof payload === 'object' && payload.username) {
-            const rawName = String(payload.username).replace(/^\[.*?\]\s*/, '');
+            const rawName = String(payload.username).replace(/^\[.*?\]\s{0,}/, '');
             const k = rawName.toLowerCase().trim();
             if (svPlayerStats[k]) {
                 syncPlayerTitlesAndBounty(rawName);
@@ -8357,6 +8355,7 @@ io.on('connection', (socket) => {
         }
     });
 });
+*/
 // ============================================================================
 // 🎮 MULTI-FUSION PROGRESSIVE SERIES — PART 2/2 (CLIENT POWER GRID & PRICE UI)
 // ============================================================================

@@ -7164,6 +7164,694 @@ io.on('connection', (socket) => {
         }
     });
 });
+// ============================================================================
+// 🔥 SAMMUVERSE MEGA UPDATE — PART 1/6 (LINEAGES, V3 100-WINS & TITLES)
+// ============================================================================
+const SV_LINEAGES = {
+    human:     { icon: '🧑', name: 'Mortal Explorer',        stage3: '👑 Ascendant Hero',      hpTurn: 0,  dmgMult: 1.00, steal: 0,    absorb: 0,    stunImmune: false },
+    slime:     { icon: '🟢', name: 'Primordial Void Slime',  stage3: '🟢 Void Sovereign Slime', hpTurn: 14, dmgMult: 1.05, steal: 0,    absorb: 0.12, stunImmune: false },
+    ape:       { icon: '🐵', name: 'Astral Ape Warrior',     stage3: '⚡ Super Astral God',    hpTurn: 0,  dmgMult: 1.22, steal: 0,    absorb: 0,    stunImmune: false },
+    reaper:    { icon: '👻', name: 'Phantom Soul Reaper',    stage3: '⚔️ Eclipse Bankai',      hpTurn: 0,  dmgMult: 1.18, steal: 0.05, absorb: 0,    stunImmune: false },
+    demon:     { icon: '😈', name: 'Infernal Demonkin',      stage3: '🔥 Abyssal Overlord',    hpTurn: 0,  dmgMult: 1.10, steal: 0.16, absorb: 0,    stunImmune: false },
+    dragonkin: { icon: '🐉', name: 'Ancient Dragonkin',      stage3: '🐲 Cosmic Wyrm King',    hpTurn: 8,  dmgMult: 1.15, steal: 0,    absorb: 0.08, stunImmune: false },
+    celestial: { icon: '🔱', name: 'Celestial Avatar',       stage3: '🔱 Supreme Cosmic Deity', hpTurn: 12, dmgMult: 1.25, steal: 0.10, absorb: 0.10, stunImmune: true  }
+};
+
+const SV_TITLES = [
+    { id: 'rookie',     tag: '🌱 Rookie',           color: '#94a3b8', req: 'Default Starter Title' },
+    { id: 'hunter',     tag: '⚔️ Bounty Hunter',    color: '#38bdf8', req: 'Reach 1.0M Bounty Honor' },
+    { id: 'warlord',    tag: '🏴‍☠️ Warlord',          color: '#a855f7', req: 'Reach 2.5M Bounty Honor' },
+    { id: 'emperor',    tag: '💀 Abyss Emperor',    color: '#f43f5e', req: 'Reach 10.0M Bounty Honor' },
+    { id: 'sovereign',  tag: '👑 Sammu Sovereign',  color: '#facc15', req: 'Reach 30.0M Bounty Honor' },
+    { id: 'v3god',      tag: '🔥 V3 Ascended',      color: '#fb923c', req: 'Reach 100 Wins on any Power (V3)' },
+    { id: 'voidslime',  tag: '🟢 Void Slime King',  color: '#4ade80', req: 'Awaken Primordial Void Slime Stage 3' },
+    { id: 'tourney',    tag: '🏆 Tourney King',     color: '#fde047', req: 'Win a SammuVerse Knockout Tournament' },
+    { id: 'godly',      tag: '✨ Godly Enchanted',  color: '#67e8f9', req: 'Roll a Godly Enchantment on any Power' },
+    { id: 'forger',     tag: '⚗️ Soul Forger',      color: '#e879f9', req: 'Forge a Custom Fusion Power' },
+    { id: 'vishnu',     tag: '🔱 MahaVishnu',       color: '#fde047', req: 'Unlock Sammu/Samaksh (MahaVishnu)' },
+    { id: 'lunaremp',   tag: '🌙 Lunar Empress',    color: '#fda4af', req: 'Unlock Dr. Moon (Lunar Empress)' },
+    { id: 'rich',       tag: '💎 Millionaire',      color: '#4ade80', req: 'Hold 100,000+ Coins' }
+];
+
+const POWER_TIER_WEIGHT = {
+    fire: 1, water: 1, lightning: 1, ice: 1,
+    storm: 2, venom: 2, rubber: 2, blood: 2,
+    gravity: 3, space: 3, time: 3, sun: 3,
+    shadow: 4, blackhole: 4, antimatter: 4,
+    zoro: 5, sus: 5, moon: 5,
+    plasma: 5, leviathan: 5, chronovoid: 5, eclipsenika: 5,
+    mahavishnu: 6, millyyt: 6, ishikastar: 6, zoroking: 6, antimpoke: 6, mahadev: 6
+};
+// ============================================================================
+// 🏷️ SAMMUVERSE MEGA UPDATE — PART 2/6 (TITLE SYNC, CHAT BADGES & V3 INIT)
+// ============================================================================
+function syncPlayerTitlesAndBounty(uname) {
+    if (!uname) return;
+    const prof = getSvProfile(uname);
+    if (!Array.isArray(prof.unlockedTitles)) prof.unlockedTitles = ['rookie'];
+    if (typeof prof.bounty !== 'number') prof.bounty = 10000;
+    if (!prof.activeTitle) prof.activeTitle = 'rookie';
+    if (!prof.lineage) prof.lineage = 'human';
+    if (!prof.lineageStage) prof.lineageStage = 1;
+
+    const grant = (id) => { if (!prof.unlockedTitles.includes(id)) prof.unlockedTitles.push(id); };
+
+    if (prof.bounty >= 1000000)  grant('hunter');
+    if (prof.bounty >= 2500000)  grant('warlord');
+    if (prof.bounty >= 10000000) grant('emperor');
+    if (prof.bounty >= 30000000) grant('sovereign');
+
+    const pWins = prof.powerWins || {};
+    if (Object.values(pWins).some(w => w >= 100)) grant('v3god');
+    if (prof.lineage === 'slime' && prof.lineageStage >= 3) grant('voidslime');
+    if (prof.tourneyWins >= 1) grant('tourney');
+    if (prof.enchants && Object.values(prof.enchants).some(e => e.id === 'godly')) grant('godly');
+    if (prof.customPower) grant('forger');
+    if ((prof.unlockedPowers || []).includes('mahavishnu')) grant('vishnu');
+    if ((prof.unlockedPowers || []).includes('moon')) grant('lunaremp');
+    if (getCoins(uname) >= 100000) grant('rich');
+}
+
+function formatBounty(b) {
+    if (b >= 1000000) return (b / 1000000).toFixed(2) + 'M';
+    if (b >= 1000) return Math.round(b / 1000) + 'K';
+    return String(b || 0);
+}
+
+// Prepend Equipped Title Badge onto Every Chat Message in the Server
+const _prevIoTo = io.to.bind(io);
+io.to = function(room) {
+    const broadcaster = _prevIoTo(room);
+    const origEmit = broadcaster.emit.bind(broadcaster);
+    broadcaster.emit = function(ev, payload, ...rest) {
+        if (ev === 'message' && payload && typeof payload === 'object' && payload.username) {
+            const rawName = String(payload.username).replace(/^\[.*?\]\s*/, '');
+            const k = rawName.toLowerCase().trim();
+            if (svPlayerStats[k]) {
+                syncPlayerTitlesAndBounty(rawName);
+                const prof = svPlayerStats[k];
+                const tObj = SV_TITLES.find(t => t.id === prof.activeTitle) || SV_TITLES;
+                if (tObj && !String(payload.username).startsWith('[')) {
+                    payload = { ...payload, username: `[${tObj.tag}] ${rawName}`, _titleColor: tObj.color };
+                }
+            }
+        }
+        return origEmit(ev, payload, ...rest);
+    };
+    return broadcaster;
+};
+
+// Apply V3 (100 Wins), Lineage Traits & Enchantments at Match Start
+const _prevStartV3 = startSvMatch;
+startSvMatch = function(srvId, sock1, pow1Key, sock2, pow2Key, isSpin1 = false) {
+    _prevStartV3(srvId, sock1, pow1Key, sock2, pow2Key, isSpin1);
+    for (const b of svBattles.values()) {
+        if (b.p1.id === sock1.id) {
+            const applyFighterMeta = (fighter, uname, pKey) => {
+                const pr = getSvProfile(uname);
+                fighter.isV3 = Boolean(pr.powerWins && pr.powerWins[pKey] >= 100);
+                fighter.enchant = (pr.enchants && pr.enchants[pKey]) || null;
+                fighter.lineageObj = SV_LINEAGES[pr.lineage || 'human'] || SV_LINEAGES.human;
+                fighter.lineageStage = pr.lineageStage || 1;
+                if (fighter.isV3) {
+                    fighter.maxHp += 65;
+                    fighter.hp += 65;
+                    fighter.bonusAtk += 20;
+                }
+            };
+            applyFighterMeta(b.p1, sock1.username, pow1Key);
+            if (!b.p2.isBot && sock2 && sock2.username) {
+                applyFighterMeta(b.p2, sock2.username, pow2Key);
+            }
+        }
+    }
+};
+// ============================================================================
+// ⚡ SAMMUVERSE MEGA UPDATE — PART 3/6 (DOMAIN CLASH, LINEAGE & BOUNTY)
+// ============================================================================
+const ENCHANT_POOL = [
+    { id: 'blazing',    name: '🔥 Blazing (+15% Burn DMG)',    mult: 1.15, red: 0,    heal: 0 },
+    { id: 'vampiric',   name: '🧛 Vampiric (+15% Lifesteal)',  mult: 1.05, red: 0,    heal: 0.15 },
+    { id: 'ironclad',   name: '🛡️ Ironclad (-15% DMG Taken)',  mult: 1.00, red: 0.15, heal: 0 },
+    { id: 'thunderous', name: '⚡ Thunderous (+20% Shock DMG)', mult: 1.20, red: 0,    heal: 0 },
+    { id: 'godly',      name: '✨ GODLY (+25% ALL STATS)',      mult: 1.25, red: 0.20, heal: 0.12 }
+];
+
+const activeDomainClashes = new Map();
+
+const _prevResolveV3 = resolveSvTurn;
+resolveSvTurn = function(battleId) {
+    const b = svBattles.get(battleId);
+    if (!b) return _prevResolveV3(battleId);
+
+    // Trigger V3 Domain Clash when BOTH V3 fighters unleash Ultimates simultaneously!
+    if (!b.p2.isBot && b.p1.isV3 && b.p2.isV3 && b.p1.choice === 3 && b.p2.choice === 3 && !b.clashResolved) {
+        b.clashResolved = true;
+        const clashData = { p1Taps: 0, p2Taps: 0 };
+        activeDomainClashes.set(battleId, clashData);
+        io.to(b.p1.id).emit('svDomainClashStart', { oppName: b.p2.name, _serverId: b.srvId });
+        io.to(b.p2.id).emit('svDomainClashStart', { oppName: b.p1.name, _serverId: b.srvId });
+
+        setTimeout(() => {
+            activeDomainClashes.delete(battleId);
+            const cur = svBattles.get(battleId);
+            if (!cur) return;
+            const p1WonClash = clashData.p1Taps >= clashData.p2Taps;
+            const winner = p1WonClash ? cur.p1 : cur.p2;
+            const loser = p1WonClash ? cur.p2 : cur.p1;
+            const clashDmg = 150 + winner.bonusAtk;
+            loser.hp = Math.max(0, loser.hp - clashDmg);
+            cur.p1.choice = 0;
+            cur.p2.choice = 0;
+            cur.clashResolved = false;
+
+            io.to(cur.p1.id).emit('svDomainClashEnd', { winnerName: winner.name, taps: Math.max(clashData.p1Taps, clashData.p2Taps), _serverId: cur.srvId });
+            io.to(cur.p2.id).emit('svDomainClashEnd', { winnerName: winner.name, taps: Math.max(clashData.p1Taps, clashData.p2Taps), _serverId: cur.srvId });
+            io.to(cur.srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚡👑 **V3 DOMAIN CLASH!!** **${winner.name}** shattered **${loser.name}**'s domain (${Math.max(clashData.p1Taps, clashData.p2Taps)} Taps) for **-${clashDmg} COSMIC DMG**!`,
+                _serverId: cur.srvId
+            });
+            _prevResolveV3(battleId);
+        }, 4200);
+        return;
+    }
+
+    const prevHp1 = b.p1.hp, prevHp2 = b.p2.hp;
+    const p1WasBot = b.p2.isBot, botId = b.p2.id;
+    const p1Name = b.p1.name, p2Name = b.p2.name;
+    const p1Pow = b.p1.pKey, p2Pow = b.p2.pKey;
+    const srvId = b.srvId;
+
+    _prevResolveV3(battleId);
+
+    const after = svBattles.get(battleId);
+    if (after) {
+        const fxLogs = [];
+        [[after.p1, after.p2, prevHp2, prevHp1], [after.p2, after.p1, prevHp1, prevHp2]].forEach(([me, opp, oppPrev, myPrev]) => {
+            if (me.hp <= 0) return;
+            const dealt = Math.max(0, oppPrev - opp.hp);
+            const taken = Math.max(0, myPrev - me.hp);
+            let bonusDmg = 0;
+
+            if (me.isV3 && dealt > 0) bonusDmg += Math.round(dealt * 0.20);
+
+            const lin = me.lineageObj;
+            const stgMult = (me.lineageStage || 1) >= 3 ? 1.0 : ((me.lineageStage || 1) === 2 ? 0.65 : 0.4);
+            if (lin) {
+                if (lin.stunImmune && me.stunned) {
+                    me.stunned = false;
+                    fxLogs.push(`🔱 <b>${me.name}</b>'s Celestial Lineage negated Stun!`);
+                }
+                if (lin.hpTurn > 0) {
+                    const reg = Math.max(2, Math.round(lin.hpTurn * stgMult));
+                    me.hp = Math.min(me.maxHp, me.hp + reg);
+                    fxLogs.push(`${lin.icon} <b>${me.name}</b> regenerated <b>+${reg} HP</b>!`);
+                }
+                if (lin.absorb > 0 && taken > 0) {
+                    const abs = Math.max(2, Math.round(taken * lin.absorb * stgMult));
+                    me.hp = Math.min(me.maxHp, me.hp + abs);
+                    fxLogs.push(`${lin.icon} <b>${me.name}</b> absorbed <b>+${abs} HP</b> from the attack!`);
+                }
+                if (lin.dmgMult > 1 && dealt > 0) {
+                    bonusDmg += Math.round(dealt * (lin.dmgMult - 1) * stgMult);
+                }
+                if (lin.steal > 0 && dealt > 0) {
+                    me.hp = Math.min(me.maxHp, me.hp + Math.max(2, Math.round(dealt * lin.steal * stgMult)));
+                }
+            }
+
+            if (me.enchant && dealt > 0) {
+                bonusDmg += Math.round(dealt * (me.enchant.mult - 1));
+                if (me.enchant.heal > 0) me.hp = Math.min(me.maxHp, me.hp + Math.max(2, Math.round(dealt * me.enchant.heal)));
+            }
+            if (me.enchant && me.enchant.red > 0 && taken > 0) {
+                me.hp = Math.min(me.maxHp, me.hp + Math.round(taken * me.enchant.red));
+            }
+
+            if (bonusDmg > 0 && opp.hp > 0) {
+                opp.hp = Math.max(0, opp.hp - bonusDmg);
+                fxLogs.push(`⚡ <b>${me.name}</b> dealt <b>-${bonusDmg} Trait/V3 DMG</b>!`);
+            }
+        });
+        if (fxLogs.length > 0) {
+            after.lastLog += '<br>' + fxLogs.join('<br>');
+            syncSvBattle(after, null);
+        }
+    } else {
+        // Match Finished -> Dynamic Bounty Scaling based on Power Tier & Opponent
+        const p1Won = b.p1.hp > b.p2.hp;
+        const winName = p1Won ? p1Name : p2Name;
+        const loseName = p1Won ? p2Name : p1Name;
+        const winPow = p1Won ? p1Pow : p2Pow;
+        const losePow = p1Won ? p2Pow : p1Pow;
+
+        if (!(p1Won === false && p1WasBot)) {
+            const wProf = getSvProfile(winName);
+            if (typeof wProf.bounty !== 'number') wProf.bounty = 10000;
+            let bountyGain = 0;
+
+            if (p1WasBot) {
+                if (botId === 'BOT_DUMMY' && wProf.bounty < 500000) bountyGain = 5000;
+                else if (botId === 'BOT_SENSEI' && wProf.bounty < 2500000) bountyGain = 25000;
+                else if (botId === 'BOT_DEMON' && wProf.bounty < 10000000) bountyGain = 100000;
+            } else {
+                const lProf = getSvProfile(loseName);
+                const wTier = POWER_TIER_WEIGHT[winPow] || 3;
+                const lTier = POWER_TIER_WEIGHT[losePow] || 3;
+                const tierDiff = Math.max(0, lTier - wTier);
+                const stolen = Math.round((lProf.bounty || 10000) * (tierDiff > 0 ? 0.10 : 0.05));
+                bountyGain = 100000 + (tierDiff * 150000) + stolen;
+                lProf.bounty = Math.max(0, (lProf.bounty || 10000) - Math.round(stolen * 0.5));
+            }
+
+            if (bountyGain > 0) {
+                wProf.bounty = Math.min(30000000, wProf.bounty + bountyGain);
+                syncPlayerTitlesAndBounty(winName);
+                saveSvStats();
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🏴‍☠️ **BOUNTY HONOR!** **${winName}** gained **+${formatBounty(bountyGain)} Bounty** (Total: **${formatBounty(wProf.bounty)}**)!`,
+                    _serverId: srvId
+                });
+            }
+            if ((wProf.powerWins?.[winPow] || 0) === 100) {
+                syncPlayerTitlesAndBounty(winName);
+                saveSvStats();
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `👑🔥 **V3 ASCENSION UNLOCKED!!** **${winName}** reached **100 WINS** on **${SV_DEFS[winPow]?.name || winPow}** and unlocked **[V3 👑]** + **[🔥 V3 Ascended]** Title!`,
+                    _serverId: srvId
+                });
+            }
+        }
+    }
+};
+// ============================================================================
+// 🏆 SAMMUVERSE MEGA UPDATE — PART 4/6 (TOURNEY ENGINE & HOURLY STOCK)
+// ============================================================================
+const svTourneysByServer = new Map();
+let hourlyStock = { expiresAt: 0, items: [] };
+
+function getHourlyStock() {
+    if (Date.now() > hourlyStock.expiresAt || hourlyStock.items.length === 0) {
+        const pool = Object.entries(SV_DEFS)
+            .filter(([k, d]) => d.cost || d.fused)
+            .map(([k, d]) => ({ key: k, icon: d.icon, name: d.name, price: d.cost || 2500 }));
+        hourlyStock = { expiresAt: Date.now() + (60 * 60 * 1000), items: pool.sort(() => Math.random() - 0.5).slice(0, 3) };
+    }
+    return hourlyStock;
+}
+
+function broadcastSvTourney(srvId) {
+    const t = svTourneysByServer.get(srvId);
+    io.to(srvId).emit('svTourneySync', t ? {
+        active: t.active,
+        roundName: t.roundName,
+        entrants: t.entrants.map(e => ({ name: e.name, isBot: Boolean(e.isBot), power: e.power })),
+        matches: t.matches,
+        champion: t.champion || null
+    } : { active: false, entrants: [], matches: [] });
+}
+
+function advanceSvTourneyRound(srvId) {
+    const t = svTourneysByServer.get(srvId);
+    if (!t || !t.active) return;
+
+    t.matches.forEach(m => {
+        if (!m.winner && m.p1.isBot && m.p2.isBot) m.winner = Math.random() < 0.5 ? m.p1 : m.p2;
+    });
+
+    const nextMatch = t.matches.find(m => !m.winner);
+    if (nextMatch) {
+        const realP = !nextMatch.p1.isBot ? nextMatch.p1 : nextMatch.p2;
+        const oppP = realP === nextMatch.p1 ? nextMatch.p2 : nextMatch.p1;
+        const s1 = io.sockets.sockets.get(realP.id);
+        if (!s1) { nextMatch.winner = oppP; return advanceSvTourneyRound(srvId); }
+
+        if (oppP.isBot) {
+            io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏆 **${t.roundName}:** **${realP.name}** vs **${oppP.name}** — Starting!`, _serverId: srvId });
+            startSvMatch(srvId, s1, realP.power, oppP.botId, null, false);
+        } else {
+            const s2 = io.sockets.sockets.get(oppP.id);
+            if (!s2) { nextMatch.winner = realP; return advanceSvTourneyRound(srvId); }
+            io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏆 **${t.roundName} PvP:** **${realP.name}** vs **${oppP.name}** — Starting!`, _serverId: srvId });
+            startSvMatch(srvId, s1, realP.power, s2, oppP.power, false);
+        }
+        broadcastSvTourney(srvId);
+        return;
+    }
+
+    const winners = t.matches.map(m => m.winner);
+    if (winners.length <= 1) {
+        const champ = winners;
+        t.active = false;
+        t.champion = champ ? champ.name : 'Bot';
+        broadcastSvTourney(srvId);
+
+        if (champ && !champ.isBot) {
+            const prof = getSvProfile(champ.name);
+            prof.tourneyWins = (prof.tourneyWins || 0) + 1;
+            prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
+            prof.bounty = Math.min(30000000, (prof.bounty || 10000) + 500000);
+            addCoins(champ.name, 15000);
+            syncPlayerTitlesAndBounty(champ.name);
+            saveSvStats();
+            const cSock = io.sockets.sockets.get(champ.id);
+            if (cSock) cSock.emit('svStatsSync', getSvProfile(champ.name));
+        }
+
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🎊👑 **TOURNAMENT CHAMPION:** **${t.champion}** won **+15,000🪙**, **+500K Bounty**, **1x Free Fusion Pass**, and **[🏆 Tourney King]** Title!`,
+            _serverId: srvId
+        });
+        svTourneysByServer.delete(srvId);
+        return;
+    }
+
+    t.roundName = winners.length === 4 ? '🔥 SEMIFINALS' : '👑 GRAND FINAL';
+    t.matches = [];
+    for (let i = 0; i < winners.length; i += 2) {
+        t.matches.push({ p1: winners[i], p2: winners[i + 1], winner: null });
+    }
+    broadcastSvTourney(srvId);
+    setTimeout(() => advanceSvTourneyRound(srvId), 2000);
+}
+
+const _prevLogTourney = recordSvLog;
+recordSvLog = function(srvId, winner, winPower, loser, losePower) {
+    _prevLogTourney(srvId, winner, winPower, loser, losePower);
+    const t = svTourneysByServer.get(srvId);
+    if (!t || !t.active) return;
+    const cleanWin = String(winner || '').replace(' (Fled)', '').trim().toLowerCase();
+    const cleanLose = String(loser || '').replace(' (Fled)', '').trim().toLowerCase();
+    const curMatch = t.matches.find(m => !m.winner && (
+        m.p1.name.toLowerCase() === cleanWin || m.p2.name.toLowerCase() === cleanWin ||
+        m.p1.name.toLowerCase() === cleanLose || m.p2.name.toLowerCase() === cleanLose
+    ));
+    if (curMatch) {
+        curMatch.winner = curMatch.p1.name.toLowerCase() === cleanWin ? curMatch.p1 : curMatch.p2;
+        broadcastSvTourney(srvId);
+        setTimeout(() => advanceSvTourneyRound(srvId), 2500);
+    }
+};
+// ============================================================================
+// 🔌 SAMMUVERSE MEGA UPDATE — PART 5/6 (SOCKET EVENTS & #SAMMUCREATOR)
+// ============================================================================
+io.on('connection', (socket) => {
+    socket.on('svDomainTap', () => {
+        for (const [, clash] of activeDomainClashes.entries()) clash.p1Taps++;
+    });
+
+    socket.on('svSpinLineage', () => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        if (getCoins(uname) < 1000) return socket.emit('svNotice', '🪙 Need 1,000 Coins to spin a Genetic Lineage!');
+        addCoins(uname, -1000);
+
+        const r = Math.random();
+        const rolledKey = r < 0.05 ? 'celestial' : (r < 0.17 ? 'slime' : (r < 0.34 ? 'dragonkin' : (r < 0.54 ? 'demon' : (r < 0.74 ? 'reaper' : 'ape'))));
+        prof.lineage = rolledKey;
+        prof.lineageStage = 1;
+        syncPlayerTitlesAndBounty(uname);
+        saveSvStats();
+        socket.emit('svStatsSync', getSvProfile(uname));
+        const lObj = SV_LINEAGES[rolledKey];
+        socket.emit('svNotice', `🧬 LINEAGE AWAKENED: ${lObj.icon} ${lObj.name} (Stage 1/3)!`);
+    });
+
+    socket.on('svEvolveLineage', () => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        const curStage = prof.lineageStage || 1;
+        if (curStage >= 3) return socket.emit('svNotice', '👑 Your Lineage is already at Stage 3 Max Awakening!');
+        const cost = curStage === 1 ? 2500 : 6000;
+        if (getCoins(uname) < cost) return socket.emit('svNotice', `🪙 Need ${cost.toLocaleString()} Coins to evolve to Stage ${curStage + 1}!`);
+        addCoins(uname, -cost);
+        prof.lineageStage = curStage + 1;
+        syncPlayerTitlesAndBounty(uname);
+        saveSvStats();
+        socket.emit('svStatsSync', getSvProfile(uname));
+        const lObj = SV_LINEAGES[prof.lineage || 'human'];
+        socket.emit('svNotice', `⚡ EVOLVED TO STAGE ${prof.lineageStage}: ${prof.lineageStage === 3 ? lObj.stage3 : lObj.name}!`);
+    });
+
+    socket.on('svEquipTitle', (titleId) => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        syncPlayerTitlesAndBounty(uname);
+        if (!prof.unlockedTitles.includes(titleId)) return socket.emit('svNotice', '🔒 Unlock this Title first!');
+        prof.activeTitle = titleId;
+        saveSvStats();
+        socket.emit('svStatsSync', getSvProfile(uname));
+        const tObj = SV_TITLES.find(t => t.id === titleId);
+        socket.emit('svNotice', `🏷️ Equipped Title: [${tObj ? tObj.tag : titleId}]!`);
+    });
+
+    socket.on('svRollEnchant', (pKey) => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        if (getCoins(uname) < 3000) return socket.emit('svNotice', '🪙 Need 3,000 Coins to roll an Enchantment!');
+        addCoins(uname, -3000);
+        if (!prof.enchants) prof.enchants = {};
+        const rolled = ENCHANT_POOL[Math.floor(Math.random() * ENCHANT_POOL.length)];
+        prof.enchants[pKey || 'fire'] = rolled;
+        syncPlayerTitlesAndBounty(uname);
+        saveSvStats();
+        socket.emit('svStatsSync', getSvProfile(uname));
+        socket.emit('svNotice', `🔮 Enchanted ${SV_DEFS[pKey]?.name || pKey} with ${rolled.name}!`);
+    });
+
+    socket.on('svGetStock', () => {
+        const st = getHourlyStock();
+        socket.emit('svStockSync', { items: st.items, minsLeft: Math.max(1, Math.ceil((st.expiresAt - Date.now()) / 60000)) });
+    });
+
+    socket.on('svBuyStockItem', (pKey) => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        const item = getHourlyStock().items.find(i => i.key === pKey);
+        if (!item) return;
+        if (prof.unlockedPowers.includes(pKey)) return socket.emit('svNotice', '✅ Already owned!');
+        if (getCoins(uname) < item.price) return socket.emit('svNotice', `🪙 Need ${item.price.toLocaleString()} Coins!`);
+        addCoins(uname, -item.price);
+        prof.unlockedPowers.push(pKey);
+        syncPlayerTitlesAndBounty(uname);
+        saveSvStats();
+        socket.emit('svStatsSync', getSvProfile(uname));
+        socket.emit('svNotice', `🎰 Unlocked ${item.icon} ${item.name} from Hourly Stock!`);
+    });
+
+    socket.on('svTourneyJoinOrStart', ({ power, forceStart }) => {
+        const srvId = socket.activeServerId;
+        const uname = socket.username || 'Player';
+        if (!srvId) return;
+
+        let t = svTourneysByServer.get(srvId);
+        if (!t) { t = { active: false, roundName: '⚔️ QUARTERFINALS', entrants: [], matches: [] }; svTourneysByServer.set(srvId, t); }
+        if (t.active) return broadcastSvTourney(srvId);
+
+        if (!t.entrants.some(e => e.id === socket.id)) {
+            t.entrants.push({ id: socket.id, name: uname, power: power || 'fire', isBot: false });
+            io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏆 **${uname}** joined the **8-Player Knockout Tournament** (${t.entrants.length}/8)!`, _serverId: srvId });
+        }
+
+        if (forceStart || t.entrants.length >= 8) {
+            const bots = [
+                { id: 'B1', botId: 'BOT_SENSEI', name: '🤖 Bot Sensei', power: 'lightning', isBot: true },
+                { id: 'B2', botId: 'BOT_DEMON',  name: '👹 Demon Overlord', power: 'blood', isBot: true },
+                { id: 'B3', botId: 'BOT_SENSEI', name: '🥷 Shadow Shinobi', power: 'shadow', isBot: true },
+                { id: 'B4', botId: 'BOT_DEMON',  name: '🐉 Dragon Lord', power: 'fire', isBot: true },
+                { id: 'B5', botId: 'BOT_SENSEI', name: '❄️ Frost King', power: 'ice', isBot: true },
+                { id: 'B6', botId: 'BOT_DEMON',  name: '🪐 Gravity Titan', power: 'gravity', isBot: true },
+                { id: 'B7', botId: 'BOT_DUMMY',  name: '🥊 Sparring Bot', power: 'rubber', isBot: true }
+            ];
+            let bIdx = 0;
+            while (t.entrants.length < 8) t.entrants.push(bots[bIdx++ % bots.length]);
+            const shuffled = [...t.entrants].sort(() => Math.random() - 0.5);
+            t.matches = [];
+            for (let i = 0; i < 8; i += 2) t.matches.push({ p1: shuffled[i], p2: shuffled[i + 1], winner: null });
+            t.active = true;
+            io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏆🔥 **8-PLAYER KNOCKOUT TOURNAMENT STARTED!** (Auto-filled with Bots!)`, _serverId: srvId });
+            advanceSvTourneyRound(srvId);
+        }
+        broadcastSvTourney(srvId);
+    });
+
+    // Master Code #sammucreator: Unlocks V3 (100 Wins), ALL Titles, 30M Bounty & Celestial Stage 3!
+    socket.on('svUnlockCode', (rawCode) => {
+        if (String(rawCode || '').trim().toLowerCase() === '#sammucreator') {
+            const uname = socket.username || 'Player';
+            const prof = getSvProfile(uname);
+            prof.unlockedPowers = Object.keys(SV_DEFS);
+            if (!prof.powerWins) prof.powerWins = {};
+            Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = Math.max(100, prof.powerWins[k] || 0); });
+            prof.unlockedTitles = SV_TITLES.map(t => t.id);
+            prof.activeTitle = 'sovereign';
+            prof.bounty = 30000000;
+            prof.lineage = 'celestial';
+            prof.lineageStage = 3;
+            prof.reforgeTokens = (prof.reforgeTokens || 0) + 10;
+            if (!prof.enchants) prof.enchants = {};
+            prof.enchants.mahavishnu = ENCHANT_POOL;
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+        }
+    });
+});
+// ============================================================================
+// 🎮 SAMMUVERSE MEGA UPDATE — PIECE 6B-1 (DATA & MODAL RENDERER)
+// ============================================================================
+const SV_MEGA_JS_PART1 = `
+(function() {
+  if (window._svMegaClientBooted) return;
+  window._svMegaClientBooted = true;
+
+  const LINEAGE_INFO = {
+    human:     { icon: '🧑', name: 'Mortal Explorer',        stage3: '👑 Ascendant Hero',      perk: 'Balanced Starter' },
+    slime:     { icon: '🟢', name: 'Primordial Void Slime',  stage3: '🟢 Void Sovereign Slime', perk: '+14 HP/Turn Regen & 12% DMG Absorb' },
+    ape:       { icon: '🐵', name: 'Astral Ape Warrior',     stage3: '⚡ Super Astral God',    perk: '+22% Surge Strike DMG' },
+    reaper:    { icon: '👻', name: 'Phantom Soul Reaper',    stage3: '⚔️ Eclipse Bankai',      perk: '+18% Slash DMG & 5% Soul Drain' },
+    demon:     { icon: '😈', name: 'Infernal Demonkin',      stage3: '🔥 Abyssal Overlord',    perk: '+10% DMG & 16% Lifesteal' },
+    dragonkin: { icon: '🐉', name: 'Ancient Dragonkin',      stage3: '🐲 Cosmic Wyrm King',    perk: '+8 HP/Turn, +15% DMG & 8% Absorb' },
+    celestial: { icon: '🔱', name: 'Celestial Avatar',       stage3: '🔱 Supreme Cosmic Deity', perk: '+25% DMG, +12 HP/Turn, Stun Immune' }
+  };
+
+  const TITLE_LIST = [
+    { id: 'rookie',     tag: '🌱 Rookie',           color: '#94a3b8', req: 'Default Starter' },
+    { id: 'hunter',     tag: '⚔️ Bounty Hunter',    color: '#38bdf8', req: '1.0M Bounty' },
+    { id: 'warlord',    tag: '🏴‍☠️ Warlord',          color: '#a855f7', req: '2.5M Bounty' },
+    { id: 'emperor',    tag: '💀 Abyss Emperor',    color: '#f43f5e', req: '10.0M Bounty' },
+    { id: 'sovereign',  tag: '👑 Sammu Sovereign',  color: '#facc15', req: '30.0M Bounty' },
+    { id: 'v3god',      tag: '🔥 V3 Ascended',      color: '#fb923c', req: '100 Wins (V3)' },
+    { id: 'voidslime',  tag: '🟢 Void Slime King',  color: '#4ade80', req: 'Void Slime Stage 3' },
+    { id: 'tourney',    tag: '🏆 Tourney King',     color: '#fde047', req: 'Win Tourney' },
+    { id: 'godly',      tag: '✨ Godly Enchanted',  color: '#67e8f9', req: 'Godly Enchant' },
+    { id: 'forger',     tag: '⚗️ Soul Forger',      color: '#e879f9', req: 'Custom Fusion' },
+    { id: 'vishnu',     tag: '🔱 MahaVishnu',       color: '#fde047', req: 'MahaVishnu Power' },
+    { id: 'lunaremp',   tag: '🌙 Lunar Empress',    color: '#fda4af', req: 'Dr. Moon Power' },
+    { id: 'rich',       tag: '💎 Millionaire',      color: '#4ade80', req: '100,000+ Coins' }
+  ];
+
+  window._svLatestStock = { items: [], minsLeft: 60 };
+  window._svLatestTourney = { active: false, entrants: [], matches: [] };
+  const fmtBounty = (b) => b >= 1000000 ? (b / 1000000).toFixed(2) + 'M' : (b >= 1000 ? Math.round(b / 1000) + 'K' : String(b || 10000));
+
+  window.openSvSub = function(mode) {
+    const modal = document.getElementById('svSubModal');
+    const title = document.getElementById('svSubTitle');
+    const body = document.getElementById('svSubBody');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    const prof = window._latestSvProf || { bounty: 10000, unlockedTitles: ['rookie'], activeTitle: 'rookie', lineage: 'human', lineageStage: 1 };
+
+    if (mode === 'lineage') {
+      const lin = LINEAGE_INFO[prof.lineage || 'human'] || LINEAGE_INFO.human;
+      const stg = prof.lineageStage || 1;
+      const evoCost = stg === 1 ? '2,500🪙' : (stg === 2 ? '6,000🪙' : 'MAXED ✅');
+      title.textContent = '🧬 GENETIC LINEAGE AWAKENING';
+      body.innerHTML =
+        '<div style="background:#1e293b;border:1.5px solid #4ade80;border-radius:12px;padding:10px;margin-bottom:8px;">' +
+          '<div style="font-size:15px;font-weight:900;color:#4ade80;">' + (stg === 3 ? lin.stage3 : (lin.icon + ' ' + lin.name)) + ' (Stage ' + stg + '/3)</div>' +
+          '<div style="font-size:11px;color:#fde047;margin-top:4px;">Passive: ' + lin.perk + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button onclick="socket.emit(\\'svSpinLineage\\')" style="flex:1;padding:9px;border:none;border-radius:10px;background:#7c3aed;color:#fff;font-weight:900;font-size:11px;cursor:pointer;">🎲 Reroll (1,000🪙)</button>' +
+          '<button ' + (stg >= 3 ? 'disabled' : '') + ' onclick="socket.emit(\\'svEvolveLineage\\')" style="flex:1;padding:9px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-weight:900;font-size:11px;cursor:pointer;">⚡ Evolve (' + evoCost + ')</button>' +
+        '</div>';
+    } else if (mode === 'titles') {
+      title.textContent = '🏷️ TITLES & BOUNTY: ' + fmtBounty(prof.bounty || 10000);
+      body.innerHTML = TITLE_LIST.map(t => {
+        const unlocked = (prof.unlockedTitles || ['rookie']).includes(t.id);
+        const equipped = prof.activeTitle === t.id;
+        return '<div style="display:flex;justify-content:space-between;align-items:center;background:#1e293b;border:1.5px solid ' + (equipped ? '#facc15' : '#334155') + ';border-radius:10px;padding:7px 9px;margin-bottom:6px;font-size:11px;">' +
+          '<div style="text-align:left;"><b style="color:' + t.color + ';">[' + t.tag + ']</b><br><span style="color:#94a3b8;">' + t.req + '</span></div>' +
+          '<button ' + (unlocked ? '' : 'disabled') + ' onclick="socket.emit(\\'svEquipTitle\\',\\'' + t.id + '\\');document.getElementById(\\'svSubModal\\').style.display=\\'none\\';" style="background:' + (equipped ? '#16a34a' : (unlocked ? '#0284c7' : '#334155')) + ';border:none;color:#fff;padding:5px 10px;border-radius:8px;font-weight:bold;cursor:pointer;">' + (equipped ? 'EQUIPPED' : (unlocked ? 'Equip' : '🔒')) + '</button></div>';
+      }).join('');
+    } else if (mode === 'tourney') {
+      const tr = window._svLatestTourney;
+      title.textContent = '🏆 8-PLAYER KNOCKOUT TOURNAMENT';
+      socket.emit('svTourneyJoinOrStart', { power: window._curSvPow || 'fire', forceStart: false });
+      const list = (tr.entrants || []).map((e, i) => '<div>' + (i + 1) + '. ' + e.name + '</div>').join('') || '<div>Joining bracket...</div>';
+      const mList = (tr.matches || []).map(m => '<div style="background:#090d16;padding:5px;border-radius:7px;margin:4px 0;border:1px solid #475569;">' + m.p1.name + ' ⚔️ ' + m.p2.name + (m.winner ? ' ➡️ <b style="color:#4ade80;">' + m.winner.name + '</b>' : '') + '</div>').join('');
+      body.innerHTML = '<div style="font-size:12px;color:#38bdf8;margin-bottom:6px;">Reward: <b>+15,000🪙 + 500K Bounty + Free Fusion Pass</b></div>' +
+        '<div style="background:#1e293b;padding:8px;border-radius:10px;font-size:11px;margin-bottom:8px;"><b>Entrants (' + (tr.entrants?.length || 0) + '/8):</b>' + list + '</div>' +
+        (mList ? '<div style="font-size:11px;margin-bottom:8px;"><b>Live Bracket:</b>' + mList + '</div>' : '') +
+        '<button onclick="socket.emit(\\'svTourneyJoinOrStart\\',{power:window._curSvPow||\\'fire\\',forceStart:true})" style="width:100%;padding:9px;border:none;border-radius:10px;background:linear-gradient(90deg,#f59e0b,#dc2626);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🚀 Start Now (Auto-Fill Bots)</button>';
+    } else if (mode === 'stock') {
+      const st = window._svLatestStock;
+      title.textContent = '🎰 HOURLY STOCK (' + st.minsLeft + 'm left)';
+      socket.emit('svGetStock');
+      body.innerHTML = (st.items || []).map(it =>
+        '<div style="display:flex;justify-content:space-between;align-items:center;background:#1e293b;border:1px solid #38bdf8;border-radius:10px;padding:8px;margin-bottom:6px;font-size:12px;">' +
+        '<span><b>' + it.icon + ' ' + it.name + '</b></span>' +
+        '<button onclick="socket.emit(\\'svBuyStockItem\\',\\'' + it.key + '\\')" style="background:#16a34a;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">' + it.price.toLocaleString() + '🪙</button></div>'
+      ).join('') || '<div style="font-size:12px;color:#94a3b8;">Loading stock...</div>';
+    }
+  };
+`;
+// ============================================================================
+// 🎮 SAMMUVERSE MEGA UPDATE — PIECE 6B-2 (QUICK-BAR, LISTENERS & DELIVERY)
+// ============================================================================
+const SV_MEGA_JS_PART2 = `
+  setInterval(() => {
+    const tabs = document.querySelector('#svLobbyView .sv-tabs');
+    if (tabs && !document.getElementById('svMegaQuickBar')) {
+      const bar = document.createElement('div');
+      bar.id = 'svMegaQuickBar';
+      bar.style.cssText = 'display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px;';
+      bar.innerHTML =
+        '<button onclick="openSvSub(\\'lineage\\')" style="padding:6px 2px;border-radius:9px;border:1px solid #4ade80;background:#064e3b;color:#86efac;font-size:10px;font-weight:900;cursor:pointer;">🧬 Lineage</button>' +
+        '<button onclick="openSvSub(\\'titles\\')" style="padding:6px 2px;border-radius:9px;border:1px solid #facc15;background:#311042;color:#fde047;font-size:10px;font-weight:900;cursor:pointer;">🏷️ Titles</button>' +
+        '<button onclick="openSvSub(\\'tourney\\')" style="padding:6px 2px;border-radius:9px;border:1px solid #f43f5e;background:#4c0519;color:#fda4af;font-size:10px;font-weight:900;cursor:pointer;">🏆 Tourney</button>' +
+        '<button onclick="openSvSub(\\'stock\\')" style="padding:6px 2px;border-radius:9px;border:1px solid #38bdf8;background:#0c4a6e;color:#7dd3fc;font-size:10px;font-weight:900;cursor:pointer;">🎰 Stock</button>' +
+        '<button onclick="socket.emit(\\'svRollEnchant\\',window._curSvPow||\\'fire\\')" style="padding:6px 2px;border-radius:9px;border:1px solid #c084fc;background:#3b0764;color:#e879f9;font-size:10px;font-weight:900;cursor:pointer;">🔮 Enchant</button>';
+      tabs.parentElement.insertBefore(bar, tabs.nextSibling);
+    }
+
+    const prof = window._latestSvProf;
+    if (prof && prof.powerWins) {
+      document.querySelectorAll('.sv-pwr-btn').forEach(btn => {
+        if (btn.classList.contains('selected')) {
+          const txt = btn.textContent || '';
+          const match = Object.entries(window.SV_POWERS || {}).find(([, v]) => txt.includes(v.name));
+          if (match) window._curSvPow = match;
+        }
+        Object.entries(window.SV_POWERS || {}).forEach(([k, v]) => {
+          if ((btn.textContent || '').includes(v.name) && (prof.powerWins[k] || 0) >= 100 && !btn.textContent.includes('[V3')) {
+            btn.textContent = btn.textContent.replace('[V2]', '') + ' [V3 👑]';
+            btn.style.borderColor = '#facc15';
+            btn.style.boxShadow = '0 0 10px rgba(250,204,21,0.5)';
+          }
+        });
+      });
+    }
+  }, 1500);
+
+  socket.emit('svGetStock');
+  socket.on('svStatsSync', (st) => { window._latestSvProf = st; });
+  socket.on('svStockSync', (st) => { window._svLatestStock = st; });
+  socket.on('svTourneySync', (t) => { window._svLatestTourney = t; });
+  socket.on('svDomainClashStart', (d) => {
+    window._clashTaps = 0;
+    const sub = document.getElementById('svClashSub');
+    const mod = document.getElementById('svDomainClashModal');
+    if (sub) sub.textContent = 'Clashing Ultimates against ' + d.oppName + '!';
+    if (mod) mod.style.display = 'flex';
+  });
+  socket.on('svDomainClashEnd', () => {
+    const mod = document.getElementById('svDomainClashModal');
+    if (mod) mod.style.display = 'none';
+  });
+})();
+`;
+
+io.on('connection', (socket) => {
+    socket.on('joinRoom', () => {
+        setTimeout(() => socket.emit('svDeliverMegaJS', SV_MEGA_JS_PART1 + '\n' + SV_MEGA_JS_PART2), 800);
+    });
+});
 
     return OG_HOSTS;
       

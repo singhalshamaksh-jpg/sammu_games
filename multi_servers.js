@@ -8479,6 +8479,65 @@ io.on('connection', (socket) => {
         });
     });
 });
+// ============================================================================
+// 🔓 SMART DEVICE LOCK + /UNLOCKUSER ADMIN COMMAND (FIXES MOBILE IP CHANGES)
+// ============================================================================
+verifyPlayerAccountOwnership = function(uname, socket, forceRelink = false) {
+    if (!uname || !socket) return false;
+    const key = uname.toLowerCase().trim();
+    if (!key) return false;
+
+    const devId = socket.trackedDeviceId || null;
+    const ip = socket.trackedIP || null;
+    const browser = socket.trackedBrowser || null;
+
+    const prof = getSvProfile(uname);
+    if (!prof.ownerSig || forceRelink) {
+        prof.ownerSig = { deviceId: devId, ip, browser };
+        saveSvStats();
+        return true;
+    }
+
+    const sig = prof.ownerSig;
+    const devMatch = devId && sig.deviceId && devId === sig.deviceId;
+    const browserMatch = browser && sig.browser && browser === sig.browser;
+
+    // Allow if Device ID matches OR Browser Fingerprint matches (handles mobile IP changes!)
+    if (devMatch || browserMatch) {
+        if (devId) sig.deviceId = devId;
+        if (ip) sig.ip = ip;
+        if (browser) sig.browser = browser;
+        saveSvStats();
+        return true;
+    }
+    return false;
+};
+
+io.on('connection', (socket) => {
+    socket.on('chatMessage', (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        if (typeof raw !== 'string' || !socket.activeServerId) return;
+        const clean = raw.trim();
+        const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
+
+        // OG Host Command: /unlockuser cb
+        if (clean.toLowerCase().startsWith('/unlockuser ')) {
+            if (!OG_HOSTS.has(sender) || !verifyOGHostTripleLock(sender, socket, false)) return;
+            const targetUser = clean.slice(12).replace('@', '').trim().toLowerCase();
+            if (!targetUser) return;
+
+            const prof = getSvProfile(targetUser);
+            delete prof.ownerSig;
+            saveSvStats();
+
+            io.to(socket.activeServerId).emit('message', {
+                username: 'SYSTEM',
+                text: `🔓 **ACCOUNT UNLOCKED:** **${targetUser}**'s device lock was reset by **${sender}**! They can rejoin now.`,
+                _serverId: socket.activeServerId
+            });
+        }
+    });
+});
 
  return OG_HOSTS;
       

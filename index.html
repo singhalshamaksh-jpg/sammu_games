@@ -2903,7 +2903,97 @@
   }, 500);
 })();
 </script>
+<!-- 🎮 SAMMUVERSE VISUAL BUTTONS & LIVE WORLD RAID BAR (PART 1/2) -->
+<div id="worldRaidHud" style="display:none;position:fixed;top:10px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
+  <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(49,16,66,0.97),rgba(15,23,42,0.97));border:2px solid #f43f5e;border-radius:16px;padding:10px 12px;width:100%;max-width:380px;color:#fff;text-align:center;box-shadow:0 6px 26px rgba(244,63,94,0.55);backdrop-filter:blur(6px);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <span id="wrBossTitle" style="font-weight:900;font-size:11px;color:#fda4af;">🐉 10-BOSS WORLD RAID</span>
+      <button onclick="document.getElementById('worldRaidHud').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+    </div>
+    <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:6px;">
+      <div style="flex:1;background:#090d16;border:1px solid #4ade80;border-radius:8px;padding:4px;">❤️ Squad HP: <b id="wrSquadHp" style="color:#4ade80;">100%</b></div>
+      <div style="flex:1;background:#090d16;border:1px solid #f43f5e;border-radius:8px;padding:4px;">👹 Boss: <b id="wrBossHp" style="color:#fda4af;">600</b></div>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;">
+      <button onclick="socket.emit('chatMessage','!attack')" style="flex:1;background:#dc2626;border:1px solid #fff;color:#fff;padding:6px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;">⚔️ Attack</button>
+      <button onclick="socket.emit('chatMessage','!ult')" style="flex:1;background:linear-gradient(90deg,#d97706,#9333ea);border:1px solid #fde047;color:#fff;padding:6px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;">💥 ULTIMATE</button>
+      <button onclick="socket.emit('chatMessage','!heal')" style="flex:1;background:#15803d;border:1px solid #fff;color:#fff;padding:6px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;">💖 Heal Squad</button>
+    </div>
+  </div>
+</div>
 
+<script>
+(function() {
+  const initVisualModes = setInterval(() => {
+    const fightPanel = document.getElementById('svFightPanel');
+    const dojoPanel = document.getElementById('svDojoPanel');
+    if (typeof socket === 'undefined' || !fightPanel || !dojoPanel) return;
+    clearInterval(initVisualModes);
+
+    // 1. Add Tap-to-Play Mode Buttons inside SammuVerse Arena Tab
+    if (!document.getElementById('svModeButtonsBox')) {
+      const modeBox = document.createElement('div');
+      modeBox.id = 'svModeButtonsBox';
+      modeBox.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;';
+      modeBox.innerHTML = `
+        <button onclick="socket.emit('svStartDungeon')" style="padding:8px 6px;border:1.5px solid #facc15;border-radius:10px;background:linear-gradient(90deg,#713f12,#991b1b);color:#fef08a;font-weight:900;font-size:11px;cursor:pointer;">🏰 5-Wave Dungeon<br><span style="font-size:9px;font-weight:normal;">Win 20k🪙 + Free Fusion</span></button>
+        <button onclick="socket.emit('chatMessage','!worldraid')" style="padding:8px 6px;border:1.5px solid #f43f5e;border-radius:10px;background:linear-gradient(90deg,#831843,#3b0764);color:#fda4af;font-weight:900;font-size:11px;cursor:pointer;">🐉 10-Boss World Raid<br><span style="font-size:9px;font-weight:normal;">Co-Op: 25k🪙 + Re-Forge</span></button>
+        <button onclick="socket.emit('chatMessage','!squadwar')" style="padding:8px 6px;border:1.5px solid #38bdf8;border-radius:10px;background:linear-gradient(90deg,#0369a1,#1e1b4b);color:#bae6fd;font-weight:900;font-size:11px;cursor:pointer;">⚔️ 3v3 Squad War<br><span style="font-size:9px;font-weight:normal;">Tag-Team (+300🪙 Each)</span></button>
+        <button onclick="sendGiftCoinsUi()" style="padding:8px 6px;border:1.5px solid #4ade80;border-radius:10px;background:linear-gradient(90deg,#065f46,#0f172a);color:#bbf7d0;font-weight:900;font-size:11px;cursor:pointer;">💸 Send Coins / Card<br><span style="font-size:9px;font-weight:normal;">Gift Friends Visually</span></button>
+      `;
+      fightPanel.appendChild(modeBox);
+    }
+
+    // 2. Add 2nd Companion Pet Slot Selector inside Dojo & Pets
+    if (!document.getElementById('svPet2Box')) {
+      const p2Box = document.createElement('div');
+      p2Box.id = 'svPet2Box';
+      p2Box.style.cssText = 'background:rgba(56,189,248,0.12);border:1.5px solid #38bdf8;border-radius:11px;padding:8px;margin-top:8px;text-align:left;font-size:11px;';
+      p2Box.innerHTML = `
+        <div style="font-weight:900;color:#7dd3fc;margin-bottom:4px;">🐾 2ND COMPANION PET SLOT (Unlocks at 25 Mini-Games)</div>
+        <div style="display:flex;gap:5px;">
+          <select id="svPet2Select" style="flex:1;padding:6px;border-radius:8px;background:#090d16;color:#fff;border:1px solid #38bdf8;font-size:11px;">
+            <option value="off">None (Unequipped)</option>
+            <option value="mochi">🐱 Mochi Spirit (+10 DMG)</option>
+            <option value="tommy">🐶 Tommy Guardian (+10 HP)</option>
+            <option value="garuda">🦅 Garuda Eagle (+22 DMG)</option>
+            <option value="sheshnag">🐍 Sheshnag Serpent (+18 Poison)</option>
+          </select>
+          <button onclick="socket.emit('chatMessage','!pet2 ' + document.getElementById('svPet2Select').value)" style="background:#0284c7;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">Equip</button>
+        </div>
+      `;
+      dojoPanel.appendChild(p2Box);
+    }
+
+    // 3. Visual Coin/Card Gifting Popup (No Chat Commands Needed!)
+    window.sendGiftCoinsUi = function() {
+      const target = prompt('Enter exact username of friend to gift:');
+      if (!target) return;
+      const choice = prompt('Type a coin amount (e.g. 500) OR type "card" to gift your top Trading Card:');
+      if (!choice) return;
+      if (choice.trim().toLowerCase() === 'card') {
+        socket.emit('chatMessage', '!giftcard ' + target.trim());
+      } else {
+        socket.emit('chatMessage', '!pay ' + target.trim() + ' ' + choice.trim());
+      }
+    };
+
+    // 4. Live 10-Boss World Raid HUD Bar Listeners
+    socket.on('worldRaidBarSync', (d) => {
+      const hud = document.getElementById('worldRaidHud');
+      if (!hud) return;
+      hud.style.display = 'flex';
+      document.getElementById('wrBossTitle').textContent = '🐉 ' + d.bossName;
+      document.getElementById('wrSquadHp').textContent = d.squadHp + '%';
+      document.getElementById('wrBossHp').textContent = d.bossHp.toLocaleString() + ' / ' + d.maxBossHp.toLocaleString();
+    });
+    socket.on('worldRaidBarEnd', () => {
+      const hud = document.getElementById('worldRaidHud');
+      if (hud) hud.style.display = 'none';
+    });
+  }, 500);
+})();
+</script>
 
 
 

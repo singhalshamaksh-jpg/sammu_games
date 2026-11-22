@@ -3130,6 +3130,100 @@
 
 <!-- ================= END ENDLESS TOWER & MULTI-FUSION UI ================= -->
 
+<!-- ================= CUSTOM POWER MAKER & V3 VISUALIZER (INDEX.HTML) ================= -->
+<script>
+(function() {
+  function syncFusionAndV3UI() {
+    const prof = window._latestSvProf;
+    if (!prof) return;
+
+    // 1. Highlight V3 (100+ Wins) powers in gold in the Arena Grid
+    if (prof.powerWins && window.SV_POWERS) {
+      document.querySelectorAll('.sv-pwr-btn').forEach(btn => {
+        const txt = btn.textContent || '';
+        Object.entries(window.SV_POWERS).forEach(([k, v]) => {
+          if (txt.includes(v.name) && (prof.powerWins[k] || 0) >= 100 && !txt.includes('[V3')) {
+            btn.textContent = txt.replace('[V2]', '') + ' [V3 👑]';
+            btn.style.borderColor = '#facc15';
+            btn.style.boxShadow = '0 0 12px rgba(250,204,21,0.55)';
+          }
+        });
+      });
+    }
+
+    // 2. Inject Custom Power Maker Card into #svDojoPanel if not already present
+    const dojo = document.getElementById('svDojoPanel');
+    if (dojo && !document.getElementById('svCustomForgeCard')) {
+      const card = document.createElement('div');
+      card.id = 'svCustomForgeCard';
+      card.style.cssText = 'background:linear-gradient(145deg,#1e1b4b,#311042);border:1.5px solid #e879f9;border-radius:12px;padding:10px;margin:8px 0;text-align:left;';
+      card.innerHTML =
+        '<div style="font-weight:900;font-size:12px;color:#f0abfc;margin-bottom:4px;">⚗️ CUSTOM POWER MAKER (MULTI-FUSION)</div>' +
+        '<div id="svForgeUnlockStatus" style="font-size:10px;color:#fde047;margin-bottom:6px;">Checking unlock status...</div>' +
+        '<div style="display:flex;gap:5px;margin-bottom:6px;">' +
+          '<select id="svFuseSel1" style="flex:1;padding:6px;border-radius:8px;border:1px solid #c084fc;background:#090d16;color:#fff;font-size:11px;"></select>' +
+          '<select id="svFuseSel2" style="flex:1;padding:6px;border-radius:8px;border:1px solid #c084fc;background:#090d16;color:#fff;font-size:11px;"></select>' +
+        '</div>' +
+        '<input id="svFuseNameInp" maxlength="24" placeholder="Custom Power Name (e.g. Harihara)..." style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #c084fc;background:#090d16;color:#fff;font-size:11px;box-sizing:border-box;margin-bottom:6px;">' +
+        '<button id="svForgeSubmitBtn" onclick="submitCustomFusionNow()" style="width:100%;padding:8px;border:none;border-radius:9px;background:linear-gradient(90deg,#d946ef,#7c3aed);color:#fff;font-weight:900;font-size:11px;cursor:pointer;">⚗️ Forge Fusion #1 (50,000🪙)</button>';
+      dojo.insertBefore(card, dojo.firstChild);
+    }
+
+    // 3. Populate Fusion Dropdowns & Update Live Series Cost
+    const sel1 = document.getElementById('svFuseSel1');
+    const sel2 = document.getElementById('svFuseSel2');
+    const statusEl = document.getElementById('svForgeUnlockStatus');
+    const btnEl = document.getElementById('svForgeSubmitBtn');
+
+    if (sel1 && sel2 && window.SV_POWERS) {
+      const owned = new Set(new Array('fire', 'water', 'lightning', 'ice').concat(prof.unlockedPowers || new Array()));
+      const opts = Object.entries(window.SV_POWERS)
+        .filter(([k]) => owned.has(k))
+        .map(([k, v]) => '<option value="' + k + '">' + v.icon + ' ' + v.name + '</option>')
+        .join('');
+
+      if (sel1.dataset.lastCount !== String(owned.size)) {
+        sel1.dataset.lastCount = String(owned.size);
+        const prev1 = sel1.value, prev2 = sel2.value;
+        sel1.innerHTML = opts;
+        sel2.innerHTML = opts;
+        if (prev1) sel1.value = prev1;
+        if (prev2) sel2.value = prev2;
+        else if (sel2.options.length > 1) sel2.selectedIndex = 1;
+      }
+    }
+
+    if (statusEl && btnEl) {
+      const played = prof.minigamesPlayed || 0;
+      const unlocked = Boolean(prof.powerMakerUnlocked || played >= 50 || (prof.freeFusionPasses || 0) > 0);
+      const fList = Array.isArray(prof.customPowers) ? prof.customPowers : (prof.customPower ? new Array(prof.customPower) : new Array());
+      const tiers = new Array(50000, 250000, 750000, 1500000);
+      const nextCost = fList.length < tiers.length ? tiers.at(fList.length) : (tiers.at(-1) + ((fList.length - tiers.length + 1) * 1000000));
+      const slotNum = fList.length + 1;
+
+      statusEl.textContent = unlocked
+        ? ('✅ UNLOCKED! Fusions Created: ' + fList.length + ' | Free Passes: ' + (prof.freeFusionPasses || 0))
+        : ('🔒 Locked: Play ' + played + '/50 Arena Mini-Games (or clear Abyssal Dungeon / Tower F50)');
+
+      btnEl.disabled = !unlocked;
+      btnEl.style.opacity = unlocked ? '1' : '0.5';
+      btnEl.textContent = (prof.freeFusionPasses || 0) > 0
+        ? ('⚗️ Forge Fusion #' + slotNum + ' (FREE PASS ✅)')
+        : ('⚗️ Forge Fusion #' + slotNum + ' (' + nextCost.toLocaleString() + '🪙)');
+    }
+  }
+
+  window.submitCustomFusionNow = function() {
+    const p1 = document.getElementById('svFuseSel1')?.value;
+    const p2 = document.getElementById('svFuseSel2')?.value;
+    const customName = document.getElementById('svFuseNameInp')?.value || '';
+    if (!p1 || !p2 || p1 === p2) return alert('⚠️ Pick 2 DIFFERENT powers to fuse!');
+    if (typeof socket !== 'undefined') socket.emit('svForgeCustomPower', { p1, p2, customName });
+  };
+
+  setInterval(syncFusionAndV3UI, 1000);
+})();
+</script>
 
 </body>
 </html>

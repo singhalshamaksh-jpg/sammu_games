@@ -6773,7 +6773,185 @@ io.on('connection', (socket) => {
     });
 });
 
+// ============================================================================
+// 🏰 ABYSSAL DUNGEON GAUNTLET (5 WAVES + FINAL BOSS = 20,000🪙 + FREE FUSION)
+// ============================================================================
+const DUNGEON_WAVES = [
+    { num: 1, name: '💀 Wave 1: Shadow Assassin',      hp: 260,  atk: 12, pKey: 'shadow',    red: 0.05 },
+    { num: 2, name: '🔥 Wave 2: Inferno Chimera',      hp: 380,  atk: 18, pKey: 'fire',      red: 0.10 },
+    { num: 3, name: '⚡ Wave 3: Thunder Raijin Lord',  hp: 520,  atk: 24, pKey: 'lightning', red: 0.15 },
+    { num: 4, name: '🌑 Wave 4: Void Eclipse Titan',   hp: 700,  atk: 30, pKey: 'blackhole', red: 0.22 },
+    { num: 5, name: '👹👑 BOSS: ABYSSAL OVERLORD',     hp: 1100, atk: 38, pKey: 'antimatter',red: 0.30 }
+];
 
+const activeDungeons = new Map();
+
+function launchDungeonWave(socket, waveIdx, carryHp) {
+    const srvId = socket.activeServerId;
+    const uname = socket.username || 'Player';
+    const prof = getSvProfile(uname);
+    const w = DUNGEON_WAVES[waveIdx];
+    const pKey = prof.customPower?.id || (prof.unlockedPowers?.slice(-1)[0]) || 'fire';
+    const myDef = SV_DEFS[pKey] || SV_DEFS.fire;
+    const bossDef = SV_DEFS[w.pKey] || SV_DEFS.shadow;
+
+    const maxHp1 = myDef.hp + (prof.hpLv * 25);
+    const startHp = carryHp ? Math.min(maxHp1, carryHp + 60) : maxHp1;
+    const isV2 = Boolean(prof.powerWins && prof.powerWins[pKey] >= 5);
+
+    const battleId = 'dng_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    const battle = {
+        id: battleId,
+        srvId,
+        isDungeon: true,
+        dungeonWave: waveIdx,
+        turn: 1,
+        timeLeft: 15,
+        lastLog: `🏰 <b>${w.name}</b> (Wave ${w.num}/5) appeared! Survive all 5 waves for <b>20,000🪙 + FREE FUSION!</b>`,
+        p1: {
+            id: socket.id, name: uname, pKey, def: myDef,
+            hp: startHp, maxHp: maxHp1, bonusAtk: prof.atkLv * 5,
+            ultCd: 0, choice: null, stunned: false, isBot: false,
+            isV2, hasStone: prof.hasStone, awakened: false,
+            pet: prof.activePet, pet2: prof.activePet2 || null,
+            relic: prof.activeRelic || null, baseReward: 0
+        },
+        p2: {
+            id: 'DNG_BOSS', name: w.name, pKey: w.pKey,
+            def: { ...bossDef, passiveRed: w.red },
+            hp: w.hp, maxHp: w.hp, bonusAtk: w.atk,
+            ultCd: 0, choice: Math.floor(Math.random() * 3), stunned: false,
+            isBot: true, isV2: waveIdx >= 3, hasStone: false, awakened: false,
+            pet: null, baseReward: 0
+        },
+        interval: null
+    };
+
+    activeDungeons.set(socket.id, { waveIdx, battleId });
+    svBattles.set(battleId, battle);
+    battle.interval = setInterval(() => {
+        const cur = svBattles.get(battleId);
+        if (!cur) return;
+        cur.timeLeft--;
+        if (cur.timeLeft <= 0) resolveSvTurn(battleId);
+        else syncSvBattle(cur, null);
+    }, 1000);
+
+    syncSvBattle(battle, 'ult');
+}
+
+// Intercept Dungeon Battle Completion to Advance Waves or Grant 20,000🪙 + Free Fusion Pass!
+const _prevResolveDungeon = resolveSvTurn;
+resolveSvTurn = function(battleId) {
+    const b = svBattles.get(battleId);
+    const isDng = b && b.isDungeon;
+    const waveIdx = isDng ? b.dungeonWave : 0;
+    const pSockId = isDng ? b.p1.id : null;
+    const pName = isDng ? b.p1.name : null;
+    const srvId = isDng ? b.srvId : null;
+
+    _prevResolveDungeon(battleId);
+
+    // Check if dungeon battle just ended
+    if (isDng && !svBattles.has(battleId)) {
+        const pSock = io.sockets.sockets.get(pSockId);
+        const survived = b.p1.hp > 0;
+
+        if (!survived || !pSock) {
+            activeDungeons.delete(pSockId);
+            if (srvId) {
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `💀🏰 **DUNGEON DEFEAT!** **${pName}** fell on **${DUNGEON_WAVES[waveIdx].name}**!`,
+                    _serverId: srvId
+                });
+            }
+            return;
+        }
+
+        // Player beat current wave!
+        if (waveIdx + 1 < DUNGEON_WAVES.length) {
+            const nextW = DUNGEON_WAVES[waveIdx + 1];
+            io.to(pSockId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚔️🔥 **WAVE ${waveIdx + 1}/5 CLEARED!** (+60 HP Campfire Heal) Preparing **${nextW.name}** in 3s...`,
+                _serverId: srvId
+            });
+            setTimeout(() => {
+                if (io.sockets.sockets.has(pSockId)) {
+                    launchDungeonWave(pSock, waveIdx + 1, b.p1.hp);
+                }
+            }, 3000);
+        } else {
+            // BEAT ALL 5 WAVES & FINAL BOSS!
+            activeDungeons.delete(pSockId);
+            const prof = getSvProfile(pName);
+            prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
+            prof.powerMakerUnlocked = true;
+            const newBal = addCoins(pName, 20000);
+            saveSvStats();
+
+            pSock.emit('svStatsSync', getSvProfile(pName));
+            pSock.emit('svNotice', `🏆👹 DUNGEON CONQUERED! You won +20,000🪙 & 1x FREE CUSTOM FUSION PASS!`);
+            if (srvId) {
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🎊👑 **DUNGEON CONQUERED!!** **${pName}** survived all 5 waves, slayed the **👹 ABYSSAL OVERLORD**, and looted **+20,000🪙** (Total: **${newBal.toLocaleString()}🪙**) + **1x FREE CUSTOM FUSION PASS**! ⚗️🔥`,
+                    _serverId: srvId
+                });
+            }
+        }
+    }
+};
+
+// ============================================================================
+// 🏰 ABYSSAL DUNGEON — PART 2/2 (!dungeon COMMAND & FREE FUSION PASS)
+// ============================================================================
+io.on('connection', (socket) => {
+    socket.on('svStartDungeon', () => {
+        const srvId = socket.activeServerId;
+        if (!srvId || findPlayerActiveSvBattle(socket.id)) {
+            return socket.emit('svNotice', '⚠️ Finish your current battle first!');
+        }
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🏰🔥 **${socket.username || 'A hero'}** entered the **5-WAVE ABYSSAL DUNGEON**! (Reward: **20,000🪙 + Free Fusion Pass**)`,
+            _serverId: srvId
+        });
+        launchDungeonWave(socket, 0, null);
+    });
+
+    socket.on('chatMessage', (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        if (typeof raw === 'string' && raw.trim().toLowerCase() === '!dungeon' && socket.activeServerId) {
+            if (findPlayerActiveSvBattle(socket.id)) {
+                return socket.emit('message', { username: "Sammu's Bot", text: '⚠️ Finish your current SammuVerse fight first!', _serverId: socket.activeServerId });
+            }
+            launchDungeonWave(socket, 0, null);
+        }
+    });
+});
+
+// Allow using a Dungeon Free Fusion Pass (0🪙 & bypasses 50-game task!) in Custom Power Maker
+const _origListenersForge = io.listeners('connection');
+io.on('connection', (socket) => {
+    const existingForge = socket.listeners('svForgeCustomPower').at(0);
+    if (existingForge) {
+        socket.removeListener('svForgeCustomPower', existingForge);
+        socket.on('svForgeCustomPower', (data) => {
+            const uname = socket.username || 'Player';
+            const prof = getSvProfile(uname);
+            if ((prof.freeFusionPasses || 0) > 0) {
+                // Temporarily grant 50,000🪙 & unlock flag so existing forge logic runs for FREE!
+                prof.freeFusionPasses--;
+                prof.powerMakerUnlocked = true;
+                addCoins(uname, 50000);
+                saveSvStats();
+            }
+            existingForge(data);
+        });
+    }
+});
 
     return OG_HOSTS;
       

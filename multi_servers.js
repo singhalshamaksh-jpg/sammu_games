@@ -6411,8 +6411,8 @@ resolveSvTurn = function(battleId) {
 
 
 // === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE + USERNAME FIX ===
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/^UPSTASH_REDIS_REST_URL=/i, '').replace(/^["']|["']$/g, '').trim();
+const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || '').replace(/^UPSTASH_REDIS_REST_TOKEN=/i, '').replace(/^["']|["']$/g, '').trim();
 
 async function upstashCmd(cmdArray) {
     if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;

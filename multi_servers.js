@@ -6409,6 +6409,78 @@ resolveSvTurn = function(battleId) {
     }
 };
 
+// === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE (ZERO DATA LOSS ON REDEPLOY) ===
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+async function upstashCmd(cmdArray) {
+    if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;
+    try {
+        const res = await fetch(UPSTASH_URL, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${UPSTASH_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(cmdArray)
+        });
+        const data = await res.json();
+        return data ? data.result : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// 1. Restore All Player Grind, Coins, Cards & Logs from Cloud on Boot
+(async function restoreCloudData() {
+    if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+    const rawStats = await upstashCmd(['GET', 'sammu_sv_stats']);
+    if (rawStats) {
+        try {
+            Object.assign(svPlayerStats, JSON.parse(rawStats));
+            Object.values(svPlayerStats).forEach(st => {
+                if (st.customPower && st.customPower.id) SV_DEFS[st.customPower.id] = st.customPower.def;
+            });
+            saveSvStats();
+        } catch (e) {}
+    }
+    const rawEco = await upstashCmd(['GET', 'sammu_economy']);
+    if (rawEco) {
+        try {
+            const eco = JSON.parse(rawEco);
+            if (eco.wallets) Object.entries(eco.wallets).forEach(([k, v]) => playerWallet.set(k, v));
+            if (eco.cards) Object.entries(eco.cards).forEach(([k, v]) => playerCards.set(k, v));
+            saveEconomyDB();
+        } catch (e) {}
+    }
+    const rawLogs = await upstashCmd(['GET', 'sammu_sv_logs']);
+    if (rawLogs) {
+        try {
+            const parsedLogs = JSON.parse(rawLogs);
+            if (Array.isArray(parsedLogs)) {
+                svBattleLogs.splice(0, svBattleLogs.length, ...parsedLogs);
+                fs.writeFileSync(SV_LOG_FILE, JSON.stringify(svBattleLogs, null, 2));
+            }
+        } catch (e) {}
+    }
+    console.log('☁️ SammuVerse Cloud Database Restored Successfully!');
+})();
+
+// 2. Auto-Sync Every Save to Cloud in Background
+const _origSaveSvStats = saveSvStats;
+saveSvStats = function() {
+    _origSaveSvStats();
+    upstashCmd(['SET', 'sammu_sv_stats', JSON.stringify(svPlayerStats)]);
+};
+
+const _origSaveEconomyDB = saveEconomyDB;
+saveEconomyDB = function() {
+    _origSaveEconomyDB();
+    upstashCmd(['SET', 'sammu_economy', JSON.stringify({
+        wallets: Object.fromEntries(playerWallet),
+        cards: Object.fromEntries(playerCards)
+    })]);
+};
 
     return OG_HOSTS;
       

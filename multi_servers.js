@@ -6953,36 +6953,10 @@ io.on('connection', (socket) => {
     }
 });
 
-// === 🎛️ VISUAL WORLD RAID BAR SYNC (FOR INDEX.HTML BUTTONS) ===
-function broadcastWorldRaidBar(srvId) {
-    const raid = worldRaidsByServer.get(srvId);
-    if (!raid) return io.to(srvId).emit('worldRaidBarEnd');
-    const boss = WORLD_RAID_BOSSES[raid.bossIdx];
-    io.to(srvId).emit('worldRaidBarSync', {
-        bossName: boss.name,
-        bossHp: raid.bossHp,
-        maxBossHp: raid.maxBossHp,
-        squadHp: raid.squadHp
-    });
-}
 
-const _origAdvanceRaid = advanceWorldRaidTurn;
-advanceWorldRaidTurn = function(srvId) {
-    _origAdvanceRaid(srvId);
-    broadcastWorldRaidBar(srvId);
-};
-// === ⚡ INSTANT HUD UPDATE ON EVERY RAID TAP ===
-io.on('connection', (socket) => {
-    socket.on('chatMessage', (payload) => {
-        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
-        const srvId = socket.activeServerId;
-        if (!srvId || typeof raw !== 'string') return;
-        const low = raw.trim().toLowerCase();
-        if (['!worldraid', '!attack', '!strike', '!ult', '!heal'].includes(low)) {
-            setTimeout(() => broadcastWorldRaidBar(srvId), 60);
-        }
-    });
-});
+
+
+
 // ============================================================================
 // 🐉 10-BOSS COSMIC WORLD RAID (FIXED ARRAY INDEXES + INSTANT HUD BAR)
 // ============================================================================

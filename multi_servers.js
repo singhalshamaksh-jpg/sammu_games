@@ -6036,17 +6036,421 @@ module.exports = function initMultiServers(app, io) {
       </div>
     </div>`;
     const SV_FULL_BUNDLE = SV_FULL_BUNDLE_PART1 + '\n' + SV_FULL_BUNDLE_PART2;
+// ============================================================================
+// 🚀 SAMMUVERSE MEGA-UPDATE — PART 1/3 (SAVE DB, POWERS & 50-GAME TRACKER)
+// ============================================================================
 
-    io.on('connection', (socket) => {
-        const sendSvBundle = () => {
-            socket.emit('svDeliverAll', {
-                html: SV_FULL_BUNDLE,
-                js: SV_CLIENT_SCRIPT_PART1 + '\n' + SV_CLIENT_SCRIPT_PART2 + '\n' + SV_CLIENT_SCRIPT_PART3
+const ECONOMY_DB_FILE = path.join(__dirname, 'sammu_economy.json');
+if (fs.existsSync(ECONOMY_DB_FILE)) {
+    try {
+        const savedEco = JSON.parse(fs.readFileSync(ECONOMY_DB_FILE, 'utf8'));
+        if (savedEco.wallets) Object.entries(savedEco.wallets).forEach(([k, v]) => playerWallet.set(k, v));
+        if (savedEco.cards) Object.entries(savedEco.cards).forEach(([k, v]) => playerCards.set(k, v));
+    } catch (e) {}
+}
+function saveEconomyDB() {
+    try {
+        fs.writeFileSync(ECONOMY_DB_FILE, JSON.stringify({
+            wallets: Object.fromEntries(playerWallet),
+            cards: Object.fromEntries(playerCards)
+        }, null, 2));
+    } catch (e) {}
+}
+const _origAddCoins = addCoins;
+addCoins = function(uname, amt) {
+    const res = _origAddCoins(uname, amt);
+    saveEconomyDB();
+    return res;
+};
+
+SV_DEFS.mahavishnu = {
+    secret: true, icon: '🔱', name: 'Sammu/Samaksh (MahaVishnu)', hp: 420, passiveRed: 0.40,
+    strong: ['blood', 'shadow', 'venom', 'antimatter', 'plasma', 'chronovoid', 'eclipsenika'],
+    moves: [
+        { label: '🪈 Prem Bansuri (65 DMG + Stun)', dmg: 65, stunChance: 0.75, cut: { theme: 'bansuri', emoji: '🪈🦚', title: 'PREM BANSURI MELODY!', sfx: 'flute' } },
+        { label: '☸️ Sudarshana Chakra (95 True DMG)', dmg: 95, trueDmg: true, cut: { theme: 'chakra', emoji: '☸️🔥', title: 'SUDARSHANA CHAKRA!' } },
+        { label: '🛡️ Vaikuntha Kavach (Evade +80 HP)', evade: true, heal: 80 },
+        { label: '🌌 Vishwaroopa ULT (160 True DMG + Stun)', dmg: 160, trueDmg: true, stun: true, cut: { theme: 'vishwaroopa', emoji: '🔱🌌', title: 'VISHWAROOPA SUPREME FORM!' } }
+    ]
+};
+
+Object.assign(SV_DEFS, {
+    zoroking:    { secret: true, icon: '⚔️', name: 'Zoro (King of Hell)',      hp: 340, passiveRed: 0.25, strong: ['blood', 'venom', 'shadow'], moves: [{ label: 'Enma Purgatory (52 DMG)', dmg: 52 }, { label: 'Three-Sword Dragon (72 DMG)', dmg: 72 }, { label: 'Conqueror Haki (Evade +45 HP)', evade: true, heal: 45 }, { label: '👹 Dragon Damnation ULT (132 DMG)', dmg: 132, cut: { theme: 'zoro', emoji: '👹⚔️', title: 'KING OF HELL: DRAGON DAMNATION!' } }] },
+    antimpoke:   { secret: true, icon: '⚡', name: 'Antim (Arceus & Rayquaza)', hp: 335, passiveRed: 0.24, strong: ['fire', 'water', 'storm'], moves: [{ label: 'Dragon Ascent (50 DMG)', dmg: 50 }, { label: 'Judgment Beam (70 True DMG)', dmg: 70, trueDmg: true }, { label: 'Multitype Plate (Block 85%)', block: 0.85 }, { label: '🐉 Mega Rayquaza ULT (130 DMG)', dmg: 130, cut: { theme: 'cosmic', emoji: '⚡🐉', title: 'MEGA RAYQUAZA: DRAGON ASCENT!' } }] },
+    mahadev:     { secret: true, icon: '🔱', name: 'Mahadev (Tandava Destroyer)', hp: 360, passiveRed: 0.30, strong: ['shadow', 'blood', 'antimatter'], moves: [{ label: 'Trishul Pierce (56 DMG)', dmg: 56 }, { label: 'Damru Cosmic Beat (74 DMG + Stun)', dmg: 74, stunChance: 0.55 }, { label: 'Kailash Meditation (+65 HP)', evade: true, heal: 65 }, { label: '🔥 Third Eye Tandava ULT (140 True DMG)', dmg: 140, trueDmg: true, stun: true, cut: { theme: 'chakra', emoji: '🔱🔥', title: 'THIRD EYE: TANDAVA DESTRUCTION!' } }] },
+    plasma:      { fused: true, icon: '⚛️🔥', name: 'Plasma Emperor',    hp: 300, passiveRed: 0.18, strong: ['ice', 'shadow'], moves: [{ label: 'Plasma Lance (48 DMG)', dmg: 48 }, { label: 'Supernova Arc (64 DMG)', dmg: 64 }, { label: 'Ion Barrier (Block 80%)', block: 0.80 }, { label: '☀️ STAR COLLAPSE ULT (108 DMG)', dmg: 108, cut: { theme: 'cosmic', emoji: '⚛️🔥', title: 'PLASMA STAR COLLAPSE!' } }] },
+    leviathan:   { fused: true, icon: '🐉🌊', name: 'Steam Leviathan',   hp: 305, passiveRed: 0.20, strong: ['fire', 'gravity'], moves: [{ label: 'Scalding Geyser (46 DMG)', dmg: 46 }, { label: 'Boil Tsunami (62 DMG + 18 HP)', dmg: 62, heal: 18 }, { label: 'Mist Mirage (Evade +28 HP)', evade: true, heal: 28 }, { label: '🐉 OCEAN BOIL ULT (105 DMG)', dmg: 105, cut: { theme: 'cosmic', emoji: '🐉💨', title: 'LEVIATHAN BOIL STORM!' } }] },
+    chronovoid:  { fused: true, icon: '⏳🌌', name: 'Chrono Void God',   hp: 295, passiveRed: 0.16, strong: ['antimatter', 'blackhole'], moves: [{ label: 'Reality Tear (50 DMG)', dmg: 50 }, { label: 'Paradox Loop (58 DMG + Stun)', dmg: 58, stunChance: 0.50 }, { label: 'Time Rewind (Evade +50 HP)', evade: true, heal: 50 }, { label: '🌌 BIG CRUNCH ULT (112 True DMG)', dmg: 112, trueDmg: true, cut: { theme: 'vishwaroopa', emoji: '⏳🌌', title: 'CHRONO VOID ERASURE!' } }] },
+    eclipsenika: { fused: true, icon: '🌑☀️', name: 'Eclipse Sun God',   hp: 315, passiveRed: 0.22, strong: ['blood', 'venom', 'zoro'], moves: [{ label: 'Dawn Eclipse Fist (52 DMG)', dmg: 52 }, { label: 'Shadow Liberation (68 DMG)', dmg: 68 }, { label: 'Drum Pulse (Block 70% + 35 HP)', block: 0.70, heal: 35 }, { label: '🌑☀️ TOTAL ECLIPSE ULT (116 DMG + Stun)', dmg: 116, stun: true, cut: { theme: 'moon', emoji: '🌑☀️', title: 'TOTAL ECLIPSE LIBERATION!' } }] }
+});
+
+Object.values(svPlayerStats).forEach(st => {
+    if (st.customPower && st.customPower.id) SV_DEFS[st.customPower.id] = st.customPower.def;
+});
+
+const FUSION_RECIPES = [
+    { id: 'plasma',      name: '⚛️🔥 Plasma Emperor',  req1: 'fire',  req2: 'lightning', cost: 500 },
+    { id: 'leviathan',   name: '🐉🌊 Steam Leviathan', req1: 'fire',  req2: 'water',     cost: 500 },
+    { id: 'chronovoid',  name: '⏳🌌 Chrono Void God', req1: 'space', req2: 'time',      cost: 800 },
+    { id: 'eclipsenika', name: '🌑☀️ Eclipse Sun God', req1: 'sun',   req2: 'shadow',    cost: 1000 }
+];
+
+const RELIC_ITEMS = {
+    excalibur: { name: '🗡️ Excalibur Blade', desc: '+20% Critical Strike (1.5x DMG)', cost: 600 },
+    aegis:     { name: '🛡️ Aegis Shield',    desc: '-15% Incoming Damage',            cost: 600 },
+    vampfang:  { name: '🧛 Vampire Fang',    desc: '+20% Lifesteal on Attacks',       cost: 750 }
+};
+
+const _prevEmitMega = io.emit.bind(io);
+io.emit = function(event, ...args) {
+    const payload = args.at(0);
+    if (event === 'announceWinner' && payload && typeof payload === 'object') {
+        const srvId = payload._serverId || lastActiveServerId;
+        const arena = srvId ? getArena(srvId) : null;
+        if (arena && Array.isArray(arena.players)) {
+            arena.players.forEach(p => {
+                if (!p.username) return;
+                const prof = getSvProfile(p.username);
+                prof.minigamesPlayed = (prof.minigamesPlayed || 0) + 1;
+                if (prof.minigamesPlayed === 50 && !prof.powerMakerUnlocked) {
+                    prof.powerMakerUnlocked = true;
+                    addCoins(p.username, 1000);
+                    io.to(srvId).emit('message', {
+                        username: "Sammu's Bot",
+                        text: `🎉🏆 **50 MINI-GAMES COMPLETE!** **${p.username}** unlocked the **⚗️ CUSTOM POWER MAKER** (+1,000🪙)!`,
+                        _serverId: srvId
+                    });
+                }
             });
+            saveSvStats();
+        }
+    }
+    return _prevEmitMega(event, ...args);
+};
+
+ // ============================================================================
+// 🚀 SAMMUVERSE MEGA-UPDATE — PART 2/3 (SOCKET HANDLERS & MASTER CODES)
+// ============================================================================
+
+io.on('connection', (socket) => {
+    socket.on('svUnlockCode', (rawCode) => {
+        const srvId = socket.activeServerId;
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        const code = String(rawCode || '').trim().toLowerCase();
+
+        if (code === '#sammucreator') {
+            prof.unlockedPowers = Object.keys(SV_DEFS);
+            prof.ownedPets = ['mochi', 'tommy', 'garuda', 'sheshnag'];
+            prof.activePet = 'sheshnag';
+            prof.ownedRelics = ['excalibur', 'aegis', 'vampfang'];
+            prof.activeRelic = 'excalibur';
+            prof.hasStone = true;
+            prof.atkLv = 15;
+            prof.hpLv = 15;
+            prof.minigamesPlayed = Math.max(50, prof.minigamesPlayed || 0);
+            prof.powerMakerUnlocked = true;
+            if (!prof.powerWins) prof.powerWins = {};
+            Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = Math.max(5, prof.powerWins[k] || 0); });
+            addCoins(uname, 999999);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svNotice', '👑🔱 SAMMU CREATOR MASTER CODE ACTIVATED! ALL Powers, V2s, Pets, Relics, Max Stats, Power Maker & +999,999🪙 UNLOCKED!');
+            return;
+        }
+
+        if (code === '#host100k') {
+            if (prof.redeemedCodes.includes(code)) return socket.emit('svNotice', '⚠️ Already redeemed #host100k!');
+            prof.redeemedCodes.push(code);
+            addCoins(uname, 100000);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svNotice', '💎👑 HOST VIP GRANT! +100,000🪙 added to your wallet!');
+            return;
+        }
+
+        const extraSecrets = {
+            '#zoroking':  { key: 'zoroking',  label: '⚔️ Zoro (King of Hell)' },
+            '#antimpoke': { key: 'antimpoke', label: '⚡ Antim (Arceus & Rayquaza)' },
+            '#mahadev':   { key: 'mahadev',   label: '🔱 Mahadev (Tandava Destroyer)' }
         };
-        socket.on('svRequestBundle', sendSvBundle);
-        socket.on('joinRoom', () => setTimeout(sendSvBundle, 500));
+        if (extraSecrets[code]) {
+            const s = extraSecrets[code];
+            if (!prof.unlockedPowers.includes(s.key)) prof.unlockedPowers.push(s.key);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svNotice', `🌟 SECRET MYTHIC UNLOCKED: ${s.label}!`);
+            if (srvId) {
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🌟⚡ **MYTHIC AWAKENING!** **${uname}** unlocked **${s.label}** in SammuVerse!`,
+                    _serverId: srvId
+                });
+            }
+            return;
+        }
+
+        const extraCoins = {
+            '#fusion5000':    { coins: 5000, msg: '⚗️ **FUSION BOOST!** +5,000🪙 added!' },
+            '#sammuverse2026':{ coins: 2500, msg: '🎉 **SAMMUVERSE 2026!** +2,500🪙 added!' }
+        };
+        if (extraCoins[code]) {
+            if (prof.redeemedCodes.includes(code)) return socket.emit('svNotice', '⚠️ Already claimed!');
+            prof.redeemedCodes.push(code);
+            addCoins(uname, extraCoins[code].coins);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svNotice', extraCoins[code].msg);
+        }
     });
+
+    socket.on('svFusePower', (recipeId) => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        const rec = FUSION_RECIPES.find(r => r.id === recipeId);
+        if (!rec) return;
+        if (prof.unlockedPowers.includes(rec.id)) return socket.emit('svNotice', '✅ Already fused!');
+        const w1 = (prof.powerWins && prof.powerWins[rec.req1]) || 0;
+        const w2 = (prof.powerWins && prof.powerWins[rec.req2]) || 0;
+        if (w1 < 5 || w2 < 5) return socket.emit('svNotice', `⚠️ Need [V2] (5 Wins) on BOTH ${rec.req1.toUpperCase()} & ${rec.req2.toUpperCase()} first!`);
+        if (getCoins(uname) < rec.cost) return socket.emit('svNotice', `🪙 Need ${rec.cost} Coins to fuse!`);
+
+        addCoins(uname, -rec.cost);
+        prof.unlockedPowers.push(rec.id);
+        saveSvStats();
+        socket.emit('svStatsSync', getSvProfile(uname));
+        socket.emit('svNotice', `⚗️🔥 FUSION COMPLETE! Unlocked ${rec.name}!`);
+    });
+
+    socket.on('svForgeCustomPower', ({ p1, p2, customName }) => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+
+        if (!prof.powerMakerUnlocked && (prof.minigamesPlayed || 0) < 50) {
+            return socket.emit('svNotice', `🔒 Play 50 Arena Mini-Games first! (${prof.minigamesPlayed || 0}/50)`);
+        }
+        if (prof.customPower) return socket.emit('svNotice', '⚠️ You already forged your Custom Power!');
+        if (!p1 || !p2 || p1 === p2) return socket.emit('svNotice', '⚠️ Select 2 DIFFERENT powers to fuse!');
+
+        const owned = new Set(['fire', 'water', 'lightning', 'ice', ...(prof.unlockedPowers || [])]);
+        if (!owned.has(p1) || !owned.has(p2)) return socket.emit('svNotice', '⚠️ You must own both powers first!');
+        if (getCoins(uname) < 50000) return socket.emit('svNotice', `🪙 Need 50,000 Coins! (You have ${getCoins(uname).toLocaleString()}🪙)`);
+
+        const def1 = SV_DEFS[p1], def2 = SV_DEFS[p2];
+        const cleanTitle = (String(customName || '').trim() || `${def1.name} x ${def2.name}`).slice(0, 24);
+        const customId = 'custom_' + uname.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now().toString(36);
+
+        const newDef = {
+            fused: true,
+            icon: `${def1.icon}${def2.icon}`,
+            name: cleanTitle,
+            hp: Math.min(340, Math.round((def1.hp + def2.hp) * 0.68)),
+            passiveRed: 0.24,
+            strong: Array.from(new Set([...(def1.strong || []), ...(def2.strong || [])])),
+            moves: [
+                { ...def1.moves, label: `${def1.moves.label.split(' (')} (58 DMG)`, dmg: 58 },
+                { ...def2.moves, label: `${def2.moves.label.split(' (')} (62 DMG + Heal)`, dmg: 62, heal: 20 },
+                { label: '🌌 Hybrid Domain (Evade +50 HP)', evade: true, heal: 50 },
+                { label: `💥 ${cleanTitle.toUpperCase()} ULT (124 DMG + Stun)`, dmg: 124, stun: true, cut: { theme: 'vishwaroopa', emoji: `${def1.icon}${def2.icon}`, title: `${cleanTitle.toUpperCase()}!` } }
+            ]
+        };
+
+        addCoins(uname, -50000);
+        SV_DEFS[customId] = newDef;
+        prof.unlockedPowers.push(customId);
+        prof.customPower = { id: customId, def: newDef };
+        saveSvStats();
+
+        socket.emit('svStatsSync', getSvProfile(uname));
+        socket.emit('svNotice', `⚗️👑 FORGED "${cleanTitle}" (${newDef.icon})!`);
+        if (socket.activeServerId) {
+            io.to(socket.activeServerId).emit('message', {
+                username: "Sammu's Bot",
+                text: `👑⚗️ **CUSTOM POWER FORGED!** **${uname}** spent **50,000🪙** and created **${newDef.icon} ${cleanTitle}**!`,
+                _serverId: socket.activeServerId
+            });
+        }
+    });
+
+    socket.on('svBuyRelic', (relicId) => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        const rel = RELIC_ITEMS[relicId];
+        if (!rel) return;
+        if (!Array.isArray(prof.ownedRelics)) prof.ownedRelics = [];
+        if (prof.ownedRelics.includes(relicId)) {
+            prof.activeRelic = prof.activeRelic === relicId ? null : relicId;
+            saveSvStats();
+            return socket.emit('svStatsSync', getSvProfile(uname));
+        }
+        if (getCoins(uname) < rel.cost) return socket.emit('svNotice', `🪙 Need ${rel.cost} Coins!`);
+        addCoins(uname, -rel.cost);
+        prof.ownedRelics.push(relicId);
+        prof.activeRelic = relicId;
+        saveSvStats();
+        socket.emit('svStatsSync', getSvProfile(uname));
+        socket.emit('svNotice', `🗡️ Equipped ${rel.name}!`);
+    });
+
+    socket.on('svGetLeaderboard', () => {
+        const board = Object.entries(svPlayerStats)
+            .map(([name, st]) => ({
+                name: name.toUpperCase(),
+                wins: st.wins || 0,
+                coins: getCoins(name),
+                powers: (st.unlockedPowers || []).length + 4
+            }))
+            .sort((a, b) => b.wins - a.wins || b.coins - a.coins)
+            .slice(0, 10);
+        socket.emit('svLeaderboardSync', board);
+    });
+});
+// ============================================================================
+// 🚀 SAMMUVERSE MEGA-UPDATE — PART 3A/3 (CLIENT UI SETUP & SHOP CARDS)
+// ============================================================================
+const SV_MEGA_UI_PART_A = `
+<script>
+(function() {
+  const waitSvMega = setInterval(() => {
+    if (typeof socket === 'undefined' || typeof SV_POWERS === 'undefined' || !document.getElementById('svDojoPanel')) return;
+    clearInterval(waitSvMega);
+
+    Object.assign(SV_POWERS, {
+      zoroking:    { secret: true, icon: '⚔️', name: 'Zoro (King of Hell)',      skills: ['Enma Purgatory (52 DMG)', 'Three-Sword Dragon (72 DMG)', 'Conqueror Haki (Evade +45 HP)', '👹 Dragon Damnation ULT (132 DMG)'] },
+      antimpoke:   { secret: true, icon: '⚡', name: 'Antim (Arceus & Rayquaza)', skills: ['Dragon Ascent (50 DMG)', 'Judgment Beam (70 True DMG)', 'Multitype Plate (Block 85%)', '🐉 Mega Rayquaza ULT (130 DMG)'] },
+      mahadev:     { secret: true, icon: '🔱', name: 'Mahadev (Tandava Destroyer)', skills: ['Trishul Pierce (56 DMG)', 'Damru Cosmic Beat (74 DMG + Stun)', 'Kailash Meditation (+65 HP)', '🔥 Third Eye Tandava ULT (140 True DMG)'] },
+      plasma:      { fused: true, icon: '⚛️🔥', name: 'Plasma Emperor',    skills: ['Plasma Lance (48 DMG)', 'Supernova Arc (64 DMG)', 'Ion Barrier (Block 80%)', '☀️ STAR COLLAPSE ULT (108 DMG)'] },
+      leviathan:   { fused: true, icon: '🐉🌊', name: 'Steam Leviathan',   skills: ['Scalding Geyser (46 DMG)', 'Boil Tsunami (62 DMG + 18 HP)', 'Mist Mirage (Evade +28 HP)', '🐉 OCEAN BOIL ULT (105 DMG)'] },
+      chronovoid:  { fused: true, icon: '⏳🌌', name: 'Chrono Void God',   skills: ['Reality Tear (50 DMG)', 'Paradox Loop (58 DMG + Stun)', 'Time Rewind (Evade +50 HP)', '🌌 BIG CRUNCH ULT (112 True DMG)'] },
+      eclipsenika: { fused: true, icon: '🌑☀️', name: 'Eclipse Sun God',   skills: ['Dawn Eclipse Fist (52 DMG)', 'Shadow Liberation (68 DMG)', 'Drum Pulse (Block 70% + 35 HP)', '🌑☀️ TOTAL ECLIPSE ULT (116 DMG + Stun)'] }
+    });
+
+    const tabs = document.querySelector('#svLobbyView .sv-tabs');
+    if (tabs && !document.getElementById('svTabTop')) {
+      const tBtn = document.createElement('button');
+      tBtn.className = 'sv-tab'; tBtn.id = 'svTabTop'; tBtn.textContent = '🏆 Top 10';
+      tBtn.onclick = () => {
+        ['Fight','Dojo','Logs'].forEach(x => {
+          document.getElementById('svTab'+x).classList.remove('active');
+          document.getElementById('sv'+x+'Panel').style.display = 'none';
+        });
+        tBtn.classList.add('active');
+        document.getElementById('svTopPanel').style.display = 'block';
+        socket.emit('svGetLeaderboard');
+      };
+      tabs.appendChild(tBtn);
+
+      const topP = document.createElement('div');
+      topP.id = 'svTopPanel'; topP.style.cssText = 'display:none;max-height:330px;overflow-y:auto;';
+      topP.innerHTML = '<div id="svTopList" style="font-size:11px;color:#fde047;">Loading Global Ranks...</div>';
+      document.getElementById('svLobbyView').appendChild(topP);
+    }
+
+    const dojo = document.getElementById('svDojoPanel');
+    if (dojo && !document.getElementById('svCustomMakerBox')) {
+      const box = document.createElement('div');
+      box.id = 'svCustomMakerBox';
+      box.innerHTML =
+        '<div style="background:linear-gradient(145deg,#311042,#1e1b4b);border:2px solid #facc15;border-radius:12px;padding:9px;margin-top:8px;text-align:left;font-size:11px;">' +
+          '<div style="font-weight:900;color:#fde047;margin-bottom:3px;">⚗️ CUSTOM POWER MAKER (50,000🪙)</div>' +
+          '<div id="svMakerStatus" style="color:#cbd5e1;margin-bottom:6px;">🎮 Task: Play 50 Arena Mini-Games (0/50)</div>' +
+          '<div id="svMakerControls" style="display:none;">' +
+            '<input id="svCustomPwrName" maxlength="24" placeholder="Name your new power..." style="width:100%;padding:6px;border-radius:8px;border:1px solid #facc15;background:#090d16;color:#fff;margin-bottom:5px;box-sizing:border-box;font-size:11px;">' +
+            '<div style="display:flex;gap:5px;margin-bottom:6px;">' +
+              '<select id="svFuseSlot1" style="flex:1;padding:6px;border-radius:8px;background:#090d16;color:#fff;border:1px solid #38bdf8;font-size:11px;"></select>' +
+              '<select id="svFuseSlot2" style="flex:1;padding:6px;border-radius:8px;background:#090d16;color:#fff;border:1px solid #38bdf8;font-size:11px;"></select>' +
+            '</div>' +
+            '<button onclick="forgeMyCustomPower()" style="width:100%;padding:7px;border:none;border-radius:9px;background:linear-gradient(90deg,#f59e0b,#ec4899);color:#fff;font-weight:900;cursor:pointer;">🔥 FUSE 2 POWERS (50,000🪙)</button>' +
+          '</div>' +
+        '</div>' +
+        '<div style="font-size:11px;font-weight:900;color:#f472b6;text-align:left;margin:8px 0 4px;">⚗️ PRESET V2 FUSIONS (Requires 5 Wins each):</div>' +
+        '<div class="sv-shop-card"><div><b>⚛️🔥 Plasma Emperor</b><br><span style="color:#cbd5e1;">Fire [V2] + Lightning [V2]</span></div><button onclick="socket.emit(\\'svFusePower\\',\\'plasma\\')" style="background:#db2777;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">500🪙</button></div>' +
+        '<div class="sv-shop-card"><div><b>🐉🌊 Steam Leviathan</b><br><span style="color:#cbd5e1;">Fire [V2] + Water [V2]</span></div><button onclick="socket.emit(\\'svFusePower\\',\\'leviathan\\')" style="background:#0284c7;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">500🪙</button></div>' +
+        '<div class="sv-shop-card"><div><b>⏳🌌 Chrono Void God</b><br><span style="color:#cbd5e1;">Space [V2] + Time [V2]</span></div><button onclick="socket.emit(\\'svFusePower\\',\\'chronovoid\\')" style="background:#7c3aed;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">800🪙</button></div>' +
+        '<div class="sv-shop-card" style="border-color:#facc15;"><div><b>🌑☀️ Eclipse Sun God</b><br><span style="color:#fde047;">Sun [V2] + Shadow [V2]</span></div><button onclick="socket.emit(\\'svFusePower\\',\\'eclipsenika\\')" style="background:#d97706;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">1000🪙</button></div>';
+      dojo.appendChild(box);
+    }
+`;
+   
+// ============================================================================
+// 🚀 SAMMUVERSE MEGA-UPDATE — PART 3B/3 (RELICS, SOCKET SYNC & MIDDLEWARE)
+// ============================================================================
+const SV_MEGA_UI_PART_B = `
+    const dojo2 = document.getElementById('svDojoPanel');
+    if (dojo2 && !document.getElementById('svRelicsSection')) {
+      const rBox = document.createElement('div');
+      rBox.id = 'svRelicsSection';
+      rBox.innerHTML =
+        '<div style="font-size:11px;font-weight:900;color:#fbbf24;text-align:left;margin:8px 0 4px;">🗡️ BATTLE RELICS:</div>' +
+        '<div class="sv-shop-card"><div><b>🗡️ Excalibur Blade</b><br><span style="color:#cbd5e1;">+20% Crit Strike</span></div><button onclick="socket.emit(\\'svBuyRelic\\',\\'excalibur\\')" style="background:#b45309;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">600🪙</button></div>' +
+        '<div class="sv-shop-card"><div><b>🛡️ Aegis Shield</b><br><span style="color:#cbd5e1;">-15% Damage Taken</span></div><button onclick="socket.emit(\\'svBuyRelic\\',\\'aegis\\')" style="background:#1d4ed8;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">600🪙</button></div>' +
+        '<div class="sv-shop-card"><div><b>🧛 Vampire Fang</b><br><span style="color:#cbd5e1;">+20% Lifesteal</span></div><button onclick="socket.emit(\\'svBuyRelic\\',\\'vampfang\\')" style="background:#991b1b;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">750🪙</button></div>';
+      dojo2.appendChild(rBox);
+    }
+
+    window.forgeMyCustomPower = function() {
+      const p1 = document.getElementById('svFuseSlot1').value;
+      const p2 = document.getElementById('svFuseSlot2').value;
+      const customName = document.getElementById('svCustomPwrName').value;
+      socket.emit('svForgeCustomPower', { p1, p2, customName });
+    };
+
+    socket.on('svStatsSync', (st) => {
+      if (!st) return;
+      if (st.customPower && st.customPower.id) {
+        SV_POWERS[st.customPower.id] = {
+          fused: true,
+          icon: st.customPower.def.icon,
+          name: st.customPower.def.name,
+          skills: st.customPower.def.moves.map(m => m.label)
+        };
+        if (typeof renderSvPowers === 'function') renderSvPowers();
+      }
+      const played = st.minigamesPlayed || 0;
+      const unlocked = st.powerMakerUnlocked || played >= 50;
+      const statEl = document.getElementById('svMakerStatus');
+      const ctrlEl = document.getElementById('svMakerControls');
+      if (!statEl || !ctrlEl) return;
+
+      if (st.customPower) {
+        statEl.innerHTML = '✅ <b>Forged:</b> ' + st.customPower.def.icon + ' ' + st.customPower.def.name;
+        ctrlEl.style.display = 'none';
+      } else if (unlocked) {
+        statEl.innerHTML = '🔓 <b>Task Complete (50/50)!</b> Pick any 2 owned powers to fuse:';
+        ctrlEl.style.display = 'block';
+        const ownedKeys = ['fire','water','lightning','ice', ...(st.unlockedPowers || [])];
+        const opts = ownedKeys.map(k => '<option value="' + k + '">' + k.toUpperCase() + '</option>').join('');
+        document.getElementById('svFuseSlot1').innerHTML = opts;
+        document.getElementById('svFuseSlot2').innerHTML = opts;
+      } else {
+        statEl.innerHTML = '🔒 <b>Task:</b> Play 50 Arena Mini-Games (<b>' + played + '/50</b>) to unlock!';
+        ctrlEl.style.display = 'none';
+      }
+    });
+
+    socket.on('svLeaderboardSync', (list) => {
+      const el = document.getElementById('svTopList');
+      if (!el) return;
+      el.innerHTML = list.map((p, i) =>
+        '<div class="sv-log-item"><b>#' + (i+1) + ' ' + p.name + '</b> — 🏆 ' + p.wins + ' Wins | 🪙 ' + p.coins.toLocaleString() + ' | ⚡ ' + p.powers + ' Powers</div>'
+      ).join('') || 'No fighters ranked yet!';
+    });
+  }, 1000);
+})();
+</script>`;
+
+const SV_MEGA_UI_SCRIPT = SV_MEGA_UI_PART_A + '\n' + SV_MEGA_UI_PART_B;
+
+app.use((req, res, next) => {
+    const origSend = res.send;
+    res.send = function(body) {
+        if (typeof body === 'string' && body.includes('</body>') && !body.includes('svCustomMakerBox')) {
+            body = body.replace('</body>', SV_MEGA_UI_SCRIPT + '\n</body>');
+        }
+        return origSend.call(this, body);
+    };
+    next();
+});
 
     
 

@@ -3011,7 +3011,7 @@
     <div id="svSubBody"></div>
   </div>
 </div>
-<!-- ================= ENDLESS TOWER & MULTI-FUSION UI (INDEX.HTML) ================= -->
+<!-- ================= ENDLESS TOWER & MULTI-FUSION UI (BRACKET-SAFE) ================= -->
 <div id="svTowerModal" style="display:none;position:fixed;inset:0;z-index:9999998;background:rgba(5,7,16,0.95);align-items:center;justify-content:center;padding:12px;">
   <div style="background:linear-gradient(155deg,#0f172a,#1e1b4b);border:2px solid #38bdf8;border-radius:20px;padding:14px;width:100%;max-width:400px;max-height:88vh;overflow-y:auto;color:#fff;text-align:center;box-shadow:0 0 30px rgba(56,189,248,0.4);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -3024,7 +3024,7 @@
 
 <script>
 (function() {
-  window._svTowerTop = [];
+  window._svTowerTop = new Array();
 
   window.openEndlessTowerModal = function() {
     const modal = document.getElementById('svTowerModal');
@@ -3037,7 +3037,7 @@
     const best = prof.maxTowerFloor || 1;
     const chk = Math.max(1, prof.towerCheckpoint || 1);
 
-    const boardHtml = (window._svTowerTop || []).map((r, i) =>
+    const boardHtml = (window._svTowerTop || new Array()).map((r, i) =>
       '<div style="display:flex;justify-content:space-between;padding:5px 6px;border-bottom:1px solid #334155;">' +
         '<span>' + (i === 0 ? '👑 ' : '#' + (i + 1) + ' ') + r.name + '</span>' +
         '<b style="color:#38bdf8;">Floor ' + r.floor + '</b>' +
@@ -3060,7 +3060,7 @@
 
   function syncMultiFusions(prof) {
     if (!prof || !window.SV_POWERS) return;
-    const fList = Array.isArray(prof.customPowers) ? prof.customPowers : (prof.customPower ? [prof.customPower] : []);
+    const fList = Array.isArray(prof.customPowers) ? prof.customPowers : (prof.customPower ? new Array(prof.customPower) : new Array());
     let added = false;
     fList.forEach(cp => {
       if (cp && cp.id && cp.def && !window.SV_POWERS[cp.id]) {
@@ -3068,7 +3068,7 @@
           fused: true,
           icon: cp.def.icon,
           name: cp.def.name,
-          skills: (cp.def.moves || []).map(m => m.label)
+          skills: (cp.def.moves || new Array()).map(m => m.label)
         };
         added = true;
       }
@@ -3077,29 +3077,29 @@
   }
 
   setInterval(() => {
-    // 1. Inject Endless Tower button into SammuVerse Modal
-    const tabs = document.querySelector('#svLobbyView .sv-tabs');
-    if (tabs && !document.getElementById('svTowerDirectBtn')) {
+    // 1. Inject Endless Tower button inside #svLobbyView
+    const lobby = document.getElementById('svLobbyView');
+    if (lobby && !document.getElementById('svTowerDirectBtn')) {
       const btn = document.createElement('button');
       btn.id = 'svTowerDirectBtn';
-      btn.style.cssText = 'width:100%;padding:8px;margin-bottom:6px;border-radius:10px;border:1.5px solid #38bdf8;background:linear-gradient(90deg,#0c4a6e,#1e1b4b);color:#7dd3fc;font-size:12px;font-weight:900;cursor:pointer;';
+      btn.style.cssText = 'width:100%;padding:8px;margin:6px 0;border-radius:10px;border:1.5px solid #38bdf8;background:linear-gradient(90deg,#0c4a6e,#1e1b4b);color:#7dd3fc;font-size:12px;font-weight:900;cursor:pointer;';
       btn.textContent = '♾️ Endless Ascension Tower (Climb & Leaderboard)';
       btn.onclick = () => window.openEndlessTowerModal();
-      tabs.parentElement.insertBefore(btn, tabs.nextSibling);
+      lobby.insertBefore(btn, lobby.firstChild);
     }
 
     // 2. Sync Multi-Fusions & Escalating Forge Cost (50k -> 250k -> 750k -> 1.5M+)
     const prof = window._latestSvProf;
     if (prof) {
       syncMultiFusions(prof);
-      const fList = Array.isArray(prof.customPowers) ? prof.customPowers : (prof.customPower ? [prof.customPower] : []);
-      const tiers =;
-      const nextCost = fList.length < tiers.length ? tiers[fList.length] : (tiers[tiers.length - 1] + ((fList.length - tiers.length + 1) * 1000000));
+      const fList = Array.isArray(prof.customPowers) ? prof.customPowers : (prof.customPower ? new Array(prof.customPower) : new Array());
+      const tiers = new Array(50000, 250000, 750000, 1500000);
+      const nextCost = fList.length < tiers.length ? tiers.at(fList.length) : (tiers.at(-1) + ((fList.length - tiers.length + 1) * 1000000));
       const slotNum = fList.length + 1;
 
       document.querySelectorAll('button').forEach(b => {
         const txt = b.textContent || '';
-        if (/forge custom|50,000|50k/i.test(txt) && !txt.includes('#' + slotNum)) {
+        if (/forge|custom fusion|50,000|50k/i.test(txt) && !txt.includes('#' + slotNum)) {
           const free = (prof.freeFusionPasses || 0) > 0;
           b.textContent = free
             ? ('⚗️ Forge Fusion #' + slotNum + ' (FREE PASS ✅)')
@@ -3107,7 +3107,7 @@
         }
       });
     }
-  }, 1200);
+  }, 1000);
 
   const bindTowerSock = setInterval(() => {
     if (typeof socket === 'undefined' || window._svTowerHtmlBound) return;
@@ -3118,14 +3118,16 @@
       syncMultiFusions(st);
     });
     socket.on('svTowerLeaderboardSync', (list) => {
-      window._svTowerTop = list || [];
+      window._svTowerTop = list || new Array();
       if (document.getElementById('svTowerModal')?.style.display === 'flex') {
         window.openEndlessTowerModal();
       }
     });
-  }, 600);
+  }, 500);
 })();
 </script>
+
+
 <!-- ================= END ENDLESS TOWER & MULTI-FUSION UI ================= -->
 
 

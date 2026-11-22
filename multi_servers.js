@@ -5735,17 +5735,18 @@ module.exports = function initMultiServers(app, io) {
         box.innerHTML = logs.map(l => '<div class="sv-log-item">🏆 <b>' + l.winner + '</b> (' + l.winPower + ') defeated <b>' + l.loser + '</b> (' + l.losePower + ') <span style="color:#94a3b8;float:right;">' + l.time + '</span></div>').join('');
       });
     `;
-
     io.on('connection', (socket) => {
         const sendSvBundle = () => {
             socket.emit('svDeliverAll', {
                 html: SV_FULL_BUNDLE,
-                js: SV_CLIENT_SCRIPT_PART1 + '\n' + SV_CLIENT_SCRIPT_PART2A + '\n' + SV_CLIENT_SCRIPT_PART2B + '\n' + SV_CLIENT_SCRIPT_PART3
+                js: SV_CLIENT_SCRIPT_PART1 + '\n' + SV_CLIENT_SCRIPT_PART2A + '\n' + SV_CLIENT_SCRIPT_PART2B + '\n' + SV_CLIENT_SCRIPT_PART3 + '\n' + (typeof SV_MEGA_JS_PART1 !== 'undefined' ? SV_MEGA_JS_PART1 + '\n' + SV_MEGA_JS_PART2 : '')
             });
         };
         socket.on('svRequestBundle', sendSvBundle);
         socket.on('joinRoom', () => setTimeout(sendSvBundle, 500));
     });
+
+        
     // === ⚔️ SAMMUVERSE EXPANSION — PIECE 1/3 (QUESTS & CHAMPION BELT) ===
     const svChampions = new Map();
     const svCoopPending = new Map();

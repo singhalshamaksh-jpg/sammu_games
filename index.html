@@ -3224,6 +3224,37 @@
   setInterval(syncFusionAndV3UI, 1000);
 })();
 </script>
+<!-- ================= MAHAVISHNU 5TH SKILL BUTTON (INDEX.HTML) ================= -->
+<script>
+(function() {
+  setInterval(() => {
+    const skBox = document.getElementById('svSkillButtons');
+    const meLbl = document.getElementById('svMeLabel')?.textContent || '';
+    const battleView = document.getElementById('svBattleView');
+
+    if (!skBox || !battleView || battleView.style.display === 'none') return;
+
+    // Show 5th Skill button whenever fighting with MahaVishnu or a 🔱 Fusion
+    const isVishnu = meLbl.includes('🔱') || meLbl.toLowerCase().includes('mahavishnu');
+    let loveBtn = document.getElementById('svLoveSurrenderBtn');
+
+    if (isVishnu && !loveBtn) {
+      loveBtn = document.createElement('button');
+      loveBtn.id = 'svLoveSurrenderBtn';
+      loveBtn.style.cssText = 'grid-column:1 / -1;background:linear-gradient(90deg,#ec4899,#f59e0b);border:2px solid #fde047;border-radius:12px;padding:9px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 0 14px rgba(236,72,153,0.6);margin-top:2px;';
+      loveBtn.textContent = '💖🪈 5th Skill: Prem Samarpan (Surrender to Love — Let Sibling Win)';
+      loveBtn.onclick = function() {
+        if (confirm('💖 Surrender to Love and gift victory + 250🪙 to your sibling?')) {
+          if (typeof socket !== 'undefined') socket.emit('svSurrenderToLove');
+        }
+      };
+      skBox.appendChild(loveBtn);
+    } else if (!isVishnu && loveBtn) {
+      loveBtn.remove();
+    }
+  }, 500);
+})();
+</script>
 
 </body>
 </html>

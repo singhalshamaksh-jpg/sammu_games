@@ -8242,7 +8242,8 @@ io.on('connection', (socket) => {
 // ============================================================================
 function getNextCustomFusionCost(prof) {
     const count = Array.isArray(prof.customPowers) ? prof.customPowers.length : (prof.customPower ? 1 : 0);
-    const tiers =;
+    const tiers = new Array(50000, 250000, 750000, 1500000);
+ 
     if (count < tiers.length) return tiers[count];
     return tiers[tiers.length - 1] + ((count - tiers.length + 1) * 1000000);
 }

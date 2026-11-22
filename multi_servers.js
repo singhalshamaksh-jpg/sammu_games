@@ -6409,7 +6409,8 @@ resolveSvTurn = function(battleId) {
     }
 };
 
-// === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE (VERIFIED SYNC) ===
+
+// === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE (COINS + POWERS + CUSTOM FUSIONS) ===
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -6432,39 +6433,45 @@ async function upstashCmd(cmdArray) {
     }
 }
 
-// Wrap save functions FIRST so any save writes straight to Upstash
+function pushAllToUpstash() {
+    if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+    upstashCmd(['SET', 'sammu_sv_stats', JSON.stringify(svPlayerStats)]);
+    upstashCmd(['SET', 'sammu_economy', JSON.stringify({
+        wallets: Object.fromEntries(playerWallet),
+        cards: Object.fromEntries(playerCards)
+    })]);
+}
+
 const _origSaveSvStats = saveSvStats;
 saveSvStats = function() {
     _origSaveSvStats();
-    upstashCmd(['SET', 'sammu_sv_stats', JSON.stringify(svPlayerStats)]);
+    pushAllToUpstash();
 };
 
 const _origSaveEconomyDB = saveEconomyDB;
 saveEconomyDB = function() {
     _origSaveEconomyDB();
-    upstashCmd(['SET', 'sammu_economy', JSON.stringify({
-        wallets: Object.fromEntries(playerWallet),
-        cards: Object.fromEntries(playerCards)
-    })]);
+    pushAllToUpstash();
 };
 
-// Restore All Player Grind, Coins & Cards from Cloud on Boot
+// Restore All Player Grind, Coins, Powers & Custom Fusions on Boot
 (async function restoreCloudData() {
-    if (!UPSTASH_URL || !UPSTASH_TOKEN) {
-        console.log('⚠️ Upstash ENV missing — running local only.');
-        return;
-    }
-    let restoredUsers = 0, restoredWallets = 0;
+    if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+    let restoredUsers = 0, restoredWallets = 0, totalPowers = 0;
 
     const rawStats = await upstashCmd(['GET', 'sammu_sv_stats']);
     if (rawStats) {
         try {
             const parsed = JSON.parse(rawStats);
-            Object.assign(svPlayerStats, parsed);
-            restoredUsers = Object.keys(parsed).length;
-            Object.values(svPlayerStats).forEach(st => {
-                if (st.customPower && st.customPower.id) SV_DEFS[st.customPower.id] = st.customPower.def;
+            Object.entries(parsed).forEach(([k, v]) => {
+                svPlayerStats[k.toLowerCase()] = v;
+                totalPowers += Array.isArray(v.unlockedPowers) ? v.unlockedPowers.length : 0;
+                if (v.customPower && v.customPower.id) SV_DEFS[v.customPower.id] = v.customPower.def;
+                if (Array.isArray(v.customPowers)) {
+                    v.customPowers.forEach(cp => { if (cp && cp.id) SV_DEFS[cp.id] = cp.def; });
+                }
             });
+            restoredUsers = Object.keys(parsed).length;
             _origSaveSvStats();
         } catch (e) {}
     }
@@ -6484,8 +6491,16 @@ saveEconomyDB = function() {
         } catch (e) {}
     }
 
-    console.log(`☁️ Cloud Restore Complete: ${restoredUsers} RPG Profiles & ${restoredWallets} Wallets loaded!`);
+    // Refresh any players who connected while cloud data was loading
+    for (const [, s] of io.sockets.sockets) {
+        if (s && s.username) {
+            s.emit('svStatsSync', getSvProfile(s.username));
+        }
+    }
+
+    console.log(`☁️ Cloud Restore: ${restoredUsers} Profiles (${totalPowers} Unlocked Powers) & ${restoredWallets} Wallets loaded!`);
 })();
+
 
 
     return OG_HOSTS;

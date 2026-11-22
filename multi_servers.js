@@ -6408,8 +6408,13 @@ resolveSvTurn = function(battleId) {
         syncSvBattle(after, null);
     }
 };
-
-// === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE (ZERO DATA LOSS ON REDEPLOY) ===
+const _origAddCoins = addCoins;
+addCoins = function(uname, amt) {
+    const res = _origAddCoins(uname, amt);
+    saveEconomyDB();
+    return res;
+};
+// === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE (VERIFIED SYNC) ===
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -6427,46 +6432,12 @@ async function upstashCmd(cmdArray) {
         const data = await res.json();
         return data ? data.result : null;
     } catch (e) {
+        console.error('Upstash Error:', e.message);
         return null;
     }
 }
 
-// 1. Restore All Player Grind, Coins, Cards & Logs from Cloud on Boot
-(async function restoreCloudData() {
-    if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
-    const rawStats = await upstashCmd(['GET', 'sammu_sv_stats']);
-    if (rawStats) {
-        try {
-            Object.assign(svPlayerStats, JSON.parse(rawStats));
-            Object.values(svPlayerStats).forEach(st => {
-                if (st.customPower && st.customPower.id) SV_DEFS[st.customPower.id] = st.customPower.def;
-            });
-            saveSvStats();
-        } catch (e) {}
-    }
-    const rawEco = await upstashCmd(['GET', 'sammu_economy']);
-    if (rawEco) {
-        try {
-            const eco = JSON.parse(rawEco);
-            if (eco.wallets) Object.entries(eco.wallets).forEach(([k, v]) => playerWallet.set(k, v));
-            if (eco.cards) Object.entries(eco.cards).forEach(([k, v]) => playerCards.set(k, v));
-            saveEconomyDB();
-        } catch (e) {}
-    }
-    const rawLogs = await upstashCmd(['GET', 'sammu_sv_logs']);
-    if (rawLogs) {
-        try {
-            const parsedLogs = JSON.parse(rawLogs);
-            if (Array.isArray(parsedLogs)) {
-                svBattleLogs.splice(0, svBattleLogs.length, ...parsedLogs);
-                fs.writeFileSync(SV_LOG_FILE, JSON.stringify(svBattleLogs, null, 2));
-            }
-        } catch (e) {}
-    }
-    console.log('☁️ SammuVerse Cloud Database Restored Successfully!');
-})();
-
-// 2. Auto-Sync Every Save to Cloud in Background
+// Wrap save functions FIRST so any save writes straight to Upstash
 const _origSaveSvStats = saveSvStats;
 saveSvStats = function() {
     _origSaveSvStats();
@@ -6481,6 +6452,46 @@ saveEconomyDB = function() {
         cards: Object.fromEntries(playerCards)
     })]);
 };
+
+// Restore All Player Grind, Coins & Cards from Cloud on Boot
+(async function restoreCloudData() {
+    if (!UPSTASH_URL || !UPSTASH_TOKEN) {
+        console.log('⚠️ Upstash ENV missing — running local only.');
+        return;
+    }
+    let restoredUsers = 0, restoredWallets = 0;
+
+    const rawStats = await upstashCmd(['GET', 'sammu_sv_stats']);
+    if (rawStats) {
+        try {
+            const parsed = JSON.parse(rawStats);
+            Object.assign(svPlayerStats, parsed);
+            restoredUsers = Object.keys(parsed).length;
+            Object.values(svPlayerStats).forEach(st => {
+                if (st.customPower && st.customPower.id) SV_DEFS[st.customPower.id] = st.customPower.def;
+            });
+            _origSaveSvStats();
+        } catch (e) {}
+    }
+
+    const rawEco = await upstashCmd(['GET', 'sammu_economy']);
+    if (rawEco) {
+        try {
+            const eco = JSON.parse(rawEco);
+            if (eco.wallets) {
+                Object.entries(eco.wallets).forEach(([k, v]) => playerWallet.set(k.toLowerCase(), Number(v)));
+                restoredWallets = Object.keys(eco.wallets).length;
+            }
+            if (eco.cards) {
+                Object.entries(eco.cards).forEach(([k, v]) => playerCards.set(k.toLowerCase(), v));
+            }
+            _origSaveEconomyDB();
+        } catch (e) {}
+    }
+
+    console.log(`☁️ Cloud Restore Complete: ${restoredUsers} RPG Profiles & ${restoredWallets} Wallets loaded!`);
+})();
+
 
     return OG_HOSTS;
       

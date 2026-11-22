@@ -2995,6 +2995,22 @@
 })();
 </script>
 
+<!-- SAMMUVERSE MEGA UPDATE UI MODALS -->
+<div id="svDomainClashModal" style="display:none;position:fixed;inset:0;z-index:99999999;background:rgba(5,5,15,0.92);align-items:center;justify-content:center;flex-direction:column;padding:14px;text-align:center;">
+  <div style="font-size:22px;font-weight:900;color:#facc15;text-shadow:0 0 18px #f59e0b;margin-bottom:8px;">⚡👑 V3 DOMAIN CLASH!! ⚡</div>
+  <div id="svClashSub" style="font-size:13px;color:#fff;margin-bottom:14px;">Rapidly tap below to overpower your rival!</div>
+  <button id="svClashTapBtn" onclick="window._clashTaps=(window._clashTaps||0)+1;this.textContent='💥 TAP! ('+window._clashTaps+')';if(typeof socket!=='undefined')socket.emit('svDomainTap');" style="width:210px;height:210px;border-radius:50%;border:5px solid #fde047;background:radial-gradient(circle,#f59e0b,#dc2626);color:#fff;font-size:24px;font-weight:900;box-shadow:0 0 40px #facc15;cursor:pointer;">💥 TAP FAST!</button>
+</div>
+
+<div id="svSubModal" style="display:none;position:fixed;inset:0;z-index:9999998;background:rgba(5,7,16,0.95);align-items:center;justify-content:center;padding:12px;">
+  <div style="background:linear-gradient(155deg,#0f172a,#1e1b4b);border:2px solid #facc15;border-radius:20px;padding:14px;width:100%;max-width:410px;max-height:88vh;overflow-y:auto;color:#fff;text-align:center;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span id="svSubTitle" style="font-weight:900;font-size:15px;color:#fde047;">🏆 SammuVerse</span>
+      <button onclick="document.getElementById('svSubModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕ Close</button>
+    </div>
+    <div id="svSubBody"></div>
+  </div>
+</div>
 
 
 </body>

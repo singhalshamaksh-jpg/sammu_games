@@ -5412,7 +5412,15 @@ module.exports = function initMultiServers(app, io) {
         moon:       { cost: 4000, icon: '🌙', name: 'Dr. Moon (Lunar Empress)', skills: ['🌙 Lunar Scalpel (44 DMG)', '🌿 Sanjeevani Surge (58 DMG + 18 HP)', '🩺 Doctor Elixir (Evade +65 HP)', '🌕 Full Moon Eclipse ULT (98 DMG + Stun)'] },
         mahavishnu: { secret: true, icon: '🔱', name: 'Sammu/Samaksh (MahaVishnu)', skills: ['🪈 Prem Bansuri (52 DMG + Stun)', '☸️ Sudarshana Chakra (78 True DMG)', '🛡️ Vaikuntha Kavach (Evade +60 HP)', '🌌 Vishwaroopa ULT (145 DMG + Stun)'] },
         millyyt:    { secret: true, icon: '🎬', name: 'Milly (YouTube Queen)',     skills: ['🔔 Subscribe Smash (46 DMG + Stun)', '📈 10M Viral Surge (64 DMG + 20 HP)', '💎 Diamond Shield (Evade +50 HP)', '▶️ Golden Play Button ULT (115 True DMG)'] },
-        ishikastar: { secret: true, icon: '✨', name: 'Ishika (Celestial Empress)', skills: ['💫 Starfall Beam (42 DMG)', '💥 Supernova Burst (58 DMG)', '🌸 Astral Blessing (Evade +45 HP)', '🌠 Empress Meteor ULT (96 DMG)'] }
+        ishikastar: { secret: true, icon: '✨', name: 'Ishika (Celestial Empress)', skills: ['💫 Starfall Beam (42 DMG)', '💥 Supernova Burst (58 DMG)', '🌸 Astral Blessing (Evade +45 HP)', '🌠 Empress Meteor ULT (96 DMG)'] }         ,
+        mahadev:     { secret: true, icon: '🔱', name: 'Mahadev (Tandava Destroyer)', skills: ['Trishul Pierce (56 DMG)', 'Damru Cosmic Beat (74 DMG + Stun)', 'Kailash Meditation (+65 HP)', '🔥 Third Eye Tandava ULT (140 True DMG)'] },
+        zoroking:    { secret: true, icon: '⚔️', name: 'Zoro (King of Hell)',      skills: ['Enma Purgatory (52 DMG)', 'Three-Sword Dragon (72 DMG)', 'Conqueror Haki (Evade +45 HP)', '👹 Dragon Damnation ULT (132 DMG)'] },
+        antimpoke:   { secret: true, icon: '⚡', name: 'Antim (Arceus & Rayquaza)', skills: ['Dragon Ascent (50 DMG)', 'Judgment Beam (70 True DMG)', 'Multitype Plate (Block 85%)', '🐉 Mega Rayquaza ULT (130 DMG)'] },
+        plasma:      { fused: true, icon: '⚛️🔥', name: 'Plasma Emperor',    skills: ['Plasma Lance (48 DMG)', 'Supernova Arc (64 DMG)', 'Ion Barrier (Block 80%)', '☀️ STAR COLLAPSE ULT (108 DMG)'] },
+        leviathan:   { fused: true, icon: '🐉🌊', name: 'Steam Leviathan',   skills: ['Scalding Geyser (46 DMG)', 'Boil Tsunami (62 DMG + 18 HP)', 'Mist Mirage (Evade +28 HP)', '🐉 OCEAN BOIL ULT (105 DMG)'] },
+        chronovoid:  { fused: true, icon: '⏳🌌', name: 'Chrono Void God',   skills: ['Reality Tear (50 DMG)', 'Paradox Loop (58 DMG + Stun)', 'Time Rewind (Evade +50 HP)', '🌌 BIG CRUNCH ULT (112 True DMG)'] },
+        eclipsenika: { fused: true, icon: '🌑☀️', name: 'Eclipse Sun God',   skills: ['Dawn Eclipse Fist (52 DMG)', 'Shadow Liberation (68 DMG)', 'Drum Pulse (Block 70% + 35 HP)', '🌑☀️ TOTAL ECLIPSE ULT (116 DMG + Stun)'] }
+
       };
       const SV_PETS = [
         { id: 'mochi', name: '🐱 Mochi Spirit', desc: 'Scratches foe for +10 DMG/turn', cost: 200 },
@@ -5551,9 +5559,17 @@ module.exports = function initMultiServers(app, io) {
         }
       }
 
-      function renderSvPowers() {
+           function renderSvPowers() {
         const grid = document.getElementById('svPowerGrid'); if (!grid) return; grid.innerHTML = '';
         const unlocked = myProfile.unlockedPowers || [], pWins = myProfile.powerWins || {};
+        if (myProfile.customPower && myProfile.customPower.id) {
+          SV_POWERS[myProfile.customPower.id] = {
+            fused: true,
+            icon: myProfile.customPower.def.icon,
+            name: myProfile.customPower.def.name,
+            skills: myProfile.customPower.def.moves.map(m => m.label)
+          };
+        }
         Object.entries(SV_POWERS).forEach(([key, p]) => {
           if (p.secret && !unlocked.includes(key)) return;
           const isCoinLocked = p.cost && !unlocked.includes(key), isV2 = (pWins[key] || 0) >= 5;
@@ -6230,36 +6246,55 @@ io.on('connection', (socket) => {
         socket.emit('svNotice', `⚗️🔥 FUSION COMPLETE! Unlocked ${rec.name}!`);
     });
 
-    socket.on('svForgeCustomPower', ({ p1, p2, customName }) => {
+        socket.on('svForgeCustomPower', ({ p1, p2, customName }) => {
         const uname = socket.username || 'Player';
         const prof = getSvProfile(uname);
 
         if (!prof.powerMakerUnlocked && (prof.minigamesPlayed || 0) < 50) {
             return socket.emit('svNotice', `🔒 Play 50 Arena Mini-Games first! (${prof.minigamesPlayed || 0}/50)`);
         }
-        if (prof.customPower) return socket.emit('svNotice', '⚠️ You already forged your Custom Power!');
-        if (!p1 || !p2 || p1 === p2) return socket.emit('svNotice', '⚠️ Select 2 DIFFERENT powers to fuse!');
+        if (!p1 || !p2 || p1 === p2) {
+            return socket.emit('svNotice', '⚠️ Select 2 DIFFERENT powers to fuse!');
+        }
 
         const owned = new Set(['fire', 'water', 'lightning', 'ice', ...(prof.unlockedPowers || [])]);
-        if (!owned.has(p1) || !owned.has(p2)) return socket.emit('svNotice', '⚠️ You must own both powers first!');
-        if (getCoins(uname) < 50000) return socket.emit('svNotice', `🪙 Need 50,000 Coins! (You have ${getCoins(uname).toLocaleString()}🪙)`);
+        if (!owned.has(p1) || !owned.has(p2)) {
+            return socket.emit('svNotice', '⚠️ You must own both powers first!');
+        }
+        if (getCoins(uname) < 50000) {
+            return socket.emit('svNotice', `🪙 Need 50,000 Coins! (You have ${getCoins(uname).toLocaleString()}🪙)`);
+        }
 
         const def1 = SV_DEFS[p1], def2 = SV_DEFS[p2];
-        const cleanTitle = (String(customName || '').trim() || `${def1.name} x ${def2.name}`).slice(0, 24);
+        if (!def1 || !def2) return socket.emit('svNotice', '⚠️ Invalid power selected!');
+
+        const cleanTitle = (String(customName || '').trim() || `${def1.name.split(' ')[0]} + ${def2.name.split(' ')[0]}`).slice(0, 26);
         const customId = 'custom_' + uname.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now().toString(36);
+
+        const m1 = def1.moves[0] || { label: 'Strike 1', dmg: 50 };
+        const m2 = def2.moves[1] || def2.moves[0] || { label: 'Strike 2', dmg: 55 };
+        const ult1 = def1.moves[3] || m1;
+        const ult2 = def2.moves[3] || m2;
+
+        const avgHp = Math.min(520, Math.round((def1.hp + def2.hp) * 0.65));
+        const avgRed = Math.min(0.48, Number((((def1.passiveRed || 0.1) + (def2.passiveRed || 0.1)) * 0.65).toFixed(2)));
+        const d1 = Math.max(55, Math.round((m1.dmg || 45) * 1.15));
+        const d2 = Math.max(60, Math.round((m2.dmg || 50) * 1.15));
+        const ultDmg = Math.min(200, Math.max(120, Math.round(((ult1.dmg || 90) + (ult2.dmg || 90)) * 0.65)));
+        const isTrue = Boolean(ult1.trueDmg || ult2.trueDmg);
 
         const newDef = {
             fused: true,
             icon: `${def1.icon}${def2.icon}`,
             name: cleanTitle,
-            hp: Math.min(340, Math.round((def1.hp + def2.hp) * 0.68)),
-            passiveRed: 0.24,
+            hp: avgHp,
+            passiveRed: avgRed,
             strong: Array.from(new Set([...(def1.strong || []), ...(def2.strong || [])])),
             moves: [
-                { ...def1.moves, label: `${def1.moves.label.split(' (')} (58 DMG)`, dmg: 58 },
-                { ...def2.moves, label: `${def2.moves.label.split(' (')} (62 DMG + Heal)`, dmg: 62, heal: 20 },
-                { label: '🌌 Hybrid Domain (Evade +50 HP)', evade: true, heal: 50 },
-                { label: `💥 ${cleanTitle.toUpperCase()} ULT (124 DMG + Stun)`, dmg: 124, stun: true, cut: { theme: 'vishwaroopa', emoji: `${def1.icon}${def2.icon}`, title: `${cleanTitle.toUpperCase()}!` } }
+                { label: `${m1.label.split(' (')[0]} (${d1} DMG)`, dmg: d1, trueDmg: Boolean(m1.trueDmg), stunChance: m1.stunChance || 0 },
+                { label: `${m2.label.split(' (')[0]} (${d2} DMG + Heal)`, dmg: d2, heal: 25, trueDmg: Boolean(m2.trueDmg) },
+                { label: `🌌 ${cleanTitle} Domain (Evade +65 HP)`, evade: true, heal: 65 },
+                { label: `💥 ${cleanTitle.toUpperCase()} ULT (${ultDmg}${isTrue ? ' True' : ''} DMG + Stun)`, dmg: ultDmg, trueDmg: isTrue, stun: true, cut: { theme: 'vishwaroopa', emoji: `${def1.icon}${def2.icon}`, title: `${cleanTitle.toUpperCase()}!` } }
             ]
         };
 
@@ -6270,15 +6305,17 @@ io.on('connection', (socket) => {
         saveSvStats();
 
         socket.emit('svStatsSync', getSvProfile(uname));
-        socket.emit('svNotice', `⚗️👑 FORGED "${cleanTitle}" (${newDef.icon})!`);
+        socket.emit('svNotice', `⚗️👑 FORGED "${cleanTitle}" (${newDef.icon}) — ${avgHp} HP & ${ultDmg} ULT DMG!`);
         if (socket.activeServerId) {
             io.to(socket.activeServerId).emit('message', {
                 username: "Sammu's Bot",
-                text: `👑⚗️ **CUSTOM POWER FORGED!** **${uname}** spent **50,000🪙** and created **${newDef.icon} ${cleanTitle}**!`,
+                text: `👑⚗️ **CUSTOM FUSION FORGED!** **${uname}** fused **${def1.name}** + **${def2.name}** into **${newDef.icon} ${cleanTitle}**!`,
                 _serverId: socket.activeServerId
             });
         }
     });
+
+    
 
     socket.on('svBuyRelic', (relicId) => {
         const uname = socket.username || 'Player';
@@ -6314,7 +6351,63 @@ io.on('connection', (socket) => {
     });
 });
 
- 
+ // === 🗡️ RELIC COMBAT ENGINE (EXCALIBUR, AEGIS SHIELD & VAMPIRE FANG) ===
+const _origStartSvMatch = startSvMatch;
+startSvMatch = function(srvId, sock1, pow1Key, sock2, pow2Key, isSpin1 = false) {
+    _origStartSvMatch(srvId, sock1, pow1Key, sock2, pow2Key, isSpin1);
+    for (const b of svBattles.values()) {
+        if (b.p1.id === sock1.id) {
+            b.p1.relic = getSvProfile(sock1.username).activeRelic || null;
+            if (!b.p2.isBot && sock2 && sock2.username) {
+                b.p2.relic = getSvProfile(sock2.username).activeRelic || null;
+            }
+        }
+    }
+};
+
+// === 🗡️ RELIC COMBAT EFFECTS (STEP 2/2) ===
+const _origResolveSvTurn = resolveSvTurn;
+resolveSvTurn = function(battleId) {
+    const b = svBattles.get(battleId);
+    const prevHp1 = b ? b.p1.hp : 0;
+    const prevHp2 = b ? b.p2.hp : 0;
+
+    _origResolveSvTurn(battleId);
+
+    const after = svBattles.get(battleId);
+    if (!after) return;
+
+    const extras = [];
+    // Apply Excalibur Crit, Aegis Refund & Vampire Lifesteal for both fighters
+    [
+        { me: after.p1, opp: after.p2, myPrev: prevHp1, oppPrev: prevHp2 },
+        { me: after.p2, opp: after.p1, myPrev: prevHp2, oppPrev: prevHp1 }
+    ].forEach(({ me, opp, myPrev, oppPrev }) => {
+        const dmgDealt = Math.max(0, oppPrev - opp.hp);
+        const dmgTaken = Math.max(0, myPrev - me.hp);
+
+        if (me.relic === 'excalibur' && dmgDealt > 0 && Math.random() < 0.25) {
+            const bonus = Math.round(dmgDealt * 0.45);
+            opp.hp = Math.max(0, opp.hp - bonus);
+            extras.push(`🗡️ <b>Excalibur Crit!</b> ${me.name} dealt <b>-${bonus} extra DMG</b>!`);
+        }
+        if (me.relic === 'aegis' && dmgTaken > 0 && me.hp > 0) {
+            const blocked = Math.max(1, Math.round(dmgTaken * 0.15));
+            me.hp = Math.min(me.maxHp, me.hp + blocked);
+            extras.push(`🛡️ <b>Aegis Shield</b> blocked <b>${blocked} DMG</b> for ${me.name}!`);
+        }
+        if (me.relic === 'vampfang' && dmgDealt > 0 && me.hp > 0) {
+            const heal = Math.max(1, Math.round(dmgDealt * 0.20));
+            me.hp = Math.min(me.maxHp, me.hp + heal);
+            extras.push(`🧛 <b>Vampire Fang</b> healed ${me.name} for <b>+${heal} HP</b>!`);
+        }
+    });
+
+    if (extras.length > 0) {
+        after.lastLog += '<br>' + extras.join('<br>');
+        syncSvBattle(after, null);
+    }
+};
 
 
     return OG_HOSTS;

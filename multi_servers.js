@@ -6408,12 +6408,7 @@ resolveSvTurn = function(battleId) {
         syncSvBattle(after, null);
     }
 };
-const _origAddCoins = addCoins;
-addCoins = function(uname, amt) {
-    const res = _origAddCoins(uname, amt);
-    saveEconomyDB();
-    return res;
-};
+
 // === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE (VERIFIED SYNC) ===
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;

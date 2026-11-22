@@ -8594,6 +8594,96 @@ io.on('connection', (socket) => {
         prevListeners.forEach(fn => fn.call(socket, rawCode));
     });
 });
+// ============================================================================
+// 🔧 FIXED MULTI-FUSION SERVER HANDLER (USES .AT() — ZERO BRACKET ISSUES)
+// ============================================================================
+io.on('connection', (socket) => {
+    socket.removeAllListeners('svForgeCustomPower');
+
+    socket.on('svForgeCustomPower', ({ p1, p2, customName }) => {
+        const uname = socket.username || 'Player';
+        const prof = getSvProfile(uname);
+        if (!Array.isArray(prof.customPowers)) {
+            prof.customPowers = prof.customPower ? new Array(prof.customPower) : new Array();
+        }
+
+        if (!prof.powerMakerUnlocked && (prof.minigamesPlayed || 0) < 50 && (prof.freeFusionPasses || 0) <= 0) {
+            return socket.emit('svNotice', `🔒 Play 50 Arena Mini-Games first! (${prof.minigamesPlayed || 0}/50)`);
+        }
+        if (!p1 || !p2 || p1 === p2) {
+            return socket.emit('svNotice', '⚠️ Select 2 DIFFERENT powers to fuse!');
+        }
+
+        const def1 = SV_DEFS[p1], def2 = SV_DEFS[p2];
+        if (!def1 || !def2) return socket.emit('svNotice', '⚠️ Invalid power selected!');
+
+        const slotNum = prof.customPowers.length + 1;
+        const tiers = new Array(50000, 250000, 750000, 1500000);
+        const requiredCost = prof.customPowers.length < tiers.length
+            ? tiers.at(prof.customPowers.length)
+            : (tiers.at(-1) + ((prof.customPowers.length - tiers.length + 1) * 1000000));
+        const usedFreePass = (prof.freeFusionPasses || 0) > 0;
+
+        if (!usedFreePass && getCoins(uname) < requiredCost) {
+            return socket.emit('svNotice', `🪙 Fusion #${slotNum} requires ${requiredCost.toLocaleString()} Coins!`);
+        }
+
+        const cleanTitle = (String(customName || '').trim() || `${def1.name.split(' ').at(0)} + ${def2.name.split(' ').at(0)}`).slice(0, 26);
+        const customId = 'custom_' + uname.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + slotNum + '_' + Date.now().toString(36);
+
+        const moves1 = Array.isArray(def1.moves) ? def1.moves : new Array();
+        const moves2 = Array.isArray(def2.moves) ? def2.moves : new Array();
+        const m1 = moves1.at(0) || { label: 'Strike 1', dmg: 50 };
+        const m2 = moves2.at(1) || moves2.at(0) || { label: 'Strike 2', dmg: 55 };
+        const ult1 = moves1.at(3) || m1;
+        const ult2 = moves2.at(3) || m2;
+
+        const tierScale = 1 + ((slotNum - 1) * 0.04);
+        const avgHp = Math.min(600, Math.round((def1.hp + def2.hp) * 0.65 * tierScale));
+        const avgRed = Math.min(0.50, Number((((def1.passiveRed || 0.1) + (def2.passiveRed || 0.1)) * 0.65).toFixed(2)));
+        const d1 = Math.max(55, Math.round((m1.dmg || 45) * 1.15 * tierScale));
+        const d2 = Math.max(60, Math.round((m2.dmg || 50) * 1.15 * tierScale));
+        const ultDmg = Math.min(230, Math.max(120, Math.round(((ult1.dmg || 90) + (ult2.dmg || 90)) * 0.65 * tierScale)));
+        const isTrue = Boolean(ult1.trueDmg || ult2.trueDmg);
+
+        const newDef = {
+            fused: true,
+            icon: `${def1.icon}${def2.icon}`,
+            name: `${cleanTitle} [#${slotNum}]`,
+            hp: avgHp,
+            passiveRed: avgRed,
+            strong: Array.from(new Set(new Array().concat(def1.strong || new Array(), def2.strong || new Array()))),
+            moves: new Array(
+                { label: `${String(m1.label || 'Strike').split(' (').at(0)} (${d1} DMG)`, dmg: d1, trueDmg: Boolean(m1.trueDmg), stunChance: m1.stunChance || 0 },
+                { label: `${String(m2.label || 'Blast').split(' (').at(0)} (${d2} DMG + Heal)`, dmg: d2, heal: 25, trueDmg: Boolean(m2.trueDmg) },
+                { label: `🌌 ${cleanTitle} Domain (Evade +65 HP)`, evade: true, heal: 65 },
+                { label: `💥 ${cleanTitle.toUpperCase()} ULT (${ultDmg}${isTrue ? ' True' : ''} DMG + Stun)`, dmg: ultDmg, trueDmg: isTrue, stun: true, cut: { theme: 'vishwaroopa', emoji: `${def1.icon}${def2.icon}`, title: `${cleanTitle.toUpperCase()}!` } }
+            )
+        };
+
+        if (usedFreePass) prof.freeFusionPasses--;
+        else addCoins(uname, -requiredCost);
+
+        SV_DEFS[customId] = newDef;
+        prof.unlockedPowers.push(customId);
+        prof.customPower = { id: customId, def: newDef };
+        prof.customPowers.push({ id: customId, def: newDef });
+
+        if (typeof syncPlayerTitlesAndBounty === 'function') syncPlayerTitlesAndBounty(uname);
+        saveSvStats();
+
+        socket.emit('svStatsSync', getSvProfile(uname));
+        socket.emit('svNotice', `⚗️👑 FUSION #${slotNum} FORGED: "${cleanTitle}" (${avgHp} HP | ${ultDmg} ULT DMG)!`);
+
+        if (socket.activeServerId) {
+            io.to(socket.activeServerId).emit('message', {
+                username: "Sammu's Bot",
+                text: `👑⚗️ **CUSTOM FUSION #${slotNum} FORGED!** **${uname}** fused **${def1.name}** + **${def2.name}** into **${newDef.icon} ${cleanTitle}**!`,
+                _serverId: socket.activeServerId
+            });
+        }
+    });
+});
 
  return OG_HOSTS;
       

@@ -6373,7 +6373,7 @@ const SV_MEGA_UI_PART_A = `
 `;
    
 // ============================================================================
-// 🚀 SAMMUVERSE MEGA-UPDATE — PART 3B/3 (RELICS, SOCKET SYNC & MIDDLEWARE)
+// 🚀 SAMMUVERSE MEGA-UPDATE — PART 3B/3 (SOCKET-DELIVERED UI + INSTRUCTIONS)
 // ============================================================================
 const SV_MEGA_UI_PART_B = `
     const dojo2 = document.getElementById('svDojoPanel');
@@ -6388,6 +6388,16 @@ const SV_MEGA_UI_PART_B = `
       dojo2.appendChild(rBox);
     }
 
+    // Add Player Guide Banner inside Arena & Dojo so everyone knows how Fusion & Power Maker work
+    const fightP = document.getElementById('svFightPanel');
+    if (fightP && !document.getElementById('svGuideBanner')) {
+      const guide = document.createElement('div');
+      guide.id = 'svGuideBanner';
+      guide.style.cssText = 'background:rgba(56,189,248,0.12);border:1px solid #38bdf8;border-radius:10px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:#e0f2fe;text-align:left;line-height:1.35;';
+      guide.innerHTML = '📖 <b>HOW TO FUSE POWERS (Open 💪 Dojo & Pets):</b><br>• <b>Custom Power Maker:</b> Play <b>50 Arena Mini-Games</b> + gather <b>50,000🪙</b> to fuse any 2 powers!<br>• <b>Preset Fusions:</b> Win <b>5 battles</b> with two base powers to reach <b>[V2]</b> & fuse them!';
+      fightP.insertBefore(guide, fightP.firstChild);
+    }
+
     window.forgeMyCustomPower = function() {
       const p1 = document.getElementById('svFuseSlot1').value;
       const p2 = document.getElementById('svFuseSlot2').value;
@@ -6395,7 +6405,7 @@ const SV_MEGA_UI_PART_B = `
       socket.emit('svForgeCustomPower', { p1, p2, customName });
     };
 
-    socket.on('svStatsSync', (st) => {
+    function applySvMegaProfile(st) {
       if (!st) return;
       if (st.customPower && st.customPower.id) {
         SV_POWERS[st.customPower.id] = {
@@ -6404,8 +6414,8 @@ const SV_MEGA_UI_PART_B = `
           name: st.customPower.def.name,
           skills: st.customPower.def.moves.map(m => m.label)
         };
-        if (typeof renderSvPowers === 'function') renderSvPowers();
       }
+      if (typeof renderSvPowers === 'function') renderSvPowers();
       const played = st.minigamesPlayed || 0;
       const unlocked = st.powerMakerUnlocked || played >= 50;
       const statEl = document.getElementById('svMakerStatus');
@@ -6413,20 +6423,23 @@ const SV_MEGA_UI_PART_B = `
       if (!statEl || !ctrlEl) return;
 
       if (st.customPower) {
-        statEl.innerHTML = '✅ <b>Forged:</b> ' + st.customPower.def.icon + ' ' + st.customPower.def.name;
+        statEl.innerHTML = '✅ <b>Forged:</b> ' + st.customPower.def.icon + ' ' + st.customPower.def.name + ' (Equip in ⚔️ Arena!)';
         ctrlEl.style.display = 'none';
       } else if (unlocked) {
-        statEl.innerHTML = '🔓 <b>Task Complete (50/50)!</b> Pick any 2 owned powers to fuse:';
+        statEl.innerHTML = '🔓 <b>Task Complete (' + played + '/50)!</b> Gather <b>50,000🪙</b> & pick any 2 owned powers to fuse:';
         ctrlEl.style.display = 'block';
         const ownedKeys = ['fire','water','lightning','ice', ...(st.unlockedPowers || [])];
         const opts = ownedKeys.map(k => '<option value="' + k + '">' + k.toUpperCase() + '</option>').join('');
         document.getElementById('svFuseSlot1').innerHTML = opts;
         document.getElementById('svFuseSlot2').innerHTML = opts;
       } else {
-        statEl.innerHTML = '🔒 <b>Task:</b> Play 50 Arena Mini-Games (<b>' + played + '/50</b>) to unlock!';
+        statEl.innerHTML = '🔒 <b>How to Unlock:</b> Play <b>50 Arena Mini-Games</b> (Progress: <b>' + played + '/50</b>) & gather <b>50,000🪙</b>!';
         ctrlEl.style.display = 'none';
       }
-    });
+    }
+
+    socket.on('svStatsSync', applySvMegaProfile);
+    if (typeof myProfile !== 'undefined') applySvMegaProfile(myProfile);
 
     socket.on('svLeaderboardSync', (list) => {
       const el = document.getElementById('svTopList');
@@ -6435,24 +6448,50 @@ const SV_MEGA_UI_PART_B = `
         '<div class="sv-log-item"><b>#' + (i+1) + ' ' + p.name + '</b> — 🏆 ' + p.wins + ' Wins | 🪙 ' + p.coins.toLocaleString() + ' | ⚡ ' + p.powers + ' Powers</div>'
       ).join('') || 'No fighters ranked yet!';
     });
-  }, 1000);
+  }, 600);
 })();
 </script>`;
 
-const SV_MEGA_UI_SCRIPT = SV_MEGA_UI_PART_A + '\n' + SV_MEGA_UI_PART_B;
+// Strip <script> tags so Socket can execute it directly in the browser!
+const SV_MEGA_RAW_JS = (SV_MEGA_UI_PART_A + '\n' + SV_MEGA_UI_PART_B)
+    .replace(/<script>/gi, '')
+    .replace(/<\/script>/gi, '');
+
+io.on('connection', (socket) => {
+    const pushMegaUi = () => socket.emit('svInjectMegaJs', SV_MEGA_RAW_JS);
+    socket.on('joinRoom', () => setTimeout(pushMegaUi, 900));
+    socket.on('svGetStats', pushMegaUi);
+});
+
+// Tiny listener injected into HTML head/body so client executes svInjectMegaJs immediately
+const SV_MEGA_BOOT_HOOK = `<script>
+(function(){
+  const t = setInterval(() => {
+    if (typeof socket === 'undefined') return;
+    clearInterval(t);
+    socket.on('svInjectMegaJs', (code) => {
+      if (window._svMegaLoaded) return;
+      window._svMegaLoaded = true;
+      const s = document.createElement('script');
+      s.textContent = code;
+      document.body.appendChild(s);
+    });
+  }, 300);
+})();
+</script>`;
 
 app.use((req, res, next) => {
     const origSend = res.send;
     res.send = function(body) {
-        if (typeof body === 'string' && body.includes('</body>') && !body.includes('svCustomMakerBox')) {
-            body = body.replace('</body>', SV_MEGA_UI_SCRIPT + '\n</body>');
+        if (typeof body === 'string' && body.includes('</body>') && !body.includes('svInjectMegaJs')) {
+            body = body.replace('</body>', SV_MEGA_BOOT_HOOK + '\n</body>');
         }
         return origSend.call(this, body);
     };
     next();
 });
+ 
 
-    
 
     return OG_HOSTS;
       

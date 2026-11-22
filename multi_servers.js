@@ -6410,7 +6410,7 @@ resolveSvTurn = function(battleId) {
 };
 
 
-// === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE (COINS + POWERS + CUSTOM FUSIONS) ===
+// === ☁️ UPSTASH CLOUD PERMANENT AUTO-SAVE + USERNAME FIX ===
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -6433,13 +6433,14 @@ async function upstashCmd(cmdArray) {
     }
 }
 
-function pushAllToUpstash() {
-    if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
-    upstashCmd(['SET', 'sammu_sv_stats', JSON.stringify(svPlayerStats)]);
-    upstashCmd(['SET', 'sammu_economy', JSON.stringify({
+async function pushAllToUpstash() {
+    if (!UPSTASH_URL || !UPSTASH_TOKEN) return false;
+    const r1 = await upstashCmd(['SET', 'sammu_sv_stats', JSON.stringify(svPlayerStats)]);
+    const r2 = await upstashCmd(['SET', 'sammu_economy', JSON.stringify({
         wallets: Object.fromEntries(playerWallet),
         cards: Object.fromEntries(playerCards)
     })]);
+    return Boolean(r1 && r2);
 }
 
 const _origSaveSvStats = saveSvStats;
@@ -6453,6 +6454,30 @@ saveEconomyDB = function() {
     _origSaveEconomyDB();
     pushAllToUpstash();
 };
+
+// Fix missing socket.username on joinRoom + add /cloudsave test command
+io.on('connection', (socket) => {
+    socket.on('joinRoom', (data) => {
+        if (data && data.username && data.username.trim()) {
+            socket.username = data.username.trim();
+            socket.emit('svStatsSync', getSvProfile(socket.username));
+        }
+    });
+
+    socket.on('chatMessage', async (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        if (typeof raw === 'string' && raw.trim().toLowerCase() === '/cloudsave' && socket.activeServerId) {
+            const ok = await pushAllToUpstash();
+            socket.emit('message', {
+                username: 'SYSTEM',
+                text: ok
+                    ? `☁️✅ **CLOUD SAVED!** (${Object.keys(svPlayerStats).length} Profiles & ${playerWallet.size} Wallets synced to Upstash!)`
+                    : `❌ **Cloud Save Failed!** Check UPSTASH_REDIS_REST_URL & TOKEN in Render Environment.`,
+                _serverId: socket.activeServerId
+            });
+        }
+    });
+});
 
 // Restore All Player Grind, Coins, Powers & Custom Fusions on Boot
 (async function restoreCloudData() {
@@ -6491,11 +6516,8 @@ saveEconomyDB = function() {
         } catch (e) {}
     }
 
-    // Refresh any players who connected while cloud data was loading
     for (const [, s] of io.sockets.sockets) {
-        if (s && s.username) {
-            s.emit('svStatsSync', getSvProfile(s.username));
-        }
+        if (s && s.username) s.emit('svStatsSync', getSvProfile(s.username));
     }
 
     console.log(`☁️ Cloud Restore: ${restoredUsers} Profiles (${totalPowers} Unlocked Powers) & ${restoredWallets} Wallets loaded!`);

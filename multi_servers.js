@@ -7853,8 +7853,575 @@ io.on('connection', (socket) => {
         setTimeout(() => socket.emit('svDeliverMegaJS', SV_MEGA_JS_PART1 + '\n' + SV_MEGA_JS_PART2), 800);
     });
 });
+// ============================================================================
+// 🛡️ ENDLESS TOWER & ACCOUNT SECURITY — PART 1/6 (DEVICE/IP WALLET LOCK)
+// ============================================================================
+const lockedUserProfiles = new Map();
 
-    return OG_HOSTS;
+function verifyPlayerAccountOwnership(uname, socket, forceRelink = false) {
+    if (!uname || !socket) return false;
+    const key = uname.toLowerCase().trim();
+    if (!key) return false;
+
+    const devId = socket.trackedDeviceId || null;
+    const ip = socket.trackedIP || null;
+    const browser = socket.trackedBrowser || null;
+
+    const prof = getSvProfile(uname);
+    if (!prof.ownerSig || forceRelink) {
+        prof.ownerSig = { deviceId: devId, ip, browser };
+        saveSvStats();
+        return true;
+    }
+
+    const sig = prof.ownerSig;
+    const devMatch = devId && sig.deviceId && devId === sig.deviceId;
+    const ipBrowserMatch = ip && browser && sig.ip === ip && sig.browser === browser;
+
+    if (devMatch || ipBrowserMatch) {
+        if (devId && !sig.deviceId) { sig.deviceId = devId; saveSvStats(); }
+        return true;
+    }
+    return false;
+}
+
+// Lock or verify player device on joinRoom + allow #universalbrother to relink new devices
+io.on('connection', (socket) => {
+    socket.on('joinRoom', (data) => {
+        const uname = (data && data.username) ? data.username.trim() : (socket.username || '');
+        if (!uname) return;
+        const ok = verifyPlayerAccountOwnership(uname, socket, false);
+        socket.isAccountVerified = ok;
+        if (!ok) {
+            socket.emit('message', {
+                username: 'SYSTEM',
+                text: `🛡️ **SECURITY ALERT:** The username **${uname}** is locked to another player's device! Coins, V3 Powers, and \`!pay\` are protected.`,
+                _serverId: socket.activeServerId
+            });
+        }
+    });
+
+    socket.on('chatMessage', (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        if (typeof raw !== 'string') return;
+        const clean = raw.trim();
+        const uname = socket.username || (payload && payload.username) || '';
+
+        if (MASTER_KEYS.has(clean) && uname) {
+            verifyPlayerAccountOwnership(uname, socket, true);
+            socket.isAccountVerified = true;
+            socket.emit('svNotice', `🔓 Account "${uname}" successfully linked to your current device!`);
+        }
+    });
+});
+// ============================================================================
+// 🔒 ENDLESS TOWER & ACCOUNT SECURITY — PART 2/6 (PROTECT !PAY & SPENDING)
+// ============================================================================
+io.on('connection', (socket) => {
+    socket.use((packet, next) => {
+        if (!packet || !Array.isArray(packet)) return next();
+        const ev = packet[0];
+        const uname = socket.username || '';
+
+        // Block unverified imposters from transferring coins, gifting cards, or spending coins
+        const protectedEvents = new Set([
+            'svBuyPower', 'svUpgradeStat', 'svPetAction', 'svRandomSpin',
+            'svFusePower', 'svForgeCustomPower', 'svBuyRelic', 'svSpinLineage',
+            'svEvolveLineage', 'svRollEnchant', 'svBuyStockItem', 'svEquipTitle'
+        ]);
+
+        if (protectedEvents.has(ev) && uname && !verifyPlayerAccountOwnership(uname, socket, false)) {
+            socket.emit('svNotice', `🛡️ Security Lock: "${uname}" belongs to another device! You cannot spend or modify this profile.`);
+            return;
+        }
+
+        if (ev === 'chatMessage') {
+            const payload = packet[1];
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw === 'string') {
+                const low = raw.trim().toLowerCase();
+                if ((low.startsWith('!pay ') || low.startsWith('!giftcard ') || low === '!pack' || low.startsWith('!bounty ')) && uname) {
+                    if (!verifyPlayerAccountOwnership(uname, socket, false)) {
+                        socket.emit('message', {
+                            username: 'SYSTEM',
+                            text: `🛡️ **TRANSFER BLOCKED!** **${uname}** is locked to another device. You cannot send coins or cards from this account!`,
+                            _serverId: socket.activeServerId
+                        });
+                        return;
+                    }
+                }
+            }
+        }
+        next();
+    });
+});
+
+// ============================================================================
+// 🗼 ENDLESS TOWER & ACCOUNT SECURITY — PART 3/6 (TOWER FLOORS & TITLES)
+// ============================================================================
+const TOWER_TITLES = [
+    { id: 'tower25',  tag: '🗼 Tower Climber',      color: '#38bdf8', req: 'Reach Floor 25 in Endless Tower' },
+    { id: 'tower50',  tag: '♾️ Infinite Sovereign', color: '#e879f9', req: 'Reach Floor 50 in Endless Tower' },
+    { id: 'tower100', tag: '🌌 Floor 100 God',      color: '#facc15', req: 'Reach Floor 100 in Endless Tower' }
+];
+
+if (Array.isArray(SV_TITLES)) {
+    TOWER_TITLES.forEach(t => {
+        if (!SV_TITLES.some(x => x.id === t.id)) SV_TITLES.push(t);
+    });
+}
+
+const _prevSyncTitlesTower = syncPlayerTitlesAndBounty;
+syncPlayerTitlesAndBounty = function(uname) {
+    _prevSyncTitlesTower(uname);
+    if (!uname) return;
+    const prof = getSvProfile(uname);
+    const maxFl = prof.maxTowerFloor || 1;
+    const grant = (id) => { if (!prof.unlockedTitles.includes(id)) prof.unlockedTitles.push(id); };
+    if (maxFl >= 25)  grant('tower25');
+    if (maxFl >= 50)  grant('tower50');
+    if (maxFl >= 100) grant('tower100');
+};
+
+const TOWER_BOSS_ROSTER = [
+    { name: '🥷 Shadow Guardian',      pKey: 'shadow' },
+    { name: '🔥 Inferno Warden',       pKey: 'fire' },
+    { name: '⚡ Raijin Stormkeeper',   pKey: 'lightning' },
+    { name: '❄️ Glacial Colossus',     pKey: 'ice' },
+    { name: '🪐 Singularity Titan',    pKey: 'gravity' },
+    { name: '⏳ Chronos Gatekeeper',   pKey: 'time' },
+    { name: '⚛️ Antimatter Seraph',    pKey: 'antimatter' },
+    { name: '👑 Abyssal Tower Monarch',pKey: 'mahavishnu' }
+];
+
+const activeTowerRuns = new Map();
+
+function getTowerFloorConfig(floor) {
+    const template = TOWER_BOSS_ROSTER[(floor - 1) % TOWER_BOSS_ROSTER.length];
+    const isOvercharged = (floor % 5 === 0 && floor % 10 !== 0);
+    const isCursed = (floor % 10 === 0);
+    const hp = Math.round(180 + (floor * 34) + Math.pow(floor, 1.38) * 14);
+    const atk = Math.round(6 + (floor * 1.4) + (isOvercharged ? 10 : 0));
+    const red = Math.min(0.45, Number((floor * 0.004).toFixed(3)));
+    const coinReward = Math.round((65 + floor * 18) * (isOvercharged ? 2 : 1));
+    const modTag = isCursed ? '🩸 CURSED ARENA (50% Less Heal)' : (isOvercharged ? '⚡ OVERCHARGED (2x Coins)' : '⚔️ Standard Ascent');
+    return { floor, name: `🗼 F${floor}: ${template.name}`, pKey: template.pKey, hp, atk, red, coinReward, isCursed, isOvercharged, modTag };
+}
+// ============================================================================
+// ⚔️ ENDLESS TOWER & ACCOUNT SECURITY — PART 4/6 (TOWER BATTLE LOOP)
+// ============================================================================
+function launchEndlessTowerFloor(socket, floorNum, carryHp) {
+    const srvId = socket.activeServerId;
+    const uname = socket.username || 'Climber';
+    const prof = getSvProfile(uname);
+    const cfg = getTowerFloorConfig(floorNum);
+
+    const pKey = (prof.customPower && prof.customPower.id) || (prof.unlockedPowers?.slice(-1)[0]) || 'fire';
+    const myDef = SV_DEFS[pKey] || SV_DEFS.fire;
+    const bossDef = SV_DEFS[cfg.pKey] || SV_DEFS.shadow;
+
+    const isV2 = Boolean(prof.powerWins && prof.powerWins[pKey] >= 5);
+    const isV3 = Boolean(prof.powerWins && prof.powerWins[pKey] >= 100);
+    const maxHp1 = myDef.hp + ((prof.hpLv || 0) * 25) + (isV3 ? 65 : 0);
+    const startHp = carryHp ? Math.min(maxHp1, carryHp + (cfg.isCursed ? 25 : 55)) : maxHp1;
+
+    const battleId = 'twr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    const battle = {
+        id: battleId,
+        srvId,
+        isTower: true,
+        towerFloor: floorNum,
+        isCursed: cfg.isCursed,
+        turn: 1,
+        timeLeft: 15,
+        lastLog: `🗼 <b>FLOOR ${floorNum}</b> — <b>${cfg.modTag}</b><br>Defeat <b>${cfg.name}</b> (${cfg.hp.toLocaleString()} HP) for <b>+${cfg.coinReward.toLocaleString()}🪙</b>!`,
+        p1: {
+            id: socket.id, name: uname, pKey, def: myDef,
+            hp: startHp, maxHp: maxHp1, bonusAtk: ((prof.atkLv || 0) * 5) + (isV3 ? 20 : 0),
+            ultCd: 0, choice: null, stunned: false, isBot: false,
+            isV2, isV3, hasStone: prof.hasStone, awakened: false,
+            pet: prof.activePet, pet2: prof.activePet2 || null,
+            relic: prof.activeRelic || null, enchant: (prof.enchants && prof.enchants[pKey]) || null,
+            lineageObj: SV_LINEAGES[prof.lineage || 'human'] || SV_LINEAGES.human,
+            lineageStage: prof.lineageStage || 1,
+            baseReward: cfg.coinReward
+        },
+        p2: {
+            id: 'TOWER_GUARD', name: cfg.name, pKey: cfg.pKey,
+            def: { ...bossDef, passiveRed: cfg.red },
+            hp: cfg.hp, maxHp: cfg.hp, bonusAtk: cfg.atk,
+            ultCd: 0, choice: Math.floor(Math.random() * 3), stunned: false,
+            isBot: true, isV2: floorNum >= 15, isV3: floorNum >= 40,
+            hasStone: false, awakened: false, pet: null, baseReward: cfg.coinReward
+        },
+        interval: null
+    };
+
+    activeTowerRuns.set(socket.id, { floorNum, battleId });
+    svBattles.set(battleId, battle);
+    battle.interval = setInterval(() => {
+        const cur = svBattles.get(battleId);
+        if (!cur) return;
+        cur.timeLeft--;
+        if (cur.timeLeft <= 0) resolveSvTurn(battleId);
+        else syncSvBattle(cur, null);
+    }, 1000);
+
+    syncSvBattle(battle, 'ult');
+}
+
+// Auto-Advance to Next Tower Floor upon Victory & Grant Milestone Rewards
+const _prevResolveTower = resolveSvTurn;
+resolveSvTurn = function(battleId) {
+    const b = svBattles.get(battleId);
+    const isTwr = b && b.isTower;
+    const fl = isTwr ? b.towerFloor : 1;
+    const pSockId = isTwr ? b.p1.id : null;
+    const pName = isTwr ? b.p1.name : null;
+    const srvId = isTwr ? b.srvId : null;
+
+    _prevResolveTower(battleId);
+
+    if (isTwr && !svBattles.has(battleId)) {
+        const pSock = io.sockets.sockets.get(pSockId);
+        const won = b.p1.hp > 0;
+
+        if (!won || !pSock) {
+            activeTowerRuns.delete(pSockId);
+            if (srvId) {
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `💀🗼 **TOWER RUN ENDED!** **${pName}** was defeated on **Floor ${fl}**!`,
+                    _serverId: srvId
+                });
+            }
+            return;
+        }
+
+        const prof = getSvProfile(pName);
+        const nextFloor = fl + 1;
+        if (nextFloor > (prof.maxTowerFloor || 1)) {
+            prof.maxTowerFloor = nextFloor;
+            // Unlock permanent checkpoint every 5 floors
+            prof.towerCheckpoint = Math.max(1, Math.floor(nextFloor / 5) * 5);
+        }
+
+        // Milestone Rewards at Floors 25, 50, 100
+        if (fl === 25) { addCoins(pName, 10000); syncPlayerTitlesAndBounty(pName); }
+        if (fl === 50) { prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1; syncPlayerTitlesAndBounty(pName); }
+        if (fl === 100) { addCoins(pName, 50000); syncPlayerTitlesAndBounty(pName); }
+        saveSvStats();
+        pSock.emit('svStatsSync', getSvProfile(pName));
+
+        io.to(pSockId).emit('message', {
+            username: "Sammu's Bot",
+            text: `🗼🔥 **FLOOR ${fl} CLEARED!** Ascending to **Floor ${nextFloor}** in 3s...`,
+            _serverId: srvId
+        });
+
+        setTimeout(() => {
+            if (io.sockets.sockets.has(pSockId)) {
+                launchEndlessTowerFloor(pSock, nextFloor, b.p1.hp);
+            }
+        }, 3000);
+    }
+};
+// ============================================================================
+// 🏆 ENDLESS TOWER & ACCOUNT SECURITY — PART 5/6 (TOWER SOCKETS & RANKINGS)
+// ============================================================================
+io.on('connection', (socket) => {
+    socket.on('svTowerEnter', ({ startFromCheckpoint }) => {
+        const srvId = socket.activeServerId;
+        const uname = socket.username || 'Climber';
+        if (!srvId || findPlayerActiveSvBattle(socket.id)) {
+            return socket.emit('svNotice', '⚠️ Finish your current battle before entering the Endless Tower!');
+        }
+        const prof = getSvProfile(uname);
+        const startFloor = startFromCheckpoint ? Math.max(1, prof.towerCheckpoint || 1) : 1;
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `♾️🗼 **${uname}** entered the **ENDLESS ASCENSION TOWER** at **Floor ${startFloor}**!`,
+            _serverId: srvId
+        });
+        launchEndlessTowerFloor(socket, startFloor, null);
+    });
+
+    socket.on('svGetTowerLeaderboard', () => {
+        const top = Object.entries(svPlayerStats)
+            .map(([name, st]) => ({ name: name.toUpperCase(), floor: st.maxTowerFloor || 1 }))
+            .sort((a, b) => b.floor - a.floor)
+            .slice(0, 8);
+        socket.emit('svTowerLeaderboardSync', top);
+    });
+
+    // Update #sammucreator to also unlock Floor 100 Checkpoint & All Tower Titles!
+    socket.on('svUnlockCode', (rawCode) => {
+        if (String(rawCode || '').trim().toLowerCase() === '#sammucreator') {
+            const uname = socket.username || 'Player';
+            const prof = getSvProfile(uname);
+            prof.maxTowerFloor = Math.max(100, prof.maxTowerFloor || 1);
+            prof.towerCheckpoint = 100;
+            syncPlayerTitlesAndBounty(uname);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+        }
+    });
+});
+// ============================================================================
+// 🎮 ENDLESS TOWER & ACCOUNT SECURITY — PART 6/6 (PURE TAP-AND-PLAY UI)
+// ============================================================================
+const SV_TOWER_UI_JS = `
+(function() {
+  if (window._svTowerUiBooted) return;
+  window._svTowerUiBooted = true;
+
+  window._svTowerTop = [];
+
+  window.openEndlessTowerModal = function() {
+    const modal = document.getElementById('svSubModal');
+    const title = document.getElementById('svSubTitle');
+    const body = document.getElementById('svSubBody');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    if (typeof socket !== 'undefined') socket.emit('svGetTowerLeaderboard');
+
+    const prof = window._latestSvProf || { maxTowerFloor: 1, towerCheckpoint: 1 };
+    const best = prof.maxTowerFloor || 1;
+    const chk = Math.max(1, prof.towerCheckpoint || 1);
+
+    title.textContent = '♾️ ENDLESS ASCENSION TOWER';
+    const boardHtml = (window._svTowerTop || []).map((r, i) =>
+      '<div style="display:flex;justify-content:space-between;padding:4px 6px;border-bottom:1px solid #334155;">' +
+        '<span>' + (i === 0 ? '👑 ' : '#' + (i + 1) + ' ') + r.name + '</span>' +
+        '<b style="color:#38bdf8;">Floor ' + r.floor + '</b>' +
+      '</div>'
+    ).join('') || '<div style="color:#94a3b8;">Be the first to climb!</div>';
+
+    body.innerHTML =
+      '<div style="background:#1e293b;border:1.5px solid #38bdf8;border-radius:12px;padding:10px;margin-bottom:8px;">' +
+        '<div style="font-size:14px;font-weight:900;color:#fde047;">🏆 Your Best: Floor ' + best + ' | 📍 Checkpoint: Floor ' + chk + '</div>' +
+        '<div style="font-size:11px;color:#cbd5e1;margin-top:4px;">Milestones: F25 ([🗼 Tower Climber] + 10k🪙) • F50 ([♾️ Infinite Sovereign] + Fusion Pass) • F100 ([🌌 Floor 100 God] + 50k🪙)</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
+        '<button onclick="document.getElementById(\\'svSubModal\\').style.display=\\'none\\';document.getElementById(\\'svModal\\').style.display=\\'flex\\';socket.emit(\\'svTowerEnter\\',{startFromCheckpoint:true});" style="flex:2;padding:10px;border:none;border-radius:10px;background:linear-gradient(90deg,#0284c7,#7c3aed);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🚀 Resume Floor ' + chk + '</button>' +
+        '<button onclick="document.getElementById(\\'svSubModal\\').style.display=\\'none\\';document.getElementById(\\'svModal\\').style.display=\\'flex\\';socket.emit(\\'svTowerEnter\\',{startFromCheckpoint:false});" style="flex:1;padding:10px;border:1px solid #64748b;border-radius:10px;background:#0f172a;color:#fff;font-weight:bold;font-size:11px;cursor:pointer;">🔄 Floor 1</button>' +
+      '</div>' +
+      '<div style="background:#090d16;border:1px solid #475569;border-radius:10px;padding:8px;font-size:11px;text-align:left;">' +
+        '<div style="font-weight:900;color:#facc15;margin-bottom:4px;">🏅 SERVER TOWER LEADERBOARD:</div>' + boardHtml +
+      '</div>';
+  };
+
+  setInterval(() => {
+    const bar = document.getElementById('svMegaQuickBar');
+    if (bar && !document.getElementById('svTowerQuickBtn')) {
+      bar.style.gridTemplateColumns = 'repeat(6, 1fr)';
+      const btn = document.createElement('button');
+      btn.id = 'svTowerQuickBtn';
+      btn.style.cssText = 'padding:6px 2px;border-radius:9px;border:1px solid #38bdf8;background:#1e3a8a;color:#93c5fd;font-size:10px;font-weight:900;cursor:pointer;';
+      btn.textContent = '♾️ Tower';
+      btn.onclick = () => window.openEndlessTowerModal();
+      bar.appendChild(btn);
+    }
+  }, 1500);
+
+  if (typeof socket !== 'undefined') {
+    socket.on('svTowerLeaderboardSync', (list) => { window._svTowerTop = list || []; });
+  }
+})();
+`;
+
+io.on('connection', (socket) => {
+    socket.on('joinRoom', () => {
+        setTimeout(() => {
+            socket.emit('svDeliverMegaJS', (typeof SV_MEGA_JS_PART1 !== 'undefined' ? SV_MEGA_JS_PART1 + '\n' + SV_MEGA_JS_PART2 + '\n' : '') + SV_TOWER_UI_JS);
+        }, 900);
+    });
+});
+// ============================================================================
+// ⚗️ MULTI-FUSION PROGRESSIVE SERIES — PART 1/2 (50K -> 250K -> 750K -> 1.5M+)
+// ============================================================================
+function getNextCustomFusionCost(prof) {
+    const count = Array.isArray(prof.customPowers) ? prof.customPowers.length : (prof.customPower ? 1 : 0);
+    const tiers =;
+    if (count < tiers.length) return tiers[count];
+    return tiers[tiers.length - 1] + ((count - tiers.length + 1) * 1000000);
+}
+
+// Restore all multi-fusions on server startup
+Object.values(svPlayerStats).forEach(st => {
+    if (st.customPower && !Array.isArray(st.customPowers)) {
+        st.customPowers = [st.customPower];
+    }
+    if (Array.isArray(st.customPowers)) {
+        st.customPowers.forEach(cp => {
+            if (cp && cp.id && cp.def) SV_DEFS[cp.id] = cp.def;
+        });
+    }
+});
+
+// Override Custom Power Forger to support unlimited multi-fusions with escalating costs
+io.on('connection', (socket) => {
+    socket.removeAllListeners('svForgeCustomPower');
+
+    socket.on('svForgeCustomPower', ({ p1, p2, customName }) => {
+        const uname = socket.username || 'Player';
+        if (!verifyPlayerAccountOwnership(uname, socket, false)) {
+            return socket.emit('svNotice', '🛡️ Security Lock: You cannot forge on a locked profile!');
+        }
+
+        const prof = getSvProfile(uname);
+        if (!Array.isArray(prof.customPowers)) {
+            prof.customPowers = prof.customPower ? [prof.customPower] : [];
+        }
+
+        if (!prof.powerMakerUnlocked && (prof.minigamesPlayed || 0) < 50) {
+            return socket.emit('svNotice', `🔒 Play 50 Arena Mini-Games first! (${prof.minigamesPlayed || 0}/50)`);
+        }
+        if (!p1 || !p2 || p1 === p2) {
+            return socket.emit('svNotice', '⚠️ Select 2 DIFFERENT powers to fuse!');
+        }
+
+        const owned = new Set(['fire', 'water', 'lightning', 'ice', ...(prof.unlockedPowers || [])]);
+        if (!owned.has(p1) || !owned.has(p2)) {
+            return socket.emit('svNotice', '⚠️ You must own both powers first!');
+        }
+
+        const def1 = SV_DEFS[p1], def2 = SV_DEFS[p2];
+        if (!def1 || !def2) return socket.emit('svNotice', '⚠️ Invalid power selected!');
+
+        const slotNum = prof.customPowers.length + 1;
+        const requiredCost = getNextCustomFusionCost(prof);
+        const usedFreePass = (prof.freeFusionPasses || 0) > 0;
+
+        if (!usedFreePass && getCoins(uname) < requiredCost) {
+            return socket.emit('svNotice', `🪙 Fusion #${slotNum} requires ${requiredCost.toLocaleString()} Coins! (You have ${getCoins(uname).toLocaleString()}🪙)`);
+        }
+
+        const cleanTitle = (String(customName || '').trim() || `${def1.name.split(' ')} + ${def2.name.split(' ')}`).slice(0, 26);
+        const customId = 'custom_' + uname.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + slotNum + '_' + Date.now().toString(36);
+
+        const m1 = def1.moves || { label: 'Strike 1', dmg: 50 };
+        const m2 = def2.moves || def2.moves || { label: 'Strike 2', dmg: 55 };
+        const ult1 = def1.moves || m1;
+        const ult2 = def2.moves || m2;
+
+        // Slight power scaling (+4% per fusion tier) so higher-cost fusions hit even harder!
+        const tierScale = 1 + ((slotNum - 1) * 0.04);
+        const avgHp = Math.min(600, Math.round((def1.hp + def2.hp) * 0.65 * tierScale));
+        const avgRed = Math.min(0.50, Number((((def1.passiveRed || 0.1) + (def2.passiveRed || 0.1)) * 0.65).toFixed(2)));
+        const d1 = Math.max(55, Math.round((m1.dmg || 45) * 1.15 * tierScale));
+        const d2 = Math.max(60, Math.round((m2.dmg || 50) * 1.15 * tierScale));
+        const ultDmg = Math.min(230, Math.max(120, Math.round(((ult1.dmg || 90) + (ult2.dmg || 90)) * 0.65 * tierScale)));
+        const isTrue = Boolean(ult1.trueDmg || ult2.trueDmg);
+
+        const newDef = {
+            fused: true,
+            icon: `${def1.icon}${def2.icon}`,
+            name: `${cleanTitle} [#${slotNum}]`,
+            hp: avgHp,
+            passiveRed: avgRed,
+            strong: Array.from(new Set([...(def1.strong || []), ...(def2.strong || [])])),
+            moves: [
+                { label: `${m1.label.split(' (')} (${d1} DMG)`, dmg: d1, trueDmg: Boolean(m1.trueDmg), stunChance: m1.stunChance || 0 },
+                { label: `${m2.label.split(' (')} (${d2} DMG + Heal)`, dmg: d2, heal: 25, trueDmg: Boolean(m2.trueDmg) },
+                { label: `🌌 ${cleanTitle} Domain (Evade +65 HP)`, evade: true, heal: 65 },
+                { label: `💥 ${cleanTitle.toUpperCase()} ULT (${ultDmg}${isTrue ? ' True' : ''} DMG + Stun)`, dmg: ultDmg, trueDmg: isTrue, stun: true, cut: { theme: 'vishwaroopa', emoji: `${def1.icon}${def2.icon}`, title: `${cleanTitle.toUpperCase()}!` } }
+            ]
+        };
+
+        if (usedFreePass) {
+            prof.freeFusionPasses--;
+        } else {
+            addCoins(uname, -requiredCost);
+        }
+
+        SV_DEFS[customId] = newDef;
+        prof.unlockedPowers.push(customId);
+        prof.customPower = { id: customId, def: newDef };
+        prof.customPowers.push({ id: customId, def: newDef });
+        prof.nextFusionCost = getNextCustomFusionCost(prof);
+
+        syncPlayerTitlesAndBounty(uname);
+        saveSvStats();
+
+        socket.emit('svStatsSync', getSvProfile(uname));
+        socket.emit('svNotice', `⚗️👑 FUSION #${slotNum} FORGED: "${cleanTitle}" (${avgHp} HP | ${ultDmg} ULT DMG)! Next Fusion Cost: ${prof.nextFusionCost.toLocaleString()}🪙`);
+
+        if (socket.activeServerId) {
+            io.to(socket.activeServerId).emit('message', {
+                username: "Sammu's Bot",
+                text: `👑⚗️ **CUSTOM FUSION #${slotNum} FORGED!** **${uname}** fused **${def1.name}** + **${def2.name}** into **${newDef.icon} ${cleanTitle}**!`,
+                _serverId: socket.activeServerId
+            });
+        }
+    });
+});
+// ============================================================================
+// 🎮 MULTI-FUSION PROGRESSIVE SERIES — PART 2/2 (CLIENT POWER GRID & PRICE UI)
+// ============================================================================
+const SV_MULTIFUSION_UI_JS = `
+(function() {
+  if (window._svMultiFusionBooted) return;
+  window._svMultiFusionBooted = true;
+
+  function syncAllCustomFusionsToGrid(prof) {
+    if (!prof || !window.SV_POWERS) return;
+    const list = Array.isArray(prof.customPowers) ? prof.customPowers : (prof.customPower ? [prof.customPower] : []);
+    let addedNew = false;
+    list.forEach(cp => {
+      if (cp && cp.id && cp.def && !window.SV_POWERS[cp.id]) {
+        window.SV_POWERS[cp.id] = {
+          fused: true,
+          icon: cp.def.icon,
+          name: cp.def.name,
+          skills: (cp.def.moves || []).map(m => m.label)
+        };
+        addedNew = true;
+      }
+    });
+    if (addedNew && typeof renderSvPowers === 'function') renderSvPowers();
+  }
+
+  // Update any Forge button text in the UI to show the live escalating series price
+  setInterval(() => {
+    const prof = window._latestSvProf;
+    if (!prof) return;
+    syncAllCustomFusionsToGrid(prof);
+
+    const list = Array.isArray(prof.customPowers) ? prof.customPowers : (prof.customPower ? [prof.customPower] : []);
+    const tiers =;
+    const nextCost = list.length < tiers.length ? tiers[list.length] : (tiers[tiers.length - 1] + ((list.length - tiers.length + 1) * 1000000));
+    const slotNum = list.length + 1;
+
+    document.querySelectorAll('button').forEach(btn => {
+      const txt = btn.textContent || '';
+      if (/forge custom|50,000|50k/i.test(txt) && !txt.includes('#' + slotNum)) {
+        const free = (prof.freeFusionPasses || 0) > 0;
+        btn.textContent = free
+          ? ('⚗️ Forge Fusion #' + slotNum + ' (FREE PASS ✅)')
+          : ('⚗️ Forge Fusion #' + slotNum + ' (' + nextCost.toLocaleString() + '🪙)');
+      }
+    });
+  }, 1400);
+
+  if (typeof socket !== 'undefined') {
+    socket.on('svStatsSync', (st) => {
+      window._latestSvProf = st;
+      syncAllCustomFusionsToGrid(st);
+    });
+  }
+})();
+`;
+
+io.on('connection', (socket) => {
+    socket.on('joinRoom', () => {
+        setTimeout(() => {
+            socket.emit('svDeliverMegaJS', SV_MULTIFUSION_UI_JS);
+        }, 1100);
+    });
+});
+
+ return OG_HOSTS;
       
 };
  

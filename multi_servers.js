@@ -7193,6 +7193,18 @@ advanceWorldRaidTurn = function(srvId) {
     _origAdvanceRaid(srvId);
     broadcastWorldRaidBar(srvId);
 };
+// === ⚡ INSTANT HUD UPDATE ON EVERY RAID TAP ===
+io.on('connection', (socket) => {
+    socket.on('chatMessage', (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        const srvId = socket.activeServerId;
+        if (!srvId || typeof raw !== 'string') return;
+        const low = raw.trim().toLowerCase();
+        if (['!worldraid', '!attack', '!strike', '!ult', '!heal'].includes(low)) {
+            setTimeout(() => broadcastWorldRaidBar(srvId), 60);
+        }
+    });
+});
 
     return OG_HOSTS;
       

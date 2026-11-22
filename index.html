@@ -2778,20 +2778,10 @@
 <script>
 (function() {
   const initSammuMegaHTML = setInterval(() => {
-    if (typeof socket === 'undefined' || typeof SV_POWERS === 'undefined' || !document.getElementById('svDojoPanel')) return;
+   if (typeof socket === 'undefined' || !document.getElementById('svDojoPanel')) return; 
     clearInterval(initSammuMegaHTML);
 
-    // 1. Register New Secret Mythics & Preset V2 Fusion Powers
-    Object.assign(SV_POWERS, {
-      zoroking:    { secret: true, icon: '⚔️', name: 'Zoro (King of Hell)',      skills: ['Enma Purgatory (52 DMG)', 'Three-Sword Dragon (72 DMG)', 'Conqueror Haki (Evade +45 HP)', '👹 Dragon Damnation ULT (132 DMG)'] },
-      antimpoke:   { secret: true, icon: '⚡', name: 'Antim (Arceus & Rayquaza)', skills: ['Dragon Ascent (50 DMG)', 'Judgment Beam (70 True DMG)', 'Multitype Plate (Block 85%)', '🐉 Mega Rayquaza ULT (130 DMG)'] },
-      mahadev:     { secret: true, icon: '🔱', name: 'Mahadev (Tandava Destroyer)', skills: ['Trishul Pierce (56 DMG)', 'Damru Cosmic Beat (74 DMG + Stun)', 'Kailash Meditation (+65 HP)', '🔥 Third Eye Tandava ULT (140 True DMG)'] },
-      plasma:      { fused: true, icon: '⚛️🔥', name: 'Plasma Emperor',    skills: ['Plasma Lance (48 DMG)', 'Supernova Arc (64 DMG)', 'Ion Barrier (Block 80%)', '☀️ STAR COLLAPSE ULT (108 DMG)'] },
-      leviathan:   { fused: true, icon: '🐉🌊', name: 'Steam Leviathan',   skills: ['Scalding Geyser (46 DMG)', 'Boil Tsunami (62 DMG + 18 HP)', 'Mist Mirage (Evade +28 HP)', '🐉 OCEAN BOIL ULT (105 DMG)'] },
-      chronovoid:  { fused: true, icon: '⏳🌌', name: 'Chrono Void God',   skills: ['Reality Tear (50 DMG)', 'Paradox Loop (58 DMG + Stun)', 'Time Rewind (Evade +50 HP)', '🌌 BIG CRUNCH ULT (112 True DMG)'] },
-      eclipsenika: { fused: true, icon: '🌑☀️', name: 'Eclipse Sun God',   skills: ['Dawn Eclipse Fist (52 DMG)', 'Shadow Liberation (68 DMG)', 'Drum Pulse (Block 70% + 35 HP)', '🌑☀️ TOTAL ECLIPSE ULT (116 DMG + Stun)'] }
-    });
-
+    
     // 2. Add "🏆 Top 10" Leaderboard Tab
     const tabs = document.querySelector('#svLobbyView .sv-tabs');
     if (tabs && !document.getElementById('svTabTop')) {

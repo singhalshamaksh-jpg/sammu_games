@@ -6318,7 +6318,7 @@ module.exports = function initMultiServers(app, io) {
                 launchDungeonWaveV3(socket, 0, null);
             }
         });
-    });
+    
 
 
     (async function restoreCloudV3() {

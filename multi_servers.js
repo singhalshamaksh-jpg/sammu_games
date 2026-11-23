@@ -8151,6 +8151,120 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // ============================================================================
+    // 🏆 GLOBAL SAMMUVERSE LEADERBOARD (!ranks / !leaderboard + 🏆 RANKS BUTTON)
+    // ============================================================================
+    function buildGlobalLeaderboardList() {
+        return Object.entries(svPlayerStats)
+            .map(([name, st]) => ({
+                name: name.toUpperCase(),
+                wins: st.wins || 0,
+                bounty: st.bounty || 10000,
+                floor: st.maxTowerFloor || 1,
+                coins: getCoins(name)
+            }))
+            .sort((a, b) => b.wins - a.wins || b.bounty - a.bounty || b.coins - a.coins)
+            .slice(0, 10);
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('svGetGlobalLeaderboard', () => {
+            socket.emit('svGlobalLeaderboardSync', buildGlobalLeaderboardList());
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const low = raw.trim().toLowerCase();
+
+            if (low === '!ranks' || low === '!leaderboard' || low === '!lb') {
+                const top = buildGlobalLeaderboardList().slice(0, 5);
+                const msg = top.length
+                    ? top.map((p, i) => `${i === 0 ? '👑' : `#${i + 1}`} **${p.name}** — ${p.wins}W | 🗼F${p.floor} | ${p.coins.toLocaleString()}🪙`).join('\n')
+                    : 'No ranked fighters yet! Win a battle in SammuVerse!';
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🏆 **SAMMUVERSE TOP FIGHTERS:**\n${msg}`,
+                    _serverId: srvId
+                });
+            }
+        });
+    });
+
+    const GLOBAL_LB_CLIENT_SCRIPT = `
+    <script>
+    (function() {
+      const waitLbBoot = setInterval(() => {
+        if (typeof socket === 'undefined' || window._svGlobalLbHooked) return;
+        window._svGlobalLbHooked = true;
+        clearInterval(waitLbBoot);
+
+        window._svGlobalBoard = [];
+        socket.on('svGlobalLeaderboardSync', (list) => {
+          window._svGlobalBoard = Array.isArray(list) ? list : [];
+          renderGlobalLbBody();
+        });
+
+        function renderGlobalLbBody() {
+          const body = document.getElementById('svGlobalLbListBox');
+          if (!body) return;
+          if (!window._svGlobalBoard.length) {
+            body.innerHTML = '<div style="color:#94a3b8;padding:12px;">No ranked battles yet! Fight in the Arena to claim #1! ⚔️</div>';
+            return;
+          }
+          body.innerHTML = window._svGlobalBoard.map((p, i) => {
+            const medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : ('#' + (i + 1))));
+            const bFmt = p.bounty >= 1000000 ? ((p.bounty / 1000000).toFixed(2) + 'M') : (Math.round(p.bounty / 1000) + 'K');
+            return '<div style="display:flex;justify-content:space-between;align-items:center;background:#1e293b;border:1px solid ' + (i === 0 ? '#facc15' : '#334155') + ';border-radius:10px;padding:7px 9px;margin-bottom:5px;font-size:11px;">' +
+              '<div style="text-align:left;"><b style="color:' + (i === 0 ? '#fde047' : '#fff') + ';">' + medal + ' ' + p.name + '</b><br><span style="color:#94a3b8;">🏴‍☠️ ' + bFmt + ' Bounty • 🗼 Floor ' + p.floor + '</span></div>' +
+              '<div style="text-align:right;"><b style="color:#4ade80;">' + p.wins + ' Wins</b><br><span style="color:#fde047;">' + p.coins.toLocaleString() + '🪙</span></div>' +
+            '</div>';
+          }).join('');
+        }
+
+        window.openGlobalLeaderboardModal = function() {
+          const modal = document.getElementById('svSubModal');
+          const title = document.getElementById('svSubTitle');
+          const body = document.getElementById('svSubBody');
+          if (!modal) return;
+          modal.style.display = 'flex';
+          title.textContent = '🏆 GLOBAL SAMMUVERSE LEADERBOARD';
+          body.innerHTML = '<div id="svGlobalLbListBox"><div style="color:#38bdf8;padding:12px;">Loading Top 10 Fighters... ⏳</div></div>';
+          renderGlobalLbBody();
+          socket.emit('svGetGlobalLeaderboard');
+        };
+
+        // Add "🏆 Ranks" button inside the SammuVerse Arena quick-bar
+        setInterval(() => {
+          const fightPanel = document.getElementById('svFightPanel');
+          if (!fightPanel || document.getElementById('svGlobalRanksBtn')) return;
+          const quickGrid = fightPanel.firstElementChild;
+          if (quickGrid && quickGrid.tagName === 'DIV') {
+            quickGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            const rBtn = document.createElement('button');
+            rBtn.id = 'svGlobalRanksBtn';
+            rBtn.type = 'button';
+            rBtn.style.cssText = 'padding:6px 1px;border-radius:9px;border:1.5px solid #facc15;background:#713f12;color:#fef08a;font-size:10px;font-weight:900;cursor:pointer;';
+            rBtn.textContent = '🏆 Ranks';
+            rBtn.onclick = () => window.openGlobalLeaderboardModal();
+            quickGrid.appendChild(rBtn);
+          }
+        }, 1200);
+      }, 600);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svGlobalLbHooked')) {
+                body = body.replace('</body>', GLOBAL_LB_CLIENT_SCRIPT + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
     return OG_HOSTS;
 };

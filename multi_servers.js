@@ -7435,6 +7435,60 @@ module.exports = function initMultiServers(app, io) {
             socket.emit('svDeliverCleanV3', { html: fixedHtml, js: SV_CLIENT_ALL_JS });
         });
     });
+    // === 🔥 GUARANTEED SAMMUVERSE INJECTOR (WORKS WITH sendFile & static) ===
+    const SV_WORKING_HTML = SV_FULL_BUNDLE.replace(
+        '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..."',
+        '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..." style="flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;">'
+    );
+
+    const SV_DIRECT_BOOT = `
+    ${SV_WORKING_HTML}
+    <button id="svDirectFab" onclick="if(window.openSammuVerseModal)window.openSammuVerseModal();else document.getElementById('svModal').style.display='flex';"
+      style="position:fixed;bottom:16px;right:16px;z-index:999990;background:linear-gradient(90deg,#9333ea,#ec4899);color:#fff;border:2px solid #facc15;border-radius:999px;padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(236,72,153,0.6);">
+      ⚔️ SammuVerse
+    </button>
+    <script>
+    (function() {
+      const waitSvSock = setInterval(() => {
+        if (typeof socket === 'undefined') return;
+        clearInterval(waitSvSock);
+        try {
+          ${SV_CLIENT_ALL_JS}
+        } catch (err) {
+          console.error('SV Init Error:', err);
+        }
+        // Also hook any existing SammuVerse button on the page
+        document.querySelectorAll('button, div, a').forEach(el => {
+          if (el.id !== 'svDirectFab' && !el.closest('#svModal') && el.children.length <= 2 && /sammuverse/i.test(el.textContent || '')) {
+            el.style.cursor = 'pointer';
+            el.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (window.openSammuVerseModal) window.openSammuVerseModal();
+              else document.getElementById('svModal').style.display = 'flex';
+            };
+          }
+        });
+      }, 300);
+    })();
+    </script>`;
+
+    // Intercept res.send AND res.end (works for res.sendFile / express.static too!)
+    app.use((req, res, next) => {
+        const origEnd = res.end;
+        res.end = function(chunk, encoding, cb) {
+            if (chunk && typeof chunk === 'string' && chunk.includes('</body>') && !chunk.includes('svDirectFab')) {
+                chunk = chunk.replace('</body>', SV_DIRECT_BOOT + '\n</body>');
+            } else if (Buffer.isBuffer(chunk)) {
+                const str = chunk.toString('utf8');
+                if (str.includes('</body>') && !str.includes('svDirectFab')) {
+                    chunk = Buffer.from(str.replace('</body>', SV_DIRECT_BOOT + '\n</body>'), 'utf8');
+                }
+            }
+            return origEnd.call(this, chunk, encoding, cb);
+        };
+        next();
+    });
 
      return OG_HOSTS;
       

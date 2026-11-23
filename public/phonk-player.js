@@ -1,5 +1,4 @@
 (function () {
-  let realPhonkAudio = null;
   let vizTimer = null;
 
   const MP3_TRACKS = {
@@ -24,13 +23,25 @@
     setTimeout(() => bars.forEach(b => { b.style.height = '15%'; }), 140);
   }
 
+  function getPersistentAudio() {
+    if (!window._sharedPhonkPlayer) {
+      const a = document.createElement('audio');
+      a.id = 'sharedPhonkAudioEl';
+      a.loop = true;
+      a.preload = 'auto';
+      a.setAttribute('playsinline', '');
+      document.body.appendChild(a);
+      window._sharedPhonkPlayer = a;
+    }
+    return window._sharedPhonkPlayer;
+  }
+
   function installMp3Override() {
     if (window._mp3OverrideInstalled) return;
     window._mp3OverrideInstalled = true;
 
     const origStopPhonkLoop = window.stopPhonkLoop;
 
-    // Continuously replace "Tokyo Drift" button text with "👾 Bing Bing Boo"
     setInterval(() => {
       const tokyoBtn = document.getElementById('loopTokyo');
       if (tokyoBtn && tokyoBtn.textContent.includes('Tokyo')) {
@@ -40,12 +51,11 @@
 
     function startTrack(style, djName) {
       if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
-      if (realPhonkAudio) {
-        realPhonkAudio.pause();
-        realPhonkAudio.currentTime = 0;
-      }
 
-      if (typeof origStopPhonkLoop === 'function') origStopPhonkLoop();
+      // Stop any old synth timer without touching our persistent <audio>
+      if (typeof origStopPhonkLoop === 'function') {
+        try { origStopPhonkLoop(); } catch (e) {}
+      }
       document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
 
       const chosen = MP3_TRACKS[style];
@@ -61,12 +71,15 @@
       const miniLbl = document.getElementById('miniBarTrack');
       if (miniLbl) miniLbl.textContent = '🎧 ' + chosen.label;
 
-      realPhonkAudio = new Audio(chosen.url);
-      realPhonkAudio.loop = true;
-      realPhonkAudio.volume = 0.85;
-      realPhonkAudio.play().catch((err) => {
+      const player = getPersistentAudio();
+      player.pause();
+      player.src = chosen.url;
+      player.currentTime = 0;
+      player.loop = true;
+      player.volume = 0.85;
+      player.play().catch((err) => {
         console.error('MP3 error:', err);
-        if (np) np.textContent = '⚠️ Could not play ' + chosen.url;
+        if (np) np.textContent = '⚠️ Tap screen once then retry: ' + chosen.url;
       });
 
       vizTimer = setInterval(bounceBars, 220);
@@ -74,12 +87,18 @@
 
     window.stopPhonkLoop = function (fromRemote) {
       if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
-      if (realPhonkAudio) {
-        realPhonkAudio.pause();
-        realPhonkAudio.currentTime = 0;
+      const player = window._sharedPhonkPlayer;
+      if (player) {
+        player.pause();
+        player.currentTime = 0;
       }
       window._activePhonkLabel = null;
-      if (typeof origStopPhonkLoop === 'function') origStopPhonkLoop();
+      document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
+      const bar = document.getElementById('phonkMiniBar');
+      if (bar) bar.style.display = 'none';
+      if (typeof origStopPhonkLoop === 'function') {
+        try { origStopPhonkLoop(); } catch (e) {}
+      }
       if (!fromRemote && typeof socket !== 'undefined') {
         socket.emit('phonkTrackSync', { action: 'stop' });
       }

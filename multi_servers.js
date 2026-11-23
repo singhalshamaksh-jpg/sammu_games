@@ -6192,6 +6192,134 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+        socket.on('chatMessage', async (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw !== 'string' || !socket.activeServerId) return;
+            const clean = raw.trim();
+            const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
+
+            if (clean.toLowerCase() === '/cloudsave') {
+                const r1 = await upstashCmd(['SET', 'sammu_sv_stats', JSON.stringify(svPlayerStats)]);
+                const r2 = await upstashCmd(['SET', 'sammu_economy', JSON.stringify({
+                    wallets: Object.fromEntries(playerWallet),
+                    cards: Object.fromEntries(playerCards)
+                })]);
+                socket.emit('message', {
+                    username: 'SYSTEM',
+                    text: (r1 && r2)
+                        ? `☁️✅ **CLOUD SAVED!** (${Object.keys(svPlayerStats).length} Profiles & ${playerWallet.size} Wallets synced to Upstash!)`
+                        : `❌ **Cloud Save Failed!** Check UPSTASH_REDIS_REST_URL & TOKEN in Render Environment.`,
+                    _serverId: socket.activeServerId
+                });
+                return;
+            }
+
+                    });
+    });
+    // ============================================================================
+    // 🏆 GLOBAL LEADERBOARD & 🏰 5-WAVE ABYSSAL DUNGEON (!dungeon)
+    // ============================================================================
+    const DUNGEON_WAVES = [
+        { num: 1, name: '💀 Wave 1: Shadow Assassin',     hp: 260,  atk: 12, pKey: 'shadow',     red: 0.05 },
+        { num: 2, name: '🔥 Wave 2: Inferno Chimera',     hp: 380,  atk: 18, pKey: 'fire',       red: 0.10 },
+        { num: 3, name: '⚡ Wave 3: Thunder Raijin Lord', hp: 520,  atk: 24, pKey: 'lightning',  red: 0.15 },
+        { num: 4, name: '🌑 Wave 4: Void Eclipse Titan',  hp: 700,  atk: 30, pKey: 'blackhole',  red: 0.22 },
+        { num: 5, name: '👹👑 BOSS: ABYSSAL OVERLORD',    hp: 1100, atk: 38, pKey: 'antimatter', red: 0.30 }
+    ];
+
+    function launchDungeonWaveV3(socket, waveIdx, carryHp) {
+        const srvId = socket.activeServerId;
+        const uname = socket.username || 'Hero';
+        const prof = getSvProfile(uname);
+        const w = DUNGEON_WAVES.at(waveIdx);
+        const pKey = (prof.customPowers?.at(-1)?.id) || (prof.unlockedPowers?.at(-1)) || 'fire';
+
+        const p1 = buildFighterObj(socket.id, uname, pKey);
+        p1.hp = carryHp ? Math.min(p1.maxHp, carryHp + 60) : p1.maxHp;
+        p1.baseReward = 20000;
+
+        const p2 = buildFighterObj('DNG_BOSS', w.name, w.pKey, w.hp, w.atk, true, 'DNG_BOSS');
+        p2.def = { ...p2.def, passiveRed: w.red };
+        p2.isV2 = waveIdx >= 3;
+
+        const battleId = 'dng_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        const battle = {
+            id: battleId, srvId, isDungeon: true, dungeonWave: waveIdx,
+            turn: 1, timeLeft: 15,
+            lastLog: `🏰 <b>${w.name}</b> (Wave ${w.num}/5) appeared! Beat all 5 waves for <b>20,000🪙 + Free Fusion Pass</b>!`,
+            p1, p2, interval: null
+        };
+        svBattles.set(battleId, battle);
+        battle.interval = setInterval(() => {
+            const cur = svBattles.get(battleId);
+            if (!cur) return;
+            cur.timeLeft--;
+            if (cur.timeLeft <= 0) resolveSvTurn(battleId);
+            else syncSvBattle(cur, null);
+        }, 1000);
+        syncSvBattle(battle, 'ult');
+    }
+
+    // Hook Dungeon Wave Progression into finishSvBattle
+    const _origFinishSvBattle = finishSvBattle;
+    finishSvBattle = function(battleId, b) {
+        if (!b || !b.isDungeon) return _origFinishSvBattle(battleId, b);
+
+        clearInterval(b.interval);
+        svBattles.delete(battleId);
+        const won = b.p1.hp > b.p2.hp;
+        const pSock = io.sockets.sockets.get(b.p1.id);
+        io.to(b.p1.id).emit('svBattleEnd', { won, _serverId: b.srvId });
+
+        if (!won || !pSock) {
+            io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `💀🏰 **DUNGEON DEFEAT!** **${b.p1.name}** fell on **${DUNGEON_WAVES.at(b.dungeonWave).name}**!`, _serverId: b.srvId });
+            return;
+        }
+        if (b.dungeonWave + 1 < DUNGEON_WAVES.length) {
+            const nextW = DUNGEON_WAVES.at(b.dungeonWave + 1);
+            io.to(b.p1.id).emit('message', { username: "Sammu's Bot", text: `⚔️🔥 **WAVE ${b.dungeonWave + 1}/5 CLEARED!** (+60 HP Heal) **${nextW.name}** in 3s...`, _serverId: b.srvId });
+            setTimeout(() => { if (io.sockets.sockets.has(b.p1.id)) launchDungeonWaveV3(pSock, b.dungeonWave + 1, b.p1.hp); }, 3000);
+        } else {
+            const prof = getSvProfile(b.p1.name);
+            prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
+            const newBal = addCoins(b.p1.name, 20000);
+            syncPlayerTitlesAndBounty(b.p1.name);
+            saveSvStats();
+            pSock.emit('svStatsSync', getSvProfile(b.p1.name));
+            pSock.emit('svNotice', '🏆👹 DUNGEON CONQUERED! +20,000🪙 & 1x FREE CUSTOM FUSION PASS!');
+            io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `🎊👑 **DUNGEON CONQUERED!!** **${b.p1.name}** slayed the **👹 ABYSSAL OVERLORD** and won **+20,000🪙** (Total: **${newBal.toLocaleString()}🪙**) + **1x FREE FUSION PASS**! ⚗️`, _serverId: b.srvId });
+        }
+    };
+
+    io.on('connection', (socket) => {
+        socket.on('svGetLeaderboard', () => {
+            const board = Object.entries(svPlayerStats)
+                .map(([name, st]) => ({
+                    name: name.toUpperCase(),
+                    wins: st.wins || 0,
+                    coins: getCoins(name),
+                    powers: (st.unlockedPowers || []).length + 4,
+                    bounty: st.bounty || 10000
+                }))
+                .sort((a, b) => b.wins - a.wins || b.coins - a.coins)
+                .slice(0, 10);
+            socket.emit('svLeaderboardSync', board);
+        });
+
+        socket.on('svStartDungeon', () => {
+            if (!socket.activeServerId || findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '⚠️ Finish your current battle first!');
+            launchDungeonWaveV3(socket, 0, null);
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw === 'string' && raw.trim().toLowerCase() === '!dungeon' && socket.activeServerId) {
+                if (findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '⚠️ Finish your current battle first!');
+                launchDungeonWaveV3(socket, 0, null);
+            }
+        });
+    });
+
 
     (async function restoreCloudV3() {
         if (!UPSTASH_URL || !UPSTASH_TOKEN) return;

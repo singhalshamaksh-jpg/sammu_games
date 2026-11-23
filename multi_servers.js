@@ -7490,7 +7490,7 @@ module.exports = function initMultiServers(app, io) {
         next();
     });
          });
-});
+
      return OG_HOSTS;
       
 };

@@ -6289,7 +6289,7 @@ module.exports = function initMultiServers(app, io) {
             </div>
 
             <div style="display:flex;gap:5px;margin-bottom:6px;">
-              <input id="svSecretCodeInput" placeholder="🔑 Secret / #train1m / #sammucreator..." style="flex:1;padding:6px 8px;border-radius:9px;border:1px solid #facc15;background:#090d16;color:#fff;font-size:11px;">
+              <input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..."
               <button onclick="redeemSvSecretCode()" style="background:linear-gradient(90deg,#f59e0b,#d97706);border:none;color:#111;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer;">🔓 Redeem</button>
             </div>
 

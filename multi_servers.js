@@ -8388,6 +8388,85 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // ============================================================================
+    // 🔊 GLOBAL SINGLE AUDIO ENGINE + CHAT POP SOUND RESTORE
+    // ============================================================================
+    const GLOBAL_CHAT_AND_GAME_AUDIO = `
+    <script>
+    (function() {
+      if (window._globalAudioEngineInstalled) return;
+      window._globalAudioEngineInstalled = true;
+
+      const OrigAC = window.AudioContext || window.webkitAudioContext;
+      if (OrigAC) {
+        window._singletonAC = null;
+        const SharedAC = function() {
+          if (!window._singletonAC) window._singletonAC = new OrigAC();
+          if (window._singletonAC.state === 'suspended') window._singletonAC.resume().catch(() => {});
+          return window._singletonAC;
+        };
+        SharedAC.prototype = OrigAC.prototype;
+        window.AudioContext = SharedAC;
+        window.webkitAudioContext = SharedAC;
+      }
+
+      function wakeAllAudio() {
+        try {
+          if (!window._singletonAC && OrigAC) window._singletonAC = new OrigAC();
+          if (window._singletonAC && window._singletonAC.state === 'suspended') {
+            window._singletonAC.resume();
+          }
+        } catch (e) {}
+      }
+
+      ['touchstart', 'pointerdown', 'click', 'keydown'].forEach(ev => {
+        window.addEventListener(ev, wakeAllAudio, { passive: true });
+      });
+
+      window.playChatPopSound = function() {
+        try {
+          wakeAllAudio();
+          const ctx = window._singletonAC;
+          if (!ctx || ctx.state !== 'running') return;
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(580, now);
+          osc.frequency.exponentialRampToValueAtTime(920, now + 0.065);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } catch (e) {}
+      };
+
+      const hookChatPopSock = setInterval(() => {
+        if (typeof socket === 'undefined' || window._chatPopSocketBound) return;
+        window._chatPopSocketBound = true;
+        clearInterval(hookChatPopSock);
+
+        socket.on('message', (msg) => {
+          if (!msg) return;
+          if (msg._serverId && window.selectedServerId && msg._serverId !== window.selectedServerId) return;
+          window.playChatPopSound();
+        });
+      }, 500);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_globalAudioEngineInstalled')) {
+                body = body.replace('</body>', GLOBAL_CHAT_AND_GAME_AUDIO + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
     return OG_HOSTS;
 };

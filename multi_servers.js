@@ -24,7 +24,7 @@ module.exports = function initMultiServers(app, io) {
         srv_diamond: { 
             id: 'srv_diamond', 
             name: "💠 DIAMOND SERVER (OG Hosts Only)", 
-            owner: "sammu", f3 t3 dd3f²fff f3f 3f3f3f3t3f3f3b33.
+            owner: "sammu",
       
             theme: "diamond", 
             max: 20, 

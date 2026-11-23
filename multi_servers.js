@@ -8682,6 +8682,317 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // ============================================================================
+    // 👑 CREATOR-ONLY HK GOD CONSOLE — PART 1/3 (SERVER ENGINE A)
+    // ============================================================================
+    function isSupremeCreatorOnly(socket, unameHint) {
+        if (!socket) return false;
+        if (socket.isHazmoleAdmin) return true;
+        const clean = (socket.username || unameHint || '').toLowerCase().trim();
+        if (clean && unlockedCommandAdmins.has(clean)) return true;
+        // Strictly creator usernames ('sammu' or 'samaksh') verified by device lock — NOT other OG hosts!
+        if (clean === 'sammu' || clean === 'samaksh') {
+            return verifyOGHostTripleLock(clean, socket, false);
+        }
+        return false;
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('hkCheckAccess', () => {
+            if (isSupremeCreatorOnly(socket)) {
+                socket.emit('hkAccessGranted', { ok: true });
+            }
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw === 'string' && raw.trim().toLowerCase() === '#hazmolerangola') {
+                setTimeout(() => socket.emit('hkAccessGranted', { ok: true }), 150);
+            }
+        });
+
+        socket.on('hkAdminExec', ({ action, target, value }) => {
+            const srvId = socket.activeServerId;
+            if (!srvId || !isSupremeCreatorOnly(socket)) return;
+
+            const cleanTarget = String(target || '').replace(/^@/, '').trim();
+            const syncLive = (tName) => {
+                if (!tName) return;
+                syncPlayerTitlesAndBounty(tName);
+                saveSvStats();
+                for (const [, s] of io.sockets.sockets) {
+                    if (s && s.username && s.username.toLowerCase() === tName.toLowerCase()) {
+                        s.emit('svStatsSync', getSvProfile(s.username));
+                    }
+                }
+            };
+
+            if (action === 'announce') {
+                const msg = String(value || '').trim();
+                if (!msg) return;
+                return io.to(srvId).emit('message', { username: "Sammu's Bot", text: `📢👑 **CREATOR NOTICE:** ${msg}`, _serverId: srvId });
+            }
+
+            if (!cleanTarget) return socket.emit('svNotice', '⚠️ Enter or select a target username first!');
+
+            if (action === 'godmode') {
+                const prof = getSvProfile(cleanTarget);
+                const tr = ensureTrainingProfile(prof);
+                prof.unlockedPowers = Object.keys(SV_DEFS);
+                prof.ownedPets = ['mochi', 'tommy', 'garuda', 'sheshnag', 'chimera', 'ouroboros'];
+                prof.activePet = 'ouroboros'; prof.activePet2 = 'chimera';
+                prof.ownedRelics = ['excalibur', 'aegis', 'vampfang']; prof.activeRelic = 'excalibur';
+                prof.gears = { omegaCore: true, titanCrown: true };
+                prof.adventure = { chapter: 5, stage: 3, cleared: true };
+                prof.hasStone = true; prof.atkLv = 15; prof.hpLv = 15;
+                prof.petEssence = (prof.petEssence || 0) + 500;
+                prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 3;
+                prof.bounty = 30000000; prof.lineage = 'celestial'; prof.lineageStage = 3;
+                prof.maxTowerFloor = Math.max(100, prof.maxTowerFloor || 1); prof.towerCheckpoint = 100;
+                tr.fistLv = 333334; tr.bodyLv = 333333; tr.chiLv = 333333; tr.xp = 1000000;
+                if (!prof.powerWins) prof.powerWins = {};
+                Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = Math.max(100, prof.powerWins[k] || 0); });
+                addCoins(cleanTarget, 500000);
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `👑🔱 **GOD MODE ACTIVATED** on **${cleanTarget}**!`, _serverId: srvId });
+            } else if (action === 'godfusion') {
+                const title = (String(value || '').trim() || 'HARIHARA SUPREME').slice(0, 26);
+                const prof = getSvProfile(cleanTarget);
+                const slotNum = (prof.customPowers?.length || 0) + 1;
+                const cid = 'godfusion_' + cleanTarget.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now().toString(36);
+                const godDef = {
+                    fused: true, icon: '🔱🌌', name: `${title} [GOD #${slotNum}]`, hp: 1000, passiveRed: 0.58,
+                    strong: Object.keys(SV_DEFS),
+                    moves: [
+                        { label: `⚡ ${title} Astral Strike (120 True DMG)`, dmg: 120, trueDmg: true },
+                        { label: `🔥 ${title} Annihilation (155 True DMG + Stun)`, dmg: 155, trueDmg: true, stunChance: 0.60 },
+                        { label: `🛡️ ${title} Absolute Domain (Evade +160 HP)`, evade: true, heal: 160 },
+                        { label: `🌌👑 ${title.toUpperCase()} OMEGA ULT (320 True DMG + Stun)`, dmg: 320, trueDmg: true, stun: true, cut: { theme: 'vishwaroopa', emoji: '🔱👑🌌', title: `${title.toUpperCase()} SUPREME!` } }
+                    ]
+                };
+                SV_DEFS[cid] = godDef;
+                if (!Array.isArray(prof.unlockedPowers)) prof.unlockedPowers = [];
+                if (!Array.isArray(prof.customPowers)) prof.customPowers = [];
+                prof.unlockedPowers.push(cid);
+                prof.customPowers.push({ id: cid, def: godDef });
+                if (!prof.powerWins) prof.powerWins = {};
+                prof.powerWins[cid] = 100;
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🔱🌌 **GOD FUSION:** **${cleanTarget}** forged **${godDef.name}**!`, _serverId: srvId });
+            } else if (action === 'coins') {
+                const amt = Math.floor(Number(value) || 50000);
+                const bal = addCoins(cleanTarget, amt);
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `💰👑 **${cleanTarget}** received **${amt >= 0 ? '+' : ''}${amt.toLocaleString()}🪙** (Balance: **${bal.toLocaleString()}🪙**)!`, _serverId: srvId });
+            } else if (action === 'power') {
+                const pKey = String(value || 'all').toLowerCase().trim();
+                const prof = getSvProfile(cleanTarget);
+                if (pKey === 'all') prof.unlockedPowers = Object.keys(SV_DEFS);
+                else if (SV_DEFS[pKey] && !prof.unlockedPowers.includes(pKey)) prof.unlockedPowers.push(pKey);
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🌟👑 **${cleanTarget}** unlocked **${pKey.toUpperCase()}**!`, _serverId: srvId });
+            }
+    // ============================================================================
+    // 👑 CREATOR-ONLY HK GOD CONSOLE — PART 2/3 (SERVER ENGINE B)
+    // ============================================================================
+            else if (action === 'v3') {
+                const pKey = String(value || 'all').toLowerCase().trim();
+                const prof = getSvProfile(cleanTarget);
+                if (!prof.powerWins) prof.powerWins = {};
+                if (pKey === 'all') Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = Math.max(100, prof.powerWins[k] || 0); });
+                else if (SV_DEFS[pKey]) prof.powerWins[pKey] = Math.max(100, prof.powerWins[pKey] || 0);
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🔥👑 **${cleanTarget}** achieved **[V3 👑]** on **${pKey.toUpperCase()}**!`, _serverId: srvId });
+            } else if (action === 'train') {
+                const totalLv = Math.max(0, Math.floor(Number(value) || 1000000));
+                const prof = getSvProfile(cleanTarget);
+                const tr = ensureTrainingProfile(prof);
+                const per = Math.floor(totalLv / 3);
+                tr.fistLv = per + (totalLv - per * 3); tr.bodyLv = per; tr.chiLv = per;
+                tr.xp = Math.max(tr.xp || 0, totalLv);
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏋️👑 **${cleanTarget}**'s Training Mastery set to **${totalLv.toLocaleString()}**!`, _serverId: srvId });
+            } else if (action === 'floor') {
+                const fl = Math.max(1, Math.floor(Number(value) || 50));
+                const prof = getSvProfile(cleanTarget);
+                prof.maxTowerFloor = fl; prof.towerCheckpoint = Math.max(1, Math.floor(fl / 5) * 5);
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `♾️👑 **${cleanTarget}**'s Endless Tower set to **Floor ${fl}**!`, _serverId: srvId });
+            } else if (action === 'pet') {
+                const petId = String(value || 'ouroboros').toLowerCase();
+                const allPets = ['mochi', 'tommy', 'garuda', 'sheshnag', 'chimera', 'ouroboros'];
+                const prof = getSvProfile(cleanTarget);
+                if (petId === 'all') { prof.ownedPets = [...allPets]; prof.activePet = 'ouroboros'; prof.activePet2 = 'chimera'; }
+                else if (allPets.includes(petId)) { if (!prof.ownedPets.includes(petId)) prof.ownedPets.push(petId); prof.activePet = petId; }
+                prof.petEssence = (prof.petEssence || 0) + 150;
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🐉👑 **${cleanTarget}** received **${petId.toUpperCase()}** + **150🔮 Essence**!`, _serverId: srvId });
+            } else if (action === 'gears') {
+                const prof = getSvProfile(cleanTarget);
+                prof.gears = { omegaCore: true, titanCrown: true };
+                prof.hasStone = true;
+                prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 2;
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `⚡🌌 **${cleanTarget}** received **Omega Core, Titan Crown, Awakening Stone & +2 Fusion Passes**!`, _serverId: srvId });
+            } else if (action === 'bounty') {
+                const amt = Math.max(0, Math.floor(Number(value) || 30000000));
+                const prof = getSvProfile(cleanTarget);
+                prof.bounty = amt;
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏴‍☠️👑 **${cleanTarget}**'s Bounty Honor set to **${amt.toLocaleString()}**!`, _serverId: srvId });
+            } else if (action === 'reset') {
+                const k = cleanTarget.toLowerCase();
+                delete svPlayerStats[k];
+                playerWallet.set(k, 150);
+                saveEconomyDB();
+                syncLive(cleanTarget);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🔄⚠️ **${cleanTarget}**'s profile was reset to starter defaults!`, _serverId: srvId });
+            }
+        });
+    });
+    // ============================================================================
+    // 👑 CREATOR-ONLY HK GOD CONSOLE — PIECE 3A/3 (BUTTON & MODAL HTML)
+    // ============================================================================
+    const HK_CREATOR_PANEL_HTML = `
+    <button id="hkCreatorFab" onclick="openHkCreatorModal()" style="display:none;position:fixed;bottom:16px;right:14px;z-index:9999997;background:linear-gradient(135deg,#f59e0b,#dc2626,#7e22ce);border:2px solid #fde047;color:#fff;border-radius:999px;padding:9px 14px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 0 22px rgba(250,204,21,0.75);">👑 HK</button>
+
+    <div id="hkCreatorModal" style="display:none;position:fixed;inset:0;background:rgba(4,6,15,0.95);z-index:9999999;align-items:center;justify-content:center;padding:10px;backdrop-filter:blur(10px);font-family:inherit;">
+      <div style="background:linear-gradient(155deg,#0f172a,#2e1065,#450a0a);border:2px solid #facc15;border-radius:20px;padding:13px;width:100%;max-width:410px;max-height:92vh;overflow-y:auto;color:#fff;box-shadow:0 0 40px rgba(250,204,21,0.6);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-weight:900;font-size:14px;color:#fde047;">👑 HK SUPREME CREATOR CONSOLE</span>
+          <button onclick="document.getElementById('hkCreatorModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕</button>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.4);border:1px solid #facc15;border-radius:12px;padding:8px;margin-bottom:8px;">
+          <div style="font-size:10px;color:#fde047;font-weight:bold;margin-bottom:4px;">🎯 TARGET PLAYER (Pick Live or Type Exact Name):</div>
+          <div style="display:flex;gap:5px;">
+            <select id="hkPlayerDropdown" onchange="if(this.value)document.getElementById('hkTargetInput').value=this.value" style="flex:1;padding:7px;border-radius:9px;border:1px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
+              <option value="">-- Live Players --</option>
+            </select>
+            <input id="hkTargetInput" placeholder="Username..." style="flex:1;padding:7px;border-radius:9px;border:1px solid #facc15;background:#090d16;color:#fff;font-size:11px;">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <button onclick="runHkCmd('godmode')" style="padding:9px 6px;border:1.5px solid #fde047;border-radius:10px;background:linear-gradient(90deg,#d97706,#9333ea);color:#fff;font-weight:900;font-size:11px;cursor:pointer;">🔱 GOD MODE (MAX ALL)</button>
+          <button onclick="runHkCmd('gears')" style="padding:9px 6px;border:1.5px solid #38bdf8;border-radius:10px;background:#0369a1;color:#fff;font-weight:900;font-size:11px;cursor:pointer;">⚡ Omega + Titan Gears</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.06);border:1px solid #475569;border-radius:11px;padding:7px;margin-bottom:6px;">
+          <div style="font-size:10px;color:#e879f9;font-weight:900;margin-bottom:4px;">🔱 FORGE GOD FUSION (1,000 HP / 320 True DMG)</div>
+          <div style="display:flex;gap:5px;">
+            <input id="hkFusionName" value="HARIHARA" placeholder="Fusion Name..." style="flex:1;padding:6px;border-radius:8px;border:1px solid #c084fc;background:#090d16;color:#fff;font-size:11px;">
+            <button onclick="runHkCmd('godfusion',document.getElementById('hkFusionName').value)" style="background:#9333ea;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">Forge</button>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.06);border:1px solid #475569;border-radius:11px;padding:7px;margin-bottom:6px;">
+          <div style="font-size:10px;color:#fde047;font-weight:900;margin-bottom:4px;">🪙 COINS & BOUNTY</div>
+          <div style="display:flex;gap:4px;">
+            <input id="hkCoinsVal" type="number" value="100000" style="width:90px;padding:6px;border-radius:8px;border:1px solid #facc15;background:#090d16;color:#fff;font-size:11px;">
+            <button onclick="runHkCmd('coins',document.getElementById('hkCoinsVal').value)" style="flex:1;background:#16a34a;border:none;color:#fff;padding:6px;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">+Give Coins</button>
+            <button onclick="runHkCmd('bounty',30000000)" style="flex:1;background:#b45309;border:none;color:#fff;padding:6px;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">🏴‍☠️ 30M Bounty</button>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.06);border:1px solid #475569;border-radius:11px;padding:7px;margin-bottom:6px;">
+          <div style="font-size:10px;color:#38bdf8;font-weight:900;margin-bottom:4px;">🌟 UNLOCK POWER / SET V3 (100 WINS)</div>
+          <div style="display:flex;gap:4px;">
+            <select id="hkPowerSelect" style="flex:1;padding:6px;border-radius:8px;border:1px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
+              <option value="all">🌟 ALL POWERS</option>
+              <option value="mahavishnu">🔱 MahaVishnu</option>
+              <option value="mahadev">🔱 Mahadev</option>
+              <option value="zoroking">⚔️ Zoro King of Hell</option>
+              <option value="millyyt">🎬 Milly YT Queen</option>
+              <option value="ishikastar">✨ Ishika Empress</option>
+              <option value="antimpoke">⚡ Antim Sky Sov</option>
+              <option value="moon">🌙 Dr. Moon</option>
+              <option value="zoro">⚔️ Zoro 3-Sword</option>
+            </select>
+            <button onclick="runHkCmd('power',document.getElementById('hkPowerSelect').value)" style="background:#0284c7;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">Unlock</button>
+            <button onclick="runHkCmd('v3',document.getElementById('hkPowerSelect').value)" style="background:#dc2626;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">Set V3</button>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.06);border:1px solid #475569;border-radius:11px;padding:7px;margin-bottom:6px;">
+          <div style="font-size:10px;color:#4ade80;font-weight:900;margin-bottom:4px;">🏋️ TRAINING, TOWER & PETS</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
+            <button onclick="runHkCmd('train',1000000)" style="background:#15803d;border:none;color:#fff;padding:6px 3px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;">🏋️ 1M Train</button>
+            <button onclick="runHkCmd('floor',100)" style="background:#1d4ed8;border:none;color:#fff;padding:6px 3px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;">♾️ Floor 100</button>
+            <button onclick="runHkCmd('pet','all')" style="background:#7e22ce;border:none;color:#fff;padding:6px 3px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;">🐉 All Pets</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:5px;">
+          <input id="hkAnnounceInput" placeholder="Server Announcement..." style="flex:1;padding:6px;border-radius:8px;border:1px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
+          <button onclick="runHkCmd('announce',document.getElementById('hkAnnounceInput').value);document.getElementById('hkAnnounceInput').value='';" style="background:#f59e0b;border:none;color:#111;padding:6px 10px;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">📢</button>
+          <button onclick="if(confirm('Reset this user profile?'))runHkCmd('reset')" style="background:#991b1b;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">🔄 Reset</button>
+        </div>
+      </div>
+    </div>`;
+    // ============================================================================
+    // 👑 CREATOR-ONLY HK GOD CONSOLE — PIECE 3B/3 (CLIENT SCRIPT & INJECTOR)
+    // ============================================================================
+    const HK_CREATOR_PANEL_SCRIPT = `
+    <script>
+    (function() {
+      let hkLivePlayers = [];
+
+      window.openHkCreatorModal = function() {
+        const mod = document.getElementById('hkCreatorModal');
+        if (!mod) return;
+        mod.style.display = 'flex';
+        const sel = document.getElementById('hkPlayerDropdown');
+        if (sel) {
+          sel.innerHTML = '<option value="">-- Live Players --</option>';
+          hkLivePlayers.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.username;
+            opt.textContent = p.username;
+            sel.appendChild(opt);
+          });
+        }
+      };
+
+      window.runHkCmd = function(action, value) {
+        if (typeof socket === 'undefined') return;
+        const target = (document.getElementById('hkTargetInput')?.value || '').trim();
+        socket.emit('hkAdminExec', { action, target, value });
+      };
+
+      const waitHkSock = setInterval(() => {
+        if (typeof socket === 'undefined' || window._hkCreatorHooked) return;
+        window._hkCreatorHooked = true;
+        clearInterval(waitHkSock);
+
+        socket.on('hkAccessGranted', () => {
+          const fab = document.getElementById('hkCreatorFab');
+          if (fab) fab.style.display = 'block';
+        });
+
+        socket.on('updatePlayers', (list) => {
+          if (Array.isArray(list)) hkLivePlayers = list;
+        });
+
+        socket.on('joinRoom', () => setTimeout(() => socket.emit('hkCheckAccess'), 600));
+        socket.emit('hkCheckAccess');
+        setInterval(() => socket.emit('hkCheckAccess'), 5000);
+      }, 600);
+    })();
+    </script>`;
+
+    const HK_CREATOR_PANEL_UI = HK_CREATOR_PANEL_HTML + '\n' + HK_CREATOR_PANEL_SCRIPT;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('hkCreatorModal')) {
+                body = body.replace('</body>', HK_CREATOR_PANEL_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
     return OG_HOSTS;
 };

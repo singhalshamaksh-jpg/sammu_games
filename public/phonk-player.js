@@ -3,13 +3,14 @@
   let vizTimer = null;
 
   const MP3_TRACKS = {
-    brazil:  { url: '/public_phonk_batidao.mp3',     label: '🇧🇷 No Batidão (Brazilian Phonk)' },
-    demon:   { url: '/public_phonk_jumpstyle.mp3',   label: '🌌 Heavenly Jumpstyle' },
-    drift:   { url: '/public_phonk_automotivo.mp3',  label: '🔥 Automotivo Mandelão' },
-    murder:  { url: '/public_phonk_murder.mp3',      label: '👻 Kordhell Murder Phonk' },
-    sigma:   { url: '/public_phonk_sigma.mp3__.mp3', label: '🗿 Sigma GigaChad' },
-    memphis: { url: '/public_phonk_memphis.mp3',     label: '👹 Montagem Memphis' },
-    cyber:   { url: '/public_phonk_hardstyle.mp3',   label: '🚀 Euphoric Hardstyle' }
+    brazil:  { url: '/public_phonk_batidao.mp3',      label: '🇧🇷 No Batidão (Brazilian Phonk)' },
+    demon:   { url: '/public_phonk_jumpstyle.mp3',    label: '🌌 Heavenly Jumpstyle' },
+    drift:   { url: '/public_phonk_automotivo.mp3',   label: '🔥 Automotivo Mandelão' },
+    murder:  { url: '/public_phonk_murder.mp3',       label: '👻 Kordhell Murder Phonk' },
+    sigma:   { url: '/public_phonk_sigma.mp3__.mp3',  label: '🗿 Sigma GigaChad' },
+    memphis: { url: '/public_phonk_memphis.mp3',      label: '👹 Montagem Memphis' },
+    cyber:   { url: '/public_phonk_hardstyle.mp3',    label: '🚀 Euphoric Hardstyle' },
+    tokyo:   { url: '/public_phonk_bingbingboo.mp3',  label: '👾 Om Zimaam Bing Bing Boo' }
   };
 
   const BTN_MAP = {
@@ -27,7 +28,9 @@
     if (window._mp3OverrideInstalled) return;
     window._mp3OverrideInstalled = true;
 
-    // Grab the synth functions AFTER PHONK_PRO_UPGRADE has finished loading
+    const tokyoBtn = document.getElementById('loopTokyo');
+    if (tokyoBtn) tokyoBtn.textContent = '👾 Bing Bing Boo';
+
     const origTogglePhonkBeat = window.togglePhonkBeat;
     const origStopPhonkLoop = window.stopPhonkLoop;
 
@@ -38,10 +41,9 @@
         realPhonkAudio.currentTime = 0;
       }
 
-      // Keep Tokyo Drift on the original synth!
       if (!MP3_TRACKS[style]) {
         if (typeof origTogglePhonkBeat === 'function') {
-          origTogglePhonkBeat(style, '🏎️ Tokyo Drift');
+          origTogglePhonkBeat(style, '👾 Bing Bing Boo');
         }
         return;
       }

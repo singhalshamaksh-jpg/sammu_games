@@ -6191,7 +6191,7 @@ module.exports = function initMultiServers(app, io) {
                 socket.emit('message', { username: 'SYSTEM', text: `🏋️✅ Set **${target}**'s Total Training Mastery to **${val.toLocaleString()}**!`, _serverId: socket.activeServerId });
             }
         });
-    });
+    
         socket.on('chatMessage', async (payload) => {
             const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
             if (typeof raw !== 'string' || !socket.activeServerId) return;

@@ -7806,6 +7806,220 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // ============================================================================
+    // 💸 FIXED !PAY + 🐉 10-BOSS COSMIC WORLD RAID — PART 1/2
+    // ============================================================================
+    const WORLD_RAID_BOSSES_V4 = [
+        { num: 1,  name: '💀 Boss 1/10: Shadow Stalker',       baseHp: 600,  dmg: 14 },
+        { num: 2,  name: '🔥 Boss 2/10: Inferno Ifrit',        baseHp: 900,  dmg: 17 },
+        { num: 3,  name: '❄️ Boss 3/10: Frost Leviathan',      baseHp: 1250, dmg: 20 },
+        { num: 4,  name: '⚡ Boss 4/10: Raijin Thunder God',   baseHp: 1650, dmg: 23 },
+        { num: 5,  name: '🩸 Boss 5/10: Crimson Demon King',   baseHp: 2100, dmg: 26 },
+        { num: 6,  name: '🪐 Boss 6/10: Gravity Singularity',  baseHp: 2600, dmg: 29 },
+        { num: 7,  name: '⏳ Boss 7/10: Chronos Time Reaper',  baseHp: 3200, dmg: 32 },
+        { num: 8,  name: '🌑 Boss 8/10: Shadow Monarch',       baseHp: 3900, dmg: 35 },
+        { num: 9,  name: '👹 Boss 9/10: Ten-Tails Jinchuriki', baseHp: 4700, dmg: 38 },
+        { num: 10, name: '🌌👑 BOSS 10/10: OMEGA DESTROYER',   baseHp: 6000, dmg: 44 }
+    ];
+
+    const worldRaidsV4 = new Map();
+
+    function getRaidDamageV4(uname, isUlt) {
+        const prof = getSvProfile(uname);
+        const trB = getTrainingBonuses(prof);
+        const unlocked = Array.isArray(prof.unlockedPowers) ? prof.unlockedPowers : [];
+        const pKey = (prof.customPowers?.at(-1)?.id) || unlocked.at(-1) || 'fire';
+        const def = SV_DEFS[pKey] || SV_DEFS.fire;
+        const mv = isUlt ? (def.moves.at(3) || def.moves.at(0)) : (def.moves.at(1) || def.moves.at(0));
+        let dmg = (mv?.dmg || 55) + ((prof.atkLv || 0) * 8) + trB.bonusDmg + Math.floor(Math.random() * 20);
+        if (prof.powerWins?.[pKey] >= 5) dmg = Math.round(dmg * 1.15);
+        if (prof.powerWins?.[pKey] >= 100) dmg = Math.round(dmg * 1.25);
+        if (prof.gears?.omegaCore) dmg = Math.round(dmg * 1.20);
+        if (prof.gears?.titanCrown) dmg = Math.round(dmg * 1.25);
+        return { dmg, icon: def.icon, pName: def.name };
+    }
+
+    function tickWorldRaidV4(srvId) {
+        const raid = worldRaidsV4.get(srvId);
+        if (!raid) return;
+        const boss = WORLD_RAID_BOSSES_V4.at(raid.bossIdx);
+        raid.actedThisTurn.clear();
+
+        if (raid.bossHp <= 0) {
+            if (raid.bossIdx + 1 >= WORLD_RAID_BOSSES_V4.length) {
+                clearInterval(raid.interval);
+                worldRaidsV4.delete(srvId);
+                const heroes = Object.keys(raid.dmgMap);
+                const sorted = Object.entries(raid.dmgMap).sort((a, b) => b.at(1) - a.at(1));
+                const mvp = sorted.at(0);
+
+                heroes.forEach(hName => {
+                    const pr = getSvProfile(hName);
+                    pr.freeFusionPasses = (pr.freeFusionPasses || 0) + 1;
+                    pr.petEssence = (pr.petEssence || 0) + 80;
+                    addCoins(hName, 25000);
+                });
+                if (mvp) addCoins(mvp.at(0), 10000);
+                saveSvStats();
+
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🎊🌌 **10-BOSS WORLD RAID CONQUERED!!**\n` +
+                          `🏆 **All ${heroes.length} Heroes** won **+25,000🪙**, **+80🔮 Essence**, & **1x Free Fusion Pass**!\n` +
+                          `👑 **Raid MVP:** **${mvp ? mvp.at(0) : 'Squad'}** (${mvp ? mvp.at(1).toLocaleString() : 0} DMG | **+10,000🪙**)!`,
+                    _serverId: srvId
+                });
+                return;
+            }
+
+            raid.bossIdx++;
+            const nextB = WORLD_RAID_BOSSES_V4.at(raid.bossIdx);
+            const scale = Math.max(1, getFullRoomPlayers(srvId).length * 0.65);
+            raid.bossHp = Math.round(nextB.baseHp * scale);
+            raid.squadHp = Math.min(100, raid.squadHp + 25);
+
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `⚔️🔥 **BOSS DEFEATED!** (+25% Squad Heal) Next Up: **${nextB.name}** (**${raid.bossHp.toLocaleString()} HP**)! Type \`!attack\`, \`!ult\`, or \`!heal\`!`,
+                _serverId: srvId
+            });
+            return;
+        }
+
+        const strike = Math.max(8, boss.dmg - Math.floor(Math.random() * 6));
+        raid.squadHp = Math.max(0, raid.squadHp - strike);
+
+        if (raid.squadHp <= 0) {
+            clearInterval(raid.interval);
+            worldRaidsV4.delete(srvId);
+            io.to(srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `💀🔥 **WORLD RAID WIPEOUT!** **${boss.name}** wiped out the squad with **${raid.bossHp.toLocaleString()} HP** left!`,
+                _serverId: srvId
+            });
+            return;
+        }
+
+        io.to(srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `👹 **${boss.name}** struck the squad (**-${strike}% HP**)! | Squad: **${raid.squadHp}%** | Boss: **${raid.bossHp.toLocaleString()} HP**\n*(Type \`!attack\`, \`!ult\`, or \`!heal\`!)*`,
+            _serverId: srvId
+        });
+    }
+    // ============================================================================
+    // 💸 FIXED !PAY + 🐉 10-BOSS COSMIC WORLD RAID — PART 2/2
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const clean = raw.trim();
+            const low = clean.toLowerCase();
+            const sender = socket.username || (payload && payload.username) || 'Player';
+            const sKey = sender.toLowerCase();
+
+            // 1. Fixed !pay command (supports !pay @user 500 OR !pay user 500)
+            if (low.startsWith('!pay ')) {
+                const args = clean.slice(5).trim().split(/\s+/);
+                const targetName = (args.at(0) || '').replace(/^@/, '').trim();
+                const amt = Math.floor(Number(args.at(1)));
+
+                if (!targetName || isNaN(amt) || amt < 10) {
+                    return socket.emit('message', { username: "Sammu's Bot", text: '⚠️ Usage: `!pay @username 500` (Min 10🪙)', _serverId: srvId });
+                }
+                if (targetName.toLowerCase() === sKey) {
+                    return socket.emit('message', { username: "Sammu's Bot", text: '😂 You cannot pay yourself!', _serverId: srvId });
+                }
+                if (!verifyPlayerAccountOwnership(sender, socket, false)) {
+                    return socket.emit('message', { username: 'SYSTEM', text: `🛡️ **TRANSFER BLOCKED!** **${sender}** is locked to another device!`, _serverId: srvId });
+                }
+                const bal = getCoins(sender);
+                if (bal < amt) {
+                    return socket.emit('message', { username: "Sammu's Bot", text: `🪙 Not enough coins! Your balance: **${bal.toLocaleString()}🪙**`, _serverId: srvId });
+                }
+
+                const senderLeft = addCoins(sender, -amt);
+                const targetNew = addCoins(targetName, amt);
+
+                for (const [, s] of io.sockets.sockets) {
+                    if (s && s.username && (s.username.toLowerCase() === sKey || s.username.toLowerCase() === targetName.toLowerCase())) {
+                        s.emit('svStatsSync', getSvProfile(s.username));
+                    }
+                }
+
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `💸🤝 **COIN TRANSFER!** **${sender}** sent **${amt.toLocaleString()}🪙** to **${targetName}**! (${sender}: **${senderLeft.toLocaleString()}🪙** | ${targetName}: **${targetNew.toLocaleString()}🪙**)`,
+                    _serverId: srvId
+                });
+                return;
+            }
+
+            // 2. 10-Boss World Raid (!worldraid, !attack, !ult, !heal)
+            if (low === '!worldraid') {
+                if (worldRaidsV4.has(srvId)) {
+                    const cur = worldRaidsV4.get(srvId);
+                    const b = WORLD_RAID_BOSSES_V4.at(cur.bossIdx);
+                    return socket.emit('message', { username: "Sammu's Bot", text: `🐉 World Raid already active! **${b.name}** (${cur.bossHp.toLocaleString()} HP) | Squad: **${cur.squadHp}%**`, _serverId: srvId });
+                }
+                const players = getFullRoomPlayers(srvId);
+                const firstB = WORLD_RAID_BOSSES_V4.at(0);
+                const startHp = Math.round(firstB.baseHp * Math.max(1, players.length * 0.65));
+                const raid = {
+                    bossIdx: 0, bossHp: startHp, squadHp: 100,
+                    dmgMap: {}, actedThisTurn: new Set(), ultUsed: new Set(),
+                    interval: setInterval(() => tickWorldRaidV4(srvId), 14000)
+                };
+                worldRaidsV4.set(srvId, raid);
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🚨🐉 **10-BOSS COSMIC WORLD RAID STARTED!**\nCurrent: **${firstB.name}** (**${startHp.toLocaleString()} HP**)\n👉 Type \`!attack\`, \`!ult\` (1x per boss), or \`!heal\` in chat!`,
+                    _serverId: srvId
+                });
+                return;
+            }
+
+            const raid = worldRaidsV4.get(srvId);
+            if (!raid) return;
+
+            if (low === '!attack' || low === '!strike' || low === '!ult') {
+                if (raid.actedThisTurn.has(socket.id)) {
+                    return socket.emit('message', { username: "Sammu's Bot", text: '⏳ Cooldown! Wait for the next boss strike (~14s).', _serverId: srvId });
+                }
+                const isUlt = (low === '!ult');
+                const ultKey = `${raid.bossIdx}_${socket.id}`;
+                if (isUlt && raid.ultUsed.has(ultKey)) {
+                    return socket.emit('message', { username: "Sammu's Bot", text: '⚠️ Already used `!ult` on this boss! Type `!attack` or `!heal`.', _serverId: srvId });
+                }
+                raid.actedThisTurn.add(socket.id);
+                if (isUlt) raid.ultUsed.add(ultKey);
+
+                const hit = getRaidDamageV4(sender, isUlt);
+                raid.bossHp = Math.max(0, raid.bossHp - hit.dmg);
+                raid.dmgMap[sender] = (raid.dmgMap[sender] || 0) + hit.dmg;
+
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `${hit.icon} **${sender}** (${hit.pName}) ${isUlt ? 'unleashed **ULTIMATE**' : 'attacked'} for **-${hit.dmg} DMG**! (Boss HP: **${raid.bossHp.toLocaleString()}**)`,
+                    _serverId: srvId
+                });
+                if (raid.bossHp <= 0) tickWorldRaidV4(srvId);
+            }
+
+            if (low === '!heal') {
+                if (raid.actedThisTurn.has(socket.id)) return;
+                raid.actedThisTurn.add(socket.id);
+                raid.squadHp = Math.min(100, raid.squadHp + 18);
+                raid.dmgMap[sender] = (raid.dmgMap[sender] || 0) + 50;
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `💖🩺 **${sender}** healed the Raid Squad (**+18% HP** -> **${raid.squadHp}%**)!`,
+                    _serverId: srvId
+                });
+            }
+        });
+    });
 
     return OG_HOSTS;
 };

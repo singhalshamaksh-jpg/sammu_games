@@ -8020,6 +8020,137 @@ module.exports = function initMultiServers(app, io) {
             }
         });
     });
+    // ============================================================================
+    // 🐉 WORLD RAID LIVE HUD BAR + 🗺️ STORY MODE FIX — PART 1/2
+    // ============================================================================
+    const WORLD_RAID_HUD_UI = `
+    <div id="svWorldRaidHud" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
+      <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(49,16,66,0.97),rgba(15,23,42,0.97));border:2px solid #facc15;border-radius:16px;padding:10px 12px;width:100%;max-width:390px;color:#fff;text-align:center;box-shadow:0 6px 28px rgba(250,204,21,0.55);backdrop-filter:blur(8px);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span id="wrHudTitle" style="font-weight:900;font-size:11px;color:#fde047;">🐉 COSMIC WORLD RAID (1/10)</span>
+          <button onclick="document.getElementById('svWorldRaidHud').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:bold;cursor:pointer;">✕ Hide</button>
+        </div>
+        <div style="display:flex;gap:6px;font-size:10px;font-weight:bold;margin-bottom:7px;">
+          <div style="flex:1;background:#090d16;border:1px solid #4ade80;border-radius:8px;padding:4px;position:relative;overflow:hidden;">
+            <div id="wrHudSquadFill" style="position:absolute;inset:0;width:100%;background:rgba(74,222,128,0.28);transition:width 0.3s;"></div>
+            <span style="position:relative;">❤️ Squad: <b id="wrHudSquadHp" style="color:#4ade80;">100%</b></span>
+          </div>
+          <div style="flex:1;background:#090d16;border:1px solid #f43f5e;border-radius:8px;padding:4px;position:relative;overflow:hidden;">
+            <div id="wrHudBossFill" style="position:absolute;inset:0;width:100%;background:rgba(244,63,94,0.34);transition:width 0.3s;"></div>
+            <span style="position:relative;">👹 Boss: <b id="wrHudBossHp" style="color:#fda4af;">600</b></span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
+          <button onclick="if(typeof socket!=='undefined')socket.emit('chatMessage','!attack')" style="padding:7px 4px;border:1.5px solid #f87171;border-radius:9px;background:#b91c1c;color:#fff;font-weight:900;font-size:11px;cursor:pointer;">⚔️ Attack</button>
+          <button onclick="if(typeof socket!=='undefined')socket.emit('chatMessage','!ult')" style="padding:7px 4px;border:1.5px solid #facc15;border-radius:9px;background:linear-gradient(90deg,#7e22ce,#d97706);color:#fff;font-weight:900;font-size:11px;cursor:pointer;">💥 ULT (1x)</button>
+          <button onclick="if(typeof socket!=='undefined')socket.emit('chatMessage','!heal')" style="padding:7px 4px;border:1.5px solid #4ade80;border-radius:9px;background:#15803d;color:#fff;font-weight:900;font-size:11px;cursor:pointer;">💖 Heal</button>
+        </div>
+      </div>
+    </div>
+    <script>
+    (function() {
+      const bootWrAndStory = setInterval(() => {
+        if (typeof socket === 'undefined' || window._wrAndStoryFixed) return;
+        window._wrAndStoryFixed = true;
+        clearInterval(bootWrAndStory);
+
+        socket.on('svWorldRaidHudSync', (d) => {
+          if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
+          const hud = document.getElementById('svWorldRaidHud');
+          if (!hud) return;
+          hud.style.display = 'flex';
+          document.getElementById('wrHudTitle').textContent = d.bossName;
+          document.getElementById('wrHudSquadHp').textContent = d.squadHp + '%';
+          document.getElementById('wrHudSquadFill').style.width = Math.max(0, d.squadHp) + '%';
+          document.getElementById('wrHudBossHp').textContent = Number(d.bossHp).toLocaleString();
+          const pct = Math.max(0, Math.min(100, Math.round((d.bossHp / (d.maxBossHp || 1)) * 100)));
+          document.getElementById('wrHudBossFill').style.width = pct + '%';
+        });
+
+        socket.on('svWorldRaidHudEnd', () => {
+          const hud = document.getElementById('svWorldRaidHud');
+          if (hud) hud.style.display = 'none';
+        });
+
+        // Fix Story Mode buttons & add a World Raid launch button inside Story tab!
+        setInterval(() => {
+          const advPanel = document.getElementById('svAdvPanel');
+          if (!advPanel) return;
+          if (!document.getElementById('svLaunchWorldRaidBtn')) {
+            const wrBtn = document.createElement('button');
+            wrBtn.id = 'svLaunchWorldRaidBtn';
+            wrBtn.style.cssText = 'width:100%;padding:9px;margin-bottom:8px;border:2px solid #facc15;border-radius:11px;background:linear-gradient(90deg,#7e22ce,#dc2626);color:#fff;font-weight:900;font-size:12px;cursor:pointer;';
+            wrBtn.textContent = '🐉 LAUNCH 10-BOSS SERVER WORLD RAID!';
+            wrBtn.onclick = () => {
+              document.getElementById('svModal').style.display = 'none';
+              socket.emit('chatMessage', '!worldraid');
+            };
+            advPanel.insertBefore(wrBtn, advPanel.firstChild);
+          }
+
+          advPanel.querySelectorAll('#svAdventureChaptersList button').forEach((btn, idx) => {
+            if (btn.disabled || btn.dataset.storyFixed) return;
+            btn.dataset.storyFixed = '1';
+            const chNum = idx + 1;
+            btn.removeAttribute('onclick');
+            btn.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const prof = window._latestSvProf || {};
+              const adv = prof.adventure || { chapter: 1, stage: 1, cleared: false };
+              const stgNum = (!adv.cleared && adv.chapter === chNum) ? (adv.stage || 1) : 1;
+              socket.emit('svStartAdventure', { ch: chNum, stg: stgNum, power: window._curSvPow || 'fire' });
+            };
+          });
+        }, 900);
+      }, 600);
+    })();
+    </script>`;
+    // ============================================================================
+    // 🐉 WORLD RAID LIVE HUD BAR + 🗺️ STORY MODE FIX — PART 2/2
+    // ============================================================================
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svWorldRaidHud')) {
+                body = body.replace('</body>', WORLD_RAID_HUD_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    function emitWorldRaidHud(srvId) {
+        const raid = worldRaidsV4.get(srvId);
+        if (!raid) return io.to(srvId).emit('svWorldRaidHudEnd');
+        const boss = WORLD_RAID_BOSSES_V4.at(raid.bossIdx) || WORLD_RAID_BOSSES_V4.at(0);
+        if (!raid.maxBossHp || raid.bossHp > raid.maxBossHp) raid.maxBossHp = raid.bossHp;
+        io.to(srvId).emit('svWorldRaidHudSync', {
+            bossName: boss.name,
+            bossHp: Math.max(0, raid.bossHp),
+            maxBossHp: raid.maxBossHp,
+            squadHp: Math.max(0, raid.squadHp),
+            _serverId: srvId
+        });
+    }
+
+    const _prevTickWrHud = tickWorldRaidV4;
+    tickWorldRaidV4 = function(srvId) {
+        _prevTickWrHud(srvId);
+        emitWorldRaidHud(srvId);
+    };
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const low = raw.trim().toLowerCase();
+            if (low === '!worldraid' || low === '!attack' || low === '!strike' || low === '!ult' || low === '!heal') {
+                setTimeout(() => emitWorldRaidHud(srvId), 120);
+            }
+        });
+    });
 
     return OG_HOSTS;
 };

@@ -7434,7 +7434,7 @@ module.exports = function initMultiServers(app, io) {
             );
             socket.emit('svDeliverCleanV3', { html: fixedHtml, js: SV_CLIENT_ALL_JS });
         });
-    });
+    
     // === 🔥 GUARANTEED SAMMUVERSE INJECTOR (WORKS WITH sendFile & static) ===
     const SV_WORKING_HTML = SV_FULL_BUNDLE.replace(
         '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..."',
@@ -7489,7 +7489,7 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
-});
+
      return OG_HOSTS;
       
 };

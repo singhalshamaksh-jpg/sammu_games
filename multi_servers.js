@@ -7263,6 +7263,8 @@ module.exports = function initMultiServers(app, io) {
     (function() {
       if (window._svBootLoaded) return;
       window._svBootLoaded = true;
+      window.openSammuVerse = function() { if (window.openSammuVerseModal) window.openSammuVerseModal(); else if (typeof socket !== 'undefined') socket.emit('svRequestCleanV3'); };
+      window.openSvModal = window.openSammuVerse;
 
       function initSvBoot() {
         if (typeof socket === 'undefined' || window._svBootSocketHooked) return;

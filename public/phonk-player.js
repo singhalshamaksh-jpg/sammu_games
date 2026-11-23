@@ -10,7 +10,7 @@
     sigma:   { url: '/public_phonk_sigma.mp3__.mp3',  label: '🗿 Sigma GigaChad' },
     memphis: { url: '/public_phonk_memphis.mp3',      label: '👹 Montagem Memphis' },
     cyber:   { url: '/public_phonk_hardstyle.mp3',    label: '🚀 Euphoric Hardstyle' },
-    tokyo:   { url: '/public_phonk_bingbingboo.mp3',  label: '👾 Om Zimaam Bing Bing Boo' }
+    tokyo:   { url: '/public_phonk_bingbingboo.mp3',  label: '👾 Bing Bing Boo' }
   };
 
   const BTN_MAP = {
@@ -28,11 +28,15 @@
     if (window._mp3OverrideInstalled) return;
     window._mp3OverrideInstalled = true;
 
-    const tokyoBtn = document.getElementById('loopTokyo');
-    if (tokyoBtn) tokyoBtn.textContent = '👾 Bing Bing Boo';
-
-    const origTogglePhonkBeat = window.togglePhonkBeat;
     const origStopPhonkLoop = window.stopPhonkLoop;
+
+    // Continuously replace "Tokyo Drift" button text with "👾 Bing Bing Boo"
+    setInterval(() => {
+      const tokyoBtn = document.getElementById('loopTokyo');
+      if (tokyoBtn && tokyoBtn.textContent.includes('Tokyo')) {
+        tokyoBtn.textContent = '👾 Bing Bing Boo';
+      }
+    }, 1000);
 
     function startTrack(style, djName) {
       if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
@@ -41,17 +45,12 @@
         realPhonkAudio.currentTime = 0;
       }
 
-      if (!MP3_TRACKS[style]) {
-        if (typeof origTogglePhonkBeat === 'function') {
-          origTogglePhonkBeat(style, '👾 Bing Bing Boo');
-        }
-        return;
-      }
-
       if (typeof origStopPhonkLoop === 'function') origStopPhonkLoop();
       document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
 
       const chosen = MP3_TRACKS[style];
+      if (!chosen) return;
+
       window._activePhonkLabel = chosen.label;
 
       const btn = document.getElementById(BTN_MAP[style]);

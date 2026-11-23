@@ -7367,6 +7367,75 @@ module.exports = function initMultiServers(app, io) {
         socket.on('joinRoom', () => setTimeout(deliverV3, 400));
     });
     });
+        // === 🚀 SAMMUVERSE EMERGENCY 1-BLOCK FIX ===
+    const SV_HOTFIX_SCRIPT = `
+    <script>
+    (function() {
+      function repairAndOpenSv() {
+        // 1. Repair broken input tag if modal exists
+        const inp = document.getElementById('svSecretCodeInput');
+        if (inp && !document.querySelector('#svFightPanel button[onclick="redeemSvSecretCode()"]')) {
+          const btn = document.createElement('button');
+          btn.textContent = '🔓 Redeem';
+          btn.style.cssText = 'background:linear-gradient(90deg,#f59e0b,#d97706);border:none;color:#111;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer;';
+          btn.onclick = () => { if (typeof window.redeemSvSecretCode === 'function') window.redeemSvSecretCode(); };
+          inp.style.cssText = 'flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;';
+          inp.parentElement.appendChild(btn);
+        }
+
+        // 2. Open modal or request bundle from server
+        if (typeof window.openSammuVerseModal === 'function' && document.getElementById('svModal')) {
+          window.openSammuVerseModal();
+        } else if (typeof socket !== 'undefined') {
+          socket.emit('svRequestCleanV3');
+          setTimeout(() => {
+            const m = document.getElementById('svModal');
+            if (typeof window.openSammuVerseModal === 'function') window.openSammuVerseModal();
+            else if (m) m.style.setProperty('display', 'flex', 'important');
+          }, 300);
+        }
+      }
+
+      // Hook EVERY button/banner mentioning SammuVerse on the page
+      setInterval(() => {
+        document.querySelectorAll('button, div, a').forEach(el => {
+          if (el.closest('#svModal') || el.dataset.svEmergencyHooked) return;
+          const txt = (el.textContent || '').trim();
+          if (el.children.length <= 2 && /sammuverse/i.test(txt)) {
+            el.dataset.svEmergencyHooked = '1';
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              repairAndOpenSv();
+            }, true);
+          }
+        });
+      }, 1000);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svEmergencyHooked')) {
+                body = body.replace('</body>', SV_HOTFIX_SCRIPT + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    io.on('connection', (socket) => {
+        socket.on('svRequestCleanV3', () => {
+            const fixedHtml = SV_FULL_BUNDLE.replace(
+                '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..."',
+                '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..." style="flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;">'
+            );
+            socket.emit('svDeliverCleanV3', { html: fixedHtml, js: SV_CLIENT_ALL_JS });
+        });
+    });
+
      return OG_HOSTS;
       
 };

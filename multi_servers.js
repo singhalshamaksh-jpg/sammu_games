@@ -6533,6 +6533,65 @@ module.exports = function initMultiServers(app, io) {
         <button onclick="if(typeof socket!=='undefined')socket.emit('svDomainTap');" style="width:100%;padding:22px;border:2px solid #fff;border-radius:16px;background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 0 25px #f59e0b;">💥 TAP FAST! 💥</button>
       </div>
     </div>`;
+  // ============================================================================
+ // 🎨 SAMMUVERSE V4 ENGINE — PIECE 14A/20: MODAL HEADER, ARENA & STORY HTML
+ // ============================================================================
+ const SV_UI_HTML_PART2A = `
+ <div id="svModal">
+   <div id="svCard">
+     <div style="display:flex;justify-content:space-between;align-items:center;">
+       <span style="font-weight:900;font-size:15px;color:#e879f9;">⚔️ SAMMUVERSE V4 RPG</span>
+       <div style="display:flex;gap:5px;align-items:center;">
+         <span id="svHeaderCoins" style="background:#090d16;border:1px solid #facc15;color:#fde047;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:900;">🪙 150</span>
+         <button id="svMuteBtn" onclick="toggleSvSfx()" style="background:#1e293b;border:1px solid #38bdf8;color:#fff;border-radius:8px;padding:3px 7px;font-size:11px;cursor:pointer;">🔊</button>
+         <button onclick="document.getElementById('svModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕</button>
+       </div>
+     </div>
+
+     <div id="svLobbyView">
+       <div class="sv-tabs">
+         <button class="sv-tab active" id="svTabFight" onclick="switchSvTab('fight')">⚔️ Arena</button>
+         <button class="sv-tab" id="svTabAdv" onclick="switchSvTab('adv')">🗺️ Story</button>
+         <button class="sv-tab" id="svTabTrain" onclick="switchSvTab('train')">🏋️ Train</button>
+         <button class="sv-tab" id="svTabDojo" onclick="switchSvTab('dojo')">💪 Dojo</button>
+         <button class="sv-tab" id="svTabLogs" onclick="switchSvTab('logs')">📜 Logs</button>
+       </div>
+
+       <div id="svFightPanel">
+         <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-bottom:6px;">
+           <button type="button" onclick="openDailyWheelModal()" style="padding:6px 1px;border-radius:9px;border:1.5px solid #f43f5e;background:#4c0519;color:#fda4af;font-size:10px;font-weight:900;cursor:pointer;">🎡 Wheel</button>
+           <button type="button" onclick="openSvSub('lineage')" style="padding:6px 1px;border-radius:9px;border:1.5px solid #4ade80;background:#064e3b;color:#86efac;font-size:10px;font-weight:900;cursor:pointer;">🧬 DNA</button>
+           <button type="button" onclick="openSvSub('titles')" style="padding:6px 1px;border-radius:9px;border:1.5px solid #facc15;background:#311042;color:#fde047;font-size:10px;font-weight:900;cursor:pointer;">🏷️ Titles</button>
+           <button type="button" onclick="openEndlessTowerModal()" style="padding:6px 1px;border-radius:9px;border:1.5px solid #38bdf8;background:#1e3a8a;color:#93c5fd;font-size:10px;font-weight:900;cursor:pointer;">♾️ Tower</button>
+           <button type="button" onclick="openSvSub('stock')" style="padding:6px 1px;border-radius:9px;border:1.5px solid #38bdf8;background:#0c4a6e;color:#7dd3fc;font-size:10px;font-weight:900;cursor:pointer;">🎰 Stock</button>
+           <button type="button" onclick="socket.emit('svRollEnchant',window._curSvPow||'fire')" style="padding:6px 1px;border-radius:9px;border:1.5px solid #c084fc;background:#3b0764;color:#e879f9;font-size:10px;font-weight:900;cursor:pointer;">🔮 Enchant</button>
+         </div>
+
+         <div style="display:flex;gap:5px;margin-bottom:6px;">
+           <input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..." style="flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;">
+           <button onclick="redeemSvSecretCode()" style="background:linear-gradient(90deg,#f59e0b,#d97706);border:none;color:#111;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer;">🔓 Redeem</button>
+         </div>
+
+         <div class="sv-powers" id="svPowerGrid"></div>
+         <div id="svPowerPreview" style="background:rgba(168,85,247,0.16);border:1px solid #c084fc;border-radius:10px;padding:6px;font-size:11px;color:#fde047;margin-bottom:7px;">Select a power to inspect its 4 skills!</div>
+
+         <div style="display:flex;gap:5px;margin-bottom:6px;">
+           <select id="svOpponentSelect" style="flex:1;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
+             <option value="BOT_DUMMY">🥊 Wooden Dummy (+35🪙)</option>
+           </select>
+           <button onclick="sendSvChallenge()" style="padding:7px 14px;border:none;border-radius:10px;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">⚔️ FIGHT</button>
+         </div>
+         <div id="svIncomingBox" style="display:none;background:rgba(250,204,21,0.2);border:1.5px solid #facc15;border-radius:12px;padding:8px;margin-top:6px;"></div>
+       </div>
+
+       <div id="svAdvPanel" style="display:none;max-height:345px;overflow-y:auto;">
+         <div style="background:linear-gradient(90deg,#064e3b,#1e3a8a);border:1.5px solid #4ade80;border-radius:12px;padding:8px;margin-bottom:8px;">
+           <div style="font-size:13px;font-weight:900;color:#4ade80;">🗺️ REALM ADVENTURE CAMPAIGN</div>
+           <div id="svAdvSummary" style="font-size:11px;color:#cbd5e1;margin-top:2px;">Chapter 1 — Stage 1/3 | Pet Essence: 0 🔮</div>
+         </div>
+         <div id="svAdventureChaptersList"></div>
+       </div>`;
+
     // ============================================================================
     // 🎨 SAMMUVERSE V4 ENGINE — PIECE 14B/20: TRAIN, DOJO, MERGER & BATTLE HUD
     // ============================================================================
@@ -6590,7 +6649,8 @@ module.exports = function initMultiServers(app, io) {
         </div>
       </div>
     </div>`;
-    const SV_FULL_BUNDLE = SV_UI_HTML_PART1 + '\n' + SV_UI_HTML_PART2;
+  const SV_FULL_BUNDLE = SV_UI_HTML_PART1 + '\n' + SV_UI_HTML_PART2A + '\n' + SV_UI_HTML_PART2B;
+
 
     // ============================================================================
     // 🎬 SAMMUVERSE V4 ENGINE — PIECE 15/20: CLIENT POWERS & ANIME SFX

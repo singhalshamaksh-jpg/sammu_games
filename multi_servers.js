@@ -7340,7 +7340,7 @@ module.exports = function initMultiServers(app, io) {
         socket.on('svRequestCleanV3', deliverV3);
         socket.on('joinRoom', () => setTimeout(deliverV3, 400));
     });
-
+    });
      return OG_HOSTS;
       
 };

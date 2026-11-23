@@ -6430,8 +6430,9 @@ module.exports = function initMultiServers(app, io) {
             </div>
 
             <div style="display:flex;gap:5px;margin-bottom:6px;">
-              <input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..."
-              <button onclick="redeemSvSecretCode()" style="background:linear-gradient(90deg,#f59e0b,#d97706);border:none;color:#111;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer;">🔓 Redeem</button>
+              <input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..." style="flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;">
+<button onclick="redeemSvSecretCode()" style="background:linear-gradient(90deg,#f59e0b,#d97706);border:none;color:#111;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer;">🔓 Redeem</button>
+
             </div>
 
             <div class="sv-powers" id="svPowerGrid"></div>
@@ -7287,28 +7288,51 @@ module.exports = function initMultiServers(app, io) {
           ensureSvArenaBtn();
         });
 
-                function ensureSvArenaBtn() {
-                    const existingBanner = Array.from(document.querySelectorAll('div, button')).find(el => /sammuverse pvp & grind/i.test(el.textContent || ''));
-          if (existingBanner) {
-            const dup = document.getElementById('svMainArenaBtn');
-            if (dup) dup.remove();
-            return;
-          }
-          if (document.getElementById('svMainArenaBtn')) return;
-          const anchor = Array.from(document.querySelectorAll('button')).find(b => /phonk dj|draw pad|disco mode/i.test(b.textContent || ''));
-          if (anchor && anchor.parentElement) {
-            const btn = anchor.cloneNode(true);
-            btn.id = 'svMainArenaBtn';
-            btn.removeAttribute('onclick');
-            btn.textContent = '⚔️ SammuVerse';
-            btn.style.background = 'linear-gradient(90deg, #9333ea, #ec4899)';
-            btn.onclick = () => {
-              if (typeof window.openSammuVerseModal === 'function') window.openSammuVerseModal();
-              else socket.emit('svRequestCleanV3');
-            };
-            anchor.parentElement.insertBefore(btn, anchor.nextSibling);
-          }
+                
+          function ensureSvArenaBtn() {
+    const triggerOpen = () => {
+        if (typeof window.openSammuVerseModal === 'function') {
+            window.openSammuVerseModal();
+        } else {
+            socket.emit('svRequestCleanV3');
+            setTimeout(() => {
+                if (typeof window.openSammuVerseModal === 'function') window.openSammuVerseModal();
+            }, 350);
         }
+    };
+
+    const existingBanner = Array.from(document.querySelectorAll('div, button, a')).find(el =>
+        el.children.length <= 2 && /sammuverse/i.test(el.textContent || '') && el.id !== 'svMainArenaBtn' && !el.closest('#svModal')
+    );
+
+    if (existingBanner) {
+        if (!existingBanner.dataset.svHooked) {
+            existingBanner.dataset.svHooked = 'true';
+            existingBanner.style.cursor = 'pointer';
+            existingBanner.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                triggerOpen();
+            };
+        }
+        const dup = document.getElementById('svMainArenaBtn');
+        if (dup) dup.remove();
+        return;
+    }
+
+    if (document.getElementById('svMainArenaBtn')) return;
+    const anchor = Array.from(document.querySelectorAll('button')).find(b => /phonk dj|draw pad|disco mode/i.test(b.textContent || ''));
+    if (anchor && anchor.parentElement) {
+        const btn = anchor.cloneNode(true);
+        btn.id = 'svMainArenaBtn';
+        btn.removeAttribute('onclick');
+        btn.textContent = '⚔️ SammuVerse';
+        btn.style.background = 'linear-gradient(90deg, #9333ea, #ec4899)';
+        btn.onclick = triggerOpen;
+        anchor.parentElement.insertBefore(btn, anchor.nextSibling);
+    }
+}
+
 
         
 

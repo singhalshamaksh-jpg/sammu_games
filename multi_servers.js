@@ -6590,7 +6590,8 @@ module.exports = function initMultiServers(app, io) {
         </div>
       </div>
     </div>`;
-    const SV_FULL_BUNDLE = SV_UI_HTML_PART1 + '\n' + SV_UI_HTML_PART2A + '\n' + SV_UI_HTML_PART2B;
+    const SV_FULL_BUNDLE = SV_UI_HTML_PART1 + '\n' + SV_UI_HTML_PART2;
+
     // ============================================================================
     // 🎬 SAMMUVERSE V4 ENGINE — PIECE 15/20: CLIENT POWERS & ANIME SFX
     // ============================================================================

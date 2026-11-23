@@ -7523,8 +7523,6 @@ module.exports = function initMultiServers(app, io) {
     return OG_HOSTS;
 };
 
-     return OG_HOSTS;
-      
-};
+     
  
                 

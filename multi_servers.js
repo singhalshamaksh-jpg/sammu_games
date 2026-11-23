@@ -8467,6 +8467,221 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
+    // ============================================================================
+    // 👑 EXPANDED #hazmolerangola ADMIN COMMANDS (POWERS, V3, PETS, GEARS & RESET)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const clean = raw.trim();
+            const low = clean.toLowerCase();
+            const sender = (socket.username || (payload && payload.username) || '').toLowerCase().trim();
+            const hasAdminPower = Boolean(socket.isHazmoleAdmin || (sender && unlockedCommandAdmins.has(sender)));
+            if (!hasAdminPower) return;
+
+            const syncTargetLive = (targetName) => {
+                syncPlayerTitlesAndBounty(targetName);
+                saveSvStats();
+                for (const [, s] of io.sockets.sockets) {
+                    if (s && s.username && s.username.toLowerCase() === targetName.toLowerCase()) {
+                        s.emit('svStatsSync', getSvProfile(s.username));
+                    }
+                }
+            };
+
+            // 1. /givepower @username <powerKey|all>
+            if (low.startsWith('/givepower ')) {
+                const args = clean.slice(11).trim().split(/\s+/);
+                const target = (args.at(0) || '').replace(/^@/, '').trim();
+                const pKey = (args.at(1) || '').toLowerCase().trim();
+                if (!target || !pKey) {
+                    return socket.emit('message', { username: 'SYSTEM', text: '⚠️ Usage: `/givepower @username mahavishnu` or `/givepower @username all`', _serverId: srvId });
+                }
+                const prof = getSvProfile(target);
+                if (pKey === 'all') {
+                    prof.unlockedPowers = Object.keys(SV_DEFS);
+                    syncTargetLive(target);
+                    return io.to(srvId).emit('message', { username: "Sammu's Bot", text: `⚡👑 **ADMIN GRANT:** **${target}** unlocked **ALL ${prof.unlockedPowers.length} POWERS**!`, _serverId: srvId });
+                }
+                if (!SV_DEFS[pKey]) {
+                    return socket.emit('message', { username: 'SYSTEM', text: `❌ Unknown power \`${pKey}\`. Valid: ${Object.keys(SV_DEFS).slice(0, 12).join(', ')}...`, _serverId: srvId });
+                }
+                if (!prof.unlockedPowers.includes(pKey)) prof.unlockedPowers.push(pKey);
+                syncTargetLive(target);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🌟👑 **ADMIN GRANT:** **${target}** unlocked **${SV_DEFS[pKey].icon} ${SV_DEFS[pKey].name}**!`, _serverId: srvId });
+            }
+
+            // 2. /setv3 @username <powerKey|all>
+            if (low.startsWith('/setv3 ')) {
+                const args = clean.slice(7).trim().split(/\s+/);
+                const target = (args.at(0) || '').replace(/^@/, '').trim();
+                const pKey = (args.at(1) || 'all').toLowerCase().trim();
+                if (!target) return socket.emit('message', { username: 'SYSTEM', text: '⚠️ Usage: `/setv3 @username fire` or `/setv3 @username all`', _serverId: srvId });
+                const prof = getSvProfile(target);
+                if (!prof.powerWins) prof.powerWins = {};
+                if (pKey === 'all') {
+                    Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = Math.max(100, prof.powerWins[k] || 0); });
+                } else if (SV_DEFS[pKey]) {
+                    prof.powerWins[pKey] = Math.max(100, prof.powerWins[pKey] || 0);
+                } else {
+                    return socket.emit('message', { username: 'SYSTEM', text: `❌ Unknown power \`${pKey}\`.`, _serverId: srvId });
+                }
+                syncTargetLive(target);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🔥👑 **V3 ASCENSION GRANTED:** **${target}** now has **100 Wins [V3 👑]** on **${pKey.toUpperCase()}**!`, _serverId: srvId });
+            }
+
+            // 3. /givepet @username <petId|all>
+            if (low.startsWith('/givepet ')) {
+                const args = clean.slice(9).trim().split(/\s+/);
+                const target = (args.at(0) || '').replace(/^@/, '').trim();
+                const petId = (args.at(1) || 'ouroboros').toLowerCase().trim();
+                const allPets = ['mochi', 'tommy', 'garuda', 'sheshnag', 'chimera', 'ouroboros'];
+                if (!target || (petId !== 'all' && !allPets.includes(petId))) {
+                    return socket.emit('message', { username: 'SYSTEM', text: `⚠️ Usage: \`/givepet @username ouroboros\` (Options: ${allPets.join(', ')}, all)`, _serverId: srvId });
+                }
+                const prof = getSvProfile(target);
+                if (petId === 'all') {
+                    prof.ownedPets = [...allPets];
+                    prof.activePet = 'ouroboros';
+                    prof.activePet2 = 'chimera';
+                } else {
+                    if (!prof.ownedPets.includes(petId)) prof.ownedPets.push(petId);
+                    prof.activePet = petId;
+                }
+                prof.petEssence = (prof.petEssence || 0) + 100;
+                syncTargetLive(target);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🐉👑 **PET GRANT:** **${target}** received **${petId.toUpperCase()}** + **100🔮 Pet Essence**!`, _serverId: srvId });
+            }
+
+            // 4. /givegears @username
+            if (low.startsWith('/givegears ')) {
+                const target = clean.slice(11).replace(/^@/, '').trim().split(/\s+/).at(0);
+                if (!target) return;
+                const prof = getSvProfile(target);
+                prof.gears = { omegaCore: true, titanCrown: true };
+                prof.hasStone = true;
+                prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
+                syncTargetLive(target);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `⚡🌌 **GODLY GEARS GRANTED:** **${target}** unlocked **⚡ Omega Core**, **🌌 Titan Crown**, **💎 Awakening Stone**, & **1x Free Fusion Pass**!`, _serverId: srvId });
+            }
+
+            // 5. /setbounty @username <amount>
+            if (low.startsWith('/setbounty ')) {
+                const args = clean.slice(11).trim().split(/\s+/);
+                const target = (args.at(0) || '').replace(/^@/, '').trim();
+                const amt = Math.max(0, Math.floor(Number(args.at(1))));
+                if (!target || isNaN(amt)) return socket.emit('message', { username: 'SYSTEM', text: '⚠️ Usage: `/setbounty @username 30000000`', _serverId: srvId });
+                const prof = getSvProfile(target);
+                prof.bounty = amt;
+                syncTargetLive(target);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏴‍☠️👑 **BOUNTY UPDATED:** **${target}**'s Bounty Honor is now **${amt.toLocaleString()}**!`, _serverId: srvId });
+            }
+
+            // 6. /resetuser @username
+            if (low.startsWith('/resetuser ')) {
+                const target = clean.slice(11).replace(/^@/, '').trim().split(/\s+/).at(0);
+                if (!target) return;
+                const k = target.toLowerCase();
+                delete svPlayerStats[k];
+                playerWallet.set(k, 150);
+                saveEconomyDB();
+                syncTargetLive(target);
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🔄⚠️ **PROFILE RESET:** **${target}**'s stats and wallet were reset to starter defaults!`, _serverId: srvId });
+            }
+        });
+    });
+    // ============================================================================
+    // 🔱 SUPREME HARIHARA SYNERGY & /godfusion ADMIN COMMAND
+    // ============================================================================
+    io.on('connection', (socket) => {
+        // Auto-upgrade any existing HariHara / MahaVishnu+Mahadev fusion on login
+        socket.on('svGetStats', () => {
+            const uname = socket.username;
+            if (!uname) return;
+            const prof = getSvProfile(uname);
+            let upgraded = false;
+            (prof.customPowers || []).forEach(cp => {
+                if (!cp || !cp.def) return;
+                const isHariHara = /harihara/i.test(cp.def.name || '') || (cp.def.icon && cp.def.icon.includes('🔱🔱'));
+                if (isHariHara && cp.def.hp < 950) {
+                    cp.def.hp = 950;
+                    cp.def.passiveRed = 0.55;
+                    cp.def.moves = [
+                        { label: '🪈🔱 HariHara Trishul-Bansuri (110 DMG + Stun)', dmg: 110, trueDmg: true, stunChance: 0.65 },
+                        { label: '☸️🔥 Sudarshana Tandava (145 True DMG)', dmg: 145, trueDmg: true },
+                        { label: '🌌🛡️ Kailash Vaikuntha Kavach (Evade +140 HP)', evade: true, heal: 140 },
+                        { label: '🔱🌌 COSMIC HARIHARA PRALAYA ULT (295 True DMG + Stun)', dmg: 295, trueDmg: true, stun: true, cut: { theme: 'vishwaroopa', emoji: '🔱🌌🔥', title: 'SUPREME HARIHARA PRALAYA!' } }
+                    ];
+                    SV_DEFS[cp.id] = cp.def;
+                    upgraded = true;
+                }
+            });
+            if (upgraded) {
+                saveSvStats();
+                socket.emit('svStatsSync', prof);
+            }
+        });
+
+        // /godfusion @username <FusionName> (Requires #hazmolerangola)
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const clean = raw.trim();
+            const low = clean.toLowerCase();
+            const sender = (socket.username || (payload && payload.username) || '').toLowerCase().trim();
+            const hasAdminPower = Boolean(socket.isHazmoleAdmin || (sender && unlockedCommandAdmins.has(sender)));
+            if (!hasAdminPower) return;
+
+            if (low.startsWith('/godfusion ')) {
+                const args = clean.slice(11).trim().split(/\s+/);
+                const target = (args.shift() || '').replace(/^@/, '').trim();
+                const title = (args.join(' ').trim() || 'HARIHARA SUPREME').slice(0, 26);
+                if (!target) return;
+
+                const prof = getSvProfile(target);
+                const slotNum = (prof.customPowers?.length || 0) + 1;
+                const cid = 'godfusion_' + target.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now().toString(36);
+                const godDef = {
+                    fused: true,
+                    icon: '🔱🌌',
+                    name: `${title} [GOD #${slotNum}]`,
+                    hp: 1000,
+                    passiveRed: 0.58,
+                    strong: Object.keys(SV_DEFS),
+                    moves: [
+                        { label: `⚡ ${title} Astral Strike (120 True DMG)`, dmg: 120, trueDmg: true },
+                        { label: `🔥 ${title} Annihilation (155 True DMG + Stun)`, dmg: 155, trueDmg: true, stunChance: 0.60 },
+                        { label: `🛡️ ${title} Absolute Domain (Evade +160 HP)`, evade: true, heal: 160 },
+                        { label: `🌌👑 ${title.toUpperCase()} OMEGA ULT (320 True DMG + Stun)`, dmg: 320, trueDmg: true, stun: true, cut: { theme: 'vishwaroopa', emoji: '🔱👑🌌', title: `${title.toUpperCase()} SUPREME!` } }
+                    ]
+                };
+
+                SV_DEFS[cid] = godDef;
+                if (!Array.isArray(prof.unlockedPowers)) prof.unlockedPowers = [];
+                if (!Array.isArray(prof.customPowers)) prof.customPowers = [];
+                prof.unlockedPowers.push(cid);
+                prof.customPowers.push({ id: cid, def: godDef });
+                if (!prof.powerWins) prof.powerWins = {};
+                prof.powerWins[cid] = 100; // Instant V3 Crown!
+
+                syncPlayerTitlesAndBounty(target);
+                saveSvStats();
+                for (const [, s] of io.sockets.sockets) {
+                    if (s && s.username && s.username.toLowerCase() === target.toLowerCase()) {
+                        s.emit('svStatsSync', getSvProfile(s.username));
+                    }
+                }
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🔱🌌 **GOD FUSION AWAKENED!** **${target}** forged **${godDef.name}** (1,000 HP | 58% Armor | 320 True DMG ULT)!`,
+                    _serverId: srvId
+                });
+            }
+        });
+    });
 
     return OG_HOSTS;
 };

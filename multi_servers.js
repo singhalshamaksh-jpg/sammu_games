@@ -8265,6 +8265,129 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
+    // ============================================================================
+    // 👑 SECRET ADMIN COMMANDS (#hazmolerangola UNLOCK -> /settrain, /givecoins, /setfloor)
+    // ============================================================================
+    const unlockedCommandAdmins = new Set();
+
+    io.on('connection', (socket) => {
+        // Intercept #hazmolerangola before it broadcasts to public chat
+        socket.use((packet, next) => {
+            if (packet && packet.at(0) === 'chatMessage' && socket.activeServerId) {
+                const payload = packet.at(1);
+                const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+                if (typeof raw === 'string' && raw.trim().toLowerCase() === '#hazmolerangola') {
+                    const uname = (socket.username || (payload && payload.username) || '').toLowerCase().trim();
+                    if (uname) unlockedCommandAdmins.add(uname);
+                    socket.isHazmoleAdmin = true;
+                    socket.emit('message', {
+                        username: 'SYSTEM',
+                        text: '🔓👑 **SECRET ADMIN MODE UNLOCKED!** You can now use `/settrain @user <lvl>`, `/givecoins @user <amt>`, and `/setfloor @user <floor>`!',
+                        _serverId: socket.activeServerId
+                    });
+                    return; // Keeps #hazmolerangola secret from public chat!
+                }
+            }
+            next();
+        });
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const clean = raw.trim();
+            const low = clean.toLowerCase();
+            const sender = (socket.username || (payload && payload.username) || '').toLowerCase().trim();
+            const hasAdminPower = Boolean(socket.isHazmoleAdmin || (sender && unlockedCommandAdmins.has(sender)));
+
+            // 1. /settrain @username <totalLevels>
+            if (low.startsWith('/settrain ')) {
+                if (!hasAdminPower) return;
+                const args = clean.slice(10).trim().split(/\s+/);
+                const target = (args.at(0) || '').replace(/^@/, '').trim();
+                const totalLv = Math.max(0, Math.floor(Number(args.at(1))));
+                if (!target || isNaN(totalLv)) {
+                    return socket.emit('message', { username: 'SYSTEM', text: '⚠️ Usage: `/settrain @username 1000000`', _serverId: srvId });
+                }
+
+                const prof = getSvProfile(target);
+                const tr = ensureTrainingProfile(prof);
+                const perStat = Math.floor(totalLv / 3);
+                const rem = totalLv - (perStat * 3);
+                tr.fistLv = perStat + rem;
+                tr.bodyLv = perStat;
+                tr.chiLv = perStat;
+                tr.xp = Math.max(tr.xp || 0, totalLv);
+
+                ensureTrainingProfile(prof);
+                syncPlayerTitlesAndBounty(target);
+                saveSvStats();
+
+                for (const [, s] of io.sockets.sockets) {
+                    if (s && s.username && s.username.toLowerCase() === target.toLowerCase()) {
+                        s.emit('svStatsSync', getSvProfile(s.username));
+                    }
+                }
+
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `🏋️👑 **ADMIN BOOST:** **${sender.toUpperCase()}** set **${target}**'s Training Mastery to **${totalLv.toLocaleString()}** (Fist: ${tr.fistLv.toLocaleString()} | Body: ${tr.bodyLv.toLocaleString()} | Chi: ${tr.chiLv.toLocaleString()})!`,
+                    _serverId: srvId
+                });
+            }
+
+            // 2. /givecoins @username <amount>
+            if (low.startsWith('/givecoins ')) {
+                if (!hasAdminPower) return;
+                const args = clean.slice(11).trim().split(/\s+/);
+                const target = (args.at(0) || '').replace(/^@/, '').trim();
+                const amt = Math.floor(Number(args.at(1)));
+                if (!target || isNaN(amt)) {
+                    return socket.emit('message', { username: 'SYSTEM', text: '⚠️ Usage: `/givecoins @username 50000`', _serverId: srvId });
+                }
+
+                const newBal = addCoins(target, amt);
+                for (const [, s] of io.sockets.sockets) {
+                    if (s && s.username && s.username.toLowerCase() === target.toLowerCase()) {
+                        s.emit('svStatsSync', getSvProfile(s.username));
+                    }
+                }
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `💰👑 **ADMIN GRANT:** **${sender.toUpperCase()}** gave **${amt.toLocaleString()}🪙** to **${target}** (New Balance: **${newBal.toLocaleString()}🪙**)!`,
+                    _serverId: srvId
+                });
+            }
+
+            // 3. /setfloor @username <floor>
+            if (low.startsWith('/setfloor ')) {
+                if (!hasAdminPower) return;
+                const args = clean.slice(10).trim().split(/\s+/);
+                const target = (args.at(0) || '').replace(/^@/, '').trim();
+                const fl = Math.max(1, Math.floor(Number(args.at(1))));
+                if (!target || isNaN(fl)) {
+                    return socket.emit('message', { username: 'SYSTEM', text: '⚠️ Usage: `/setfloor @username 50`', _serverId: srvId });
+                }
+
+                const prof = getSvProfile(target);
+                prof.maxTowerFloor = fl;
+                prof.towerCheckpoint = Math.max(1, Math.floor(fl / 5) * 5);
+                syncPlayerTitlesAndBounty(target);
+                saveSvStats();
+
+                for (const [, s] of io.sockets.sockets) {
+                    if (s && s.username && s.username.toLowerCase() === target.toLowerCase()) {
+                        s.emit('svStatsSync', getSvProfile(s.username));
+                    }
+                }
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `♾️👑 **ADMIN SET:** **${target}**'s Endless Tower progress set to **Floor ${fl}** (Checkpoint: **F${prof.towerCheckpoint}**)!`,
+                    _serverId: srvId
+                });
+            }
+        });
+    });
 
     return OG_HOSTS;
 };

@@ -4930,8 +4930,10 @@ module.exports = function initMultiServers(app, io) {
         });
     });
                 
-    // ============================================================================
-    // ⚔️ SAMMUVERSE V3 ENGINE (8-PIECE CLEAN REBUILD) — PIECE 1/8: DB & TITLES
+
+                
+       // ============================================================================
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 1A/20: DB FILES, CLOUD SYNC & LINEAGES
     // ============================================================================
     const SV_LOG_FILE = path.join(__dirname, 'sammuverse_logs.json');
     const SV_STATS_FILE = path.join(__dirname, 'sammuverse_stats.json');
@@ -4982,9 +4984,9 @@ module.exports = function initMultiServers(app, io) {
         }
     }
 
-    const _origAddCoinsV3 = addCoins;
+    const _origAddCoinsV4 = addCoins;
     addCoins = function(uname, amt) {
-        const res = _origAddCoinsV3(uname, amt);
+        const res = _origAddCoinsV4(uname, amt);
         saveEconomyDB();
         return res;
     };
@@ -4998,24 +5000,31 @@ module.exports = function initMultiServers(app, io) {
         dragonkin: { icon: '🐉', name: 'Ancient Dragonkin',     stage3: '🐲 Cosmic Wyrm King',     hpTurn: 8,  dmgMult: 1.15, steal: 0,    absorb: 0.08, stunImmune: false },
         celestial: { icon: '🔱', name: 'Celestial Avatar',      stage3: '🔱 Supreme Cosmic Deity', hpTurn: 12, dmgMult: 1.25, steal: 0.10, absorb: 0.10, stunImmune: true  }
     };
-
+                 
+        // ============================================================================
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 1B/20: TITLES, PROFILE LOADER & LOGGER
+    // ============================================================================
     const SV_TITLES = [
-        { id: 'rookie',    tag: '🌱 Rookie',           color: '#94a3b8', req: 'Default Starter Title' },
-        { id: 'hunter',    tag: '⚔️ Bounty Hunter',    color: '#38bdf8', req: 'Reach 1.0M Bounty Honor' },
-        { id: 'warlord',   tag: '🏴‍☠️ Warlord',          color: '#a855f7', req: 'Reach 2.5M Bounty Honor' },
-        { id: 'emperor',   tag: '💀 Abyss Emperor',    color: '#f43f5e', req: 'Reach 10.0M Bounty Honor' },
-        { id: 'sovereign', tag: '👑 Sammu Sovereign',  color: '#facc15', req: 'Reach 30.0M Bounty Honor' },
-        { id: 'v3god',     tag: '🔥 V3 Ascended',      color: '#fb923c', req: 'Reach 100 Wins on any Power (V3)' },
-        { id: 'voidslime', tag: '🟢 Void Slime King',  color: '#4ade80', req: 'Awaken Void Slime Stage 3' },
-        { id: 'gymgod',    tag: '🏋️ Gym Sovereign',    color: '#fb923c', req: 'Reach Total Training Level 50' },
-        { id: 'godly',     tag: '✨ Godly Enchanted',  color: '#67e8f9', req: 'Roll a Godly Enchantment' },
-        { id: 'forger',    tag: '⚗️ Soul Forger',      color: '#e879f9', req: 'Forge a Custom Fusion Power' },
-        { id: 'vishnu',    tag: '🔱 MahaVishnu',       color: '#fde047', req: 'Unlock MahaVishnu Power' },
-        { id: 'lunaremp',  tag: '🌙 Lunar Empress',    color: '#fda4af', req: 'Unlock Dr. Moon Power' },
-        { id: 'tower25',   tag: '🗼 Tower Climber',    color: '#38bdf8', req: 'Reach Floor 25 in Endless Tower' },
-        { id: 'tower50',   tag: '♾️ Infinite Sovereign',color: '#e879f9', req: 'Reach Floor 50 in Endless Tower' },
-        { id: 'tower100',  tag: '🌌 Floor 100 God',    color: '#facc15', req: 'Reach Floor 100 in Endless Tower' },
-        { id: 'rich',      tag: '💎 Millionaire',      color: '#4ade80', req: 'Hold 100,000+ Coins' }
+        { id: 'rookie',     tag: '🌱 Rookie',           color: '#94a3b8', req: 'Default Starter Title' },
+        { id: 'hunter',     tag: '⚔️ Bounty Hunter',    color: '#38bdf8', req: 'Reach 1.0M Bounty Honor' },
+        { id: 'warlord',    tag: '🏴‍☠️ Warlord',          color: '#a855f7', req: 'Reach 2.5M Bounty Honor' },
+        { id: 'emperor',    tag: '💀 Abyss Emperor',    color: '#f43f5e', req: 'Reach 10.0M Bounty Honor' },
+        { id: 'sovereign',  tag: '👑 Sammu Sovereign',  color: '#facc15', req: 'Reach 30.0M Bounty Honor' },
+        { id: 'v3god',      tag: '🔥 V3 Ascended',      color: '#fb923c', req: 'Reach 100 Wins on any Power (V3)' },
+        { id: 'titanlord',  tag: '🌌 Colossal Titan',   color: '#f43f5e', req: 'Unlock Titan Crown Gear' },
+        { id: 'omegagod',   tag: '⚡ Omega Awakened',   color: '#38bdf8', req: 'Unlock Omega Core Gear' },
+        { id: 'adventurer', tag: '🗺️ Realm Conqueror',  color: '#4ade80', req: 'Clear Adventure Chapter 5' },
+        { id: 'petmaster',  tag: '🐉 Ouroboros Tamer',  color: '#e879f9', req: 'Merge an Evolved Mega Pet' },
+        { id: 'voidslime',  tag: '🟢 Void Slime King',  color: '#4ade80', req: 'Awaken Void Slime Stage 3' },
+        { id: 'gymgod',     tag: '🏋️ Gym Sovereign',    color: '#fb923c', req: 'Reach Total Training Level 50' },
+        { id: 'godly',      tag: '✨ Godly Enchanted',  color: '#67e8f9', req: 'Roll a Godly Enchantment' },
+        { id: 'forger',     tag: '⚗️ Soul Forger',      color: '#e879f9', req: 'Forge a Custom Fusion Power' },
+        { id: 'vishnu',     tag: '🔱 MahaVishnu',       color: '#fde047', req: 'Unlock MahaVishnu Power' },
+        { id: 'lunaremp',   tag: '🌙 Lunar Empress',    color: '#fda4af', req: 'Unlock Dr. Moon Power' },
+        { id: 'tower25',    tag: '🗼 Tower Climber',    color: '#38bdf8', req: 'Reach Floor 25 in Endless Tower' },
+        { id: 'tower50',    tag: '♾️ Infinite Sovereign',color: '#e879f9', req: 'Reach Floor 50 in Endless Tower' },
+        { id: 'tower100',   tag: '🌌 Floor 100 God',    color: '#facc15', req: 'Reach Floor 100 in Endless Tower' },
+        { id: 'rich',       tag: '💎 Millionaire',      color: '#4ade80', req: 'Hold 100,000+ Coins' }
     ];
 
     function getSvProfile(uname) {
@@ -5025,12 +5034,19 @@ module.exports = function initMultiServers(app, io) {
                 atkLv: 0, hpLv: 0, wins: 0, streak: 0, bounty: 10000, maxTowerFloor: 1, towerCheckpoint: 1,
                 lineage: 'human', lineageStage: 1, activeTitle: 'rookie', unlockedTitles: ['rookie'],
                 training: { fistLv: 0, bodyLv: 0, chiLv: 0, xp: 0 },
+                gears: { omegaCore: false, titanCrown: false },
+                adventure: { chapter: 1, stage: 1, cleared: false },
+                petEssence: 0, lastDailySpin: 0,
                 hasStone: false, unlockedPowers: [], ownedPets: [], activePet: null, activePet2: null,
                 ownedRelics: [], activeRelic: null, enchants: {}, powerWins: {}, customPowers: [], redeemedCodes: []
             };
         }
         const p = svPlayerStats[k];
         if (!p.training) p.training = { fistLv: 0, bodyLv: 0, chiLv: 0, xp: 0 };
+        if (!p.gears) p.gears = { omegaCore: false, titanCrown: false };
+        if (!p.adventure) p.adventure = { chapter: 1, stage: 1, cleared: false };
+        if (typeof p.petEssence !== 'number') p.petEssence = 0;
+        if (typeof p.lastDailySpin !== 'number') p.lastDailySpin = 0;
         if (!Array.isArray(p.unlockedTitles)) p.unlockedTitles = ['rookie'];
         if (typeof p.bounty !== 'number') p.bounty = 10000;
         if (!p.lineage) p.lineage = 'human';
@@ -5051,6 +5067,10 @@ module.exports = function initMultiServers(app, io) {
         if (prof.bounty >= 10000000) grant('emperor');
         if (prof.bounty >= 30000000) grant('sovereign');
         if (Object.values(prof.powerWins || {}).some(w => w >= 100)) grant('v3god');
+        if (prof.gears?.omegaCore) grant('omegagod');
+        if (prof.gears?.titanCrown) grant('titanlord');
+        if (prof.adventure?.cleared || (prof.adventure?.chapter || 1) > 5) grant('adventurer');
+        if ((prof.ownedPets || []).includes('ouroboros') || (prof.ownedPets || []).includes('chimera')) grant('petmaster');
         if (prof.lineage === 'slime' && prof.lineageStage >= 3) grant('voidslime');
         const trTotal = (prof.training?.fistLv || 0) + (prof.training?.bodyLv || 0) + (prof.training?.chiLv || 0);
         if (trTotal >= 50) grant('gymgod');
@@ -5070,8 +5090,8 @@ module.exports = function initMultiServers(app, io) {
         try { fs.writeFileSync(SV_LOG_FILE, JSON.stringify(svBattleLogs, null, 2)); } catch (e) {}
         io.to(srvId).emit('svLogsUpdate', svBattleLogs.filter(l => l.srvId === srvId));
     }
-    // ============================================================================
-    // ⚔️ SAMMUVERSE V3 ENGINE — PIECE 2A/8: STARTER, RARE & EPIC POWERS
+  / ============================================================================
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 2/20: STARTER, RARE & EPIC POWERS
     // ============================================================================
     const SV_DEFS = {
         fire: {
@@ -5182,9 +5202,9 @@ module.exports = function initMultiServers(app, io) {
                 { label: '🔥 Bajrang Dawn ULT (78 DMG)', dmg: 78, cut: { theme: 'fire', emoji: '☀️🥁', title: 'DRUMS OF LIBERATION!' } }
             ]
         }
-    };
-    // ============================================================================
-    // ⚔️ SAMMUVERSE V3 ENGINE — PIECE 2B/8: LEGENDARY, FUSION & SECRET POWERS
+    };                                      
+         // ============================================================================
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 3/20: LEGENDARY, FUSIONS & MYTHICS
     // ============================================================================
     Object.assign(SV_DEFS, {
         shadow: {
@@ -5314,12 +5334,12 @@ module.exports = function initMultiServers(app, io) {
             ]
         },
         antimpoke: {
-            secret: true, icon: '⚡', name: 'Antim (Arceus & Rayquaza)', hp: 335, passiveRed: 0.24, strong: ['fire', 'water', 'storm'],
+            secret: true, icon: '⚡', name: 'Antim (Astral Sky Sovereign)', hp: 335, passiveRed: 0.24, strong: ['fire', 'water', 'storm'],
             moves: [
                 { label: 'Dragon Ascent (50 DMG)', dmg: 50 },
                 { label: 'Judgment Beam (70 True DMG)', dmg: 70, trueDmg: true },
                 { label: 'Multitype Plate (Block 85%)', block: 0.85 },
-                { label: '🐉 Mega Rayquaza ULT (130 DMG)', dmg: 130, cut: { theme: 'lightning', emoji: '⚡🐉', title: 'MEGA RAYQUAZA: DRAGON ASCENT!' } }
+                { label: '🐉 Sky Sovereign ULT (130 DMG)', dmg: 130, cut: { theme: 'lightning', emoji: '⚡🐉', title: 'ASTRAL SKY SOVEREIGN: ASCENT!' } }
             ]
         },
         mahadev: {
@@ -5340,8 +5360,9 @@ module.exports = function initMultiServers(app, io) {
             });
         }
     });
-      // ============================================================================
-    // ⚔️ SAMMUVERSE V3 ENGINE — PIECE 3A/8: STATE, TRAINING BONUSES & FIGHTERS
+         
+        // ============================================================================
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 4/20: ADVENTURE, TOWER, FIGHTERS & SYNC
     // ============================================================================
     const svBattles = new Map();
     const svPending = new Map();
@@ -5354,6 +5375,14 @@ module.exports = function initMultiServers(app, io) {
         { id: 'ironclad',   name: '🛡️ Ironclad (-15% DMG Taken)',  mult: 1.00, red: 0.15, heal: 0 },
         { id: 'thunderous', name: '⚡ Thunderous (+20% Shock DMG)', mult: 1.20, red: 0,    heal: 0 },
         { id: 'godly',      name: '✨ GODLY (+25% ALL STATS)',      mult: 1.25, red: 0.20, heal: 0.12 }
+    ];
+
+    const ADVENTURE_CHAPTERS = [
+        { ch: 1, title: '🌲 Ch.1: Whispering Dojo',   stages: ['🥷 Rogue Disciple', '🐺 Shadow Wolf', '👹 Dojo Sensei Boss'],     pKey: 'rubber',     baseHp: 210, baseAtk: 6,  coins: 350,  xp: 200,  essence: 15 },
+        { ch: 2, title: '🌋 Ch.2: Crimson Volcano',   stages: ['🦎 Magma Salamander', '🔥 Flame Knight', '🐉 Magma Wyrm Boss'],     pKey: 'fire',       baseHp: 340, baseAtk: 14, coins: 700,  xp: 450,  essence: 30 },
+        { ch: 3, title: '🌊 Ch.3: Abyssal Trench',    stages: ['🦈 Depth Stalker', '🐙 Kraken Tentacle', '🌊 Leviathan Boss'],      pKey: 'water',      baseHp: 520, baseAtk: 22, coins: 1200, xp: 800,  essence: 50 },
+        { ch: 4, title: '⚡ Ch.4: Celestial Citadel', stages: ['🦅 Sky Valkyrie', '⚡ Thunder Golem', '👑 Raijin Sovereign Boss'],  pKey: 'lightning',  baseHp: 780, baseAtk: 30, coins: 2200, xp: 1400, essence: 80 },
+        { ch: 5, title: '🌌 Ch.5: Void Throne',       stages: ['🌑 Void Phantom', '🕳️ Singularity Knight', '🔱 Abyssal God Boss'],  pKey: 'antimatter', baseHp: 1150,baseAtk: 40, coins: 5000, xp: 3000, essence: 150 }
     ];
 
     const TOWER_BOSS_ROSTER = [
@@ -5401,13 +5430,17 @@ module.exports = function initMultiServers(app, io) {
     function syncSvBattle(battle, sfx) {
         const sendView = (me, opp) => {
             if (me.isBot) return;
-            const verTag = me.isV3 ? ' [V3 👑]' : (me.isV2 ? ' [V2]' : '');
-            const oppVerTag = opp.isV3 ? ' [V3 👑]' : (opp.isV2 ? ' [V2]' : '');
+            const formBadge = me.titanTurns > 0 ? ' [🌌 TITAN]' : (me.omegaTurns > 0 ? ' [⚡ OMEGA]' : '');
+            const verTag = (me.isV3 ? ' [V3 👑]' : (me.isV2 ? ' [V2]' : '')) + formBadge;
+            const oppVerTag = (opp.isV3 ? ' [V3 👑]' : (opp.isV2 ? ' [V2]' : '')) + (opp.titanTurns > 0 ? ' [🌌 TITAN]' : (opp.omegaTurns > 0 ? ' [⚡ OMEGA]' : ''));
             io.to(me.id).emit('svBattleSync', {
                 turn: battle.turn, timeLeft: battle.timeLeft, logText: battle.lastLog, sfx: sfx || null,
                 me: {
                     name: me.name, icon: me.def.icon, powerName: me.def.name + verTag, powerKey: me.pKey,
                     hp: me.hp, maxHp: me.maxHp, ultCd: me.ultCd, awakened: me.awakened,
+                    energy: me.energy || 0,
+                    hasOmegaGear: Boolean(me.gears?.omegaCore), omegaUsed: Boolean(me.omegaUsed), omegaTurns: me.omegaTurns || 0,
+                    hasTitanGear: Boolean(me.gears?.titanCrown), titanUsed: Boolean(me.titanUsed), titanTurns: me.titanTurns || 0,
                     locked: me.choice !== null, stunned: me.stunned, isBotOpp: opp.isBot,
                     skills: me.def.moves.map(m => m.label)
                 },
@@ -5428,8 +5461,9 @@ module.exports = function initMultiServers(app, io) {
             return {
                 id: botId || 'BOT', name: uname, pKey: powKey, def, hp: customHp, maxHp: customHp, bonusAtk: customAtk,
                 ultCd: 0, choice: Math.floor(Math.random() * 3), stunned: false, isBot: true,
-                isV2: false, isV3: false, hasStone: false, awakened: false, pet: null, pet2: null,
-                relic: null, enchant: null, lineageObj: SV_LINEAGES.human, lineageStage: 1,
+                isV2: false, isV3: false, hasStone: false, awakened: false, energy: 0,
+                gears: {}, omegaUsed: false, omegaTurns: 0, titanUsed: false, titanTurns: 0,
+                pet: null, pet2: null, relic: null, enchant: null, lineageObj: SV_LINEAGES.human, lineageStage: 1,
                 trainBonus: { ultMult: 1, critChance: 0 }, baseReward: 50
             };
         }
@@ -5443,15 +5477,17 @@ module.exports = function initMultiServers(app, io) {
         return {
             id: sockId, name: uname || 'Fighter', pKey: powKey, def, hp: maxHp, maxHp, bonusAtk,
             ultCd: 0, choice: null, stunned: false, isBot: false, isV2, isV3,
-            hasStone: Boolean(prof.hasStone), awakened: false,
+            hasStone: Boolean(prof.hasStone), awakened: false, energy: 50,
+            gears: prof.gears || { omegaCore: false, titanCrown: false },
+            omegaUsed: false, omegaTurns: 0, titanUsed: false, titanTurns: 0,
             pet: prof.activePet || null, pet2: prof.activePet2 || null,
             relic: prof.activeRelic || null, enchant: (prof.enchants && prof.enchants[powKey]) || null,
             lineageObj: SV_LINEAGES[prof.lineage || 'human'] || SV_LINEAGES.human, lineageStage: prof.lineageStage || 1,
             trainBonus: trB, baseReward: 150
         };
     }
-    // ============================================================================
-    // ⚔️ SAMMUVERSE V3 ENGINE — PIECE 3B/8: DOMAIN CLASH & COMBAT RESOLVER
+        // ============================================================================
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 5/20: COMBAT RESOLVER (OMEGA & TITAN FORMS)
     // ============================================================================
     function resolveSvTurn(battleId) {
         const b = svBattles.get(battleId);
@@ -5472,7 +5508,7 @@ module.exports = function initMultiServers(app, io) {
                 const p1WonClash = clashData.p1Taps >= clashData.p2Taps;
                 const winner = p1WonClash ? cur.p1 : cur.p2;
                 const loser = p1WonClash ? cur.p2 : cur.p1;
-                const clashDmg = 150 + winner.bonusAtk;
+                const clashDmg = 160 + winner.bonusAtk;
                 loser.hp = Math.max(0, loser.hp - clashDmg);
                 cur.p1.choice = 0; cur.p2.choice = 0; cur.clashResolved = false;
 
@@ -5521,6 +5557,8 @@ module.exports = function initMultiServers(app, io) {
             if (atk.isV2) dmg = Math.round(dmg * 1.15);
             if (atk.isV3) dmg = Math.round(dmg * 1.20);
             if (atk.awakened) dmg = Math.round(dmg * 1.25);
+            if (atk.omegaTurns > 0) dmg = Math.round(dmg * 1.40);
+            if (atk.titanTurns > 0) dmg = Math.round(dmg * 1.55);
             if (atk.def.strong && atk.def.strong.includes(def.pKey)) dmg = Math.round(dmg * 1.22);
 
             const lin = atk.lineageObj;
@@ -5532,21 +5570,26 @@ module.exports = function initMultiServers(app, io) {
             let isCrit = false;
             if (critRoll > 0 && Math.random() < critRoll) { dmg = Math.round(dmg * 1.45); isCrit = true; }
 
-            if (!atkMove.trueDmg && defMove && defMove.evade) {
+            const bypassDodge = Boolean(atkMove.trueDmg || atk.titanTurns > 0);
+            if (!bypassDodge && defMove && defMove.evade) {
                 logs.push(`${atk.def.icon} <b>${atk.name}</b> used <b>${atkMove.label.split(' (').at(0)}</b>, but <b>${def.name}</b> EVADED! 💨`);
                 return;
             }
-            if (!atkMove.trueDmg && defMove && defMove.block) {
+            if (!bypassDodge && defMove && defMove.block) {
                 const blocked = Math.round(dmg * defMove.block);
                 dmg -= blocked;
                 if (defMove.reflect) atk.hp = Math.max(0, atk.hp - Math.round(blocked * defMove.reflect));
             }
-            if (def.pet === 'sheshnag' || def.pet2 === 'sheshnag') dmg = Math.round(dmg * 0.85);
+
+            if (def.omegaTurns > 0) dmg = Math.round(dmg * 0.70);
+            if (def.titanTurns > 0) dmg = Math.round(dmg * 0.55);
+            if (def.pet === 'sheshnag' || def.pet2 === 'sheshnag' || def.pet === 'ouroboros') dmg = Math.round(dmg * 0.82);
             if (def.relic === 'aegis') dmg = Math.round(dmg * 0.85);
             if (def.enchant && def.enchant.red > 0) dmg = Math.round(dmg * (1 - def.enchant.red));
             if (def.def.passiveRed) dmg = Math.round(dmg * (1 - def.def.passiveRed));
 
             def.hp = Math.max(0, def.hp - dmg);
+            atk.energy = Math.min(100, (atk.energy || 0) + 25);
 
             const stealPct = (atk.relic === 'vampfang' ? 0.20 : 0) + (atk.enchant?.heal || 0) + (lin ? lin.steal * stgMult : 0);
             if (stealPct > 0 && atk.hp > 0) atk.hp = Math.min(atk.maxHp, atk.hp + Math.max(2, Math.round(dmg * stealPct)));
@@ -5556,10 +5599,11 @@ module.exports = function initMultiServers(app, io) {
             }
 
             if ((atkMove.stun || (atkMove.stunChance && Math.random() < atkMove.stunChance)) && def.hp > 0) {
-                if (!(def.lineageObj && def.lineageObj.stunImmune)) def.stunned = true;
+                if (!(def.lineageObj && def.lineageObj.stunImmune) && !(def.titanTurns > 0)) def.stunned = true;
             }
-            if (atkMove.trueDmg) turnSfx = 'ult';
-            logs.push(`${atk.def.icon} <b>${atk.name}</b> hit <b>${atkMove.label.split(' (').at(0)}</b>${isCrit ? ' 💥CRIT' : ''} for <b>-${dmg} HP</b>!`);
+            if (atkMove.trueDmg || atk.titanTurns > 0) turnSfx = 'ult';
+            const formTag = atk.titanTurns > 0 ? ' 🌌[TITAN]' : (atk.omegaTurns > 0 ? ' ⚡[OMEGA]' : '');
+            logs.push(`${atk.def.icon} <b>${atk.name}</b>${formTag} hit <b>${atkMove.label.split(' (').at(0)}</b>${isCrit ? ' 💥CRIT' : ''} for <b>-${dmg} HP</b>!`);
         };
 
         applyClash(b.p1, m1, c1 === 3, b.p2, m2);
@@ -5567,13 +5611,27 @@ module.exports = function initMultiServers(app, io) {
 
         [[b.p1, b.p2], [b.p2, b.p1]].forEach(([me, opp]) => {
             if (me.hp <= 0) return;
+            if (me.omegaTurns > 0) me.omegaTurns--;
+            if (me.titanTurns > 0) me.titanTurns--;
+
             [me.pet, me.pet2].filter(Boolean).forEach((pt, idx) => {
                 if (idx === 1 && pt === me.pet) return;
                 if (pt === 'mochi' && opp.hp > 0) { opp.hp = Math.max(0, opp.hp - 10); logs.push(`🐱 Mochi scratched ${opp.name} (-10)!`); }
                 if (pt === 'tommy') { me.hp = Math.min(me.maxHp, me.hp + 10); }
                 if (pt === 'garuda' && opp.hp > 0) { opp.hp = Math.max(0, opp.hp - 22); logs.push(`🦅 Garuda struck ${opp.name} (-22)!`); }
                 if (pt === 'sheshnag' && opp.hp > 0) { opp.hp = Math.max(0, opp.hp - 18); logs.push(`🐍 Sheshnag poisoned ${opp.name} (-18)!`); }
+                if (pt === 'chimera' && opp.hp > 0) {
+                    opp.hp = Math.max(0, opp.hp - 24);
+                    me.hp = Math.min(me.maxHp, me.hp + 20);
+                    logs.push(`🦁 Chimera Guardian slashed ${opp.name} (-24) & healed ${me.name} (+20 HP)!`);
+                }
+                if (pt === 'ouroboros' && opp.hp > 0) {
+                    opp.hp = Math.max(0, opp.hp - 42);
+                    me.hp = Math.min(me.maxHp, me.hp + 25);
+                    logs.push(`🐉 Cosmic Ouroboros blasted ${opp.name} (-42) & healed ${me.name} (+25 HP)!`);
+                }
             });
+
             if (me.lineageObj && me.lineageObj.hpTurn > 0) {
                 const rMult = (me.lineageStage || 1) >= 3 ? 1.0 : 0.5;
                 me.hp = Math.min(me.maxHp, me.hp + Math.max(3, Math.round(me.lineageObj.hpTurn * rMult)));
@@ -5599,8 +5657,8 @@ module.exports = function initMultiServers(app, io) {
         b.p2.choice = b.p2.isBot ? (b.p2.ultCd === 0 ? 3 : Math.floor(Math.random() * 3)) : (b.p2.stunned ? -1 : null);
         syncSvBattle(b, turnSfx);
     }
-    // ============================================================================
-    // ⚔️ SAMMUVERSE V3 ENGINE — PIECE 3C/8: MATCH FINISHER & TOWER LAUNCHERS
+     // ============================================================================
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 6/20: FINISHER, TOWER GEARS & ADVENTURE
     // ============================================================================
     function finishSvBattle(battleId, b) {
         clearInterval(b.interval);
@@ -5612,6 +5670,7 @@ module.exports = function initMultiServers(app, io) {
         if (!b.p1.isBot) io.to(b.p1.id).emit('svBattleEnd', { won: p1Won, _serverId: b.srvId });
         if (!b.p2.isBot) io.to(b.p2.id).emit('svBattleEnd', { won: !p1Won, _serverId: b.srvId });
 
+        // 1. ENDLESS TOWER PROGRESSION & FLOOR 50 GEAR UNLOCKS
         if (b.isTower) {
             const pSock = io.sockets.sockets.get(b.p1.id);
             if (!p1Won || !pSock) {
@@ -5626,23 +5685,75 @@ module.exports = function initMultiServers(app, io) {
                 prof.towerCheckpoint = Math.max(1, Math.floor(nextFl / 5) * 5);
             }
             addCoins(b.p1.name, b.p1.baseReward);
+            prof.petEssence = (prof.petEssence || 0) + 5;
+
             if (b.towerFloor === 25) addCoins(b.p1.name, 10000);
-            if (b.towerFloor === 50) prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
+            if (b.towerFloor === 50) {
+                prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
+                prof.gears.omegaCore = true;
+                io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `⚡👑 **FLOOR 50 CONQUERED!** **${b.p1.name}** unlocked the **⚡ OMEGA CORE GEAR** + **Free Fusion Pass**!`, _serverId: b.srvId });
+            }
+            if (b.towerFloor === 75) {
+                prof.gears.titanCrown = true;
+                io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `🌌👑 **FLOOR 75 CONQUERED!** **${b.p1.name}** unlocked the **🌌 TITAN CROWN GEAR**!`, _serverId: b.srvId });
+            }
             if (b.towerFloor === 100) addCoins(b.p1.name, 50000);
+
             syncPlayerTitlesAndBounty(b.p1.name);
             saveSvStats();
             pSock.emit('svStatsSync', getSvProfile(b.p1.name));
-            io.to(b.p1.id).emit('message', { username: "Sammu's Bot", text: `🗼🔥 **FLOOR ${b.towerFloor} CLEARED!** (+${b.p1.baseReward.toLocaleString()}🪙) Ascending to **Floor ${nextFl}** in 3s...`, _serverId: b.srvId });
+            io.to(b.p1.id).emit('message', { username: "Sammu's Bot", text: `🗼🔥 **FLOOR ${b.towerFloor} CLEARED!** (+${b.p1.baseReward.toLocaleString()}🪙 & +5🔮 Essence) Ascending to **Floor ${nextFl}** in 3s...`, _serverId: b.srvId });
             setTimeout(() => { if (io.sockets.sockets.has(b.p1.id)) launchEndlessTowerFloor(pSock, nextFl, b.p1.hp); }, 3000);
             return;
         }
 
+        // 2. ADVENTURE STORY MODE PROGRESSION
+        if (b.isAdventure) {
+            const pSock = io.sockets.sockets.get(b.p1.id);
+            if (!p1Won || !pSock) {
+                io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `💀🗺️ **ADVENTURE DEFEAT!** **${b.p1.name}** was defeated in **${b.advTitle}**! Train harder & retry!`, _serverId: b.srvId });
+                return;
+            }
+            const prof = getSvProfile(b.p1.name);
+            const adv = prof.adventure || { chapter: 1, stage: 1, cleared: false };
+            const chObj = ADVENTURE_CHAPTERS.find(c => c.ch === b.advChapter) || ADVENTURE_CHAPTERS.at(0);
+            const isBossStage = b.advStage >= 3;
+            const cGain = isBossStage ? chObj.coins : Math.round(chObj.coins * 0.4);
+            const xpGain = isBossStage ? chObj.xp : Math.round(chObj.xp * 0.4);
+            const essGain = isBossStage ? chObj.essence : Math.round(chObj.essence * 0.4);
+
+            addCoins(b.p1.name, cGain);
+            prof.training.xp = (prof.training.xp || 0) + xpGain;
+            prof.petEssence = (prof.petEssence || 0) + essGain;
+
+            if (adv.chapter === b.advChapter && adv.stage === b.advStage) {
+                if (adv.stage < 3) {
+                    adv.stage++;
+                } else if (adv.chapter < 5) {
+                    adv.chapter++;
+                    adv.stage = 1;
+                } else {
+                    adv.cleared = true;
+                }
+            }
+            syncPlayerTitlesAndBounty(b.p1.name);
+            saveSvStats();
+            pSock.emit('svStatsSync', getSvProfile(b.p1.name));
+            io.to(b.srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `🗺️🏆 **STAGE CLEARED!** **${b.p1.name}** conquered **${b.p2.name}** in **${chObj.title}** and looted **+${cGain.toLocaleString()}🪙**, **+${xpGain}⚡ XP**, & **+${essGain}🔮 Pet Essence**!`,
+                _serverId: b.srvId
+            });
+            return;
+        }
+
+        // 3. STANDARD ARENA / PVP REWARDS
         let reward = loser.baseReward || 150;
-        if (winner.isSpin) reward = Math.round(reward * 1.5);
         if (!winner.isBot) {
             const wProf = getSvProfile(winner.name);
             wProf.wins = (wProf.wins || 0) + 1;
             wProf.streak = (wProf.streak || 0) + 1;
+            wProf.petEssence = (wProf.petEssence || 0) + (loser.isBot ? 4 : 12);
             if (!wProf.powerWins) wProf.powerWins = {};
             wProf.powerWins[winner.pKey] = (wProf.powerWins[winner.pKey] || 0) + 1;
             if (wProf.powerWins[winner.pKey] === 5) {
@@ -5662,12 +5773,12 @@ module.exports = function initMultiServers(app, io) {
         recordSvLog(b.srvId, winner.name, `${winner.def.icon} ${winner.def.name}`, loser.name, `${loser.def.icon} ${loser.def.name}`);
         io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `⚔️🔥 **SAMMUVERSE:** **${winner.name}** (${winner.def.icon} ${winner.def.name}) defeated **${loser.name}** and won **+${reward}🪙**! 🏆`, _serverId: b.srvId });
     }
-
-    function startSvMatch(srvId, sock1, pow1Key, sock2, pow2Key, isSpin1 = false) {
+       // ============================================================================
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 7/20: PVP, TOWER & ADVENTURE LAUNCHERS
+    // ============================================================================
+    function startSvMatch(srvId, sock1, pow1Key, sock2, pow2Key) {
         const p1 = buildFighterObj(sock1.id, sock1.username, pow1Key);
-        p1.isSpin = isSpin1;
         let p2 = null;
-
         if (typeof sock2 === 'string') {
             const bots = {
                 BOT_DUMMY:  { name: '🥊 Wooden Dummy',   hp: 150, atk: 0,  reward: 35,  pKey: 'rubber' },
@@ -5727,16 +5838,45 @@ module.exports = function initMultiServers(app, io) {
         syncSvBattle(battle, 'ult');
     }
 
+    function launchAdventureStage(socket, chNum, stgNum, powKey) {
+        const srvId = socket.activeServerId;
+        const uname = socket.username || 'Hero';
+        const chObj = ADVENTURE_CHAPTERS.find(c => c.ch === chNum) || ADVENTURE_CHAPTERS.at(0);
+        const stageIdx = Math.max(0, Math.min(2, (stgNum || 1) - 1));
+        const enemyName = chObj.stages.at(stageIdx);
+        const mult = stageIdx === 2 ? 1.45 : (stageIdx === 1 ? 1.18 : 1.0);
+        const hp = Math.round(chObj.baseHp * mult);
+        const atk = Math.round(chObj.baseAtk * mult);
+
+        const p1 = buildFighterObj(socket.id, uname, powKey || 'fire');
+        const p2 = buildFighterObj('ADV_FOE', enemyName, chObj.pKey, hp, atk, true, 'ADV_FOE');
+        p2.isV2 = chNum >= 3; p2.isV3 = chNum >= 5 && stageIdx === 2;
+
+        const battleId = 'adv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        const battle = {
+            id: battleId, srvId, isAdventure: true, advChapter: chNum, advStage: stgNum, advTitle: chObj.title,
+            turn: 1, timeLeft: 15, lastLog: `🗺️ <b>${chObj.title} (Stage ${stgNum}/3)</b> — <b>${enemyName}</b> blocks your path!`,
+            p1, p2, interval: null
+        };
+        svBattles.set(battleId, battle);
+        battle.interval = setInterval(() => {
+            const cur = svBattles.get(battleId);
+            if (!cur) return;
+            cur.timeLeft--;
+            if (cur.timeLeft <= 0) resolveSvTurn(battleId);
+            else syncSvBattle(cur, null);
+        }, 1000);
+        syncSvBattle(battle, 'atk');
+    }
+
     function findPlayerActiveSvBattle(socketId) {
         for (const [bId, b] of svBattles.entries()) {
             if (b.p1.id === socketId || b.p2.id === socketId) return { bId, b };
         }
         return null;
     }
-  
-
-      // ============================================================================
-    // 🏋️ SAMMUVERSE V3 ENGINE — PIECE 4A/8: STOCK, SECURITY & CHAT BADGES
+       // ============================================================================
+    // 🛡️ SAMMUVERSE V4 ENGINE — PIECE 8/20: STOCK, SECURITY & CHAT BADGES
     // ============================================================================
     let hourlyStock = { expiresAt: 0, items: [] };
 
@@ -5750,42 +5890,17 @@ module.exports = function initMultiServers(app, io) {
         return hourlyStock;
     }
 
-        function verifyPlayerAccountOwnership(uname, socket, forceRelink = false) {
+    function verifyPlayerAccountOwnership(uname, socket, forceRelink = false) {
         if (!uname || !socket) return false;
         const devId = socket.trackedDeviceId || null;
         const prof = getSvProfile(uname);
-
-        // If no deviceId arrived yet on initial handshake, don't falsely lock out
         if (!devId) return true;
-
-        // First time linking OR master key relink
         if (!prof.ownerDevId || forceRelink) {
             prof.ownerDevId = devId;
-            delete prof.ownerSig;
             saveSvStats();
             return true;
         }
-
-        // Strict Device ID match only
         return prof.ownerDevId === devId;
-    
-
-        if (!prof.ownerSig || forceRelink) {
-            prof.ownerSig = { deviceId: devId, ip, browser };
-            saveSvStats();
-            return true;
-        }
-        const sig = prof.ownerSig;
-        const devMatch = devId && sig.deviceId && devId === sig.deviceId;
-        const browserMatch = browser && sig.browser && browser === sig.browser;
-        if (devMatch || browserMatch) {
-            if (devId) sig.deviceId = devId;
-            if (ip) sig.ip = ip;
-            if (browser) sig.browser = browser;
-            saveSvStats();
-            return true;
-        }
-        return false;
     }
 
     function ensureTrainingProfile(prof) {
@@ -5795,9 +5910,9 @@ module.exports = function initMultiServers(app, io) {
         return prof.training;
     }
 
-    const _prevIoToV3 = io.to.bind(io);
+    const _prevIoToV4 = io.to.bind(io);
     io.to = function(room) {
-        const broadcaster = _prevIoToV3(room);
+        const broadcaster = _prevIoToV4(room);
         const origEmit = broadcaster.emit.bind(broadcaster);
         broadcaster.emit = function(ev, payload, ...rest) {
             if (ev === 'message' && payload && typeof payload === 'object' && payload.username) {
@@ -5816,96 +5931,197 @@ module.exports = function initMultiServers(app, io) {
         };
         return broadcaster;
     };
-    // ============================================================================
-    // 🏋️ SAMMUVERSE V3 ENGINE — PIECE 4B/8: TRAINING ARENA & 1M UNLOCK CODES
+     // ============================================================================
+    // 🎡 SAMMUVERSE V4 ENGINE — PIECE 9/20: DAILY WHEEL, PET MERGER & GEAR FORGE
     // ============================================================================
     io.on('connection', (socket) => {
-        socket.on('joinRoom', (data) => {
-            const uname = (data && data.username) ? data.username.trim() : (socket.username || '');
-            if (!uname) return;
-            socket.username = uname;
-            if (!verifyPlayerAccountOwnership(uname, socket, false)) {
-                socket.emit('message', {
-                    username: 'SYSTEM',
-                    text: `🛡️ **SECURITY ALERT:** **${uname}** is locked to another device! Spending & \`!pay\` are protected.`,
-                    _serverId: socket.activeServerId
-                });
-            }
-            const prof = getSvProfile(uname);
-            ensureTrainingProfile(prof);
-            socket.emit('svStatsSync', prof);
-        });
-
-        socket.on('svGetStats', () => {
-            const prof = getSvProfile(socket.username || 'Player');
-            ensureTrainingProfile(prof);
-            socket.emit('svStatsSync', prof);
-        });
-
-        socket.on('svRequestLogs', () => {
-            if (socket.activeServerId) socket.emit('svLogsUpdate', svBattleLogs.filter(l => l.srvId === socket.activeServerId));
-        });
-
-        socket.on('svTrainAction', ({ mode, stat }) => {
+        // 1. Daily Lucky Wheel Spin (Free every 24h OR Paid Spin for 500 Coins)
+        socket.on('svDailyWheelSpin', ({ paid }) => {
             const uname = socket.username || 'Player';
-            if (!verifyPlayerAccountOwnership(uname, socket, false)) {
-                return socket.emit('svNotice', '🛡️ Security Lock: Cannot train on a locked profile!');
-            }
+            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
             const prof = getSvProfile(uname);
-            const tr = ensureTrainingProfile(prof);
+            const now = Date.now();
+            const dayMs = 24 * 60 * 60 * 1000;
 
-            if (mode === 'grind_free') {
-                tr.xp = (tr.xp || 0) + 25;
-                addCoins(uname, 8);
-            } else if (mode === 'grind_10x') {
-                if (getCoins(uname) < 100) return socket.emit('svNotice', '🪙 Need 100 Coins for 10x Gravity Training!');
-                addCoins(uname, -100);
-                tr.xp = (tr.xp || 0) + 300;
-            } else if (mode === 'grind_100x') {
-                if (getCoins(uname) < 800) return socket.emit('svNotice', '🪙 Need 800 Coins for 100x Hyperbolic Chamber!');
-                addCoins(uname, -800);
-                tr.xp = (tr.xp || 0) + 3000;
-            } else if (mode === 'upgrade' && ['fistLv', 'bodyLv', 'chiLv'].includes(stat)) {
-                const curLv = tr[stat] || 0;
-                const xpCost = 100 + Math.floor(curLv * 25);
-                if ((tr.xp || 0) < xpCost) return socket.emit('svNotice', `⚡ Need ${xpCost.toLocaleString()} Training XP! Keep grinding!`);
-                tr.xp -= xpCost;
-                tr[stat] = curLv + 1;
+            if (!paid) {
+                if (now - (prof.lastDailySpin || 0) < dayMs) {
+                    const hrs = Math.ceil((dayMs - (now - prof.lastDailySpin)) / 3600000);
+                    return socket.emit('svNotice', `⏳ Free Spin recharges in ${hrs}h! Or spin anytime for 500🪙!`);
+                }
+                prof.lastDailySpin = now;
+            } else {
+                if (getCoins(uname) < 500) return socket.emit('svNotice', '🪙 Need 500 Coins for a Cosmic Wheel Spin!');
+                addCoins(uname, -500);
             }
 
-            ensureTrainingProfile(prof);
+            const r = Math.random();
+            let prize = { idx: 0, label: '🪙 +600 Coins!', type: 'coins', val: 600 };
+            if (r < 0.02) {
+                prize = { idx: 5, label: '🌈 JACKPOT! +15,000 Coins & Free Fusion Pass!', type: 'jackpot' };
+                addCoins(uname, 15000);
+                prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
+            } else if (r < 0.16) {
+                prize = { idx: 4, label: '🔮 +40 Pet Essence!', type: 'essence', val: 40 };
+                prof.petEssence = (prof.petEssence || 0) + 40;
+            } else if (r < 0.36) {
+                prize = { idx: 3, label: '⚡ +600 Training XP!', type: 'xp', val: 600 };
+                prof.training.xp = (prof.training.xp || 0) + 600;
+            } else if (r < 0.62) {
+                prize = { idx: 2, label: '💰 +2,000 Coins!', type: 'coins', val: 2000 };
+                addCoins(uname, 2000);
+            } else if (r < 0.82) {
+                prize = { idx: 1, label: '🔮 +20 Pet Essence & +400🪙!', type: 'combo' };
+                prof.petEssence = (prof.petEssence || 0) + 20;
+                addCoins(uname, 400);
+            } else {
+                addCoins(uname, 600);
+            }
+
             syncPlayerTitlesAndBounty(uname);
             saveSvStats();
-            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svWheelResult', { prize, profile: getSvProfile(uname) });
         });
 
+        // 2. Pet Merger & Evolution Lab (Fuse Pets + Essence + Coins -> Evolved Mega Pets)
+        socket.on('svMergePet', (evoId) => {
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
+            const prof = getSvProfile(uname);
+
+            if (evoId === 'chimera') {
+                if (prof.ownedPets.includes('chimera')) return socket.emit('svNotice', '✅ You already evolved 🦁 Chimera Guardian!');
+                if (!prof.ownedPets.includes('mochi') || !prof.ownedPets.includes('tommy')) {
+                    return socket.emit('svNotice', '⚠️ Own BOTH 🐱 Mochi & 🐶 Tommy first to merge them!');
+                }
+                if ((prof.petEssence || 0) < 30 || getCoins(uname) < 1000) {
+                    return socket.emit('svNotice', '🔮 Need 30 Pet Essence + 1,000🪙 to merge Chimera Guardian!');
+                }
+                prof.petEssence -= 30;
+                addCoins(uname, -1000);
+                prof.ownedPets.push('chimera');
+                prof.activePet = 'chimera';
+                syncPlayerTitlesAndBounty(uname);
+                saveSvStats();
+                socket.emit('svStatsSync', getSvProfile(uname));
+                socket.emit('svNotice', '🦁⚡ PET EVOLUTION COMPLETE! Mochi + Tommy merged into 🦁 CHIMERA GUARDIAN (+24 DMG & +20 HP/turn)!');
+            } else if (evoId === 'ouroboros') {
+                if (prof.ownedPets.includes('ouroboros')) return socket.emit('svNotice', '✅ You already evolved 🐉 Cosmic Ouroboros!');
+                if (!prof.ownedPets.includes('garuda') || !prof.ownedPets.includes('sheshnag')) {
+                    return socket.emit('svNotice', '⚠️ Own BOTH 🦅 Garuda & 🐍 Sheshnag first to merge them!');
+                }
+                if ((prof.petEssence || 0) < 80 || getCoins(uname) < 4000) {
+                    return socket.emit('svNotice', '🔮 Need 80 Pet Essence + 4,000🪙 to merge Cosmic Ouroboros!');
+                }
+                prof.petEssence -= 80;
+                addCoins(uname, -4000);
+                prof.ownedPets.push('ouroboros');
+                prof.activePet = 'ouroboros';
+                syncPlayerTitlesAndBounty(uname);
+                saveSvStats();
+                socket.emit('svStatsSync', getSvProfile(uname));
+                socket.emit('svNotice', '🐉🌌 MYTHIC PET EVOLUTION! Garuda + Sheshnag merged into 🐉 COSMIC OUROBOROS (-18% DMG Taken, +42 DMG & +25 HP/turn)!');
+            }
+        });
+
+        // 3. Gear Forge (Requires Tower Floor 50 Milestone + Coins!)
+        socket.on('svCraftGear', (gearKey) => {
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
+            const prof = getSvProfile(uname);
+            const bestFloor = prof.maxTowerFloor || 1;
+
+            if (gearKey === 'omegaCore') {
+                if (prof.gears.omegaCore) return socket.emit('svNotice', '✅ Omega Core Gear already forged!');
+                if (bestFloor < 50) return socket.emit('svNotice', `🔒 Reach Endless Tower Floor 50 first! (Your Best: Floor ${bestFloor})`);
+                if (getCoins(uname) < 10000) return socket.emit('svNotice', '🪙 Need 10,000 Coins to forge ⚡ Omega Core Gear!');
+                addCoins(uname, -10000);
+                prof.gears.omegaCore = true;
+                syncPlayerTitlesAndBounty(uname);
+                saveSvStats();
+                socket.emit('svStatsSync', getSvProfile(uname));
+                socket.emit('svNotice', '⚡👑 FORGED OMEGA CORE GEAR! You can now trigger ⚡ OMEGA EVOLUTION mid-battle!');
+            } else if (gearKey === 'titanCrown') {
+                if (prof.gears.titanCrown) return socket.emit('svNotice', '✅ Titan Crown Gear already forged!');
+                if (bestFloor < 50) return socket.emit('svNotice', `🔒 Reach Endless Tower Floor 50 first! (Your Best: Floor ${bestFloor})`);
+                if (getCoins(uname) < 25000) return socket.emit('svNotice', '🪙 Need 25,000 Coins to forge 🌌 Titan Crown Gear!');
+                addCoins(uname, -25000);
+                prof.gears.titanCrown = true;
+                syncPlayerTitlesAndBounty(uname);
+                saveSvStats();
+                socket.emit('svStatsSync', getSvProfile(uname));
+                socket.emit('svNotice', '🌌👑 FORGED TITAN CROWN GEAR! You can now unleash 🌌 COLOSSAL TITAN FORM mid-battle!');
+            }
+        });
+    });
+    // ============================================================================
+    // ⚡ SAMMUVERSE V4 ENGINE — PIECE 10/20: OMEGA/TITAN TRANSFORM & SECRET CODES
+    // ============================================================================
+    io.on('connection', (socket) => {
+        // Mid-Battle Transformation Handler (Omega Evolution OR Colossal Titan Form)
+        socket.on('svTransform', (formType) => {
+            const found = findPlayerActiveSvBattle(socket.id);
+            if (!found) return;
+            const { b } = found;
+            const me = b.p1.id === socket.id ? b.p1 : b.p2;
+
+            if (formType === 'omega') {
+                if (!me.gears?.omegaCore) return socket.emit('svNotice', '🔒 Forge the ⚡ Omega Core Gear first (Tower Floor 50 + 10,000🪙)!');
+                if (me.omegaUsed) return socket.emit('svNotice', '⚠️ Already used Omega Evolution in this battle!');
+                if ((me.energy || 0) < 50) return socket.emit('svNotice', `⚡ Need 50% Battle Energy (Current: ${me.energy || 0}%)!`);
+
+                me.omegaUsed = true;
+                me.energy -= 50;
+                me.omegaTurns = 3;
+                me.hp = Math.min(me.maxHp, me.hp + 70);
+                broadcastSvCutscene(b, {
+                    theme: 'awaken',
+                    emoji: '⚡🧬',
+                    title: 'OMEGA EVOLUTION!',
+                    caption: `⚡🧬 ${me.name.toUpperCase()} ASCENDED TO OMEGA FORM! (+40% ATK, +30% ARMOR & +70 HP for 3 Turns!)`,
+                    sfx: 'awaken'
+                });
+                b.lastLog = `⚡🧬 <b>${me.name}</b> triggered <b>OMEGA EVOLUTION</b>! (+40% ATK, +30% Armor, +70 HP)<br>` + b.lastLog;
+                syncSvBattle(b, 'awaken');
+            } else if (formType === 'titan') {
+                if (!me.gears?.titanCrown) return socket.emit('svNotice', '🔒 Forge the 🌌 Titan Crown Gear first (Tower Floor 50 + 25,000🪙)!');
+                if (me.titanUsed) return socket.emit('svNotice', '⚠️ Already used Colossal Titan Form in this battle!');
+                if ((me.energy || 0) < 75) return socket.emit('svNotice', `⚡ Need 75% Battle Energy (Current: ${me.energy || 0}%)!`);
+
+                me.titanUsed = true;
+                me.energy -= 75;
+                me.titanTurns = 2;
+                me.maxHp += 150;
+                me.hp += 150;
+                broadcastSvCutscene(b, {
+                    theme: 'vishwaroopa',
+                    emoji: '🌌👑',
+                    title: 'COLOSSAL TITAN FORM!',
+                    caption: `🌌👑 ${me.name.toUpperCase()} GREW INTO A COLOSSAL TITAN! (+150 HP, +55% DMG, UNSTOPPABLE!)`,
+                    sfx: 'ult'
+                });
+                b.lastLog = `🌌👑 <b>${me.name}</b> unleashed <b>COLOSSAL TITAN FORM</b>! (+150 HP, +55% DMG, Evade-Break)<br>` + b.lastLog;
+                syncSvBattle(b, 'ult');
+            }
+        });
+
+        // Secret & Gift Codes (Brand-New Supreme Code #sammuomega999 + Fresh Gift Codes!)
         socket.on('svUnlockCode', (rawCode) => {
             const uname = socket.username || 'Player';
             const prof = getSvProfile(uname);
             const tr = ensureTrainingProfile(prof);
             const code = String(rawCode || '').trim().toLowerCase();
 
-            // 👽 INSTANT 1,000,000 (1M) TRAINING MASTERY CODE!
-            if (code === '#train1m') {
-                tr.fistLv = 333334;
-                tr.bodyLv = 333333;
-                tr.chiLv  = 333333;
-                tr.xp     = 1000000;
-                ensureTrainingProfile(prof);
-                syncPlayerTitlesAndBounty(uname);
-                saveSvStats();
-                socket.emit('svStatsSync', getSvProfile(uname));
-                socket.emit('svNotice', '👽🔥 1,000,000 (1M) TRAINING MASTERY UNLOCKED! (Fist: 333,334 | Body: 333,333 | Chi: 333,333)');
-                return;
-            }
-
-            if (code === '#sammucreator' || code === '#v3unlock') {
+            // 👑 YOUR NEW SUPREME DEV CODE: #sammuomega999
+            if (code === '#sammuomega999') {
                 prof.unlockedPowers = Object.keys(SV_DEFS);
-                prof.ownedPets = new Array('mochi', 'tommy', 'garuda', 'sheshnag');
-                prof.activePet = 'sheshnag';
-                prof.activePet2 = 'garuda';
+                prof.ownedPets = new Array('mochi', 'tommy', 'garuda', 'sheshnag', 'chimera', 'ouroboros');
+                prof.activePet = 'ouroboros';
+                prof.activePet2 = 'chimera';
                 prof.ownedRelics = new Array('excalibur', 'aegis', 'vampfang');
                 prof.activeRelic = 'excalibur';
+                prof.gears = { omegaCore: true, titanCrown: true };
+                prof.adventure = { chapter: 5, stage: 3, cleared: true };
+                prof.petEssence = (prof.petEssence || 0) + 500;
                 prof.hasStone = true;
                 prof.atkLv = 15;
                 prof.hpLv = 15;
@@ -5927,7 +6143,15 @@ module.exports = function initMultiServers(app, io) {
                 addCoins(uname, 999999);
                 saveSvStats();
                 socket.emit('svStatsSync', getSvProfile(uname));
-                socket.emit('svNotice', '👑🔱 CREATOR MASTER UNLOCKED! 1M Training Mastery, ALL V3 Powers, Pets, Relics & +999,999🪙!');
+                socket.emit('svNotice', '👑🔱 SUPREME OMEGA UNLOCKED! All V3 Powers, Omega & Titan Gears, Evolved Pets, 1M Mastery & +999,999🪙!');
+                return;
+            }
+
+            if (code === '#train1m') {
+                tr.fistLv = 333334; tr.bodyLv = 333333; tr.chiLv = 333333; tr.xp = 1000000;
+                ensureTrainingProfile(prof); syncPlayerTitlesAndBounty(uname); saveSvStats();
+                socket.emit('svStatsSync', getSvProfile(uname));
+                socket.emit('svNotice', '👽🔥 1,000,000 (1M) TRAINING MASTERY UNLOCKED!');
                 return;
             }
 
@@ -5936,35 +6160,90 @@ module.exports = function initMultiServers(app, io) {
                 '#millyyt':    { key: 'millyyt',    label: '🎬 Milly (YouTube Queen)' },
                 '#ishikastar': { key: 'ishikastar', label: '✨ Ishika (Celestial Empress)' },
                 '#zoroking':   { key: 'zoroking',   label: '⚔️ Zoro (King of Hell)' },
-                '#antimpoke':  { key: 'antimpoke',  label: '⚡ Antim (Arceus & Rayquaza)' },
+                '#antimpoke':  { key: 'antimpoke',  label: '⚡ Antim (Astral Sky Sovereign)' },
                 '#mahadev':    { key: 'mahadev',    label: '🔱 Mahadev (Tandava Destroyer)' }
             };
             if (secretMap[code]) {
                 const s = secretMap[code];
                 if (!prof.unlockedPowers.includes(s.key)) prof.unlockedPowers.push(s.key);
-                syncPlayerTitlesAndBounty(uname);
-                saveSvStats();
+                syncPlayerTitlesAndBounty(uname); saveSvStats();
                 socket.emit('svStatsSync', getSvProfile(uname));
                 socket.emit('svNotice', `🌟 MYTHIC POWER UNLOCKED: ${s.label}!`);
                 return;
             }
 
-            const coinCodes = { '#didi4000': 4000, '#moondidi': 4500, '#sammu1000': 1000, '#bhaichara500': 500, '#host100k': 100000 };
-            if (coinCodes[code]) {
-                if (prof.redeemedCodes.includes(code)) return socket.emit('svNotice', '⚠️ Already redeemed!');
+            // Fresh Public Gift Codes for Players!
+            const giftCodes = {
+                '#titan2026':    { coins: 3000, xp: 300, ess: 25, msg: '🌌 **TITAN 2026 PACK!** +3,000🪙, +300⚡ XP & +25🔮 Pet Essence!' },
+                '#luckywheel':   { coins: 1500, xp: 150, ess: 15, msg: '🎡 **LUCKY WHEEL BONUS!** +1,500🪙 & +15🔮 Pet Essence!' },
+                '#petfusion':    { coins: 2000, xp: 200, ess: 40, msg: '🐾 **PET MERGER GIFT!** +2,000🪙 & +40🔮 Pet Essence!' },
+                '#adventure5k':  { coins: 5000, xp: 500, ess: 30, msg: '🗺️ **ADVENTURE HERO GIFT!** +5,000🪙 & +500⚡ XP!' },
+                '#didi4000':     { coins: 4000, xp: 0,   ess: 0,  msg: '🌙💖 **DIDI ROYAL GIFT!** +4,000🪙 added!' },
+                '#moondidi':     { coins: 4500, xp: 0,   ess: 0,  msg: '🌙🩺 **DR. MOON GIFT!** +4,500🪙 added!' }
+            };
+            if (giftCodes[code]) {
+                if (prof.redeemedCodes.includes(code)) return socket.emit('svNotice', '⚠️ Already redeemed this code!');
                 prof.redeemedCodes.push(code);
-                addCoins(uname, coinCodes[code]);
-                saveSvStats();
+                const g = giftCodes[code];
+                addCoins(uname, g.coins);
+                prof.training.xp = (prof.training.xp || 0) + g.xp;
+                prof.petEssence = (prof.petEssence || 0) + g.ess;
+                syncPlayerTitlesAndBounty(uname); saveSvStats();
                 socket.emit('svStatsSync', getSvProfile(uname));
-                return socket.emit('svNotice', `🎉 +${coinCodes[code].toLocaleString()}🪙 added!`);
+                return socket.emit('svNotice', g.msg);
             }
             socket.emit('svNotice', '❌ Invalid Secret or Gift Code!');
         });
     });
     // ============================================================================
-    // 🏋️ SAMMUVERSE V3 ENGINE — PIECE 4C-1/8: SHOP, LINEAGE, TITLES & FUSION
+    // 🏋️ SAMMUVERSE V4 ENGINE — PIECE 11A/20: STATS, TRAINING & DOJO UPGRADES
     // ============================================================================
     io.on('connection', (socket) => {
+        socket.on('joinRoom', (data) => {
+            const uname = (data && data.username) ? data.username.trim() : (socket.username || '');
+            if (!uname) return;
+            socket.username = uname;
+            if (!verifyPlayerAccountOwnership(uname, socket, false)) {
+                socket.emit('message', { username: 'SYSTEM', text: `🛡️ **SECURITY ALERT:** **${uname}** is locked to another device!`, _serverId: socket.activeServerId });
+            }
+            const prof = getSvProfile(uname);
+            ensureTrainingProfile(prof);
+            socket.emit('svStatsSync', prof);
+        });
+
+        socket.on('svGetStats', () => {
+            const prof = getSvProfile(socket.username || 'Player');
+            ensureTrainingProfile(prof);
+            socket.emit('svStatsSync', prof);
+        });
+
+        socket.on('svRequestLogs', () => {
+            if (socket.activeServerId) socket.emit('svLogsUpdate', svBattleLogs.filter(l => l.srvId === socket.activeServerId));
+        });
+
+        socket.on('svTrainAction', ({ mode, stat }) => {
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
+            const prof = getSvProfile(uname);
+            const tr = ensureTrainingProfile(prof);
+
+            if (mode === 'grind_free') { tr.xp = (tr.xp || 0) + 25; addCoins(uname, 8); }
+            else if (mode === 'grind_10x') {
+                if (getCoins(uname) < 100) return socket.emit('svNotice', '🪙 Need 100 Coins!');
+                addCoins(uname, -100); tr.xp = (tr.xp || 0) + 300;
+            } else if (mode === 'grind_100x') {
+                if (getCoins(uname) < 800) return socket.emit('svNotice', '🪙 Need 800 Coins!');
+                addCoins(uname, -800); tr.xp = (tr.xp || 0) + 3000;
+            } else if (mode === 'upgrade' && ['fistLv', 'bodyLv', 'chiLv'].includes(stat)) {
+                const curLv = tr[stat] || 0;
+                const xpCost = 100 + Math.floor(curLv * 25);
+                if ((tr.xp || 0) < xpCost) return socket.emit('svNotice', `⚡ Need ${xpCost.toLocaleString()} Training XP!`);
+                tr.xp -= xpCost; tr[stat] = curLv + 1;
+            }
+            ensureTrainingProfile(prof); syncPlayerTitlesAndBounty(uname); saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+        });
+
         socket.on('svBuyPower', (pKey) => {
             const uname = socket.username || 'Player';
             if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
@@ -5986,14 +6265,15 @@ module.exports = function initMultiServers(app, io) {
             else return socket.emit('svNotice', '🪙 Not enough Coins or maxed!');
             saveSvStats(); socket.emit('svStatsSync', getSvProfile(uname));
         });
-
+        // ========================================================================
+        // 🏋️ SAMMUVERSE V4 ENGINE — PIECE 11B/20: LINEAGE, TITLES, ENCHANT & FUSION
+        // ========================================================================
         socket.on('svPetAction', (petId) => {
             const uname = socket.username || 'Player';
             if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
             const prof = getSvProfile(uname), costs = { mochi: 200, tommy: 200, garuda: 500, sheshnag: 2500 };
-            if (!costs[petId]) return;
             if (prof.ownedPets.includes(petId)) { prof.activePet = prof.activePet === petId ? null : petId; }
-            else {
+            else if (costs[petId]) {
                 if (getCoins(uname) < costs[petId]) return socket.emit('svNotice', `🪙 Need ${costs[petId]} Coins!`);
                 addCoins(uname, -costs[petId]); prof.ownedPets.push(petId); prof.activePet = petId;
             }
@@ -6002,7 +6282,6 @@ module.exports = function initMultiServers(app, io) {
 
         socket.on('svSpinLineage', () => {
             const uname = socket.username || 'Player';
-            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
             const prof = getSvProfile(uname);
             if (getCoins(uname) < 1000) return socket.emit('svNotice', '🪙 Need 1,000 Coins!');
             addCoins(uname, -1000);
@@ -6010,13 +6289,10 @@ module.exports = function initMultiServers(app, io) {
             prof.lineage = r < 0.06 ? 'celestial' : (r < 0.20 ? 'slime' : (r < 0.38 ? 'dragonkin' : (r < 0.58 ? 'demon' : (r < 0.78 ? 'reaper' : 'ape'))));
             prof.lineageStage = 1;
             syncPlayerTitlesAndBounty(uname); saveSvStats(); socket.emit('svStatsSync', getSvProfile(uname));
-            const l = SV_LINEAGES[prof.lineage];
-            socket.emit('svNotice', `🧬 LINEAGE AWAKENED: ${l.icon} ${l.name}!`);
         });
 
         socket.on('svEvolveLineage', () => {
             const uname = socket.username || 'Player';
-            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
             const prof = getSvProfile(uname), stg = prof.lineageStage || 1;
             if (stg >= 3) return;
             const cost = stg === 1 ? 2500 : 6000;
@@ -6035,7 +6311,6 @@ module.exports = function initMultiServers(app, io) {
 
         socket.on('svRollEnchant', (pKey) => {
             const uname = socket.username || 'Player';
-            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
             const prof = getSvProfile(uname);
             if (getCoins(uname) < 3000) return socket.emit('svNotice', '🪙 Need 3,000 Coins!');
             addCoins(uname, -3000);
@@ -6067,7 +6342,6 @@ module.exports = function initMultiServers(app, io) {
             if (!p1 || !p2 || p1 === p2) return socket.emit('svNotice', '⚠️ Select 2 DIFFERENT powers!');
             const def1 = SV_DEFS[p1], def2 = SV_DEFS[p2];
             if (!def1 || !def2) return;
-
             const slotNum = prof.customPowers.length + 1;
             const tiers = new Array(50000, 250000, 750000, 1500000);
             const cost = prof.customPowers.length < tiers.length ? tiers.at(prof.customPowers.length) : (tiers.at(-1) + ((prof.customPowers.length - tiers.length + 1) * 1000000));
@@ -6095,7 +6369,6 @@ module.exports = function initMultiServers(app, io) {
                     { label: `💥 ${title.toUpperCase()} ULT (${uDmg} True DMG + Stun)`, dmg: uDmg, trueDmg: true, stun: true, cut: { theme: 'vishwaroopa', emoji: `${def1.icon}${def2.icon}`, title: `${title.toUpperCase()}!` } }
                 )
             };
-
             if (usePass) prof.freeFusionPasses--; else addCoins(uname, -cost);
             SV_DEFS[cid] = newDef; prof.unlockedPowers.push(cid); prof.customPowers.push({ id: cid, def: newDef });
             syncPlayerTitlesAndBounty(uname); saveSvStats();
@@ -6104,13 +6377,13 @@ module.exports = function initMultiServers(app, io) {
         });
     });
     // ============================================================================
-    // 🏋️ SAMMUVERSE V3 ENGINE — PIECE 4C-2/8: PVP, TOWER, ADMIN & CLOUD RESTORE
+    // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 12/20: PVP, ADVENTURE, TOWER & CLOUD BOOT
     // ============================================================================
     io.on('connection', (socket) => {
         socket.on('svChallenge', ({ targetId, power }) => {
             const srvId = socket.activeServerId;
             if (!srvId || findPlayerActiveSvBattle(socket.id)) return;
-            if (['BOT_DUMMY', 'BOT_SENSEI', 'BOT_DEMON'].includes(targetId)) return startSvMatch(srvId, socket, power, targetId, null, false);
+            if (['BOT_DUMMY', 'BOT_SENSEI', 'BOT_DEMON'].includes(targetId)) return startSvMatch(srvId, socket, power, targetId, null);
             const tSock = io.sockets.sockets.get(targetId);
             if (!tSock || tSock.activeServerId !== srvId) return socket.emit('svNotice', '⚠️ Opponent offline!');
             svPending.set(socket.id, { targetId, power, srvId, expires: Date.now() + 45000 });
@@ -6123,7 +6396,7 @@ module.exports = function initMultiServers(app, io) {
             if (!srvId || !req || req.targetId !== socket.id || Date.now() > req.expires) return;
             svPending.delete(challengerId);
             const cSock = io.sockets.sockets.get(challengerId);
-            if (cSock) startSvMatch(srvId, cSock, req.power, socket, power, false);
+            if (cSock) startSvMatch(srvId, cSock, req.power, socket, power);
         });
 
         socket.on('svUseSkill', (idx) => {
@@ -6158,9 +6431,13 @@ module.exports = function initMultiServers(app, io) {
             io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `💖🪈 **PREM SAMARPAN!** **${me.name}** surrendered out of love to **${opp.name}** (+250🪙)!`, _serverId: b.srvId });
         });
 
+        socket.on('svStartAdventure', ({ ch, stg, power }) => {
+            if (!socket.activeServerId || findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '⚠️ Finish your current battle first!');
+            launchAdventureStage(socket, Number(ch) || 1, Number(stg) || 1, power || 'fire');
+        });
+
         socket.on('svTowerEnter', ({ startFromCheckpoint }) => {
-            const srvId = socket.activeServerId;
-            if (!srvId || findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '⚠️ Finish your current battle first!');
+            if (!socket.activeServerId || findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '⚠️ Finish your current battle first!');
             const prof = getSvProfile(socket.username || 'Climber');
             launchEndlessTowerFloor(socket, startFromCheckpoint ? Math.max(1, prof.towerCheckpoint || 1) : 1, null);
         });
@@ -6170,158 +6447,18 @@ module.exports = function initMultiServers(app, io) {
             socket.emit('svTowerLeaderboardSync', top);
         });
 
-        socket.on('chatMessage', (payload) => {
-            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
-            if (typeof raw !== 'string' || !socket.activeServerId) return;
-            const clean = raw.trim();
-            const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
-            if (clean.toLowerCase().startsWith('/settrain ') && OG_HOSTS.has(sender)) {
-                const parts = clean.slice(10).trim().split(/\s+/);
-                const target = parts.at(0);
-                const val = Math.max(1, parseInt(parts.at(1), 10) || 1000000);
-                if (!target) return;
-                const prof = getSvProfile(target);
-                const tr = ensureTrainingProfile(prof);
-                tr.fistLv = Math.ceil(val / 3);
-                tr.bodyLv = Math.floor(val / 3);
-                tr.chiLv  = Math.floor(val / 3);
-                tr.xp     = val;
-                syncPlayerTitlesAndBounty(target);
-                saveSvStats();
-                socket.emit('message', { username: 'SYSTEM', text: `🏋️✅ Set **${target}**'s Total Training Mastery to **${val.toLocaleString()}**!`, _serverId: socket.activeServerId });
-            }
-        });
-    
         socket.on('chatMessage', async (payload) => {
             const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
             if (typeof raw !== 'string' || !socket.activeServerId) return;
-            const clean = raw.trim();
-            const sender = (socket.username || (payload && payload.username) || '').toLowerCase();
-
-            if (clean.toLowerCase() === '/cloudsave') {
+            if (raw.trim().toLowerCase() === '/cloudsave') {
                 const r1 = await upstashCmd(['SET', 'sammu_sv_stats', JSON.stringify(svPlayerStats)]);
-                const r2 = await upstashCmd(['SET', 'sammu_economy', JSON.stringify({
-                    wallets: Object.fromEntries(playerWallet),
-                    cards: Object.fromEntries(playerCards)
-                })]);
-                socket.emit('message', {
-                    username: 'SYSTEM',
-                    text: (r1 && r2)
-                        ? `☁️✅ **CLOUD SAVED!** (${Object.keys(svPlayerStats).length} Profiles & ${playerWallet.size} Wallets synced to Upstash!)`
-                        : `❌ **Cloud Save Failed!** Check UPSTASH_REDIS_REST_URL & TOKEN in Render Environment.`,
-                    _serverId: socket.activeServerId
-                });
-                return;
+                const r2 = await upstashCmd(['SET', 'sammu_economy', JSON.stringify({ wallets: Object.fromEntries(playerWallet), cards: Object.fromEntries(playerCards) })]);
+                socket.emit('message', { username: 'SYSTEM', text: (r1 && r2) ? `☁️✅ **CLOUD SAVED!** (${Object.keys(svPlayerStats).length} Profiles synced!)` : `❌ **Cloud Save Failed!**`, _serverId: socket.activeServerId });
             }
-
-                    });
+        });
     });
-    // ============================================================================
-    // 🏆 GLOBAL LEADERBOARD & 🏰 5-WAVE ABYSSAL DUNGEON (!dungeon)
-    // ============================================================================
-    const DUNGEON_WAVES = [
-        { num: 1, name: '💀 Wave 1: Shadow Assassin',     hp: 260,  atk: 12, pKey: 'shadow',     red: 0.05 },
-        { num: 2, name: '🔥 Wave 2: Inferno Chimera',     hp: 380,  atk: 18, pKey: 'fire',       red: 0.10 },
-        { num: 3, name: '⚡ Wave 3: Thunder Raijin Lord', hp: 520,  atk: 24, pKey: 'lightning',  red: 0.15 },
-        { num: 4, name: '🌑 Wave 4: Void Eclipse Titan',  hp: 700,  atk: 30, pKey: 'blackhole',  red: 0.22 },
-        { num: 5, name: '👹👑 BOSS: ABYSSAL OVERLORD',    hp: 1100, atk: 38, pKey: 'antimatter', red: 0.30 }
-    ];
 
-    function launchDungeonWaveV3(socket, waveIdx, carryHp) {
-        const srvId = socket.activeServerId;
-        const uname = socket.username || 'Hero';
-        const prof = getSvProfile(uname);
-        const w = DUNGEON_WAVES.at(waveIdx);
-        const pKey = (prof.customPowers?.at(-1)?.id) || (prof.unlockedPowers?.at(-1)) || 'fire';
-
-        const p1 = buildFighterObj(socket.id, uname, pKey);
-        p1.hp = carryHp ? Math.min(p1.maxHp, carryHp + 60) : p1.maxHp;
-        p1.baseReward = 20000;
-
-        const p2 = buildFighterObj('DNG_BOSS', w.name, w.pKey, w.hp, w.atk, true, 'DNG_BOSS');
-        p2.def = { ...p2.def, passiveRed: w.red };
-        p2.isV2 = waveIdx >= 3;
-
-        const battleId = 'dng_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-        const battle = {
-            id: battleId, srvId, isDungeon: true, dungeonWave: waveIdx,
-            turn: 1, timeLeft: 15,
-            lastLog: `🏰 <b>${w.name}</b> (Wave ${w.num}/5) appeared! Beat all 5 waves for <b>20,000🪙 + Free Fusion Pass</b>!`,
-            p1, p2, interval: null
-        };
-        svBattles.set(battleId, battle);
-        battle.interval = setInterval(() => {
-            const cur = svBattles.get(battleId);
-            if (!cur) return;
-            cur.timeLeft--;
-            if (cur.timeLeft <= 0) resolveSvTurn(battleId);
-            else syncSvBattle(cur, null);
-        }, 1000);
-        syncSvBattle(battle, 'ult');
-    }
-
-    // Hook Dungeon Wave Progression into finishSvBattle
-    const _origFinishSvBattle = finishSvBattle;
-    finishSvBattle = function(battleId, b) {
-        if (!b || !b.isDungeon) return _origFinishSvBattle(battleId, b);
-
-        clearInterval(b.interval);
-        svBattles.delete(battleId);
-        const won = b.p1.hp > b.p2.hp;
-        const pSock = io.sockets.sockets.get(b.p1.id);
-        io.to(b.p1.id).emit('svBattleEnd', { won, _serverId: b.srvId });
-
-        if (!won || !pSock) {
-            io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `💀🏰 **DUNGEON DEFEAT!** **${b.p1.name}** fell on **${DUNGEON_WAVES.at(b.dungeonWave).name}**!`, _serverId: b.srvId });
-            return;
-        }
-        if (b.dungeonWave + 1 < DUNGEON_WAVES.length) {
-            const nextW = DUNGEON_WAVES.at(b.dungeonWave + 1);
-            io.to(b.p1.id).emit('message', { username: "Sammu's Bot", text: `⚔️🔥 **WAVE ${b.dungeonWave + 1}/5 CLEARED!** (+60 HP Heal) **${nextW.name}** in 3s...`, _serverId: b.srvId });
-            setTimeout(() => { if (io.sockets.sockets.has(b.p1.id)) launchDungeonWaveV3(pSock, b.dungeonWave + 1, b.p1.hp); }, 3000);
-        } else {
-            const prof = getSvProfile(b.p1.name);
-            prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
-            const newBal = addCoins(b.p1.name, 20000);
-            syncPlayerTitlesAndBounty(b.p1.name);
-            saveSvStats();
-            pSock.emit('svStatsSync', getSvProfile(b.p1.name));
-            pSock.emit('svNotice', '🏆👹 DUNGEON CONQUERED! +20,000🪙 & 1x FREE CUSTOM FUSION PASS!');
-            io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `🎊👑 **DUNGEON CONQUERED!!** **${b.p1.name}** slayed the **👹 ABYSSAL OVERLORD** and won **+20,000🪙** (Total: **${newBal.toLocaleString()}🪙**) + **1x FREE FUSION PASS**! ⚗️`, _serverId: b.srvId });
-        }
-    };
-
-    io.on('connection', (socket) => {
-        socket.on('svGetLeaderboard', () => {
-            const board = Object.entries(svPlayerStats)
-                .map(([name, st]) => ({
-                    name: name.toUpperCase(),
-                    wins: st.wins || 0,
-                    coins: getCoins(name),
-                    powers: (st.unlockedPowers || []).length + 4,
-                    bounty: st.bounty || 10000
-                }))
-                .sort((a, b) => b.wins - a.wins || b.coins - a.coins)
-                .slice(0, 10);
-            socket.emit('svLeaderboardSync', board);
-        });
-
-        socket.on('svStartDungeon', () => {
-            if (!socket.activeServerId || findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '⚠️ Finish your current battle first!');
-            launchDungeonWaveV3(socket, 0, null);
-        });
-
-        socket.on('chatMessage', (payload) => {
-            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
-            if (typeof raw === 'string' && raw.trim().toLowerCase() === '!dungeon' && socket.activeServerId) {
-                if (findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '⚠️ Finish your current battle first!');
-                launchDungeonWaveV3(socket, 0, null);
-            }
-        });
-    
-
-
-    (async function restoreCloudV3() {
+    (async function restoreCloudV4() {
         if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
         const rawStats = await upstashCmd(['GET', 'sammu_sv_stats']);
         if (rawStats) {
@@ -6342,18 +6479,17 @@ module.exports = function initMultiServers(app, io) {
             } catch (e) {}
         }
     })();
-    
-      // ============================================================================
-    // 🎨 SAMMUVERSE V3 ENGINE — PIECE 5A/8: STYLES, CUTSCENE & SUB-MODALS HTML
+    // ============================================================================
+    // 🎨 SAMMUVERSE V4 ENGINE — PIECE 13/20: V4 STYLES & CINEMA CUTSCENE HTML
     // ============================================================================
     const SV_UI_HTML_PART1 = `
     <style>
       #svModal { display:none; position:fixed; inset:0; background:rgba(5,7,16,0.95); z-index:999995; align-items:center; justify-content:center; padding:10px; backdrop-filter:blur(10px); font-family:inherit; }
-      #svCard { background:linear-gradient(155deg,#0f172a,#1e1b4b,#311042); border:2px solid #a855f7; border-radius:22px; padding:13px; width:100%; max-width:435px; max-height:93vh; overflow-y:auto; color:#fff; box-shadow:0 0 40px rgba(168,85,247,0.55); text-align:center; }
-      .sv-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:8px 0; }
-      .sv-tab { padding:7px 3px; border-radius:10px; border:1px solid #a855f7; background:#1e1b4b; color:#fff; font-weight:900; font-size:10px; cursor:pointer; }
+      #svCard { background:linear-gradient(155deg,#0f172a,#1e1b4b,#311042); border:2px solid #a855f7; border-radius:22px; padding:13px; width:100%; max-width:440px; max-height:93vh; overflow-y:auto; color:#fff; box-shadow:0 0 40px rgba(168,85,247,0.55); text-align:center; }
+      .sv-tabs { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; margin:8px 0; }
+      .sv-tab { padding:7px 2px; border-radius:10px; border:1px solid #a855f7; background:#1e1b4b; color:#fff; font-weight:900; font-size:10px; cursor:pointer; }
       .sv-tab.active { background:#a855f7; color:#fff; box-shadow:0 0 10px rgba(168,85,247,0.6); }
-      .sv-powers { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0; max-height:190px; overflow-y:auto; }
+      .sv-powers { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0; max-height:185px; overflow-y:auto; }
       .sv-pwr-btn { background:rgba(255,255,255,0.07); border:1.5px solid #475569; border-radius:11px; padding:7px 6px; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; text-align:left; }
       .sv-pwr-btn.selected { border-color:#facc15; background:rgba(250,204,21,0.22); }
       .sv-pwr-btn.locked-coin { border-color:#38bdf8; background:rgba(56,189,248,0.1); }
@@ -6366,22 +6502,22 @@ module.exports = function initMultiServers(app, io) {
       .sv-skill-btn.ult { border-color:#facc15; background:linear-gradient(145deg,#713f12,#4c0519); }
       .sv-shop-card { background:rgba(255,255,255,0.06); border:1px solid #475569; border-radius:11px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; text-align:left; font-size:11px; }
       .sv-log-item { background:rgba(255,255,255,0.06); border-left:3px solid #facc15; border-radius:8px; padding:6px 8px; margin-bottom:5px; font-size:11px; text-align:left; }
-      #svCutsceneOverlay { display:none; position:fixed; inset:0; z-index:9999999; background:rgba(4,6,15,0.92); backdrop-filter:blur(8px); align-items:center; justify-content:center; flex-direction:column; padding:12px; }
-      #svCutsceneBox { position:relative; width:100%; max-width:420px; border:2.5px solid #facc15; border-radius:20px; overflow:hidden; background:#050814; box-shadow:0 0 50px rgba(250,204,21,0.75); text-align:center; }
-      #svCutsceneCanvas { width:100%; height:240px; display:block; }
-      #svSkipCutsceneBtn { position:absolute; top:10px; right:10px; z-index:10; background:rgba(15,23,42,0.9); border:1.5px solid #facc15; color:#fde047; border-radius:999px; padding:5px 12px; font-size:11px; font-weight:900; cursor:pointer; }
+      #svCutsceneOverlay { display:none; position:fixed; inset:0; z-index:9999999; background:rgba(3,5,12,0.95); backdrop-filter:blur(10px); align-items:center; justify-content:center; flex-direction:column; padding:12px; }
+      #svCutsceneBox { position:relative; width:100%; max-width:430px; border:3px solid #facc15; border-radius:20px; overflow:hidden; background:#03050c; box-shadow:0 0 60px rgba(250,204,21,0.85); text-align:center; }
+      #svCutsceneCanvas { width:100%; height:260px; display:block; }
+      #svSkipCutsceneBtn { position:absolute; top:26px; right:10px; z-index:10; background:rgba(15,23,42,0.92); border:1.5px solid #facc15; color:#fde047; border-radius:999px; padding:5px 12px; font-size:11px; font-weight:900; cursor:pointer; }
     </style>
 
     <div id="svCutsceneOverlay" onclick="if(event.target===this)skipSvCutscene()">
       <div id="svCutsceneBox">
         <button id="svSkipCutsceneBtn" onclick="skipSvCutscene()">⏭️ Skip</button>
-        <canvas id="svCutsceneCanvas" width="400" height="240"></canvas>
-        <div id="svCutsceneCaption" style="padding:8px 10px;background:linear-gradient(90deg,#3b0764,#713f12);font-weight:900;font-size:13px;color:#fef08a;">ULTIMATE AWAKENING!</div>
+        <canvas id="svCutsceneCanvas" width="420" height="260"></canvas>
+        <div id="svCutsceneCaption" style="padding:9px 10px;background:linear-gradient(90deg,#3b0764,#713f12);font-weight:900;font-size:13px;color:#fef08a;">ULTIMATE AWAKENING!</div>
       </div>
     </div>
 
     <div id="svSubModal" style="display:none;position:fixed;inset:0;background:rgba(5,7,18,0.93);z-index:9999996;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(8px);">
-      <div style="background:linear-gradient(155deg,#0f172a,#1e1b4b);border:2px solid #38bdf8;border-radius:20px;padding:14px;width:100%;max-width:410px;max-height:86vh;overflow-y:auto;color:#fff;text-align:center;box-shadow:0 0 35px rgba(56,189,248,0.5);">
+      <div style="background:linear-gradient(155deg,#0f172a,#1e1b4b);border:2px solid #38bdf8;border-radius:20px;padding:14px;width:100%;max-width:415px;max-height:86vh;overflow-y:auto;color:#fff;text-align:center;box-shadow:0 0 35px rgba(56,189,248,0.5);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <span id="svSubTitle" style="font-weight:900;font-size:14px;color:#38bdf8;">✨ SAMMUVERSE MENU</span>
           <button onclick="document.getElementById('svSubModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕ Close</button>
@@ -6397,57 +6533,8 @@ module.exports = function initMultiServers(app, io) {
         <button onclick="if(typeof socket!=='undefined')socket.emit('svDomainTap');" style="width:100%;padding:22px;border:2px solid #fff;border-radius:16px;background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 0 25px #f59e0b;">💥 TAP FAST! 💥</button>
       </div>
     </div>`;
-     // ============================================================================
-    // 🎨 SAMMUVERSE V3 ENGINE — PIECE 5B-1/8: MAIN MODAL HEADER & ARENA PANEL
     // ============================================================================
-    const SV_UI_HTML_PART2A = `
-    <div id="svModal">
-      <div id="svCard">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:900;font-size:15px;color:#e879f9;">⚔️ SAMMUVERSE V3 RPG</span>
-          <div style="display:flex;gap:5px;align-items:center;">
-            <span id="svHeaderCoins" style="background:#090d16;border:1px solid #facc15;color:#fde047;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:900;">🪙 150</span>
-            <button id="svMuteBtn" onclick="toggleSvSfx()" style="background:#1e293b;border:1px solid #38bdf8;color:#fff;border-radius:8px;padding:3px 7px;font-size:11px;cursor:pointer;">🔊</button>
-            <button onclick="document.getElementById('svModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕</button>
-          </div>
-        </div>
-
-        <div id="svLobbyView">
-          <div class="sv-tabs">
-            <button class="sv-tab active" id="svTabFight" onclick="switchSvTab('fight')">⚔️ Arena</button>
-            <button class="sv-tab" id="svTabTrain" onclick="switchSvTab('train')">🏋️ Training</button>
-            <button class="sv-tab" id="svTabDojo" onclick="switchSvTab('dojo')">💪 Dojo/Fuse</button>
-            <button class="sv-tab" id="svTabLogs" onclick="switchSvTab('logs')">📜 Logs</button>
-          </div>
-
-          <div id="svFightPanel">
-            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px;">
-              <button type="button" onclick="openSvSub('lineage')" style="padding:6px 2px;border-radius:9px;border:1.5px solid #4ade80;background:#064e3b;color:#86efac;font-size:10px;font-weight:900;cursor:pointer;">🧬 Lineage</button>
-              <button type="button" onclick="openSvSub('titles')" style="padding:6px 2px;border-radius:9px;border:1.5px solid #facc15;background:#311042;color:#fde047;font-size:10px;font-weight:900;cursor:pointer;">🏷️ Titles</button>
-              <button type="button" onclick="openEndlessTowerModal()" style="padding:6px 2px;border-radius:9px;border:1.5px solid #38bdf8;background:#1e3a8a;color:#93c5fd;font-size:10px;font-weight:900;cursor:pointer;">♾️ Tower</button>
-              <button type="button" onclick="openSvSub('stock')" style="padding:6px 2px;border-radius:9px;border:1.5px solid #38bdf8;background:#0c4a6e;color:#7dd3fc;font-size:10px;font-weight:900;cursor:pointer;">🎰 Stock</button>
-              <button type="button" onclick="socket.emit('svRollEnchant',window._curSvPow||'fire')" style="padding:6px 2px;border-radius:9px;border:1.5px solid #c084fc;background:#3b0764;color:#e879f9;font-size:10px;font-weight:900;cursor:pointer;">🔮 Enchant</button>
-            </div>
-
-            <div style="display:flex;gap:5px;margin-bottom:6px;">
-              <input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..." style="flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;">
-<button onclick="redeemSvSecretCode()" style="background:linear-gradient(90deg,#f59e0b,#d97706);border:none;color:#111;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer;">🔓 Redeem</button>
-
-            </div>
-
-            <div class="sv-powers" id="svPowerGrid"></div>
-            <div id="svPowerPreview" style="background:rgba(168,85,247,0.16);border:1px solid #c084fc;border-radius:10px;padding:6px;font-size:11px;color:#fde047;margin-bottom:7px;">Select a power to inspect its 4 skills!</div>
-
-            <div style="display:flex;gap:5px;margin-bottom:6px;">
-              <select id="svOpponentSelect" style="flex:1;padding:7px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;">
-                <option value="BOT_DUMMY">🥊 Wooden Dummy (+35🪙)</option>
-              </select>
-              <button onclick="sendSvChallenge()" style="padding:7px 14px;border:none;border-radius:10px;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">⚔️ FIGHT</button>
-            </div>
-            <div id="svIncomingBox" style="display:none;background:rgba(250,204,21,0.2);border:1.5px solid #facc15;border-radius:12px;padding:8px;margin-top:6px;"></div>
-          </div>`;
-      // ============================================================================
-    // 🎨 SAMMUVERSE V3 ENGINE — PIECE 5B-2/8: TRAINING PANEL, DOJO & 5s RAID TIMER
+    // 🎨 SAMMUVERSE V4 ENGINE — PIECE 14B/20: TRAIN, DOJO, MERGER & BATTLE HUD
     // ============================================================================
     const SV_UI_HTML_PART2B = `
           <div id="svTrainPanel" style="display:none;max-height:345px;overflow-y:auto;">
@@ -6466,9 +6553,11 @@ module.exports = function initMultiServers(app, io) {
           </div>
 
           <div id="svDojoPanel" style="display:none;max-height:345px;overflow-y:auto;">
-            <div id="svRankBanner" style="background:rgba(168,85,247,0.2);border:1px solid #c084fc;border-radius:10px;padding:6px;font-size:11px;font-weight:bold;color:#e879f9;margin-bottom:7px;">Wins: 0 | Streak: 0🔥</div>
-            <div class="sv-shop-card"><div><b style="color:#f87171;">⚔️ Attack Power Boost</b><br><span id="svAtkDesc" style="color:#cbd5e1;">Lv.0/15 (+0 Bonus DMG)</span></div><button id="svBuyAtkBtn" onclick="buySvItem('atk')" style="background:#dc2626;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">150🪙</button></div>
-            <div class="sv-shop-card"><div><b style="color:#4ade80;">❤️ Max Health Boost</b><br><span id="svHpDesc" style="color:#cbd5e1;">Lv.0/15 (+0 Bonus HP)</span></div><button id="svBuyHpBtn" onclick="buySvItem('hp')" style="background:#16a34a;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">150🪙</button></div>
+            <div id="svRankBanner" style="background:rgba(168,85,247,0.2);border:1px solid #c084fc;border-radius:10px;padding:6px;font-size:11px;font-weight:bold;color:#e879f9;margin-bottom:7px;">Wins: 0 | Essence: 0🔮</div>
+            <div class="sv-shop-card" style="border-color:#38bdf8;"><div><b style="color:#38bdf8;">⚡ Omega Core Gear</b><br><span style="color:#cbd5e1;">Req: Tower Floor 50 | Unlocks ⚡ Omega Evolution!</span></div><button id="svGearOmegaBtn" onclick="socket.emit('svCraftGear','omegaCore')" style="background:#0284c7;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">10,000🪙</button></div>
+            <div class="sv-shop-card" style="border-color:#f43f5e;"><div><b style="color:#fda4af;">🌌 Titan Crown Gear</b><br><span style="color:#cbd5e1;">Req: Tower Floor 50 | Unlocks 🌌 Colossal Titan Form!</span></div><button id="svGearTitanBtn" onclick="socket.emit('svCraftGear','titanCrown')" style="background:#e11d48;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">25,000🪙</button></div>
+            <div class="sv-shop-card"><div><b style="color:#f87171;">⚔️ Attack Boost</b><br><span id="svAtkDesc" style="color:#cbd5e1;">Lv.0/15 (+0 DMG)</span></div><button id="svBuyAtkBtn" onclick="buySvItem('atk')" style="background:#dc2626;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">150🪙</button></div>
+            <div class="sv-shop-card"><div><b style="color:#4ade80;">❤️ Health Boost</b><br><span id="svHpDesc" style="color:#cbd5e1;">Lv.0/15 (+0 HP)</span></div><button id="svBuyHpBtn" onclick="buySvItem('hp')" style="background:#16a34a;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">150🪙</button></div>
             <div class="sv-shop-card" style="border-color:#facc15;"><div><b style="color:#fde047;">💎 Awakening Stone</b><br><span style="color:#cbd5e1;">Below 40% HP: +25% ATK & +40 HP!</span></div><button id="svBuyStoneBtn" onclick="buySvItem('stone')" style="background:#d97706;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">1000🪙</button></div>
             <div style="background:rgba(168,85,247,0.16);border:1.5px solid #e879f9;border-radius:12px;padding:8px;margin:7px 0;text-align:left;">
               <div style="font-size:11px;font-weight:900;color:#f0abfc;margin-bottom:5px;">⚗️ CUSTOM MULTI-FUSION LAB</div>
@@ -6479,6 +6568,9 @@ module.exports = function initMultiServers(app, io) {
               <input id="svFuseName" placeholder="Custom Fusion Name..." maxlength="24" style="width:100%;padding:6px;border-radius:8px;background:#090d16;color:#fff;border:1px solid #38bdf8;font-size:11px;margin-bottom:5px;box-sizing:border-box;">
               <button id="svForgeBtn" onclick="socket.emit('svForgeCustomPower',{p1:document.getElementById('svFuseP1').value,p2:document.getElementById('svFuseP2').value,customName:document.getElementById('svFuseName').value})" style="width:100%;padding:8px;border:none;border-radius:9px;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;font-weight:900;font-size:11px;cursor:pointer;">⚗️ Forge Fusion #1 (50,000🪙)</button>
             </div>
+            <div style="font-size:11px;font-weight:900;color:#f472b6;text-align:left;margin:6px 0 4px;">🧬 PET MERGER & EVOLUTION LAB:</div>
+            <div class="sv-shop-card" style="border-color:#f59e0b;"><div><b style="color:#fde047;">🦁 Chimera Guardian</b><br><span style="color:#cbd5e1;">Merge 🐱 Mochi + 🐶 Tommy (30🔮 + 1,000🪙)</span></div><button id="svMergeChimeraBtn" onclick="socket.emit('svMergePet','chimera')" style="background:#d97706;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">Merge</button></div>
+            <div class="sv-shop-card" style="border-color:#a855f7;"><div><b style="color:#e879f9;">🐉 Cosmic Ouroboros</b><br><span style="color:#cbd5e1;">Merge 🦅 Garuda + 🐍 Sheshnag (80🔮 + 4,000🪙)</span></div><button id="svMergeOuroBtn" onclick="socket.emit('svMergePet','ouroboros')" style="background:#7c3aed;border:none;color:#fff;padding:6px 9px;border-radius:8px;font-weight:900;cursor:pointer;">Merge</button></div>
             <div style="font-size:11px;font-weight:900;color:#38bdf8;text-align:left;margin:6px 0 4px;">🐾 COMPANION SPIRITS:</div>
             <div id="svPetShopList"></div>
           </div>
@@ -6492,33 +6584,15 @@ module.exports = function initMultiServers(app, io) {
           <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;color:#38bdf8;margin-bottom:4px;"><span id="svTurnBadge">Turn 1</span><span id="svBattleTimer" style="color:#fde047;">⏳ 15s</span></div>
           <div class="sv-hp-wrap"><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;margin-bottom:2px;"><span id="svOppLabel" style="color:#f87171;">Opponent</span><span id="svOppHpText">200 / 200 HP</span></div><div class="sv-hp-bar" id="svOppHpBar" style="width:100%;background:linear-gradient(90deg,#dc2626,#f87171);"></div></div>
           <div class="sv-hp-wrap"><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:bold;margin-bottom:2px;"><span id="svMeLabel" style="color:#4ade80;">You</span><span id="svMeHpText">200 / 200 HP</span></div><div class="sv-hp-bar" id="svMeHpBar" style="width:100%;"></div></div>
+          <div id="svTransformBar" style="display:flex;gap:5px;margin:5px 0;"></div>
           <div id="svCombatFeed" style="background:#090d16;border:1px solid #334155;border-radius:10px;padding:6px;font-size:11px;color:#e2e8f0;min-height:44px;margin:5px 0;">Choose your skill below!</div>
           <div class="sv-skills" id="svSkillButtons"></div>
         </div>
       </div>
     </div>`;
-
     const SV_FULL_BUNDLE = SV_UI_HTML_PART1 + '\n' + SV_UI_HTML_PART2A + '\n' + SV_UI_HTML_PART2B;
-
-    // Set 10-Boss World Raid Boss Turn Timer to 5 Seconds
-    if (typeof worldRaidsByServer !== 'undefined') {
-        io.on('connection', (socket) => {
-            socket.on('chatMessage', (payload) => {
-                const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
-                if (typeof raw === 'string' && raw.trim().toLowerCase() === '!worldraid' && socket.activeServerId) {
-                    setTimeout(() => {
-                        const r = worldRaidsByServer.get(socket.activeServerId);
-                        if (r && r.interval) {
-                            clearInterval(r.interval);
-                            r.interval = setInterval(() => tickWorldRaid(socket.activeServerId), 5000);
-                        }
-                    }, 150);
-                }
-            });
-        });
-    }
-     // ============================================================================
-    // 🎬 SAMMUVERSE V3 ENGINE — PIECE 6A/8: CLIENT POWERS, SFX & CUTSCENE SETUP
+    // ============================================================================
+    // 🎬 SAMMUVERSE V4 ENGINE — PIECE 15/20: CLIENT POWERS & ANIME SFX
     // ============================================================================
     const SV_CLIENT_JS_PART1 = `
       const SV_POWERS = {
@@ -6548,7 +6622,7 @@ module.exports = function initMultiServers(app, io) {
         millyyt:     { secret: true, icon: '🎬', name: 'Milly (YouTube Queen)',     skills: ['🔔 Subscribe Smash (46 DMG + Stun)', '📈 10M Viral Surge (64 DMG + 20 HP)', '💎 Diamond Shield (Evade +50 HP)', '▶️ Golden Play Button ULT (115 True DMG)'] },
         ishikastar:  { secret: true, icon: '✨', name: 'Ishika (Celestial Empress)', skills: ['💫 Starfall Beam (42 DMG)', '💥 Supernova Burst (58 DMG)', '🌸 Astral Blessing (Evade +45 HP)', '🌠 Empress Meteor ULT (96 DMG)'] },
         zoroking:    { secret: true, icon: '⚔️', name: 'Zoro (King of Hell)',      skills: ['Enma Purgatory (52 DMG)', 'Three-Sword Dragon (72 DMG)', 'Conqueror Haki (Evade +45 HP)', '👹 Dragon Damnation ULT (132 DMG)'] },
-        antimpoke:   { secret: true, icon: '⚡', name: 'Antim (Arceus & Rayquaza)', skills: ['Dragon Ascent (50 DMG)', 'Judgment Beam (70 True DMG)', 'Multitype Plate (Block 85%)', '🐉 Mega Rayquaza ULT (130 DMG)'] },
+        antimpoke:   { secret: true, icon: '⚡', name: 'Antim (Astral Sky Sovereign)', skills: ['Dragon Ascent (50 DMG)', 'Judgment Beam (70 True DMG)', 'Multitype Plate (Block 85%)', '🐉 Sky Sovereign ULT (130 DMG)'] },
         mahadev:     { secret: true, icon: '🔱', name: 'Mahadev (Tandava Destroyer)', skills: ['Trishul Pierce (56 DMG)', 'Damru Cosmic Beat (74 DMG + Stun)', 'Kailash Meditation (+65 HP)', '🔥 Third Eye Tandava ULT (140 True DMG)'] }
       };
 
@@ -6556,11 +6630,13 @@ module.exports = function initMultiServers(app, io) {
         { id: 'mochi', name: '🐱 Mochi Spirit', desc: 'Scratches foe for +10 DMG/turn', cost: 200 },
         { id: 'tommy', name: '🐶 Tommy Guardian', desc: 'Heals you for +10 HP/turn', cost: 200 },
         { id: 'garuda', name: '🦅 Garuda Eagle', desc: 'Strikes for +22 DMG/turn', cost: 500 },
-        { id: 'sheshnag', name: '🐍 Sheshnag Serpent', desc: '15% Block + 18 Poison/turn', cost: 2500 }
+        { id: 'sheshnag', name: '🐍 Sheshnag Serpent', desc: '15% Block + 18 Poison/turn', cost: 2500 },
+        { id: 'chimera', name: '🦁 Chimera Guardian [EVOLVED]', desc: '+24 DMG & +20 HP/turn (Merge Mochi+Tommy)', evolved: true },
+        { id: 'ouroboros', name: '🐉 Cosmic Ouroboros [MYTHIC]', desc: '-18% DMG Taken, +42 DMG & +25 HP/turn', evolved: true }
       ];
 
       let selectedPower = 'fire', latestPlayers = [], sfxMuted = false, svAudio = null, cutAnimId = null, cutTimeout = null;
-      let myProfile = { coins: 150, atkLv: 0, hpLv: 0, wins: 0, streak: 0, hasStone: false, unlockedPowers: [], ownedPets: [], activePet: null, powerWins: {}, training: { fistLv: 0, bodyLv: 0, chiLv: 0, xp: 0 } };
+      let myProfile = { coins: 150, atkLv: 0, hpLv: 0, wins: 0, streak: 0, petEssence: 0, gears: { omegaCore: false, titanCrown: false }, adventure: { chapter: 1, stage: 1 }, hasStone: false, unlockedPowers: [], ownedPets: [], activePet: null, powerWins: {}, training: { fistLv: 0, bodyLv: 0, chiLv: 0, xp: 0 } };
 
       window.toggleSvSfx = function() { sfxMuted = !sfxMuted; const b = document.getElementById('svMuteBtn'); if (b) b.textContent = sfxMuted ? '🔇' : '🔊'; };
 
@@ -6579,9 +6655,9 @@ module.exports = function initMultiServers(app, io) {
             });
           } else if (type === 'ult' || type === 'awaken') {
             const o = svAudio.createOscillator(), g = svAudio.createGain();
-            o.type = 'sawtooth'; o.frequency.setValueAtTime(type === 'awaken' ? 220 : 150, now); o.frequency.exponentialRampToValueAtTime(type === 'awaken' ? 920 : 32, now + 0.65);
-            g.gain.setValueAtTime(0.32, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.68);
-            o.connect(g); g.connect(svAudio.destination); o.start(now); o.stop(now + 0.7);
+            o.type = 'sawtooth'; o.frequency.setValueAtTime(type === 'awaken' ? 220 : 150, now); o.frequency.exponentialRampToValueAtTime(type === 'awaken' ? 920 : 28, now + 0.72);
+            g.gain.setValueAtTime(0.35, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+            o.connect(g); g.connect(svAudio.destination); o.start(now); o.stop(now + 0.76);
           } else if (type === 'win') {
             [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
               const o = svAudio.createOscillator(), g = svAudio.createGain();
@@ -6598,8 +6674,8 @@ module.exports = function initMultiServers(app, io) {
         } catch (e) {}
       }
     `;
-      // ============================================================================
-    // 🎬 SAMMUVERSE V3 ENGINE — PIECE 6B/8: 4-PHASE ANIME CUTSCENE ENGINE
+    // ============================================================================
+    // 🎬 SAMMUVERSE V4 ENGINE — PIECE 16/20: CINEMA-GRADE 6-PHASE CUTSCENES
     // ============================================================================
     const SV_CLIENT_JS_PART2 = `
       window.skipSvCutscene = function() {
@@ -6626,29 +6702,29 @@ module.exports = function initMultiServers(app, io) {
         const ctx = c.getContext('2d');
         const theme = data.theme || 'vishwaroopa';
         const paletteMap = {
-          fire:        { c1: '#450a0a', c2: '#ea580c', pCol: '#fbbf24' },
-          water:       { c1: '#082f49', c2: '#0284c7', pCol: '#7dd3fc' },
-          lightning:   { c1: '#1e1b4b', c2: '#ca8a04', pCol: '#fef08a' },
-          ice:         { c1: '#083344', c2: '#06b6d4', pCol: '#cffafe' },
-          zoro:        { c1: '#022c22', c2: '#15803d', pCol: '#4ade80' },
-          moon:        { c1: '#1e1b4b', c2: '#be123c', pCol: '#fda4af' },
-          chakra:      { c1: '#1e1b4b', c2: '#b45309', pCol: '#fde047' },
-          bansuri:     { c1: '#064e3b', c2: '#0369a1', pCol: '#6ee7b7' },
-          milly:       { c1: '#450a0a', c2: '#eab308', pCol: '#fef08a' },
-          awaken:      { c1: '#422006', c2: '#dc2626', pCol: '#fde047' },
-          vishwaroopa: { c1: '#090d16', c2: '#7e22ce', pCol: '#e879f9' }
+          fire:        { c1: '#450a0a', c2: '#ea580c', pCol: '#fbbf24', rune: '炎' },
+          water:       { c1: '#082f49', c2: '#0284c7', pCol: '#7dd3fc', rune: '水' },
+          lightning:   { c1: '#1e1b4b', c2: '#ca8a04', pCol: '#fef08a', rune: '雷' },
+          ice:         { c1: '#083344', c2: '#06b6d4', pCol: '#cffafe', rune: '氷' },
+          zoro:        { c1: '#022c22', c2: '#15803d', pCol: '#4ade80', rune: '鬼' },
+          moon:        { c1: '#1e1b4b', c2: '#be123c', pCol: '#fda4af', rune: '月' },
+          chakra:      { c1: '#1e1b4b', c2: '#b45309', pCol: '#fde047', rune: '神' },
+          bansuri:     { c1: '#064e3b', c2: '#0369a1', pCol: '#6ee7b7', rune: '愛' },
+          milly:       { c1: '#450a0a', c2: '#eab308', pCol: '#fef08a', rune: '王' },
+          awaken:      { c1: '#422006', c2: '#dc2626', pCol: '#fde047', rune: '極' },
+          vishwaroopa: { c1: '#090d16', c2: '#7e22ce', pCol: '#e879f9', rune: '宇宙' }
         };
         const pal = paletteMap[theme] || paletteMap.vishwaroopa;
 
-        // Spawn 65 physics particles for the impact burst
-        const particles = Array.from({ length: 65 }, () => {
+        // 120 high-velocity physics particles + orbiting energy sparks
+        const particles = Array.from({ length: 120 }, () => {
           const ang = Math.random() * Math.PI * 2;
-          const spd = Math.random() * 5.5 + 1.5;
+          const spd = Math.random() * 7.2 + 1.8;
           return {
-            x: 200, y: 115,
+            x: 210, y: 130,
             vx: Math.cos(ang) * spd,
             vy: Math.sin(ang) * spd,
-            r: Math.random() * 4 + 1.5,
+            r: Math.random() * 4.5 + 1.2,
             alpha: 1
           };
         });
@@ -6656,120 +6732,124 @@ module.exports = function initMultiServers(app, io) {
         let frame = 0;
         function drawFrame() {
           frame++;
-          ctx.clearRect(0, 0, 400, 240);
+          ctx.clearRect(0, 0, 420, 260);
 
-          // Phase 1 (Frames 1-6): Manga High-Contrast Impact Flash
-          if (frame <= 6) {
-            ctx.fillStyle = frame % 2 === 0 ? '#ffffff' : '#050814';
-            ctx.fillRect(0, 0, 400, 240);
+          // Phase 1 (Frames 1-8): Manga Black-and-White Impact Strobe
+          if (frame <= 8) {
+            ctx.fillStyle = frame % 2 === 0 ? '#ffffff' : '#03050c';
+            ctx.fillRect(0, 0, 420, 260);
             ctx.strokeStyle = frame % 2 === 0 ? '#000000' : '#facc15';
-            ctx.lineWidth = 4;
-            for (let i = 0; i < 32; i++) {
-              const a = (i * Math.PI) / 16;
+            ctx.lineWidth = 5;
+            for (let i = 0; i < 40; i++) {
+              const a = (i * Math.PI) / 20;
               ctx.beginPath();
-              ctx.moveTo(200 + Math.cos(a) * 25, 115 + Math.sin(a) * 25);
-              ctx.lineTo(200 + Math.cos(a) * 240, 115 + Math.sin(a) * 240);
+              ctx.moveTo(210 + Math.cos(a) * 20, 130 + Math.sin(a) * 20);
+              ctx.lineTo(210 + Math.cos(a) * 260, 130 + Math.sin(a) * 260);
               ctx.stroke();
             }
           } else {
-            // Phase 2: Swirling Elemental Domain Background & Shockwave Rings
-            const grad = ctx.createRadialGradient(200, 115, 10, 200, 115, 220);
+            // Phase 2: Swirling Dimensional Vortex & Dual Shockwave Rings
+            const grad = ctx.createRadialGradient(210, 130, 8, 210, 130, 235);
             grad.addColorStop(0, pal.c1);
-            grad.addColorStop(1, pal.c2);
+            grad.addColorStop(0.65, pal.c2);
+            grad.addColorStop(1, '#02040a');
             ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 400, 240);
+            ctx.fillRect(0, 0, 420, 260);
 
-            // Rotating Manga Speed Lines
-            ctx.strokeStyle = 'rgba(255,255,255,0.24)';
+            // Rotating Anime Speed Lines
+            ctx.strokeStyle = 'rgba(255,255,255,0.26)';
             ctx.lineWidth = 2;
-            for (let i = 0; i < 28; i++) {
-              const ang = (i * Math.PI / 14) + (frame * 0.055);
-              const inner = 40 + Math.sin(frame * 0.15) * 10;
+            for (let i = 0; i < 36; i++) {
+              const ang = (i * Math.PI / 18) + (frame * 0.065);
+              const inner = 38 + Math.sin(frame * 0.18) * 12;
               ctx.beginPath();
-              ctx.moveTo(200 + Math.cos(ang) * inner, 115 + Math.sin(ang) * inner);
-              ctx.lineTo(200 + Math.cos(ang) * 240, 115 + Math.sin(ang) * 240);
+              ctx.moveTo(210 + Math.cos(ang) * inner, 130 + Math.sin(ang) * inner);
+              ctx.lineTo(210 + Math.cos(ang) * 260, 130 + Math.sin(ang) * 260);
               ctx.stroke();
             }
 
-            // Expanding Shockwave Rings
-            const ringR = ((frame * 7) % 180) + 20;
-            ctx.strokeStyle = pal.pCol;
-            ctx.lineWidth = 3;
-            ctx.globalAlpha = Math.max(0, 1 - ringR / 200);
-            ctx.beginPath();
-            ctx.arc(200, 115, ringR, 0, Math.PI * 2);
-            ctx.stroke();
+            // Dual Expanding Shockwave Rings
+            [0, 80].forEach(offset => {
+              const ringR = (((frame * 8) + offset) % 200) + 18;
+              ctx.strokeStyle = pal.pCol;
+              ctx.lineWidth = 3.5;
+              ctx.globalAlpha = Math.max(0, 1 - ringR / 215);
+              ctx.beginPath();
+              ctx.arc(210, 130, ringR, 0, Math.PI * 2);
+              ctx.stroke();
+            });
             ctx.globalAlpha = 1;
 
-            // Custom Element Centerpieces
+            // Phase 3: Floating Giant Anime Kanji Watermark
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,0.12)';
+            ctx.font = '900 135px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(pal.rune, 210, 132);
+            ctx.restore();
+
+            // Custom Elemental Centerpiece VFX
             if (theme === 'chakra') {
               ctx.save();
-              ctx.translate(200, 115);
-              ctx.rotate(frame * 0.32);
+              ctx.translate(210, 130);
+              ctx.rotate(frame * 0.36);
               ctx.strokeStyle = '#fde047';
               ctx.lineWidth = 6;
               ctx.beginPath();
-              ctx.arc(0, 0, 52, 0, Math.PI * 2);
+              ctx.arc(0, 0, 56, 0, Math.PI * 2);
               ctx.stroke();
-              for (let k = 0; k < 16; k++) {
-                const a = (k * Math.PI) / 8;
+              for (let k = 0; k < 18; k++) {
+                const a = (k * Math.PI) / 9;
                 ctx.beginPath();
-                ctx.moveTo(Math.cos(a) * 52, Math.sin(a) * 52);
-                ctx.lineTo(Math.cos(a + 0.22) * 76, Math.sin(a + 0.22) * 76);
+                ctx.moveTo(Math.cos(a) * 56, Math.sin(a) * 56);
+                ctx.lineTo(Math.cos(a + 0.24) * 84, Math.sin(a + 0.24) * 84);
                 ctx.stroke();
               }
               ctx.restore();
             } else if (theme === 'zoro') {
               ctx.strokeStyle = '#4ade80';
-              ctx.lineWidth = 7;
+              ctx.lineWidth = 8;
               ctx.shadowColor = '#22c55e';
-              ctx.shadowBlur = 15;
-              ctx.beginPath(); ctx.moveTo(30, 25); ctx.lineTo(370, 205); ctx.stroke();
-              ctx.beginPath(); ctx.moveTo(370, 25); ctx.lineTo(30, 205); ctx.stroke();
-              ctx.beginPath(); ctx.moveTo(200, 10); ctx.lineTo(200, 220); ctx.stroke();
+              ctx.shadowBlur = 18;
+              ctx.beginPath(); ctx.moveTo(25, 30); ctx.lineTo(395, 225); ctx.stroke();
+              ctx.beginPath(); ctx.moveTo(395, 30); ctx.lineTo(25, 225); ctx.stroke();
+              ctx.beginPath(); ctx.moveTo(210, 15); ctx.lineTo(210, 240); ctx.stroke();
               ctx.shadowBlur = 0;
             } else if (theme === 'lightning') {
               ctx.strokeStyle = '#fef08a';
               ctx.lineWidth = 4;
-              for (let b = 0; b < 4; b++) {
+              for (let b = 0; b < 5; b++) {
                 ctx.beginPath();
-                let lx = 80 + b * 80, ly = 0;
+                let lx = 60 + b * 75, ly = 0;
                 ctx.moveTo(lx, ly);
                 for (let s = 0; s < 6; s++) {
-                  lx += (Math.random() - 0.5) * 45;
-                  ly += 40;
+                  lx += (Math.random() - 0.5) * 50;
+                  ly += 44;
                   ctx.lineTo(lx, ly);
                 }
                 ctx.stroke();
               }
-            } else if (theme === 'moon') {
-              ctx.fillStyle = frame > 45 ? '#f43f5e' : '#fef08a';
-              ctx.shadowColor = frame > 45 ? '#f43f5e' : '#facc15';
-              ctx.shadowBlur = 22;
-              ctx.beginPath();
-              ctx.arc(200, 108, 56, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.shadowBlur = 0;
             }
 
-            // Center Icon Zoom & Pulse
-            ctx.font = '60px serif';
+            // Center Emoji Zoom + Aura Halo
+            ctx.font = '66px serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const zoom = Math.min(1.25, 0.5 + frame * 0.03) + Math.sin(frame * 0.3) * 0.1;
+            const zoom = Math.min(1.35, 0.45 + frame * 0.035) + Math.sin(frame * 0.35) * 0.12;
             ctx.save();
-            ctx.translate(200, 112);
+            ctx.translate(210, 128);
             ctx.scale(zoom, zoom);
             ctx.fillText(data.emoji || '⚡', 0, 0);
             ctx.restore();
 
-            // Phase 3: 65-Particle Physics Burst (after frame 22)
-            if (frame > 22) {
+            // Phase 4: 120-Particle Physics Explosion (after frame 20)
+            if (frame > 20) {
               particles.forEach(p => {
                 p.x += p.vx;
                 p.y += p.vy;
-                p.vy += 0.08;
-                p.alpha = Math.max(0, p.alpha - 0.015);
+                p.vy += 0.07;
+                p.alpha = Math.max(0, p.alpha - 0.013);
                 ctx.fillStyle = pal.pCol;
                 ctx.globalAlpha = p.alpha;
                 ctx.beginPath();
@@ -6780,45 +6860,60 @@ module.exports = function initMultiServers(app, io) {
             }
           }
 
-          // Phase 4: Camera Shake & White Impact Flash on Frame 45
-          if (box && frame >= 42 && frame <= 58) {
-            const dx = (Math.random() - 0.5) * 14;
-            const dy = (Math.random() - 0.5) * 14;
+          // Phase 5: Letterbox Cinema Bars
+          const barH = Math.min(22, frame * 2);
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, 420, barH);
+          ctx.fillRect(0, 260 - barH, 420, barH);
+
+          // Phase 6: Camera Shake & Chromatic Flash on Impact (Frames 44-62)
+          if (box && frame >= 44 && frame <= 62) {
+            const dx = (Math.random() - 0.5) * 16;
+            const dy = (Math.random() - 0.5) * 16;
             box.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
           } else if (box) {
             box.style.transform = 'none';
           }
-          if (frame === 45 || frame === 46) {
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.fillRect(0, 0, 400, 240);
+          if (frame === 46 || frame === 47) {
+            ctx.fillStyle = 'rgba(255,255,255,0.92)';
+            ctx.fillRect(0, 0, 420, 260);
           }
 
           // Comic Title Slam Banner
           ctx.fillStyle = '#ffffff';
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = 5;
-          ctx.font = '900 19px Impact, sans-serif';
+          ctx.font = '900 20px Impact, sans-serif';
           ctx.textAlign = 'center';
           const title = (data.title || 'COSMIC IMPACT!').toUpperCase();
-          ctx.strokeText(title, 200, 216);
-          ctx.fillText(title, 200, 216);
+          ctx.strokeText(title, 210, 232);
+          ctx.fillText(title, 210, 232);
 
           cutAnimId = requestAnimationFrame(drawFrame);
         }
 
         drawFrame();
-        cutTimeout = setTimeout(window.skipSvCutscene, 2500);
+        cutTimeout = setTimeout(window.skipSvCutscene, 2700);
       }
     `;
     // ============================================================================
-    // 🎮 SAMMUVERSE V3 ENGINE — PIECE 7A/8: TABS, POWER GRID, TRAINING & DOJO UI
+    // 🎮 SAMMUVERSE V4 ENGINE — PIECE 17A/20: TABS, STORY MAP & POWER GRID
     // ============================================================================
-    const SV_CLIENT_JS_PART3 = `
+    const SV_CLIENT_JS_PART3A = `
+      const ADV_CHAPTERS_UI = [
+        { ch: 1, title: '🌲 Ch.1: Whispering Dojo',   stages: ['🥷 Rogue Disciple', '🐺 Shadow Wolf', '👹 Dojo Sensei Boss'],     reward: '350🪙 • 200⚡ • 15🔮' },
+        { ch: 2, title: '🌋 Ch.2: Crimson Volcano',   stages: ['🦎 Magma Salamander', '🔥 Flame Knight', '🐉 Magma Wyrm Boss'],     reward: '700🪙 • 450⚡ • 30🔮' },
+        { ch: 3, title: '🌊 Ch.3: Abyssal Trench',    stages: ['🦈 Depth Stalker', '🐙 Kraken Tentacle', '🌊 Leviathan Boss'],      reward: '1.2k🪙 • 800⚡ • 50🔮' },
+        { ch: 4, title: '⚡ Ch.4: Celestial Citadel', stages: ['🦅 Sky Valkyrie', '⚡ Thunder Golem', '👑 Raijin Sovereign Boss'],  reward: '2.2k🪙 • 1.4k⚡ • 80🔮' },
+        { ch: 5, title: '🌌 Ch.5: Void Throne',       stages: ['🌑 Void Phantom', '🕳️ Singularity Knight', '🔱 Abyssal God Boss'],  reward: '5.0k🪙 • 3.0k⚡ • 150🔮' }
+      ];
+
       window.openSammuVerseModal = function() {
         const mod = document.getElementById('svModal');
         if (!mod) return;
         mod.style.display = 'flex';
         renderSvPowers();
+        renderAdventureMap();
         renderTrainingPanel();
         renderDojoShop();
         refreshOpponentDropdown();
@@ -6829,16 +6924,37 @@ module.exports = function initMultiServers(app, io) {
       };
 
       window.switchSvTab = function(tab) {
-        ['fight', 'train', 'dojo', 'logs'].forEach(t => {
+        ['fight', 'adv', 'train', 'dojo', 'logs'].forEach(t => {
           const tabBtn = document.getElementById('svTab' + t.charAt(0).toUpperCase() + t.slice(1));
           const panel = document.getElementById('sv' + t.charAt(0).toUpperCase() + t.slice(1) + 'Panel');
           if (tabBtn) tabBtn.classList.toggle('active', tab === t);
           if (panel) panel.style.display = tab === t ? 'block' : 'none';
         });
         if (tab === 'logs' && typeof socket !== 'undefined') socket.emit('svRequestLogs');
+        if (tab === 'adv') renderAdventureMap();
         if (tab === 'train') renderTrainingPanel();
         if (tab === 'dojo') renderDojoShop();
       };
+
+      function renderAdventureMap() {
+        const box = document.getElementById('svAdventureChaptersList');
+        const sum = document.getElementById('svAdvSummary');
+        if (!box) return;
+        const adv = myProfile.adventure || { chapter: 1, stage: 1, cleared: false };
+        if (sum) {
+          sum.textContent = (adv.cleared ? '👑 ALL 5 CHAPTERS CLEARED!' : ('Progress: Chapter ' + adv.chapter + ' — Stage ' + adv.stage + '/3')) + ' | Pet Essence: ' + (myProfile.petEssence || 0) + ' 🔮';
+        }
+        box.innerHTML = ADV_CHAPTERS_UI.map(c => {
+          const unlocked = adv.cleared || adv.chapter >= c.ch;
+          const isCur = !adv.cleared && adv.chapter === c.ch;
+          const curStg = isCur ? adv.stage : (adv.chapter > c.ch || adv.cleared ? 3 : 1);
+          const foeName = c.stages.at(curStg - 1) || c.stages.at(0);
+          return '<div class="sv-shop-card" style="border-color:' + (isCur ? '#4ade80' : (unlocked ? '#38bdf8' : '#334155')) + ';">' +
+            '<div><b style="color:' + (unlocked ? '#fde047' : '#94a3b8') + ';">' + c.title + '</b><br>' +
+            '<span style="color:#cbd5e1;">' + (unlocked ? ('Stage ' + curStg + '/3: ' + foeName + ' • ' + c.reward) : '🔒 Clear Chapter ' + (c.ch - 1) + ' first') + '</span></div>' +
+            '<button ' + (unlocked ? '' : 'disabled') + ' onclick="socket.emit(\\'svStartAdventure\\',{ch:' + c.ch + ',stg:' + curStg + ',power:selectedPower})" style="background:' + (isCur ? '#16a34a' : (unlocked ? '#0284c7' : '#334155')) + ';border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">' + (unlocked ? '⚔️ Play' : '🔒') + '</button></div>';
+        }).join('');
+      }
 
       function renderSvPowers() {
         const grid = document.getElementById('svPowerGrid');
@@ -6852,9 +6968,7 @@ module.exports = function initMultiServers(app, io) {
           myProfile.customPowers.forEach(cp => {
             if (cp && cp.id && cp.def && !SV_POWERS[cp.id]) {
               SV_POWERS[cp.id] = {
-                fused: true,
-                icon: cp.def.icon,
-                name: cp.def.name,
+                fused: true, icon: cp.def.icon, name: cp.def.name,
                 skills: (cp.def.moves || []).map(m => m.label)
               };
             }
@@ -6874,69 +6988,58 @@ module.exports = function initMultiServers(app, io) {
           if (isV3) b.style.boxShadow = '0 0 10px rgba(250,204,21,0.55)';
 
           const verBadge = isV3 ? ' [V3 👑]' : (isV2 ? ' [V2]' : '');
-          b.textContent = isCoinLocked
-            ? ('🔒 ' + p.icon + ' ' + p.name + ' (' + p.cost + '🪙)')
-            : (p.icon + ' ' + p.name + verBadge);
+          b.textContent = isCoinLocked ? ('🔒 ' + p.icon + ' ' + p.name + ' (' + p.cost + '🪙)') : (p.icon + ' ' + p.name + verBadge);
 
           b.onclick = () => {
             if (isCoinLocked) {
-              if (confirm('Unlock ' + p.icon + ' ' + p.name + ' for ' + p.cost + ' Coins?')) {
-                socket.emit('svBuyPower', key);
-              }
+              if (confirm('Unlock ' + p.icon + ' ' + p.name + ' for ' + p.cost + ' Coins?')) socket.emit('svBuyPower', key);
               return;
             }
-            selectedPower = key;
-            window._curSvPow = key;
-            renderSvPowers();
+            selectedPower = key; window._curSvPow = key; renderSvPowers();
           };
           grid.appendChild(b);
         });
 
         const cur = SV_POWERS[selectedPower] || SV_POWERS.fire;
         const curWins = pWins[selectedPower] || 0;
-        const verDesc = curWins >= 100
-          ? ' 👑 [V3 ASCENDED: +65 HP, +20 ATK, +20% DMG]'
-          : (curWins >= 5 ? (' 🔥 [V2 +15% DMG] (' + curWins + '/100 to V3)') : (' (' + curWins + '/5 wins to V2)'));
-
+        const verDesc = curWins >= 100 ? ' 👑 [V3 ASCENDED]' : (curWins >= 5 ? (' 🔥 [V2] (' + curWins + '/100 to V3)') : (' (' + curWins + '/5 wins to V2)'));
         const prev = document.getElementById('svPowerPreview');
         if (prev) prev.innerHTML = '<b>' + cur.icon + ' ' + cur.name + verDesc + ':</b><br>' + cur.skills.join(' • ');
       }
-
+    `;
+    // ============================================================================
+    // 🎮 SAMMUVERSE V4 ENGINE — PIECE 17B/20: TRAINING & DOJO SHOP RENDERERS
+    // ============================================================================
+    const SV_CLIENT_JS_PART3B = `
       function renderTrainingPanel() {
         const tr = myProfile.training || { fistLv: 0, bodyLv: 0, chiLv: 0, xp: 0 };
-        const fLv = Number(tr.fistLv) || 0;
-        const bLv = Number(tr.bodyLv) || 0;
-        const cLv = Number(tr.chiLv) || 0;
-        const total = fLv + bLv + cLv;
-
+        const fLv = Number(tr.fistLv) || 0, bLv = Number(tr.bodyLv) || 0, cLv = Number(tr.chiLv) || 0;
         const sum = document.getElementById('svTrainSummary');
-        if (sum) sum.textContent = 'Total Mastery: ' + total.toLocaleString() + ' | Available XP: ' + (tr.xp || 0).toLocaleString() + ' ⚡';
+        if (sum) sum.textContent = 'Total Mastery: ' + (fLv + bLv + cLv).toLocaleString() + ' | Available XP: ' + (tr.xp || 0).toLocaleString() + ' ⚡';
 
         const bonusDmg = fLv >= 100000 ? Math.round(150 + Math.log10(fLv) * 45) : Math.min(350, fLv * 3);
         const bonusHp  = bLv >= 100000 ? Math.round(900 + Math.log10(bLv) * 250) : Math.min(2000, bLv * 20);
         const ultPct   = cLv >= 100000 ? 85 : Math.min(80, cLv * 4);
         const critPct  = cLv >= 100000 ? 50 : Math.min(45, cLv);
 
-        const fd = document.getElementById('svFistDesc');
-        if (fd) fd.textContent = 'Lv.' + fLv.toLocaleString() + ' (+' + bonusDmg + ' Permanent DMG)';
-        const bd = document.getElementById('svBodyDesc');
-        if (bd) bd.textContent = 'Lv.' + bLv.toLocaleString() + ' (+' + bonusHp + ' Permanent HP)';
-        const cd = document.getElementById('svChiDesc');
-        if (cd) cd.textContent = 'Lv.' + cLv.toLocaleString() + ' (+' + ultPct + '% ULT & ' + critPct + '% Crit)';
-
-        const fBtn = document.getElementById('svUpFistBtn');
-        if (fBtn) fBtn.textContent = (100 + Math.floor(fLv * 25)).toLocaleString() + ' XP';
-        const bBtn = document.getElementById('svUpBodyBtn');
-        if (bBtn) bBtn.textContent = (100 + Math.floor(bLv * 25)).toLocaleString() + ' XP';
-        const cBtn = document.getElementById('svUpChiBtn');
-        if (cBtn) cBtn.textContent = (100 + Math.floor(cLv * 25)).toLocaleString() + ' XP';
+        const fd = document.getElementById('svFistDesc'); if (fd) fd.textContent = 'Lv.' + fLv.toLocaleString() + ' (+' + bonusDmg + ' Permanent DMG)';
+        const bd = document.getElementById('svBodyDesc'); if (bd) bd.textContent = 'Lv.' + bLv.toLocaleString() + ' (+' + bonusHp + ' Permanent HP)';
+        const cd = document.getElementById('svChiDesc');  if (cd) cd.textContent = 'Lv.' + cLv.toLocaleString() + ' (+' + ultPct + '% ULT & ' + critPct + '% Crit)';
+        const fBtn = document.getElementById('svUpFistBtn'); if (fBtn) fBtn.textContent = (100 + Math.floor(fLv * 25)).toLocaleString() + ' XP';
+        const bBtn = document.getElementById('svUpBodyBtn'); if (bBtn) bBtn.textContent = (100 + Math.floor(bLv * 25)).toLocaleString() + ' XP';
+        const cBtn = document.getElementById('svUpChiBtn');  if (cBtn) cBtn.textContent = (100 + Math.floor(cLv * 25)).toLocaleString() + ' XP';
       }
 
       function renderDojoShop() {
         const hc = document.getElementById('svHeaderCoins');
         if (hc) hc.textContent = '🪙 ' + (myProfile.coins || 0).toLocaleString();
         const rb = document.getElementById('svRankBanner');
-        if (rb) rb.textContent = 'Wins: ' + (myProfile.wins || 0) + ' | Streak: ' + (myProfile.streak || 0) + '🔥 | Bounty: ' + ((myProfile.bounty || 10000) / 1000).toFixed(0) + 'K';
+        if (rb) rb.textContent = 'Wins: ' + (myProfile.wins || 0) + ' | Pet Essence: ' + (myProfile.petEssence || 0) + '🔮 | Tower Best: F' + (myProfile.maxTowerFloor || 1);
+
+        const omBtn = document.getElementById('svGearOmegaBtn');
+        if (omBtn) { omBtn.textContent = myProfile.gears?.omegaCore ? 'FORGED ✅' : '10,000🪙'; omBtn.disabled = Boolean(myProfile.gears?.omegaCore); }
+        const tiBtn = document.getElementById('svGearTitanBtn');
+        if (tiBtn) { tiBtn.textContent = myProfile.gears?.titanCrown ? 'FORGED ✅' : '25,000🪙'; tiBtn.disabled = Boolean(myProfile.gears?.titanCrown); }
 
         document.getElementById('svAtkDesc').textContent = 'Lv.' + (myProfile.atkLv || 0) + '/15 (+' + ((myProfile.atkLv || 0) * 5) + ' Bonus DMG)';
         document.getElementById('svBuyAtkBtn').textContent = (myProfile.atkLv || 0) >= 15 ? 'MAX' : '150🪙';
@@ -6959,19 +7062,22 @@ module.exports = function initMultiServers(app, io) {
         if (s1 && s2 && s1.options.length === 0) {
           const owned = new Set(['fire', 'water', 'lightning', 'ice', ...(myProfile.unlockedPowers || [])]);
           Object.entries(SV_POWERS).forEach(([k, v]) => {
-            if (owned.has(k)) {
-              s1.add(new Option(v.icon + ' ' + v.name, k));
-              s2.add(new Option(v.icon + ' ' + v.name, k));
-            }
+            if (owned.has(k)) { s1.add(new Option(v.icon + ' ' + v.name, k)); s2.add(new Option(v.icon + ' ' + v.name, k)); }
           });
           if (s2.options.length > 1) s2.selectedIndex = 1;
         }
+
+        const cBtn = document.getElementById('svMergeChimeraBtn');
+        if (cBtn && (myProfile.ownedPets || []).includes('chimera')) { cBtn.textContent = 'EVOLVED ✅'; cBtn.disabled = true; }
+        const oBtn = document.getElementById('svMergeOuroBtn');
+        if (oBtn && (myProfile.ownedPets || []).includes('ouroboros')) { oBtn.textContent = 'EVOLVED ✅'; oBtn.disabled = true; }
 
         const petBox = document.getElementById('svPetShopList');
         if (!petBox) return;
         petBox.innerHTML = '';
         SV_PETS.forEach(pet => {
           const owned = (myProfile.ownedPets || []).includes(pet.id);
+          if (pet.evolved && !owned) return;
           const active = myProfile.activePet === pet.id;
           const row = document.createElement('div');
           row.className = 'sv-shop-card';
@@ -6986,7 +7092,7 @@ module.exports = function initMultiServers(app, io) {
       }
     `;
     // ============================================================================
-    // 🎮 SAMMUVERSE V3 ENGINE — PIECE 7B-1/8: LINEAGE, TITLES & STOCK MODALS
+    // 🎡 SAMMUVERSE V4 ENGINE — PIECE 18A/20: LINEAGES, TITLES & DAILY WHEEL UI
     // ============================================================================
     const SV_CLIENT_JS_PART4A = `
       const LINEAGE_UI_INFO = {
@@ -7000,27 +7106,52 @@ module.exports = function initMultiServers(app, io) {
       };
 
       const TITLE_UI_LIST = [
-        { id: 'rookie',    tag: '🌱 Rookie',           color: '#94a3b8', req: 'Default Starter' },
-        { id: 'hunter',    tag: '⚔️ Bounty Hunter',    color: '#38bdf8', req: '1.0M Bounty' },
-        { id: 'warlord',   tag: '🏴‍☠️ Warlord',          color: '#a855f7', req: '2.5M Bounty' },
-        { id: 'emperor',   tag: '💀 Abyss Emperor',    color: '#f43f5e', req: '10.0M Bounty' },
-        { id: 'sovereign', tag: '👑 Sammu Sovereign',  color: '#facc15', req: '30.0M Bounty' },
-        { id: 'v3god',     tag: '🔥 V3 Ascended',      color: '#fb923c', req: '100 Wins (V3)' },
-        { id: 'voidslime', tag: '🟢 Void Slime King',  color: '#4ade80', req: 'Void Slime Stage 3' },
-        { id: 'gymgod',    tag: '🏋️ Gym Sovereign',    color: '#fb923c', req: 'Training Level 50' },
-        { id: 'godly',     tag: '✨ Godly Enchanted',  color: '#67e8f9', req: 'Godly Enchant' },
-        { id: 'forger',    tag: '⚗️ Soul Forger',      color: '#e879f9', req: 'Custom Fusion' },
-        { id: 'vishnu',    tag: '🔱 MahaVishnu',       color: '#fde047', req: 'MahaVishnu Power' },
-        { id: 'lunaremp',  tag: '🌙 Lunar Empress',    color: '#fda4af', req: 'Dr. Moon Power' },
-        { id: 'tower25',   tag: '🗼 Tower Climber',    color: '#38bdf8', req: 'Tower Floor 25' },
-        { id: 'tower50',   tag: '♾️ Infinite Sovereign',color: '#e879f9', req: 'Tower Floor 50' },
-        { id: 'tower100',  tag: '🌌 Floor 100 God',    color: '#facc15', req: 'Tower Floor 100' },
-        { id: 'rich',      tag: '💎 Millionaire',      color: '#4ade80', req: '100,000+ Coins' }
+        { id: 'rookie',     tag: '🌱 Rookie',           color: '#94a3b8', req: 'Default Starter' },
+        { id: 'hunter',     tag: '⚔️ Bounty Hunter',    color: '#38bdf8', req: '1.0M Bounty' },
+        { id: 'warlord',    tag: '🏴‍☠️ Warlord',          color: '#a855f7', req: '2.5M Bounty' },
+        { id: 'emperor',    tag: '💀 Abyss Emperor',    color: '#f43f5e', req: '10.0M Bounty' },
+        { id: 'sovereign',  tag: '👑 Sammu Sovereign',  color: '#facc15', req: '30.0M Bounty' },
+        { id: 'v3god',      tag: '🔥 V3 Ascended',      color: '#fb923c', req: '100 Wins (V3)' },
+        { id: 'omegagod',   tag: '⚡ Omega Awakened',   color: '#38bdf8', req: 'Omega Core Gear' },
+        { id: 'titanlord',  tag: '🌌 Colossal Titan',   color: '#f43f5e', req: 'Titan Crown Gear' },
+        { id: 'adventurer', tag: '🗺️ Realm Conqueror',  color: '#4ade80', req: 'Clear Story Ch.5' },
+        { id: 'petmaster',  tag: '🐉 Ouroboros Tamer',  color: '#e879f9', req: 'Merge Evolved Pet' },
+        { id: 'voidslime',  tag: '🟢 Void Slime King',  color: '#4ade80', req: 'Void Slime Stage 3' },
+        { id: 'gymgod',     tag: '🏋️ Gym Sovereign',    color: '#fb923c', req: 'Training Level 50' },
+        { id: 'godly',      tag: '✨ Godly Enchanted',  color: '#67e8f9', req: 'Godly Enchant' },
+        { id: 'forger',     tag: '⚗️ Soul Forger',      color: '#e879f9', req: 'Custom Fusion' },
+        { id: 'vishnu',     tag: '🔱 MahaVishnu',       color: '#fde047', req: 'MahaVishnu Power' },
+        { id: 'lunaremp',   tag: '🌙 Lunar Empress',    color: '#fda4af', req: 'Dr. Moon Power' },
+        { id: 'tower25',    tag: '🗼 Tower Climber',    color: '#38bdf8', req: 'Tower Floor 25' },
+        { id: 'tower50',    tag: '♾️ Infinite Sovereign',color: '#e879f9', req: 'Tower Floor 50' },
+        { id: 'tower100',   tag: '🌌 Floor 100 God',    color: '#facc15', req: 'Tower Floor 100' },
+        { id: 'rich',       tag: '💎 Millionaire',      color: '#4ade80', req: '100,000+ Coins' }
       ];
 
       window._svLatestStock = { items: [], minsLeft: 60 };
       window._svTowerTop = [];
 
+      window.openDailyWheelModal = function() {
+        const modal = document.getElementById('svSubModal');
+        const title = document.getElementById('svSubTitle');
+        const body = document.getElementById('svSubBody');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        title.textContent = '🎡 COSMIC DAILY LUCKY WHEEL';
+        const freeReady = (Date.now() - (myProfile.lastDailySpin || 0)) >= 86400000;
+        body.innerHTML =
+          '<div id="svWheelDisc" style="width:170px;height:170px;margin:6px auto 12px;border-radius:50%;border:5px solid #facc15;background:conic-gradient(#dc2626 0deg 60deg,#0284c7 60deg 120deg,#16a34a 120deg 180deg,#7c3aed 180deg 240deg,#d97706 240deg 300deg,#ec4899 300deg 360deg);display:flex;align-items:center;justify-content:center;font-size:38px;box-shadow:0 0 28px rgba(250,204,21,0.6);transition:transform 2.2s cubic-bezier(0.15,0.85,0.25,1);">🎡</div>' +
+          '<div id="svWheelResultText" style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:10px;">Win Coins, Training XP, Pet Essence, or 15,000🪙 Jackpot!</div>' +
+          '<div style="display:flex;gap:6px;">' +
+            '<button onclick="socket.emit(\\'svDailyWheelSpin\\',{paid:false})" style="flex:1;padding:10px;border:none;border-radius:10px;background:' + (freeReady ? '#16a34a' : '#334155') + ';color:#fff;font-weight:900;font-size:11px;cursor:pointer;">🎁 Free Daily Spin</button>' +
+            '<button onclick="socket.emit(\\'svDailyWheelSpin\\',{paid:true})" style="flex:1;padding:10px;border:none;border-radius:10px;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;font-weight:900;font-size:11px;cursor:pointer;">💎 Cosmic Spin (500🪙)</button>' +
+          '</div>';
+      };
+    `;
+    // ============================================================================
+    // 🎡 SAMMUVERSE V4 ENGINE — PIECE 18B/20: SUB-MODALS, TOWER & HELPERS
+    // ============================================================================
+    const SV_CLIENT_JS_PART4B = `
       window.openSvSub = function(mode) {
         const modal = document.getElementById('svSubModal');
         const title = document.getElementById('svSubTitle');
@@ -7063,11 +7194,7 @@ module.exports = function initMultiServers(app, io) {
           ).join('') || '<div style="font-size:12px;color:#94a3b8;">Loading stock...</div>';
         }
       };
-    `;
-    // ============================================================================
-    // 🎮 SAMMUVERSE V3 ENGINE — PIECE 7B-2/8: ENDLESS TOWER & ACTION HELPERS
-    // ============================================================================
-    const SV_CLIENT_JS_PART4B = `
+
       window.openEndlessTowerModal = function() {
         const modal = document.getElementById('svSubModal');
         const title = document.getElementById('svSubTitle');
@@ -7090,7 +7217,7 @@ module.exports = function initMultiServers(app, io) {
         body.innerHTML =
           '<div style="background:#1e293b;border:1.5px solid #38bdf8;border-radius:12px;padding:10px;margin-bottom:8px;">' +
             '<div style="font-size:14px;font-weight:900;color:#fde047;">🏆 Your Best: Floor ' + best + ' | 📍 Checkpoint: Floor ' + chk + '</div>' +
-            '<div style="font-size:11px;color:#cbd5e1;margin-top:4px;">F25: +10k🪙 | F50: Free Fusion Pass | F100: +50k🪙</div>' +
+            '<div style="font-size:11px;color:#cbd5e1;margin-top:4px;">F25: +10k🪙 | F50: ⚡ Omega & Titan Gear Forge Unlocked! | F100: +50k🪙</div>' +
           '</div>' +
           '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
             '<button onclick="document.getElementById(\\'svSubModal\\').style.display=\\'none\\';socket.emit(\\'svTowerEnter\\',{startFromCheckpoint:true});" style="flex:2;padding:10px;border:none;border-radius:10px;background:linear-gradient(90deg,#0284c7,#7c3aed);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🚀 Resume Floor ' + chk + '</button>' +
@@ -7128,7 +7255,7 @@ module.exports = function initMultiServers(app, io) {
       };
     `;
     // ============================================================================
-    // 🚀 SAMMUVERSE V3 ENGINE — PIECE 8A/8: CLIENT SOCKET BINDINGS & BATTLE HUD
+    // 🚀 SAMMUVERSE V4 ENGINE — PIECE 19/20: BATTLE HUD, WHEEL & TRANSFORM BUTTONS
     // ============================================================================
     const SV_CLIENT_JS_PART5 = `
       socket.on('svCutscene', (d) => {
@@ -7142,9 +7269,21 @@ module.exports = function initMultiServers(app, io) {
           myProfile = st;
           window._latestSvProf = st;
           renderSvPowers();
+          renderAdventureMap();
           renderTrainingPanel();
           renderDojoShop();
         }
+      });
+
+      socket.on('svWheelResult', ({ prize, profile }) => {
+        if (profile) { myProfile = profile; window._latestSvProf = profile; renderDojoShop(); }
+        const disc = document.getElementById('svWheelDisc');
+        const txt = document.getElementById('svWheelResultText');
+        if (disc) disc.style.transform = 'rotate(' + (1440 + ((prize?.idx || 0) * 60)) + 'deg)';
+        playSvSfx('win');
+        setTimeout(() => {
+          if (txt && prize) txt.textContent = '🎉 WON: ' + prize.label;
+        }, 2200);
       });
 
       socket.on('svNotice', (msg) => { playSvSfx('win'); alert(msg); });
@@ -7185,19 +7324,40 @@ module.exports = function initMultiServers(app, io) {
         document.getElementById('svLobbyView').style.display = 'none';
         document.getElementById('svBattleView').style.display = 'block';
 
-        document.getElementById('svTurnBadge').textContent = 'Turn ' + b.turn + (b.me.awakened ? ' ⚡ AWAKENED!' : '');
+        document.getElementById('svTurnBadge').textContent = 'Turn ' + b.turn + ' • Energy: ' + (b.me.energy || 0) + '%⚡';
         document.getElementById('svBattleTimer').textContent = '⏳ ' + b.timeLeft + 's';
         document.getElementById('svMeLabel').textContent = b.me.icon + ' ' + b.me.name + ' (' + b.me.powerName + ')';
         document.getElementById('svMeHpText').textContent = b.me.hp + ' / ' + b.me.maxHp + ' HP';
         const meBar = document.getElementById('svMeHpBar');
         meBar.style.width = Math.max(0, Math.round((b.me.hp / b.me.maxHp) * 100)) + '%';
-        meBar.classList.toggle('awakened', Boolean(b.me.awakened));
+        meBar.classList.toggle('awakened', Boolean(b.me.awakened || b.me.omegaTurns > 0 || b.me.titanTurns > 0));
 
         document.getElementById('svOppLabel').textContent = b.opp.icon + ' ' + b.opp.name + ' (' + b.opp.powerName + ')';
         document.getElementById('svOppHpText').textContent = b.opp.hp + ' / ' + b.opp.maxHp + ' HP';
         const oppBar = document.getElementById('svOppHpBar');
         oppBar.style.width = Math.max(0, Math.round((b.opp.hp / b.opp.maxHp) * 100)) + '%';
         oppBar.classList.toggle('awakened', Boolean(b.opp.awakened));
+
+        const tBar = document.getElementById('svTransformBar');
+        if (tBar) {
+          tBar.innerHTML = '';
+          if (b.me.hasOmegaGear && !b.me.omegaUsed) {
+            const oBtn = document.createElement('button');
+            oBtn.disabled = (b.me.energy || 0) < 50;
+            oBtn.style.cssText = 'flex:1;padding:6px;border:1.5px solid #38bdf8;border-radius:9px;background:linear-gradient(90deg,#0284c7,#6366f1);color:#fff;font-weight:900;font-size:10px;cursor:pointer;opacity:' + ((b.me.energy || 0) >= 50 ? '1' : '0.45') + ';';
+            oBtn.textContent = '⚡ OMEGA EVOLVE (50%⚡)';
+            oBtn.onclick = () => socket.emit('svTransform', 'omega');
+            tBar.appendChild(oBtn);
+          }
+          if (b.me.hasTitanGear && !b.me.titanUsed) {
+            const tiBtn = document.createElement('button');
+            tiBtn.disabled = (b.me.energy || 0) < 75;
+            tiBtn.style.cssText = 'flex:1;padding:6px;border:1.5px solid #facc15;border-radius:9px;background:linear-gradient(90deg,#dc2626,#9333ea);color:#fff;font-weight:900;font-size:10px;cursor:pointer;opacity:' + ((b.me.energy || 0) >= 75 ? '1' : '0.45') + ';';
+            tiBtn.textContent = '🌌 TITAN FORM (75%⚡)';
+            tiBtn.onclick = () => socket.emit('svTransform', 'titan');
+            tBar.appendChild(tiBtn);
+          }
+        }
 
         document.getElementById('svCombatFeed').innerHTML = b.logText;
         const skBox = document.getElementById('svSkillButtons');
@@ -7216,7 +7376,6 @@ module.exports = function initMultiServers(app, io) {
           skBox.appendChild(btn);
         });
 
-        // 5th Skill: Prem Samarpan (Surrender to Love) in real PvP for MahaVishnu
         const isVishnu = b.me.powerKey === 'mahavishnu' || String(b.me.icon || '').includes('🔱');
         if (isVishnu && !b.me.isBotOpp) {
           const loveBtn = document.createElement('button');
@@ -7248,12 +7407,13 @@ module.exports = function initMultiServers(app, io) {
       });
     `;
     // ============================================================================
-    // 🚀 SAMMUVERSE V3 ENGINE — PIECE 8B/8: BOOTLOADER & SERVER BUNDLE DELIVERY
+    // 🚀 SAMMUVERSE V4 ENGINE — PIECE 20/20: BOOTLOADER & SERVER BUNDLE DELIVERY
     // ============================================================================
     const SV_CLIENT_ALL_JS = [
         SV_CLIENT_JS_PART1,
         SV_CLIENT_JS_PART2,
-        SV_CLIENT_JS_PART3,
+        SV_CLIENT_JS_PART3A,
+        SV_CLIENT_JS_PART3B,
         SV_CLIENT_JS_PART4A,
         SV_CLIENT_JS_PART4B,
         SV_CLIENT_JS_PART5
@@ -7264,79 +7424,72 @@ module.exports = function initMultiServers(app, io) {
     (function() {
       if (window._svBootLoaded) return;
       window._svBootLoaded = true;
-      window.openSammuVerse = function() { if (window.openSammuVerseModal) window.openSammuVerseModal(); else if (typeof socket !== 'undefined') socket.emit('svRequestCleanV3'); };
-      window.openSvModal = window.openSammuVerse;
 
       function initSvBoot() {
         if (typeof socket === 'undefined' || window._svBootSocketHooked) return;
         window._svBootSocketHooked = true;
 
-        socket.on('svDeliverCleanV3', (bundle) => {
+        socket.on('svDeliverCleanV4', (bundle) => {
           if (bundle && bundle.html && !document.getElementById('svModal')) {
             const wrap = document.createElement('div');
             wrap.innerHTML = bundle.html;
             document.body.appendChild(wrap);
           }
-          if (bundle && bundle.js && !window._svV3JsExecuted) {
-            window._svV3JsExecuted = true;
+          if (bundle && bundle.js && !window._svV4JsExecuted) {
+            window._svV4JsExecuted = true;
             try {
               (new Function(bundle.js))();
             } catch (e) {
-              console.error('SammuVerse Boot Error:', e);
+              console.error('SammuVerse V4 Boot Error:', e);
             }
           }
           ensureSvArenaBtn();
         });
 
-                
-          function ensureSvArenaBtn() {
-    const triggerOpen = () => {
-        if (typeof window.openSammuVerseModal === 'function') {
+        function triggerOpenSv() {
+          if (typeof window.openSammuVerseModal === 'function') {
             window.openSammuVerseModal();
-        } else {
-            socket.emit('svRequestCleanV3');
+          } else {
+            socket.emit('svRequestCleanV4');
             setTimeout(() => {
-                if (typeof window.openSammuVerseModal === 'function') window.openSammuVerseModal();
+              if (typeof window.openSammuVerseModal === 'function') window.openSammuVerseModal();
             }, 350);
+          }
         }
-    };
 
-    const existingBanner = Array.from(document.querySelectorAll('div, button, a')).find(el =>
-        el.children.length <= 2 && /sammuverse/i.test(el.textContent || '') && el.id !== 'svMainArenaBtn' && !el.closest('#svModal')
-    );
-
-    if (existingBanner) {
-        if (!existingBanner.dataset.svHooked) {
-            existingBanner.dataset.svHooked = 'true';
-            existingBanner.style.cursor = 'pointer';
-            existingBanner.onclick = (e) => {
+        function ensureSvArenaBtn() {
+          const existingBanner = Array.from(document.querySelectorAll('div, button, a')).find(el =>
+            el.children.length <= 2 && /sammuverse/i.test(el.textContent || '') && el.id !== 'svMainArenaBtn' && !el.closest('#svModal')
+          );
+          if (existingBanner) {
+            if (!existingBanner.dataset.svV4Hooked) {
+              existingBanner.dataset.svV4Hooked = '1';
+              existingBanner.style.cursor = 'pointer';
+              existingBanner.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                triggerOpen();
-            };
+                triggerOpenSv();
+              };
+            }
+            const dup = document.getElementById('svMainArenaBtn');
+            if (dup) dup.remove();
+            return;
+          }
+
+          if (document.getElementById('svMainArenaBtn')) return;
+          const anchor = Array.from(document.querySelectorAll('button')).find(b => /phonk dj|draw pad|disco mode/i.test(b.textContent || ''));
+          if (anchor && anchor.parentElement) {
+            const btn = anchor.cloneNode(true);
+            btn.id = 'svMainArenaBtn';
+            btn.removeAttribute('onclick');
+            btn.textContent = '⚔️ SammuVerse';
+            btn.style.background = 'linear-gradient(90deg, #9333ea, #ec4899)';
+            btn.onclick = triggerOpenSv;
+            anchor.parentElement.insertBefore(btn, anchor.nextSibling);
+          }
         }
-        const dup = document.getElementById('svMainArenaBtn');
-        if (dup) dup.remove();
-        return;
-    }
 
-    if (document.getElementById('svMainArenaBtn')) return;
-    const anchor = Array.from(document.querySelectorAll('button')).find(b => /phonk dj|draw pad|disco mode/i.test(b.textContent || ''));
-    if (anchor && anchor.parentElement) {
-        const btn = anchor.cloneNode(true);
-        btn.id = 'svMainArenaBtn';
-        btn.removeAttribute('onclick');
-        btn.textContent = '⚔️ SammuVerse';
-        btn.style.background = 'linear-gradient(90deg, #9333ea, #ec4899)';
-        btn.onclick = triggerOpen;
-        anchor.parentElement.insertBefore(btn, anchor.nextSibling);
-    }
-}
-
-
-        
-
-        socket.emit('svRequestCleanV3');
+        socket.emit('svRequestCleanV4');
         setInterval(ensureSvArenaBtn, 1500);
       }
 
@@ -7357,139 +7510,18 @@ module.exports = function initMultiServers(app, io) {
     });
 
     io.on('connection', (socket) => {
-        const deliverV3 = () => {
-            socket.emit('svDeliverCleanV3', {
+        const deliverV4 = () => {
+            socket.emit('svDeliverCleanV4', {
                 html: SV_FULL_BUNDLE,
                 js: SV_CLIENT_ALL_JS
             });
         };
-        socket.on('svRequestCleanV3', deliverV3);
-        socket.on('joinRoom', () => setTimeout(deliverV3, 400));
-    });
-    });
-        // === 🚀 SAMMUVERSE EMERGENCY 1-BLOCK FIX ===
-    const SV_HOTFIX_SCRIPT = `
-    <script>
-    (function() {
-      function repairAndOpenSv() {
-        // 1. Repair broken input tag if modal exists
-        const inp = document.getElementById('svSecretCodeInput');
-        if (inp && !document.querySelector('#svFightPanel button[onclick="redeemSvSecretCode()"]')) {
-          const btn = document.createElement('button');
-          btn.textContent = '🔓 Redeem';
-          btn.style.cssText = 'background:linear-gradient(90deg,#f59e0b,#d97706);border:none;color:#111;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer;';
-          btn.onclick = () => { if (typeof window.redeemSvSecretCode === 'function') window.redeemSvSecretCode(); };
-          inp.style.cssText = 'flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;';
-          inp.parentElement.appendChild(btn);
-        }
-
-        // 2. Open modal or request bundle from server
-        if (typeof window.openSammuVerseModal === 'function' && document.getElementById('svModal')) {
-          window.openSammuVerseModal();
-        } else if (typeof socket !== 'undefined') {
-          socket.emit('svRequestCleanV3');
-          setTimeout(() => {
-            const m = document.getElementById('svModal');
-            if (typeof window.openSammuVerseModal === 'function') window.openSammuVerseModal();
-            else if (m) m.style.setProperty('display', 'flex', 'important');
-          }, 300);
-        }
-      }
-
-      // Hook EVERY button/banner mentioning SammuVerse on the page
-      setInterval(() => {
-        document.querySelectorAll('button, div, a').forEach(el => {
-          if (el.closest('#svModal') || el.dataset.svEmergencyHooked) return;
-          const txt = (el.textContent || '').trim();
-          if (el.children.length <= 2 && /sammuverse/i.test(txt)) {
-            el.dataset.svEmergencyHooked = '1';
-            el.style.cursor = 'pointer';
-            el.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              repairAndOpenSv();
-            }, true);
-          }
-        });
-      }, 1000);
-    })();
-    </script>`;
-
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svEmergencyHooked')) {
-                body = body.replace('</body>', SV_HOTFIX_SCRIPT + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
+        socket.on('svRequestCleanV4', deliverV4);
+        socket.on('joinRoom', () => setTimeout(deliverV4, 400));
     });
 
-    io.on('connection', (socket) => {
-        socket.on('svRequestCleanV3', () => {
-            const fixedHtml = SV_FULL_BUNDLE.replace(
-                '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..."',
-                '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..." style="flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;">'
-            );
-            socket.emit('svDeliverCleanV3', { html: fixedHtml, js: SV_CLIENT_ALL_JS });
-        });
-    
-    // === 🔥 GUARANTEED SAMMUVERSE INJECTOR (WORKS WITH sendFile & static) ===
-    const SV_WORKING_HTML = SV_FULL_BUNDLE.replace(
-        '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..."',
-        '<input id="svSecretCodeInput" placeholder="🔑 Enter Secret or Gift Code..." style="flex:1;padding:6px 8px;border-radius:9px;border:1.5px solid #f59e0b;background:#090d16;color:#fff;font-size:11px;">'
-    );
-
-    const SV_DIRECT_BOOT = `
-    ${SV_WORKING_HTML}
-    <button id="svDirectFab" onclick="if(window.openSammuVerseModal)window.openSammuVerseModal();else document.getElementById('svModal').style.display='flex';"
-      style="position:fixed;bottom:16px;right:16px;z-index:999990;background:linear-gradient(90deg,#9333ea,#ec4899);color:#fff;border:2px solid #facc15;border-radius:999px;padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(236,72,153,0.6);">
-      ⚔️ SammuVerse
-    </button>
-    <script>
-    (function() {
-      const waitSvSock = setInterval(() => {
-        if (typeof socket === 'undefined') return;
-        clearInterval(waitSvSock);
-        try {
-          ${SV_CLIENT_ALL_JS}
-        } catch (err) {
-          console.error('SV Init Error:', err);
-        }
-        // Also hook any existing SammuVerse button on the page
-        document.querySelectorAll('button, div, a').forEach(el => {
-          if (el.id !== 'svDirectFab' && !el.closest('#svModal') && el.children.length <= 2 && /sammuverse/i.test(el.textContent || '')) {
-            el.style.cursor = 'pointer';
-            el.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (window.openSammuVerseModal) window.openSammuVerseModal();
-              else document.getElementById('svModal').style.display = 'flex';
-            };
-          }
-        });
-      }, 300);
-    })();
-    </script>`;
-
-    // Intercept res.send AND res.end (works for res.sendFile / express.static too!)
-    app.use((req, res, next) => {
-        const origEnd = res.end;
-        res.end = function(chunk, encoding, cb) {
-            if (chunk && typeof chunk === 'string' && chunk.includes('</body>') && !chunk.includes('svDirectFab')) {
-                chunk = chunk.replace('</body>', SV_DIRECT_BOOT + '\n</body>');
-            } else if (Buffer.isBuffer(chunk)) {
-                const str = chunk.toString('utf8');
-                if (str.includes('</body>') && !str.includes('svDirectFab')) {
-                    chunk = Buffer.from(str.replace('</body>', SV_DIRECT_BOOT + '\n</body>'), 'utf8');
-                }
-            }
-            return origEnd.call(this, chunk, encoding, cb);
-        };
-        next();
-    });
-         });
+    return OG_HOSTS;
+};
 
      return OG_HOSTS;
       

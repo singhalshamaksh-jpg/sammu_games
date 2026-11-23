@@ -9,12 +9,15 @@
     sigma:   { url: '/public_phonk_sigma.mp3__.mp3',  label: '🗿 Sigma GigaChad' },
     memphis: { url: '/public_phonk_memphis.mp3',      label: '👹 Montagem Memphis' },
     cyber:   { url: '/public_phonk_hardstyle.mp3',    label: '🚀 Euphoric Hardstyle' },
-    tokyo:   { url: '/public_phonk_bingbingboo.mp3',  label: '👾 Bing Bing Boo' }
+    tokyo:   { url: '/public_phonk_bingbingboo.mp3',  label: '👾 Bing Bing Boo' },
+    supreme: { url: '/public_phonk_supreme.mp3',      label: '👑 Shubh - Supreme' },
+    onelove: { url: '/public_phonk_onelove.mp3',      label: '💖 Shubh - One Love' }
   };
 
   const BTN_MAP = {
     drift: 'loopDrift', brazil: 'loopBrazil', murder: 'loopMurder', sigma: 'loopSigma',
-    memphis: 'loopMemphis', cyber: 'loopCyber', tokyo: 'loopTokyo', demon: 'loopDemon'
+    memphis: 'loopMemphis', cyber: 'loopCyber', tokyo: 'loopTokyo', demon: 'loopDemon',
+    supreme: 'loopSupreme', onelove: 'loopOneLove'
   };
 
   function bounceBars() {
@@ -42,17 +45,38 @@
 
     const origStopPhonkLoop = window.stopPhonkLoop;
 
+    // Rename Tokyo button & inject "👑 Shubh - Supreme" + "💖 Shubh - One Love"
     setInterval(() => {
       const tokyoBtn = document.getElementById('loopTokyo');
       if (tokyoBtn && tokyoBtn.textContent.includes('Tokyo')) {
         tokyoBtn.textContent = '👾 Bing Bing Boo';
+      }
+      const grid = document.querySelector('#phonkDjCard .dj-loops');
+      if (grid) {
+        if (!document.getElementById('loopSupreme')) {
+          const supBtn = document.createElement('button');
+          supBtn.id = 'loopSupreme';
+          supBtn.className = 'dj-loop-btn';
+          supBtn.style.borderColor = '#facc15';
+          supBtn.textContent = '👑 Shubh - Supreme';
+          supBtn.onclick = () => window.togglePhonkBeat('supreme');
+          grid.appendChild(supBtn);
+        }
+        if (!document.getElementById('loopOneLove')) {
+          const loveBtn = document.createElement('button');
+          loveBtn.id = 'loopOneLove';
+          loveBtn.className = 'dj-loop-btn';
+          loveBtn.style.borderColor = '#f472b6';
+          loveBtn.textContent = '💖 Shubh - One Love';
+          loveBtn.onclick = () => window.togglePhonkBeat('onelove');
+          grid.appendChild(loveBtn);
+        }
       }
     }, 1000);
 
     function startTrack(style, djName) {
       if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
 
-      // Stop any old synth timer without touching our persistent <audio>
       if (typeof origStopPhonkLoop === 'function') {
         try { origStopPhonkLoop(); } catch (e) {}
       }

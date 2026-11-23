@@ -5090,7 +5090,7 @@ module.exports = function initMultiServers(app, io) {
         try { fs.writeFileSync(SV_LOG_FILE, JSON.stringify(svBattleLogs, null, 2)); } catch (e) {}
         io.to(srvId).emit('svLogsUpdate', svBattleLogs.filter(l => l.srvId === srvId));
     }
-  / ============================================================================
+  // ============================================================================
     // ⚔️ SAMMUVERSE V4 ENGINE — PIECE 2/20: STARTER, RARE & EPIC POWERS
     // ============================================================================
     const SV_DEFS = {

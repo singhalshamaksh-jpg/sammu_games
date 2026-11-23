@@ -7157,7 +7157,13 @@ module.exports = function initMultiServers(app, io) {
           ensureSvArenaBtn();
         });
 
-        function ensureSvArenaBtn() {
+                function ensureSvArenaBtn() {
+                    const existingBanner = Array.from(document.querySelectorAll('div, button')).find(el => /sammuverse pvp & grind/i.test(el.textContent || ''));
+          if (existingBanner) {
+            const dup = document.getElementById('svMainArenaBtn');
+            if (dup) dup.remove();
+            return;
+          }
           if (document.getElementById('svMainArenaBtn')) return;
           const anchor = Array.from(document.querySelectorAll('button')).find(b => /phonk dj|draw pad|disco mode/i.test(b.textContent || ''));
           if (anchor && anchor.parentElement) {
@@ -7173,6 +7179,8 @@ module.exports = function initMultiServers(app, io) {
             anchor.parentElement.insertBefore(btn, anchor.nextSibling);
           }
         }
+
+        
 
         socket.emit('svRequestCleanV3');
         setInterval(ensureSvArenaBtn, 1500);

@@ -5750,12 +5750,25 @@ module.exports = function initMultiServers(app, io) {
         return hourlyStock;
     }
 
-    function verifyPlayerAccountOwnership(uname, socket, forceRelink = false) {
+        function verifyPlayerAccountOwnership(uname, socket, forceRelink = false) {
         if (!uname || !socket) return false;
         const devId = socket.trackedDeviceId || null;
-        const ip = socket.trackedIP || null;
-        const browser = socket.trackedBrowser || null;
         const prof = getSvProfile(uname);
+
+        // If no deviceId arrived yet on initial handshake, don't falsely lock out
+        if (!devId) return true;
+
+        // First time linking OR master key relink
+        if (!prof.ownerDevId || forceRelink) {
+            prof.ownerDevId = devId;
+            delete prof.ownerSig;
+            saveSvStats();
+            return true;
+        }
+
+        // Strict Device ID match only
+        return prof.ownerDevId === devId;
+    
 
         if (!prof.ownerSig || forceRelink) {
             prof.ownerSig = { deviceId: devId, ip, browser };

@@ -10548,50 +10548,49 @@ ll(this, body);
         };
         next();
     });
-     // ============================================================================
-    // ⚡ TURBO FAST-BOOT & ANTI-LAG ENGINE (PASTE RIGHT ABOVE return OG_HOSTS;)
+         // ============================================================================
+    // 🛡️ CLIENT-SIDE ANTI-FREEZE SHIELD (STOPS INFINITE MUTATION/TIMER LOOPS)
     // ============================================================================
-    const TURBO_FAST_BOOT_PATCH = `
+    const CLIENT_ANTIFREEZE_SHIELD = `
     <script>
     (function() {
-      if (window._turboBootApplied) return;
-      window._turboBootApplied = true;
+      if (window._antiFreezeShieldOn) return;
+      window._antiFreezeShieldOn = true;
 
-      // 1. Slow down heavy DOM-scanning setIntervals so mobile CPUs don't freeze on load
-      const _rawSetInterval = window.setInterval;
+      // 1. Prevent MutationObserver infinite feedback loops from freezing Chrome
+      const OrigMO = window.MutationObserver;
+      if (OrigMO) {
+        window.MutationObserver = function(cb) {
+          let running = false, calls = 0, lastReset = Date.now();
+          return new OrigMO(function(mutations, obs) {
+            if (running) return;
+            const now = Date.now();
+            if (now - lastReset > 1000) { calls = 0; lastReset = now; }
+            if (++calls > 15) return; // Cap at 15 DOM reactions/sec so browser never hangs
+            running = true;
+            try { cb(mutations, obs); } finally { running = false; }
+          });
+        };
+        window.MutationObserver.prototype = OrigMO.prototype;
+      }
+
+      // 2. Slow down rapid DOM-polling intervals (< 2500ms) so mobile UI stays responsive
+      const _rawInt = window.setInterval;
       window.setInterval = function(fn, ms, ...args) {
-        const code = fn ? fn.toString() : '';
-        if (ms && ms < 2500 && /querySelectorAll|getElementById|inject|ensure|bind|hook|boot|upgrade/i.test(code)) {
-          return _rawSetInterval(fn, 4000, ...args);
+        const src = fn ? fn.toString() : '';
+        if (ms && ms < 2500 && /querySelector|getElementById|inject|ensure|bind|hook|boot|upgrade|observer/i.test(src)) {
+          return _rawInt(fn, 3500, ...args);
         }
-        return _rawSetInterval(fn, ms, ...args);
+        return _rawInt(fn, ms, ...args);
       };
-
-      // 2. Defer heavy startup timers until after the page & server browser finish painting
-      const _rawSetTimeout = window.setTimeout;
-      window.setTimeout = function(fn, ms, ...args) {
-        if (document.readyState === 'loading' && ms >= 400 && ms <= 1500) {
-          return _rawSetTimeout(fn, ms + 1200, ...args);
-        }
-        return _rawSetTimeout(fn, ms, ...args);
-      };
-
-      // 3. Force fast WebSocket-first connection (skips slow HTTP long-polling handshake)
-      const waitIo = _rawSetInterval(() => {
-        if (typeof socket !== 'undefined' && socket.io && socket.io.opts) {
-          socket.io.opts.transports = ['websocket', 'polling'];
-          socket.io.opts.upgrade = true;
-          clearInterval(waitIo);
-        }
-      }, 300);
     })();
     </script>`;
 
     app.use((req, res, next) => {
         const prevSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('<head>') && !body.includes('_turboBootApplied')) {
-                body = body.replace('<head>', '<head>\n' + TURBO_FAST_BOOT_PATCH);
+            if (typeof body === 'string' && body.includes('<head>') && !body.includes('_antiFreezeShieldOn')) {
+                body = body.replace('<head>', '<head>\n' + CLIENT_ANTIFREEZE_SHIELD);
             }
             return prevSend.call(this, body);
         };

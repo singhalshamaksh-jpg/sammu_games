@@ -10548,12 +10548,23 @@ def.name + ' [V4 ??]' };
         next();
     });
 
-    // ============================================================================
-    // 👑 V6 MASTER CODE (#sammuv6god) + FULL HTML & SOCKET EMOJI CLEANER
+       // ============================================================================
+    // 👑 V6 MASTER CODE (#sammuv6god) + COMPLETE EMOJI CLEANER (ABOVE return OG_HOSTS;)
     // ============================================================================
     function cleanAllV6Emojis(str) {
         if (typeof str !== 'string' || !str.includes('?')) return str;
         return str
+            .replace(/\?{1,4}\s*World 1/g, '🌍 World 1')
+            .replace(/\?{1,4}\s*World 2\s*\?/g, '🌌 World 2 🔒')
+            .replace(/\?{1,4}\s*World 2/g, '🌌 World 2')
+            .replace(/\?{1,4}\s*Aura\s*\/\s*V4/g, '🔮 Aura / V4')
+            .replace(/\?{1,4}\s*Ch\.(\d+):/g, '🪐 Ch.$1:')
+            .replace(/\?{1,4}\s*S([123])/g, '🔒 S$1')
+            .replace(/\?{1,4}\s*Clear Chapter/g, '🔒 Clear Chapter')
+            .replace(/k\?{1,4}\s*•\s*\?{1,4}\s*Shard/g, 'k🪙 • 🔷 Shard')
+            .replace(/k\?{1,4}\s*•\s*\?{1,4}\s*Crystal/g, 'k🪙 • 💎 Crystal')
+            .replace(/\?{1,4}\s*Shard/g, '🔷 Shard')
+            .replace(/\?{1,4}\s*Crystal/g, '💎 Crystal')
             .replace(/\?{2,4}\s*ENTER V4/g, '🔥 ENTER V4')
             .replace(/\?{2,4}\s*Void Walker/g, '🌌 Void Walker')
             .replace(/\?{2,4}\s*V4 TEMPLE/g, '⛩️ V4 TEMPLE')
@@ -10572,12 +10583,11 @@ def.name + ' [V4 ??]' };
             .replace(/100\s*\?{1,4}/g, '100 🔥')
             .replace(/'\?'\.repeat/g, "'⭐'.repeat")
             .replace(/\|\|\s*'\?'/g, "|| '⚡'")
-            .replace(/\?wordl/gi, '🌍 World')
             .replace(/([a-zA-Z0-9])\?{2,4}/g, '$1 ✨')
             .replace(/\?{2,4}/g, '✨');
     }
 
-    // 1. Clean ALL V6_CLIENT_UI & HTML strings inside res.send BEFORE browser loads
+    // 1. Clean ALL HTML & V6_CLIENT_UI before browser loads + keep HK button visible
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
@@ -10593,7 +10603,7 @@ def.name + ' [V4 ??]' };
         next();
     });
 
-    // 2. Clean outgoing chat messages & wire #sammuv6god straight into prof.v6
+    // 2. Clean chat messages & make #sammuv6god unlock ALL World 2 chapters, V4, Aura & Gears
     io.on('connection', (socket) => {
         const origEmit = socket.emit.bind(socket);
         socket.emit = function(ev, payload, ...rest) {
@@ -10613,7 +10623,6 @@ def.name + ' [V4 ??]' };
                     const prof = getSvProfile(uname);
                     const tr = ensureTrainingProfile(prof);
 
-                    // Unlock all V1-V4 base stats, powers, gears & training
                     prof.unlockedPowers = Object.keys(SV_DEFS);
                     prof.ownedPets = ['mochi', 'tommy', 'garuda', 'sheshnag', 'chimera', 'ouroboros'];
                     prof.activePet = 'ouroboros';
@@ -10629,20 +10638,21 @@ def.name + ' [V4 ??]' };
                     if (!prof.powerWins) prof.powerWins = {};
                     Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = 100; });
 
-                    // Populate nested prof.v6 object (World 2, V4 Awakenings, Divine Aura, Gears, Shards & Crystals)
+                    // Unlock all World 2 Chapters (11-15), V4 Powers, Divine Aura, Relic Gears & 9999 Shards/Crystals
                     if (!prof.v6 || typeof prof.v6 !== 'object') prof.v6 = {};
                     prof.v6.w2Unlocked = true;
                     prof.v6.w2Cleared = true;
-                    prof.v6.w2Chapter = 15;
+                    prof.v6.w2Chapter = 16;
                     prof.v6.w2Stage = 3;
                     prof.v6.v4Unlocked = true;
                     prof.v6.v4Awakened = Object.keys(SV_DEFS);
-                    prof.v6.activeV4 = Object.keys(SV_DEFS)[0] || 'infinity';
+                    prof.v6.activeV4 = 'infinity';
                     prof.v6.auraClass = 'divine';
                     prof.v6.aura = 'divine';
                     prof.v6.auraLv = 10;
                     prof.v6.shards = 9999;
                     prof.v6.crystals = 9999;
+                    prof.v6.relics = { astralBlade: 10, voidArmor: 10, infinityRing: 10 };
                     prof.v6.gears = { astralBlade: 10, voidArmor: 10, infinityRing: 10, omegaCore: 10, titanCrown: 10 };
                     prof.v6.maxGear = true;
                     prof.v6.stars = prof.v6.stars || {};
@@ -10654,13 +10664,14 @@ def.name + ' [V4 ??]' };
                     syncPlayerTitlesAndBounty(uname);
                     saveSvStats();
                     socket.emit('svStatsSync', getSvProfile(uname));
-                    socket.emit('svNotice', '👑🌌 MASTER CODE #sammuv6god UNLOCKED EVERYTHING (V4 Powers, World 2, Divine Aura, V6 Gears & 9999 Shards/Crystals)!');
+                    socket.emit('svNotice', '👑🌌 MASTER CODE #sammuv6god ACTIVATED! All World 2 Chapters, V4 Powers, Divine Aura & Relic Gears Unlocked!');
                     return;
                 }
             }
             next();
         });
     });
+ 
 
     return OG_HOSTS;
 };

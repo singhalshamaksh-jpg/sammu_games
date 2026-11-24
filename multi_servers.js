@@ -10033,8 +10033,7 @@ def.name + ' [V4 ??]' };
             }
             saveSvStats();
             pSock.emit('svStatsSync', ensureV6Profile(cleanName));
-            return io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `??${'?'.repeat(stars)} **W2 CLEARED!** **${b.p1.name}** defeated **${b.p2.name}** (+${cGain.toLocaleString()}??, +${xpGa
-in}? XP${dropTxt})!`, _serverId: b.srvId });
+            return io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `??${'?'.repeat(stars)} **W2 CLEARED!** **${b.p1.name}** defeated **${b.p2.name}** (+${cGain.toLocaleString()}??, +${xpGain}? XP${dropTxt})!`, _serverId: b.srvId });
         }
  
         return _prevFinishSvBattleV6(battleId, b);

@@ -10910,8 +10910,7 @@ div>') +
     return OG_HOSTS;
 };
    
-    return OG_HOSTS;
-};
+   
 
      
  

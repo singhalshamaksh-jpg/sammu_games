@@ -10342,6 +10342,144 @@ div>') +
         next();
     });
                 
+    // ============================================================================
+    // 🎙️ DIAMOND SERVER EXCLUSIVE VOICE NOTE CHAT (PASTE ABOVE return OG_HOSTS;)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('diamondVoiceMsg', (payload) => {
+            if (socket.activeServerId !== 'srv_diamond') return;
+            const uname = (socket.username || '').trim();
+            if (!uname || !payload || typeof payload.audio !== 'string') return;
+
+            // Validate audio data URL & enforce 250KB max size (~12s voice clip)
+            if (!payload.audio.startsWith('data:audio/') || payload.audio.length > 260000) {
+                return socket.emit('svNotice', '⚠️ Voice note too long (max 12 seconds)!');
+            }
+
+            const sec = Math.min(12, Math.max(1, Number(payload.duration) || 1));
+            const msgObj = {
+                username: uname,
+                text: `🎙️ Voice Note (${sec}s)`,
+                voiceAudio: payload.audio,
+                voiceDur: sec,
+                _serverId: 'srv_diamond',
+                ts: Date.now()
+            };
+
+            if (!multiDB.chatHistory['srv_diamond']) multiDB.chatHistory['srv_diamond'] = [];
+            multiDB.chatHistory['srv_diamond'].push(msgObj);
+            if (multiDB.chatHistory['srv_diamond'].length > 50) {
+                multiDB.chatHistory['srv_diamond'] = multiDB.chatHistory['srv_diamond'].slice(-50);
+            }
+
+            io.to('srv_diamond').emit('diamondVoiceBroadcast', msgObj);
+        });
+    });
+
+    const DIAMOND_VOICE_UI = `
+    <script id="diamondVoiceChatScript">
+    (function() {
+      if (window._diamondVoiceReady) return;
+      window._diamondVoiceReady = true;
+
+      let mediaRec = null, chunks = [], recStart = 0, recTimer = null;
+
+      function isDiamondRoom() {
+        return (window.currentServerId === 'srv_diamond' || window.activeServerId === 'srv_diamond' ||
+          (document.body && document.body.innerText && document.body.innerText.includes('DIAMOND SERVER') &&
+           !document.getElementById('serverSelectModal')?.offsetParent));
+      }
+
+      function renderVoiceBubble(data) {
+        const box = document.getElementById('messages') || document.getElementById('chatBox') || document.querySelector('.messages');
+        if (!box || !data || !data.voiceAudio) return;
+        const row = document.createElement('div');
+        row.style.cssText = 'background:linear-gradient(90deg,rgba(14,165,233,0.22),rgba(168,85,247,0.22));border:1px solid #38bdf8;border-radius:12px;padding:8px 10px;margin:6px 0;';
+        row.innerHTML =
+          '<div style="font-size:11px;font-weight:900;color:#7dd3fc;margin-bottom:4px;">💠 ' + (data.username || 'VIP') + ' • 🎙️ Voice (' + (data.voiceDur || 1) + 's)</div>' +
+          '<audio controls preload="none" src="' + data.voiceAudio + '" style="width:100%;height:34px;border-radius:8px;"></audio>';
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+      }
+
+      function hookVoiceSocket() {
+        if (typeof socket === 'undefined' || socket._diamondVoiceHooked) return;
+        socket._diamondVoiceHooked = true;
+        socket.on('diamondVoiceBroadcast', renderVoiceBubble);
+      }
+
+      async function toggleRecord(btn) {
+        hookVoiceSocket();
+        if (mediaRec && mediaRec.state === 'recording') {
+          clearTimeout(recTimer);
+          mediaRec.stop();
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          chunks = [];
+          recStart = Date.now();
+          mediaRec = new MediaRecorder(stream);
+          mediaRec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+          mediaRec.onstop = () => {
+            stream.getTracks().forEach(t => t.stop());
+            btn.textContent = '🎙️';
+            btn.style.background = '#0284c7';
+            const dur = Math.max(1, Math.round((Date.now() - recStart) / 1000));
+            const blob = new Blob(chunks, { type: mediaRec.mimeType || 'audio/webm' });
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              if (typeof socket !== 'undefined') {
+                socket.emit('diamondVoiceMsg', { audio: reader.result, duration: dur });
+              }
+            };
+            reader.readAsDataURL(blob);
+          };
+          mediaRec.start();
+          btn.textContent = '⏹️';
+          btn.style.background = '#dc2626';
+          recTimer = setTimeout(() => { if (mediaRec && mediaRec.state === 'recording') mediaRec.stop(); }, 12000);
+        } catch (err) {
+          alert('🎙️ Please allow Microphone permission in your browser to send Diamond voice notes!');
+        }
+      }
+
+      setInterval(() => {
+        hookVoiceSocket();
+        let btn = document.getElementById('diamondMicBtn');
+        const input = document.getElementById('msgInput') || document.getElementById('messageInput') || document.querySelector('form input[type="text"]');
+        if (!input || !input.parentElement) return;
+
+        if (!isDiamondRoom()) {
+          if (btn) btn.style.display = 'none';
+          return;
+        }
+        if (!btn) {
+          btn = document.createElement('button');
+          btn.id = 'diamondMicBtn';
+          btn.type = 'button';
+          btn.textContent = '🎙️';
+          btn.title = 'Record Diamond Voice Note (Max 12s)';
+          btn.style.cssText = 'background:#0284c7;border:none;color:#fff;padding:0 12px;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;margin-left:4px;';
+          btn.onclick = () => toggleRecord(btn);
+          input.parentElement.appendChild(btn);
+        }
+        btn.style.display = 'inline-flex';
+        btn.style.alignItems = 'center';
+      }, 1000);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('diamondVoiceChatScript')) {
+                body = body.replace('</body>', DIAMOND_VOICE_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
 
     return OG_HOSTS;

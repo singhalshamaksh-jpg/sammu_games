@@ -9119,8 +9119,7 @@ module.exports = function initMultiServers(app, io) {
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>') && !body.includes('_inAppPatchApplied')) {
-                body = body.replace('</body>', IN_APP_B
-ROWSER_PATCH_UI + '\n</body>');
+                body = body.replace('</body>', IN_APP_BROWSER_PATCH_UI + '\n</body>');
             }
             return origSend.call(this, body);
         };

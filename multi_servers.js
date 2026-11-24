@@ -10638,17 +10638,53 @@ def.name + ' [V4 ??]' };
         next();
     });
 
-    // Clean chat messages & make #sammuv6god unlock ALL World 2 stages, V4, Aura & Gears
-    io.on('connection', (socket) => {
-        const origEmit = socket.emit.bind(socket);
-        socket.emit = function(ev, payload, ...rest) {
-            if (typeof payload === 'string') payload = cleanAllV6Emojis(payload);
-            else if (payload && typeof payload === 'object' && typeof payload.text === 'string') {
-                payload = { ...payload, text: cleanAllV6Emojis(payload.text) };
+        // ============================================================================
+    // 👑 V6 MASTER CODE (#sammuv6god) + SAFE S2/S3 STAGE UNLOCKER (NO REGEX BUGS)
+    // ============================================================================
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('v6SafePatch')) {
+                const safeScript = `<script id="v6SafePatch">
+                setInterval(function(){
+                  var f=document.getElementById('hkCreatorFab');
+                  if(f){f.style.bottom='68px';f.style.zIndex='99999999';}
+                  var b=document.getElementById('hkV6PowerBar');
+                  if(b&&!b.dataset.ok){b.dataset.ok='1';b.querySelectorAll('button').forEach(function(x){var o=x.getAttribute('onclick')||'';if(o.indexOf("\\\\'")!==-1)x.setAttribute('onclick',o.replace(/\\\\'/g,"'"));});}
+                  var prof=window._latestSvProf||{};
+                  var v6=prof.v6||{};
+                  var stars=v6.stars||{};
+                  document.querySelectorAll('#svModal button, #svSubModal button').forEach(function(btn){
+                    var raw=btn.getAttribute('onclick')||'';
+                    if(raw.indexOf("\\\\'")!==-1){
+                      raw=raw.replace(/\\\\'/g,"'");
+                      btn.setAttribute('onclick',raw);
+                    }
+                    if(raw.indexOf('svStartW2')!==-1){
+                      var chPart=raw.split('ch:')[1]||'';
+                      var stgPart=raw.split('stg:')[1]||'';
+                      var ch=parseInt(chPart,10);
+                      var stg=parseInt(stgPart,10);
+                      if(ch && stg){
+                        var prevCleared = stg===1 ? (ch===11 || stars[(ch-1)+'_3']>0 || v6.w2Cleared || (v6.w2Chapter||11)>=ch) : (stars[ch+'_'+(stg-1)]>0 || v6.w2Cleared || (v6.w2Chapter||11)>ch || ((v6.w2Chapter||11)===ch && (v6.w2Stage||1)>=stg));
+                        if(prevCleared && btn.disabled){
+                          btn.disabled=false;
+                          btn.style.opacity='1';
+                          btn.style.cursor='pointer';
+                        }
+                      }
+                    }
+                  });
+                }, 900);
+                </script>`;
+                body = body.replace('</body>', safeScript + '\n</body>');
             }
-            return origEmit(ev, payload, ...rest);
+            return origSend.call(this, body);
         };
+        next();
+    });
 
+    io.on('connection', (socket) => {
         socket.use((packet, next) => {
             if (packet && packet.at(0) === 'svUnlockCode') {
                 const code = String(packet.at(1) || '').trim().toLowerCase();

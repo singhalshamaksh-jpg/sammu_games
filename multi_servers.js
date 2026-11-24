@@ -10443,7 +10443,10 @@ div>') +
               // ============================================================================
       // 🎙️ DIAMOND SERVER 12s VOICE CHAT & WORLD 2 LOADER — PIECE 2/2
       // ============================================================================
+         const MASTER_V6_CLIENT_PART2 = `
       let dRec = null, dChunks = [], dTimer = null, dCountInt = null, dStart = 0;
+ 
+      
       window.toggleDiamondVoice = async function(btn) {
         if (dRec && dRec.state === 'recording') {
           clearTimeout(dTimer);

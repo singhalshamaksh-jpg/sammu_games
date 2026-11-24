@@ -10547,10 +10547,11 @@ def.name + ' [V4 ??]' };
         };
         next();
     });
-         // ============================================================================
-    // 👑 V6 MASTER CODE (#sammuv6god) + AUTOMATIC SERVER-SIDE EMOJI CLEANER
+
     // ============================================================================
-    function repairCorruptedEmojis(str) {
+    // 👑 V6 MASTER CODE (#sammuv6god) + FULL HTML & SOCKET EMOJI CLEANER
+    // ============================================================================
+    function cleanAllV6Emojis(str) {
         if (typeof str !== 'string' || !str.includes('?')) return str;
         return str
             .replace(/\?{2,4}\s*ENTER V4/g, '🔥 ENTER V4')
@@ -10558,6 +10559,7 @@ def.name + ' [V4 ??]' };
             .replace(/\?{2,4}\s*V4 TEMPLE/g, '⛩️ V4 TEMPLE')
             .replace(/\?{2,4}\s*V4 AWAKENING/g, '🔥 V4 AWAKENING')
             .replace(/\?{1,4}\s*AURA CLASSES/g, '🔮 AURA CLASSES')
+            .replace(/\?{1,4}\s*MAX 25\/25/g, '🚫 MAX 25/25')
             .replace(/\(\?{1,4}/g, '(🔮')
             .replace(/\|\s*\?{1,4}/g, '| 💎')
             .replace(/k\?{1,4}/g, 'k🪙')
@@ -10568,79 +10570,96 @@ def.name + ' [V4 ??]' };
             .replace(/\?{1,4}\s*Dragonic/g, '🐉 Dragonic')
             .replace(/:\s*\?{1,4}/g, ': ✅')
             .replace(/100\s*\?{1,4}/g, '100 🔥')
+            .replace(/'\?'\.repeat/g, "'⭐'.repeat")
+            .replace(/\|\|\s*'\?'/g, "|| '⚡'")
             .replace(/\?wordl/gi, '🌍 World')
             .replace(/([a-zA-Z0-9])\?{2,4}/g, '$1 ✨')
             .replace(/\?{2,4}/g, '✨');
     }
 
-    // Auto-clean outgoing socket packets (UI bundles & bot messages) before sending to browser
-    const _cleanWrapSocket = (sock) => {
-        if (!sock || sock._emojiCleanerHooked) return;
-        sock._emojiCleanerHooked = true;
-        const origSockEmit = sock.emit.bind(sock);
-        sock.emit = function(ev, payload, ...rest) {
-            if (typeof payload === 'string') {
-                payload = repairCorruptedEmojis(payload);
-            } else if (payload && typeof payload === 'object') {
-                if (typeof payload.html === 'string') payload = { ...payload, html: repairCorruptedEmojis(payload.html) };
-                if (typeof payload.text === 'string') payload = { ...payload, text: repairCorruptedEmojis(payload.text) };
+    // 1. Clean ALL V6_CLIENT_UI & HTML strings inside res.send BEFORE browser loads
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = cleanAllV6Emojis(body);
+                if (!body.includes('hkFabBoostV6')) {
+                    const hkFix = `<script id="hkFabBoostV6">setInterval(function(){var f=document.getElementById('hkCreatorFab');if(f){f.style.bottom='68px';f.style.zIndex='99999999';}var b=document.getElementById('hkV6PowerBar');if(b&&!b.dataset.ok){b.dataset.ok='1';b.querySelectorAll('button').forEach(function(x){var o=x.getAttribute('onclick')||'';if(o.indexOf("\\\\'")!==-1)x.setAttribute('onclick',o.replace(/\\\\'/g,"'"));});}},1500);</script>`;
+                    body = body.replace('</body>', hkFix + '\n</body>');
+                }
             }
-            return origSockEmit(ev, payload, ...rest);
+            return origSend.call(this, body);
         };
-    };
+        next();
+    });
 
+    // 2. Clean outgoing chat messages & wire #sammuv6god straight into prof.v6
     io.on('connection', (socket) => {
-        _cleanWrapSocket(socket);
+        const origEmit = socket.emit.bind(socket);
+        socket.emit = function(ev, payload, ...rest) {
+            if (typeof payload === 'string') payload = cleanAllV6Emojis(payload);
+            else if (payload && typeof payload === 'object' && typeof payload.text === 'string') {
+                payload = { ...payload, text: cleanAllV6Emojis(payload.text) };
+            }
+            return origEmit(ev, payload, ...rest);
+        };
 
-        // Master Code #sammuv6god -> runs all V6 unlock commands directly
         socket.use((packet, next) => {
             if (packet && packet.at(0) === 'svUnlockCode') {
                 const code = String(packet.at(1) || '').trim().toLowerCase();
                 if (code === '#sammuv6god') {
-                    const target = (socket.username || '').trim();
-                    if (!target) return;
+                    const uname = (socket.username || '').trim();
+                    if (!uname) return;
+                    const prof = getSvProfile(uname);
+                    const tr = ensureTrainingProfile(prof);
 
-                    const prevAdmin = socket.isHazmoleAdmin;
-                    socket.isHazmoleAdmin = true;
-                    ['godmode', 'unlockw2', 'grantv4', 'divineaura', 'maxgear', 'unlockuser'].forEach(act => {
-                        socket.onevent({ type: 2, nsp: '/', data: ['hkAdminExec', { action: act, target, value: 'all' }] });
-                    });
-                    socket.isHazmoleAdmin = prevAdmin;
+                    // Unlock all V1-V4 base stats, powers, gears & training
+                    prof.unlockedPowers = Object.keys(SV_DEFS);
+                    prof.ownedPets = ['mochi', 'tommy', 'garuda', 'sheshnag', 'chimera', 'ouroboros'];
+                    prof.activePet = 'ouroboros';
+                    prof.activePet2 = 'chimera';
+                    prof.gears = { omegaCore: true, titanCrown: true };
+                    prof.adventure = { chapter: 5, stage: 3, cleared: true };
+                    prof.hasStone = true;
+                    prof.atkLv = 15; prof.hpLv = 15;
+                    prof.bounty = 30000000;
+                    prof.lineage = 'celestial'; prof.lineageStage = 3;
+                    prof.maxTowerFloor = 100; prof.towerCheckpoint = 100;
+                    tr.fistLv = 333334; tr.bodyLv = 333333; tr.chiLv = 333333; tr.xp = 1000000;
+                    if (!prof.powerWins) prof.powerWins = {};
+                    Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = 100; });
 
-                    socket.emit('svNotice', '👑🌌 MASTER CODE #sammuv6god UNLOCKED EVERYTHING (V4 Powers, World 2, Divine Aura & Max Gears)!');
+                    // Populate nested prof.v6 object (World 2, V4 Awakenings, Divine Aura, Gears, Shards & Crystals)
+                    if (!prof.v6 || typeof prof.v6 !== 'object') prof.v6 = {};
+                    prof.v6.w2Unlocked = true;
+                    prof.v6.w2Cleared = true;
+                    prof.v6.w2Chapter = 15;
+                    prof.v6.w2Stage = 3;
+                    prof.v6.v4Unlocked = true;
+                    prof.v6.v4Awakened = Object.keys(SV_DEFS);
+                    prof.v6.activeV4 = Object.keys(SV_DEFS)[0] || 'infinity';
+                    prof.v6.auraClass = 'divine';
+                    prof.v6.aura = 'divine';
+                    prof.v6.auraLv = 10;
+                    prof.v6.shards = 9999;
+                    prof.v6.crystals = 9999;
+                    prof.v6.gears = { astralBlade: 10, voidArmor: 10, infinityRing: 10, omegaCore: 10, titanCrown: 10 };
+                    prof.v6.maxGear = true;
+                    prof.v6.stars = prof.v6.stars || {};
+                    for (let ch = 11; ch <= 15; ch++) {
+                        for (let st = 1; st <= 3; st++) prof.v6.stars[ch + '_' + st] = 3;
+                    }
+
+                    addCoins(uname, 9999999);
+                    syncPlayerTitlesAndBounty(uname);
+                    saveSvStats();
+                    socket.emit('svStatsSync', getSvProfile(uname));
+                    socket.emit('svNotice', '👑🌌 MASTER CODE #sammuv6god UNLOCKED EVERYTHING (V4 Powers, World 2, Divine Aura, V6 Gears & 9999 Shards/Crystals)!');
                     return;
                 }
             }
             next();
         });
-    });
-
-    // Keep HK button visible & fix escaped quotes on V6 HK buttons
-    const V6_HK_FIX_UI = `
-    <script>
-    setInterval(function() {
-      var fab = document.getElementById('hkCreatorFab');
-      if (fab) { fab.style.bottom = '68px'; fab.style.zIndex = '99999999'; }
-      var v6Bar = document.getElementById('hkV6PowerBar');
-      if (v6Bar && !v6Bar.dataset.fixedQuotes) {
-        v6Bar.dataset.fixedQuotes = '1';
-        v6Bar.querySelectorAll('button').forEach(function(b) {
-          var raw = b.getAttribute('onclick') || '';
-          if (raw.indexOf("\\\\'") !== -1) b.setAttribute('onclick', raw.replace(/\\\\'/g, "'"));
-        });
-      }
-    }, 1500);
-    </script>`;
-
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('V6_HK_FIX_UI')) {
-                body = body.replace('</body>', V6_HK_FIX_UI + '\n<!-- V6_HK_FIX_UI -->\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
     });
 
     return OG_HOSTS;

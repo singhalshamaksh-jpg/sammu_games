@@ -10546,6 +10546,56 @@ ll(this, body);
         };
         next();
     });
+     // ============================================================================
+    // ⚡ TURBO FAST-BOOT & ANTI-LAG ENGINE (PASTE RIGHT ABOVE return OG_HOSTS;)
+    // ============================================================================
+    const TURBO_FAST_BOOT_PATCH = `
+    <script>
+    (function() {
+      if (window._turboBootApplied) return;
+      window._turboBootApplied = true;
+
+      // 1. Slow down heavy DOM-scanning setIntervals so mobile CPUs don't freeze on load
+      const _rawSetInterval = window.setInterval;
+      window.setInterval = function(fn, ms, ...args) {
+        const code = fn ? fn.toString() : '';
+        if (ms && ms < 2500 && /querySelectorAll|getElementById|inject|ensure|bind|hook|boot|upgrade/i.test(code)) {
+          return _rawSetInterval(fn, 4000, ...args);
+        }
+        return _rawSetInterval(fn, ms, ...args);
+      };
+
+      // 2. Defer heavy startup timers until after the page & server browser finish painting
+      const _rawSetTimeout = window.setTimeout;
+      window.setTimeout = function(fn, ms, ...args) {
+        if (document.readyState === 'loading' && ms >= 400 && ms <= 1500) {
+          return _rawSetTimeout(fn, ms + 1200, ...args);
+        }
+        return _rawSetTimeout(fn, ms, ...args);
+      };
+
+      // 3. Force fast WebSocket-first connection (skips slow HTTP long-polling handshake)
+      const waitIo = _rawSetInterval(() => {
+        if (typeof socket !== 'undefined' && socket.io && socket.io.opts) {
+          socket.io.opts.transports = ['websocket', 'polling'];
+          socket.io.opts.upgrade = true;
+          clearInterval(waitIo);
+        }
+      }, 300);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const prevSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('<head>') && !body.includes('_turboBootApplied')) {
+                body = body.replace('<head>', '<head>\n' + TURBO_FAST_BOOT_PATCH);
+            }
+            return prevSend.call(this, body);
+        };
+        next();
+    });
+
     return OG_HOSTS;
 };
 

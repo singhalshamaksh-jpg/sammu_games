@@ -10342,8 +10342,8 @@ div>') +
         next();
     });
                 
-    // ============================================================================
-    // 🎙️ DIAMOND SERVER EXCLUSIVE VOICE NOTE CHAT (PASTE ABOVE return OG_HOSTS;)
+         // ============================================================================
+    // 🎙️ DIAMOND SERVER 12s VOICE CHAT & WORLD 2 LOADER — PIECE 1/2
     // ============================================================================
     io.on('connection', (socket) => {
         socket.on('diamondVoiceMsg', (payload) => {
@@ -10351,77 +10351,127 @@ div>') +
             const uname = (socket.username || '').trim();
             if (!uname || !payload || typeof payload.audio !== 'string') return;
 
-            // Validate audio data URL & enforce 250KB max size (~12s voice clip)
-            if (!payload.audio.startsWith('data:audio/') || payload.audio.length > 260000) {
+            if (!payload.audio.startsWith('data:audio/') || payload.audio.length > 1500000) {
                 return socket.emit('svNotice', '⚠️ Voice note too long (max 12 seconds)!');
             }
 
             const sec = Math.min(12, Math.max(1, Number(payload.duration) || 1));
-            const msgObj = {
+            io.to('srv_diamond').emit('diamondVoiceBroadcast', {
                 username: uname,
-                text: `🎙️ Voice Note (${sec}s)`,
                 voiceAudio: payload.audio,
                 voiceDur: sec,
                 _serverId: 'srv_diamond',
                 ts: Date.now()
-            };
-
-            
-            io.to('srv_diamond').emit('diamondVoiceBroadcast', msgObj);
+            });
         });
     });
 
-    const DIAMOND_VOICE_UI = `
-    <script id="diamondVoiceChatScript">
+    const FULL_V6_JS = typeof V6_COMPLETE_CLIENT_BUNDLE !== 'undefined'
+        ? V6_COMPLETE_CLIENT_BUNDLE.replace(/<\/?script[^>]*>/gi, '')
+        : '';
+
+    const MASTER_V6_CLIENT_PART1 = `
+    <script id="masterV6AndVoiceScript">
     (function() {
-      if (window._diamondVoiceReady) return;
-      window._diamondVoiceReady = true;
+      if (window._masterV6VoiceDone) return;
+      window._masterV6VoiceDone = true;
 
-      let mediaRec = null, chunks = [], recStart = 0, recTimer = null;
+      try { (new Function(${JSON.stringify(FULL_V6_JS)}))(); } catch(e) { console.error('V6JS:', e); }
 
-      function isDiamondRoom() {
-        return (window.currentServerId === 'srv_diamond' || window.activeServerId === 'srv_diamond' ||
-          (document.body && document.body.innerText && document.body.innerText.includes('DIAMOND SERVER') &&
-           !document.getElementById('serverSelectModal')?.offsetParent));
+      function findRealChatFeed() {
+        const direct = document.getElementById('messages') || document.getElementById('chatMessages') || document.getElementById('chatBox');
+        if (direct && direct.scrollHeight >= direct.clientHeight && direct.clientHeight > 80) return direct;
+
+        const sendBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '➤');
+        if (sendBtn) {
+          let parent = sendBtn.parentElement;
+          for (let i = 0; i < 5 && parent; i++) {
+            const divs = Array.from(parent.querySelectorAll('div')).filter(d => {
+              const st = window.getComputedStyle(d);
+              return (st.overflowY === 'auto' || st.overflowY === 'scroll') && d.clientHeight > 100 && !d.closest('#svModal') && !d.closest('#srvBrowserOverlay');
+            });
+            if (divs.length > 0) return divs.sort((a, b) => b.clientHeight - a.clientHeight)[0];
+            parent = parent.parentElement;
+          }
+        }
+        return null;
       }
 
-      function renderVoiceBubble(data) {
-        const box = document.getElementById('messages') || document.getElementById('chatBox') || document.querySelector('.messages');
-        if (!box || !data || !data.voiceAudio) return;
-        const row = document.createElement('div');
-        row.style.cssText = 'background:linear-gradient(90deg,rgba(14,165,233,0.22),rgba(168,85,247,0.22));border:1px solid #38bdf8;border-radius:12px;padding:8px 10px;margin:6px 0;';
-        row.innerHTML =
-          '<div style="font-size:11px;font-weight:900;color:#7dd3fc;margin-bottom:4px;">💠 ' + (data.username || 'VIP') + ' • 🎙️ Voice (' + (data.voiceDur || 1) + 's)</div>' +
-          '<audio controls preload="none" src="' + data.voiceAudio + '" style="width:100%;height:34px;border-radius:8px;"></audio>';
-        box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
-      }
+      function appendWhatsAppVoiceBubble(data) {
+        const feed = findRealChatFeed();
+        if (!feed || !data || !data.voiceAudio) return;
 
-      function hookVoiceSocket() {
-        if (typeof socket === 'undefined' || socket._diamondVoiceHooked) return;
-        socket._diamondVoiceHooked = true;
-        socket.on('diamondVoiceBroadcast', renderVoiceBubble);
-      }
+        const dur = Math.min(12, Math.max(1, Number(data.voiceDur) || 1));
+        const uid = 'wa_v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
 
-      async function toggleRecord(btn) {
-        hookVoiceSocket();
-        if (mediaRec && mediaRec.state === 'recording') {
-          clearTimeout(recTimer);
-          mediaRec.stop();
+        const bubble = document.createElement('div');
+        bubble.style.cssText = 'background:linear-gradient(135deg,#075e54,#128c7e);border:1.5px solid #25d366;border-radius:16px 16px 16px 4px;padding:8px 12px;margin:6px 4px;max-width:270px;color:#fff;box-shadow:0 3px 12px rgba(0,0,0,0.35);';
+        bubble.innerHTML =
+          '<div style="font-size:11px;font-weight:900;color:#a7f3d0;margin-bottom:5px;">💠 ' + (data.username || 'VIP') + '</div>' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<button id="' + uid + '_btn" type="button" style="width:34px;height:34px;border-radius:50%;border:none;background:#25d366;color:#052e16;font-size:14px;font-weight:900;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">▶️</button>' +
+            '<div style="flex:1;background:rgba(0,0,0,0.3);height:6px;border-radius:999px;overflow:hidden;">' +
+              '<div id="' + uid + '_bar" style="width:0%;height:100%;background:#6ee7b7;transition:width 0.15s linear;"></div>' +
+            '</div>' +
+            '<span id="' + uid + '_time" style="font-size:11px;font-weight:bold;color:#ecfdf5;min-width:30px;text-align:right;">0:' + (dur < 10 ? '0' + dur : dur) + '</span>' +
+          '</div>';
+
+        feed.appendChild(bubble);
+        feed.scrollTop = feed.scrollHeight;
+
+        const audio = new Audio(data.voiceAudio);
+        const playBtn = document.getElementById(uid + '_btn');
+        const progBar = document.getElementById(uid + '_bar');
+        const timeLbl = document.getElementById(uid + '_time');
+
+        playBtn.onclick = function() {
+          if (audio.paused) { audio.play().catch(() => {}); playBtn.textContent = '⏸️'; }
+          else { audio.pause(); playBtn.textContent = '▶️'; }
+        };
+        audio.ontimeupdate = function() {
+          const total = (audio.duration && isFinite(audio.duration)) ? audio.duration : dur;
+          progBar.style.width = Math.min(100, Math.round((audio.currentTime / total) * 100)) + '%';
+          const rem = Math.max(0, Math.ceil(total - audio.currentTime));
+          timeLbl.textContent = '0:' + (rem < 10 ? '0' + rem : rem);
+        };
+        audio.onended = function() {
+          playBtn.textContent = '▶️';
+          progBar.style.width = '0%';
+          timeLbl.textContent = '0:' + (dur < 10 ? '0' + dur : dur);
+        };
+      }
+              // ============================================================================
+      // 🎙️ DIAMOND SERVER 12s VOICE CHAT & WORLD 2 LOADER — PIECE 2/2
+      // ============================================================================
+      let dRec = null, dChunks = [], dTimer = null, dCountInt = null, dStart = 0;
+      window.toggleDiamondVoice = async function(btn) {
+        if (dRec && dRec.state === 'recording') {
+          clearTimeout(dTimer);
+          clearInterval(dCountInt);
+          dRec.stop();
           return;
         }
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          chunks = [];
-          recStart = Date.now();
-          mediaRec = new MediaRecorder(stream);
-          mediaRec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-          mediaRec.onstop = () => {
+          dChunks = [];
+          dStart = Date.now();
+          const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+          const chosenType = types.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+          dRec = chosenType ? new MediaRecorder(stream, { mimeType: chosenType }) : new MediaRecorder(stream);
+
+          dRec.ondataavailable = (e) => { if (e.data && e.data.size > 0) dChunks.push(e.data); };
+          dRec.onstop = () => {
+            clearInterval(dCountInt);
             stream.getTracks().forEach(t => t.stop());
             btn.textContent = '🎙️';
             btn.style.background = '#0284c7';
-            const dur = Math.max(1, Math.round((Date.now() - recStart) / 1000));
-            const blob = new Blob(chunks, { type: mediaRec.mimeType || 'audio/webm' });
+            const dur = Math.min(12, Math.max(1, Math.round((Date.now() - dStart) / 1000)));
+            const blob = new Blob(dChunks, { type: dRec.mimeType || 'audio/webm' });
+
+            if (blob.size > 1400000) {
+              alert('⚠️ Audio too large! Keep under 12 seconds.');
+              return;
+            }
             const reader = new FileReader();
             reader.onloadend = () => {
               if (typeof socket !== 'undefined') {
@@ -10430,342 +10480,21 @@ div>') +
             };
             reader.readAsDataURL(blob);
           };
-          mediaRec.start();
-          btn.textContent = '⏹️';
+
+          dRec.start(250);
+          let secLeft = 12;
+          btn.textContent = '⏹️ ' + secLeft + 's';
           btn.style.background = '#dc2626';
-          recTimer = setTimeout(() => { if (mediaRec && mediaRec.state === 'recording') mediaRec.stop(); }, 12000);
+          dCountInt = setInterval(() => {
+            secLeft = Math.max(1, secLeft - 1);
+            if (dRec && dRec.state === 'recording') btn.textContent = '⏹️ ' + secLeft + 's';
+          }, 1000);
+          dTimer = setTimeout(() => { if (dRec && dRec.state === 'recording') dRec.stop(); }, 12000);
         } catch (err) {
-          alert('🎙️ Please allow Microphone permission in your browser to send Diamond voice notes!');
-        }
-      }
-
-      setInterval(() => {
-        hookVoiceSocket();
-        let btn = document.getElementById('diamondMicBtn');
-        const input = document.getElementById('msgInput') || document.getElementById('messageInput') || document.querySelector('form input[type="text"]');
-        if (!input || !input.parentElement) return;
-
-        if (!isDiamondRoom()) {
-          if (btn) btn.style.display = 'none';
-          return;
-        }
-        if (!btn) {
-          btn = document.createElement('button');
-          btn.id = 'diamondMicBtn';
-          btn.type = 'button';
-          btn.textContent = '🎙️';
-          btn.title = 'Record Diamond Voice Note (Max 12s)';
-          btn.style.cssText = 'background:#0284c7;border:none;color:#fff;padding:0 12px;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;margin-left:4px;';
-          btn.onclick = () => toggleRecord(btn);
-          input.parentElement.appendChild(btn);
-        }
-        btn.style.display = 'inline-flex';
-        btn.style.alignItems = 'center';
-      }, 1000);
-    })();
-    </script>`;
-
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('diamondVoiceChatScript')) {
-                body = body.replace('</body>', DIAMOND_VOICE_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
-
-    // ============================================================================
-    // 🎨 PRO ARTIST STUDIO DRAW PAD — PIECE 1/2 (STYLES & MODAL HTML)
-    // ============================================================================
-    const PRO_DRAWPAD_PART1 = `
-    <style>
-      #proArtModal { display:none; position:fixed; inset:0; background:rgba(5,8,20,0.96); z-index:9999998; align-items:center; justify-content:center; padding:8px; backdrop-filter:blur(10px); font-family:inherit; }
-      #proArtCard { background:linear-gradient(155deg,#0f172a,#1e1b4b); border:2px solid #38bdf8; border-radius:20px; padding:11px; width:100%; max-width:420px; color:#fff; box-shadow:0 0 35px rgba(56,189,248,0.45); }
-      .art-row { display:flex; gap:5px; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; }
-      .art-tool { background:#1e293b; border:1px solid #475569; color:#fff; border-radius:8px; padding:5px 7px; font-size:11px; font-weight:800; cursor:pointer; }
-      .art-tool.active { background:#0284c7; border-color:#7dd3fc; box-shadow:0 0 10px rgba(56,189,248,0.5); }
-      .art-swatch { width:22px; height:22px; border-radius:50%; border:2px solid #fff; cursor:pointer; flex-shrink:0; }
-    </style>
-
-    <div id="proArtModal">
-      <div id="proArtCard">
-        <div class="art-row">
-          <span style="font-weight:900;font-size:14px;color:#38bdf8;">🎨 PRO ARTIST STUDIO</span>
-          <div style="display:flex;gap:5px;">
-            <button onclick="proArtUndo()" class="art-tool">↩️ Undo</button>
-            <button onclick="proArtClear()" class="art-tool" style="background:#991b1b;">🗑️ Clear</button>
-            <button onclick="document.getElementById('proArtModal').style.display='none'" class="art-tool" style="background:#ef4444;">✕</button>
-          </div>
-        </div>
-
-        <div class="art-row" id="proBrushBar">
-          <button class="art-tool active" data-b="pen" onclick="setProBrush('pen',this)">🖊️ Pen</button>
-          <button class="art-tool" data-b="brush" onclick="setProBrush('brush',this)">🖌️ Brush</button>
-          <button class="art-tool" data-b="neon" onclick="setProBrush('neon',this)">✨ Neon</button>
-          <button class="art-tool" data-b="spray" onclick="setProBrush('spray',this)">💨 Spray</button>
-          <button class="art-tool" data-b="rainbow" onclick="setProBrush('rainbow',this)">🌈 Rainbow</button>
-          <button class="art-tool" data-b="fill" onclick="setProBrush('fill',this)">🪣 Fill</button>
-          <button class="art-tool" data-b="eraser" onclick="setProBrush('eraser',this)">🧽 Erase</button>
-        </div>
-
-        <div class="art-row">
-          <button class="art-tool" id="proMirrorBtn" onclick="window._artMirror=!window._artMirror;this.classList.toggle('active',window._artMirror)">🪞 Mirror: OFF</button>
-          <select onchange="setProCanvasBg(this.value)" style="background:#0f172a;color:#fff;border:1px solid #38bdf8;border-radius:8px;padding:4px 6px;font-size:11px;">
-            <option value="#090d16">🌑 Dark Canvas</option>
-            <option value="#ffffff">⬜ White Paper</option>
-            <option value="#1e1b4b">🌌 Midnight Indigo</option>
-            <option value="#fef3c7">📜 Warm Sketch</option>
-          </select>
-          <span style="font-size:11px;">Size: <input id="proBrushSize" type="range" min="2" max="28" value="6" style="width:65px;vertical-align:middle;"></span>
-        </div>
-
-        <div class="art-row" style="justify-content:flex-start;">
-          <input type="color" id="proColorPicker" value="#38bdf8" onchange="window._artColor=this.value" style="width:28px;height:24px;border:none;background:none;cursor:pointer;">
-          <div class="art-swatch" style="background:#ffffff;" onclick="pickArtColor('#ffffff')"></div>
-          <div class="art-swatch" style="background:#ef4444;" onclick="pickArtColor('#ef4444')"></div>
-          <div class="art-swatch" style="background:#f97316;" onclick="pickArtColor('#f97316')"></div>
-          <div class="art-swatch" style="background:#facc15;" onclick="pickArtColor('#facc15')"></div>
-          <div class="art-swatch" style="background:#4ade80;" onclick="pickArtColor('#4ade80')"></div>
-          <div class="art-swatch" style="background:#38bdf8;" onclick="pickArtColor('#38bdf8')"></div>
-          <div class="art-swatch" style="background:#c084fc;" onclick="pickArtColor('#c084fc')"></div>
-          <div class="art-swatch" style="background:#ec4899;" onclick="pickArtColor('#ec4899')"></div>
-        </div>
-
-        <canvas id="proArtCanvas" width="380" height="290" style="width:100%;border:2px solid #38bdf8;border-radius:12px;background:#090d16;touch-action:none;cursor:crosshair;display:block;"></canvas>
-
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <button onclick="saveProArtLocal()" style="flex:1;padding:9px;border:none;border-radius:10px;background:#334155;color:#fff;font-weight:900;font-size:12px;cursor:pointer;">💾 Save PNG</button>
-          <button onclick="sendProArtToChat()" style="flex:2;padding:9px;border:none;border-radius:10px;background:linear-gradient(90deg,#0284c7,#9333ea);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🚀 Post Art to Chat!</button>
-        </div>
-      </div>
-    </div>`;
-    // ============================================================================
-    // 🎨 PRO ARTIST STUDIO DRAW PAD — PIECE 2/2 (BRUSH ENGINE & INJECTOR)
-    // ============================================================================
-    const PRO_DRAWPAD_PART2 = `
-    <script id="proArtistStudioScript">
-    (function() {
-      if (window._proArtLoaded) return;
-      window._proArtLoaded = true;
-
-      window._artBrush = 'pen';
-      window._artColor = '#38bdf8';
-      window._artBg = '#090d16';
-      window._artMirror = false;
-      let drawing = false, lastX = 0, lastY = 0, hue = 0, history = [];
-
-      window.pickArtColor = function(hex) {
-        window._artColor = hex;
-        const p = document.getElementById('proColorPicker');
-        if (p) p.value = hex;
-      };
-
-      window.setProBrush = function(b, el) {
-        window._artBrush = b;
-        document.querySelectorAll('#proBrushBar .art-tool').forEach(x => x.classList.remove('active'));
-        if (el) el.classList.add('active');
-      };
-
-      function saveHistory() {
-        const c = document.getElementById('proArtCanvas');
-        if (!c) return;
-        if (history.length > 15) history.shift();
-        history.push(c.toDataURL());
-      }
-
-      window.proArtUndo = function() {
-        const c = document.getElementById('proArtCanvas');
-        if (!c || history.length <= 1) return;
-        history.pop();
-        const img = new Image();
-        img.onload = () => {
-          const ctx = c.getContext('2d');
-          ctx.clearRect(0, 0, c.width, c.height);
-          ctx.drawImage(img, 0, 0);
-        };
-        img.src = history[history.length - 1];
-      };
-
-      window.proArtClear = function() {
-        const c = document.getElementById('proArtCanvas');
-        if (!c) return;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = window._artBg;
-        ctx.fillRect(0, 0, c.width, c.height);
-        saveHistory();
-      };
-
-      window.setProCanvasBg = function(col) {
-        window._artBg = col;
-        window.proArtClear();
-      };
-
-      window.openProArtistModal = function() {
-        const m = document.getElementById('proArtModal');
-        if (!m) return;
-        m.style.display = 'flex';
-        const c = document.getElementById('proArtCanvas');
-        if (c && !c.dataset.ready) {
-          c.dataset.ready = '1';
-          window.proArtClear();
-          bindCanvasEvents(c);
+          alert('🎙️ Mic Error: ' + (err.message || 'Allow Microphone permission!'));
         }
       };
 
-      function getPos(c, e) {
-        const r = c.getBoundingClientRect();
-        const t = e.touches ? e.touches : e;
-        return {
-          x: (t.clientX - r.left) * (c.width / r.width),
-          y: (t.clientY - r.top) * (c.height / r.height)
-        };
-      }
-
-      function strokeSegment(ctx, x1, y1, x2, y2, size) {
-        const b = window._artBrush;
-        ctx.save();
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = size;
-
-        if (b === 'eraser') {
-          ctx.strokeStyle = window._artBg;
-          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-        } else if (b === 'brush') {
-          ctx.globalAlpha = 0.28;
-          ctx.strokeStyle = window._artColor;
-          ctx.shadowColor = window._artColor;
-          ctx.shadowBlur = size * 0.9;
-          ctx.lineWidth = size * 1.6;
-          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-        } else if (b === 'spray') {
-          ctx.fillStyle = window._artColor;
-          for (let i = 0; i < 22; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const rad = Math.random() * size * 1.8;
-            ctx.fillRect(x2 + Math.cos(ang) * rad, y2 + Math.sin(ang) * rad, 1.5, 1.5);
-          }
-        } else {
-          const col = b === 'rainbow' ? ('hsl(' + (hue = (hue + 4) % 360) + ',100%,55%)') : window._artColor;
-          ctx.strokeStyle = col;
-          if (b === 'neon') {
-            ctx.shadowColor = col;
-            ctx.shadowBlur = size * 2.2;
-          }
-          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      function bindCanvasEvents(c) {
-        const ctx = c.getContext('2d');
-        const start = (e) => {
-          e.preventDefault();
-          const p = getPos(c, e);
-          if (window._artBrush === 'fill') {
-            ctx.fillStyle = window._artColor;
-            ctx.fillRect(0, 0, c.width, c.height);
-            saveHistory();
-            return;
-          }
-          drawing = true;
-          lastX = p.x;
-          lastY = p.y;
-        };
-        const move = (e) => {
-          if (!drawing) return;
-          e.preventDefault();
-          const p = getPos(c, e);
-          const sz = Number(document.getElementById('proBrushSize')?.value || 6);
-          strokeSegment(ctx, lastX, lastY, p.x, p.y, sz);
-          if (window._artMirror) {
-            strokeSegment(ctx, c.width - lastX, lastY, c.width - p.x, p.y, sz);
-          }
-          lastX = p.x;
-          lastY = p.y;
-        };
-        const end = () => {
-          if (drawing) { drawing = false; saveHistory(); }
-        };
-
-        c.addEventListener('mousedown', start);
-        c.addEventListener('mousemove', move);
-        window.addEventListener('mouseup', end);
-        c.addEventListener('touchstart', start, { passive: false });
-        c.addEventListener('touchmove', move, { passive: false });
-        c.addEventListener('touchend', end);
-      }
-
-      window.saveProArtLocal = function() {
-        const c = document.getElementById('proArtCanvas');
-        if (!c) return;
-        const a = document.createElement('a');
-        a.download = 'sammu-art-' + Date.now() + '.png';
-        a.href = c.toDataURL('image/png');
-        a.click();
-      };
-
-      window.sendProArtToChat = function() {
-        const c = document.getElementById('proArtCanvas');
-        if (!c || typeof socket === 'undefined') return;
-        const imgData = c.toDataURL('image/jpeg', 0.78);
-        socket.emit('postArenaMeme', { image: imgData });
-        document.getElementById('proArtModal').style.display = 'none';
-      };
-
-      setInterval(() => {
-        const btn = Array.from(document.querySelectorAll('button')).find(b => /draw\s*pad|🎨/i.test(b.textContent || '') && !b.closest('#proArtModal'));
-        if (btn && !btn.dataset.proArtHooked) {
-          btn.dataset.proArtHooked = '1';
-          btn.textContent = '🎨 Pro Draw Pad';
-          btn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            window.openProArtistModal();
-          };
-        }
-      }, 1200);
-    })();
-    </script>`;
-
-    const PRO_DRAWPAD_FULL = PRO_DRAWPAD_PART1 + '\n' + PRO_DRAWPAD_PART2;
-
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('proArtistStudioScript')) {
-                body = body.replace('</body>', PRO_DRAWPAD_FULL + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
-    
-           // ============================================================================
-    // 🚀 FIXED UNIFIED DELIVERY: WORLD 2, PRO DRAWPAD & DIAMOND VOICE CHAT
-    // ============================================================================
-    const UNIFIED_V6_HTML = [
-        typeof PRO_DRAWPAD_PART1 !== 'undefined' ? PRO_DRAWPAD_PART1 : ''
-    ].join('\n');
-
-    const UNIFIED_V6_CLIENT = `
-    <script id="unifiedV6MasterPatch">
-    (function() {
-      if (window._unifiedV6Active) return;
-      window._unifiedV6Active = true;
-
-      // 1. Inject Pro Artist Studio Modal HTML immediately
-      function ensureProArtModal() {
-        if (!document.getElementById('proArtModal')) {
-          const wrap = document.createElement('div');
-          wrap.innerHTML = ${JSON.stringify(UNIFIED_V6_HTML)};
-          document.body.appendChild(wrap);
-        }
-      }
-
-      // 2. Wire World 2 & Aura/V4 into SammuVerse Story Tab
       window.setSvV6Tab = function(tab) {
         window._svV6ActiveTab = tab;
         const w1 = document.getElementById('svAdventureChaptersList');
@@ -10777,49 +10506,9 @@ div>') +
         if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
       };
 
-      // 3. Diamond Server Voice Recorder (3 Seconds)
-      let dRec = null, dChunks = [], dTimer = null, dStart = 0;
-      window.toggleDiamond3sVoice = async function(btn) {
-        if (dRec && dRec.state === 'recording') {
-          clearTimeout(dTimer);
-          dRec.stop();
-          return;
-        }
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          dChunks = [];
-          dStart = Date.now();
-          dRec = new MediaRecorder(stream, { audioBitsPerSecond: 24000 });
-          dRec.ondataavailable = (e) => { if (e.data && e.data.size > 0) dChunks.push(e.data); };
-          dRec.onstop = () => {
-            stream.getTracks().forEach(t => t.stop());
-            btn.textContent = '🎙️';
-            btn.style.background = '#0284c7';
-            const dur = Math.min(3, Math.max(1, Math.round((Date.now() - dStart) / 1000)));
-            const blob = new Blob(dChunks, { type: dRec.mimeType || 'audio/webm' });
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              if (typeof socket !== 'undefined') {
-                socket.emit('diamondVoiceMsg', { audio: reader.result, duration: dur });
-              }
-            };
-            reader.readAsDataURL(blob);
-          };
-          dRec.start();
-          btn.textContent = '⏹️';
-          btn.style.background = '#dc2626';
-          dTimer = setTimeout(() => { if (dRec && dRec.state === 'recording') dRec.stop(); }, 3000);
-        } catch (e) {
-          alert('🎙️ Allow Microphone permission to send Diamond voice notes!');
-        }
-      };
-
-      // 4. Continuous UI Enforcer (Runs every 800ms)
       setInterval(function() {
-        ensureProArtModal();
         window.selectedPower = window._curSvPow || window.selectedPower || 'fire';
 
-        // A) Force World 2 & Aura Tabs into Story Panel
         const advPanel = document.getElementById('svAdvPanel');
         const w1List = document.getElementById('svAdventureChaptersList');
         if (advPanel && w1List) {
@@ -10832,27 +10521,6 @@ div>') +
           if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
         }
 
-        // B) Override "🎨 Draw Pad" to open Pro Artist Studio
-        document.querySelectorAll('button').forEach(function(b) {
-          if (b.dataset.proArtHooked || b.closest('#proArtModal')) return;
-          if (/draw\s*pad/i.test(b.textContent || '')) {
-            b.dataset.proArtHooked = '1';
-            b.textContent = '🎨 Pro Draw Pad';
-            b.removeAttribute('onclick');
-            b.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              ensureProArtModal();
-              if (typeof window.openProArtistModal === 'function') {
-                window.openProArtistModal();
-              } else {
-                document.getElementById('proArtModal').style.display = 'flex';
-              }
-            }, true);
-          }
-        });
-
-        // C) Show 🎙️ Voice Mic Button ONLY in Diamond Server
         const sendBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '➤');
         let micBtn = document.getElementById('diamondMicBtn');
         const inDiamond = (window.selectedServerId === 'srv_diamond');
@@ -10866,41 +10534,30 @@ div>') +
               micBtn.id = 'diamondMicBtn';
               micBtn.type = 'button';
               micBtn.textContent = '🎙️';
-              micBtn.title = 'Diamond 3s Voice Note';
-              micBtn.style.cssText = 'background:#0284c7;border:none;color:#fff;padding:6px 10px;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;margin-right:4px;';
-              micBtn.onclick = function() { window.toggleDiamond3sVoice(micBtn); };
+              micBtn.title = 'Record 12s Diamond Voice Note';
+              micBtn.style.cssText = 'background:#0284c7;border:none;color:#fff;padding:6px 10px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;margin-right:4px;white-space:nowrap;';
+              micBtn.onclick = function() { window.toggleDiamondVoice(micBtn); };
               sendBtn.parentElement.insertBefore(micBtn, sendBtn);
             }
             micBtn.style.display = 'inline-flex';
           }
         }
 
-        // D) Bind incoming voice messages once socket is ready
-        if (typeof socket !== 'undefined' && !window._diamondVoiceBound) {
-          window._diamondVoiceBound = true;
+        if (typeof socket !== 'undefined' && !window._diamondVoiceReceiverBound) {
+          window._diamondVoiceReceiverBound = true;
           socket.on('diamondVoiceBroadcast', (data) => {
-            if (window.selectedServerId !== 'srv_diamond' || !data || !data.voiceAudio) return;
-            const sBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '➤');
-            const chatBox = document.getElementById('messages') || document.getElementById('chatBox') || (sBtn && sBtn.closest('div')?.parentElement?.querySelector('div'));
-            if (!chatBox) return;
-            const row = document.createElement('div');
-            row.style.cssText = 'background:linear-gradient(90deg,rgba(14,165,233,0.22),rgba(168,85,247,0.22));border:1px solid #38bdf8;border-radius:12px;padding:8px 10px;margin:6px 0;';
-            row.innerHTML =
-              '<div style="font-size:11px;font-weight:900;color:#7dd3fc;margin-bottom:4px;">💠 ' + (data.username || 'VIP') + ' • 🎙️ Voice (' + (data.voiceDur || 1) + 's)</div>' +
-              '<audio controls preload="none" src="' + data.voiceAudio + '" style="width:100%;height:34px;border-radius:8px;"></audio>';
-            chatBox.appendChild(row);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            if (window.selectedServerId === 'srv_diamond') appendWhatsAppVoiceBubble(data);
           });
         }
-      }, 800);
+      }, 700);
     })();
     </script>`;
 
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('unifiedV6MasterPatch')) {
-                body = body.replace('</body>', UNIFIED_V6_CLIENT + '\n</body>');
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('masterV6AndVoiceScript')) {
+                body = body.replace('</body>', MASTER_V6_CLIENT_PART1 + '\n' + MASTER_V6_CLIENT_PART2 + '\n</body>');
             }
             return origSend.call(this, body);
         };
@@ -10909,6 +10566,10 @@ div>') +
 
     return OG_HOSTS;
 };
+       
+    
+
+ 
    
    
 

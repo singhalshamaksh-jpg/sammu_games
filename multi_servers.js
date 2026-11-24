@@ -10541,15 +10541,16 @@ def.name + ' [V4 ??]' };
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svV6Installed')) {
-                body = body.replace('</body>', V6_CLIENT_UI + '\n</body>');
+                body = cleanAllV6Emojis(body.replace('</body>', V6_CLIENT_UI + '\n</body>'));
+
             }
             return origSend.call(this, body);
         };
         next();
     });
 
-       // ============================================================================
-    // 👑 V6 MASTER CODE (#sammuv6god) + COMPLETE EMOJI CLEANER (ABOVE return OG_HOSTS;)
+    // ============================================================================
+    // 👑 V6 MASTER CODE (#sammuv6god) + S2/S3 CLICK UNLOCK + LATE-STAGE EMOJI FIX
     // ============================================================================
     function cleanAllV6Emojis(str) {
         if (typeof str !== 'string' || !str.includes('?')) return str;
@@ -10559,7 +10560,7 @@ def.name + ' [V4 ??]' };
             .replace(/\?{1,4}\s*World 2/g, '🌌 World 2')
             .replace(/\?{1,4}\s*Aura\s*\/\s*V4/g, '🔮 Aura / V4')
             .replace(/\?{1,4}\s*Ch\.(\d+):/g, '🪐 Ch.$1:')
-            .replace(/\?{1,4}\s*S([123])/g, '🔒 S$1')
+            .replace(/\?{1,4}\s*S()/g, '🔒 S$1')
             .replace(/\?{1,4}\s*Clear Chapter/g, '🔒 Clear Chapter')
             .replace(/k\?{1,4}\s*•\s*\?{1,4}\s*Shard/g, 'k🪙 • 🔷 Shard')
             .replace(/k\?{1,4}\s*•\s*\?{1,4}\s*Crystal/g, 'k🪙 • 💎 Crystal')
@@ -10587,15 +10588,49 @@ def.name + ' [V4 ??]' };
             .replace(/\?{2,4}/g, '✨');
     }
 
-    // 1. Clean ALL HTML & V6_CLIENT_UI before browser loads + keep HK button visible
+    // Hook into res.write/res.end & res.send at the VERY END of Express pipeline so V6_CLIENT_UI gets cleaned too
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>')) {
                 body = cleanAllV6Emojis(body);
-                if (!body.includes('hkFabBoostV6')) {
-                    const hkFix = `<script id="hkFabBoostV6">setInterval(function(){var f=document.getElementById('hkCreatorFab');if(f){f.style.bottom='68px';f.style.zIndex='99999999';}var b=document.getElementById('hkV6PowerBar');if(b&&!b.dataset.ok){b.dataset.ok='1';b.querySelectorAll('button').forEach(function(x){var o=x.getAttribute('onclick')||'';if(o.indexOf("\\\\'")!==-1)x.setAttribute('onclick',o.replace(/\\\\'/g,"'"));});}},1500);</script>`;
-                    body = body.replace('</body>', hkFix + '\n</body>');
+                if (!body.includes('v6StageAndEmojiFix')) {
+                    const fixScript = `<script id="v6StageAndEmojiFix">
+                    (function(){
+                      function patchV6DOM(){
+                        // 1. Fix HK button position & V6 HK onclick quotes
+                        var f=document.getElementById('hkCreatorFab');
+                        if(f){f.style.bottom='68px';f.style.zIndex='99999999';}
+                        var b=document.getElementById('hkV6PowerBar');
+                        if(b&&!b.dataset.ok){b.dataset.ok='1';b.querySelectorAll('button').forEach(function(x){var o=x.getAttribute('onclick')||'';if(o.indexOf("\\\\'")!==-1)x.setAttribute('onclick',o.replace(/\\\\'/g,"'"));});}
+
+                        // 2. Fix S1/S2/S3 buttons in World 2 (fix escaped quotes & unlock next stage when previous stage has stars)
+                        var prof=window._latestSvProf||{};
+                        var v6=prof.v6||{};
+                        var stars=v6.stars||{};
+                        document.querySelectorAll('#svModal button, #svSubModal button').forEach(function(btn){
+                          var raw=btn.getAttribute('onclick')||'';
+                          if(raw.indexOf("\\\\'")!==-1){
+                            raw=raw.replace(/\\\\'/g,"'");
+                            btn.setAttribute('onclick',raw);
+                          }
+                          var m=raw.match(/ch\\s*:\\s*(\\d+)\\s*,\\s*stg\\s*:\\s*(\\d+)/);
+                          if(m){
+                            var ch=Number(m[1]), stg=Number(m[2]);
+                            var prevCleared = stg===1 ? (ch===11 || stars[(ch-1)+'_3']>0 || v6.w2Cleared || (v6.w2Chapter||11)>=ch) : (stars[ch+'_'+(stg-1)]>0 || v6.w2Cleared || (v6.w2Chapter||11)>ch || ((v6.w2Chapter||11)===ch && (v6.w2Stage||1)>=stg));
+                            if(prevCleared && btn.disabled){
+                              btn.disabled=false;
+                              btn.style.opacity='1';
+                              btn.style.cursor='pointer';
+                              btn.textContent=btn.textContent.replace('🔒','⚔️');
+                            }
+                          }
+                        });
+                      }
+                      setInterval(patchV6DOM, 800);
+                    })();
+                    </script>`;
+                    body = body.replace('</body>', fixScript + '\n</body>');
                 }
             }
             return origSend.call(this, body);
@@ -10603,7 +10638,7 @@ def.name + ' [V4 ??]' };
         next();
     });
 
-    // 2. Clean chat messages & make #sammuv6god unlock ALL World 2 chapters, V4, Aura & Gears
+    // Clean chat messages & make #sammuv6god unlock ALL World 2 stages, V4, Aura & Gears
     io.on('connection', (socket) => {
         const origEmit = socket.emit.bind(socket);
         socket.emit = function(ev, payload, ...rest) {
@@ -10638,7 +10673,6 @@ def.name + ' [V4 ??]' };
                     if (!prof.powerWins) prof.powerWins = {};
                     Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = 100; });
 
-                    // Unlock all World 2 Chapters (11-15), V4 Powers, Divine Aura, Relic Gears & 9999 Shards/Crystals
                     if (!prof.v6 || typeof prof.v6 !== 'object') prof.v6 = {};
                     prof.v6.w2Unlocked = true;
                     prof.v6.w2Cleared = true;
@@ -10664,14 +10698,14 @@ def.name + ' [V4 ??]' };
                     syncPlayerTitlesAndBounty(uname);
                     saveSvStats();
                     socket.emit('svStatsSync', getSvProfile(uname));
-                    socket.emit('svNotice', '👑🌌 MASTER CODE #sammuv6god ACTIVATED! All World 2 Chapters, V4 Powers, Divine Aura & Relic Gears Unlocked!');
+                    socket.emit('svNotice', '👑🌌 MASTER CODE #sammuv6god ACTIVATED! All World 2 Stages, V4 Powers, Divine Aura & Relic Gears Unlocked!');
                     return;
                 }
             }
             next();
         });
     });
- 
+
 
     return OG_HOSTS;
 };

@@ -10342,9 +10342,9 @@ div>') +
         next();
     });
                 
-          SAMMUVERSE V6 CLEAN LOADER (WORLD 2, AURA CLASSES, V4 TEMPLE & RELICS)
-        // ============================================================================
-    // 🌌 SAMMUVERSE V6 CLEAN LOADER & FIGHT ENGINE FIX
+          
+      
+    // 🌌 SAMMUVERSE V6 CLEAN LOADER & FIGHT ENGINE FIX//
     // ============================================================================
     function clearPlayerStuckBattles(sockId) {
         for (const [bId, b] of svBattles.entries()) {

@@ -9656,8 +9656,7 @@ div>') +
             if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svV5Installed')) {
                 body = body.replace('</body>', V5_EXPANSION_UI + '\n</body>');
             }
-            re
-turn origSend.call(this, body);
+            return origSend.call(this, body);
         };
         next();
     });

@@ -1,5 +1,27 @@
  const fs = require('fs');
 const path = require('path')
+    // ============================================================================
+    // 🛡️ SOCKET.IO MAX LISTENERS & MEMORY LEAK FIX (PASTE ABOVE return OG_HOSTS;)
+    // ============================================================================
+    require('events').EventEmitter.defaultMaxListeners = 100;
+    if (io && typeof io.setMaxListeners === 'function') {
+        io.setMaxListeners(100);
+    }
+    if (io && io.sockets && typeof io.sockets.setMaxListeners === 'function') {
+        io.sockets.setMaxListeners(100);
+    }
+
+    // Automatically raise maxListeners on every connected socket & clean up on disconnect
+    io.on('connection', (socket) => {
+        if (typeof socket.setMaxListeners === 'function') {
+            socket.setMaxListeners(100);
+        }
+        socket.once('disconnect', () => {
+            setTimeout(() => {
+                try { socket.removeAllListeners(); } catch (e) {}
+            }, 30000);
+        });
+    });
 
 module.exports = function initMultiServers(app, io) {
     const DB_FILE = path.join(__dirname, 'servers_db.json');

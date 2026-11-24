@@ -10742,81 +10742,42 @@ div>') +
         };
         next();
     });
+    
+           // ============================================================================
+    // 🚀 FIXED UNIFIED DELIVERY: WORLD 2, PRO DRAWPAD & DIAMOND VOICE CHAT
     // ============================================================================
-    // 🚀 GUARANTEED SOCKET UI DELIVERY (WORLD 2, PRO DRAWPAD & DIAMOND 3s VOICE)
-    // ============================================================================
-    const V6_ALL_IN_ONE_HTML = [
+    const UNIFIED_V6_HTML = [
         typeof PRO_DRAWPAD_PART1 !== 'undefined' ? PRO_DRAWPAD_PART1 : ''
     ].join('\n');
 
-    const V6_ALL_IN_ONE_JS = `
-      // 1. Wire World 2, Aura/V4 & Relic Forge into #svAdvPanel & #svAdventureChaptersList
+    const UNIFIED_V6_CLIENT = `
+    <script id="unifiedV6MasterPatch">
+    (function() {
+      if (window._unifiedV6Active) return;
+      window._unifiedV6Active = true;
+
+      // 1. Inject Pro Artist Studio Modal HTML immediately
+      function ensureProArtModal() {
+        if (!document.getElementById('proArtModal')) {
+          const wrap = document.createElement('div');
+          wrap.innerHTML = ${JSON.stringify(UNIFIED_V6_HTML)};
+          document.body.appendChild(wrap);
+        }
+      }
+
+      // 2. Wire World 2 & Aura/V4 into SammuVerse Story Tab
       window.setSvV6Tab = function(tab) {
         window._svV6ActiveTab = tab;
-        var w1 = document.getElementById('svAdventureChaptersList');
-        var w2 = document.getElementById('svV6W2Box');
-        var au = document.getElementById('svV6AuraBox');
+        const w1 = document.getElementById('svAdventureChaptersList');
+        const w2 = document.getElementById('svV6W2Box');
+        const au = document.getElementById('svV6AuraBox');
         if (w1) w1.style.display = (tab === 'w1') ? 'block' : 'none';
         if (w2) w2.style.display = (tab === 'w2') ? 'block' : 'none';
         if (au) au.style.display = (tab === 'aura') ? 'block' : 'none';
         if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
       };
 
-      setInterval(function() {
-        window.selectedPower = window._curSvPow || window.selectedPower || 'fire';
-        var advPanel = document.getElementById('svAdvPanel');
-        var w1List = document.getElementById('svAdventureChaptersList');
-        if (advPanel && w1List) {
-          var nav = document.getElementById('svV6NavBar');
-          if (!nav) {
-            nav = document.createElement('div');
-            nav.id = 'svV6NavBar';
-            nav.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;';
-            advPanel.insertBefore(nav, w1List);
-          }
-          if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
-        }
-
-        // 2. Hook "🎨 Draw Pad" button directly to Pro Artist Studio (Pen, Brush, Neon, Spray, Rainbow, Fill)
-        Array.from(document.querySelectorAll('button')).forEach(function(b) {
-          if (b.dataset.proArtHooked || b.closest('#proArtModal')) return;
-          if (/draw\s*pad/i.test(b.textContent || '')) {
-            b.dataset.proArtHooked = '1';
-            b.textContent = '🎨 Pro Draw Pad';
-            b.onclick = function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              if (typeof window.openProArtistModal === 'function') window.openProArtistModal();
-            };
-          }
-        });
-
-        // 3. Hook 3-Second Voice Note Mic ("🎙️") next to "➤" Send button ONLY in Diamond Server
-        var sendBtn = Array.from(document.querySelectorAll('button')).find(function(b) {
-          return (b.textContent || '').trim() === '➤';
-        });
-        var micBtn = document.getElementById('diamondMicBtn');
-        var inDiamond = (window.selectedServerId === 'srv_diamond');
-        if (sendBtn && sendBtn.parentElement) {
-          if (!inDiamond) {
-            if (micBtn) micBtn.style.display = 'none';
-          } else {
-            if (!micBtn) {
-              micBtn = document.createElement('button');
-              micBtn.id = 'diamondMicBtn';
-              micBtn.type = 'button';
-              micBtn.textContent = '🎙️';
-              micBtn.title = 'Diamond 3s Voice Note';
-              micBtn.style.cssText = 'background:#0284c7;border:none;color:#fff;padding:6px 10px;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;margin-right:4px;';
-              micBtn.onclick = function() { window.toggleDiamond3sVoice(micBtn); };
-              sendBtn.parentElement.insertBefore(micBtn, sendBtn);
-            }
-            micBtn.style.display = 'inline-flex';
-          }
-        }
-      }, 900);
-
-      // 4. Diamond Server 3-Second Voice Recorder & Player
+      // 3. Diamond Server Voice Recorder (3 Seconds)
       let dRec = null, dChunks = [], dTimer = null, dStart = 0;
       window.toggleDiamond3sVoice = async function(btn) {
         if (dRec && dRec.state === 'recording') {
@@ -10838,7 +10799,9 @@ div>') +
             const blob = new Blob(dChunks, { type: dRec.mimeType || 'audio/webm' });
             const reader = new FileReader();
             reader.onloadend = () => {
-              if (typeof socket !== 'undefined') socket.emit('diamondVoiceMsg', { audio: reader.result, duration: dur });
+              if (typeof socket !== 'undefined') {
+                socket.emit('diamondVoiceMsg', { audio: reader.result, duration: dur });
+              }
             };
             reader.readAsDataURL(blob);
           };
@@ -10847,46 +10810,106 @@ div>') +
           btn.style.background = '#dc2626';
           dTimer = setTimeout(() => { if (dRec && dRec.state === 'recording') dRec.stop(); }, 3000);
         } catch (e) {
-          alert('🎙️ Allow Microphone permission to send 3s Diamond voice notes!');
+          alert('🎙️ Allow Microphone permission to send Diamond voice notes!');
         }
       };
 
-      if (typeof socket !== 'undefined' && !window._diamondVoiceBound) {
-        window._diamondVoiceBound = true;
-        socket.on('diamondVoiceBroadcast', (data) => {
-          if (window.selectedServerId !== 'srv_diamond' || !data || !data.voiceAudio) return;
-          const sendBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '➤');
-          const chatBox = document.getElementById('messages') || document.getElementById('chatBox') || (sendBtn && sendBtn.closest('div')?.parentElement?.querySelector('div'));
-          if (!chatBox) return;
-          const row = document.createElement('div');
-          row.style.cssText = 'background:linear-gradient(90deg,rgba(14,165,233,0.22),rgba(168,85,247,0.22));border:1px solid #38bdf8;border-radius:12px;padding:8px 10px;margin:6px 0;';
-          row.innerHTML =
-            '<div style="font-size:11px;font-weight:900;color:#7dd3fc;margin-bottom:4px;">💠 ' + (data.username || 'VIP') + ' • 🎙️ Voice (' + (data.voiceDur || 1) + 's)</div>' +
-            '<audio controls preload="none" src="' + data.voiceAudio + '" style="width:100%;height:34px;border-radius:8px;"></audio>';
-          chatBox.appendChild(row);
-          chatBox.scrollTop = chatBox.scrollHeight;
+      // 4. Continuous UI Enforcer (Runs every 800ms)
+      setInterval(function() {
+        ensureProArtModal();
+        window.selectedPower = window._curSvPow || window.selectedPower || 'fire';
+
+        // A) Force World 2 & Aura Tabs into Story Panel
+        const advPanel = document.getElementById('svAdvPanel');
+        const w1List = document.getElementById('svAdventureChaptersList');
+        if (advPanel && w1List) {
+          if (!document.getElementById('svV6NavBar')) {
+            const nav = document.createElement('div');
+            nav.id = 'svV6NavBar';
+            nav.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;';
+            advPanel.insertBefore(nav, w1List);
+          }
+          if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
+        }
+
+        // B) Override "🎨 Draw Pad" to open Pro Artist Studio
+        document.querySelectorAll('button').forEach(function(b) {
+          if (b.dataset.proArtHooked || b.closest('#proArtModal')) return;
+          if (/draw\s*pad/i.test(b.textContent || '')) {
+            b.dataset.proArtHooked = '1';
+            b.textContent = '🎨 Pro Draw Pad';
+            b.removeAttribute('onclick');
+            b.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              ensureProArtModal();
+              if (typeof window.openProArtistModal === 'function') {
+                window.openProArtistModal();
+              } else {
+                document.getElementById('proArtModal').style.display = 'flex';
+              }
+            }, true);
+          }
         });
-      }
-    `;
 
-    io.on('connection', (socket) => {
-        const deliverV6Extras = () => {
-            const v6ScriptOnly = (typeof V6_COMPLETE_CLIENT_BUNDLE === 'string')
-                ? V6_COMPLETE_CLIENT_BUNDLE.replace(/<\/?script[^>]*>/gi, '')
-                : '';
-            const drawScriptOnly = (typeof PRO_DRAWPAD_PART2 === 'string')
-                ? PRO_DRAWPAD_PART2.replace(/<\/?script[^>]*>/gi, '')
-                : '';
+        // C) Show 🎙️ Voice Mic Button ONLY in Diamond Server
+        const sendBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '➤');
+        let micBtn = document.getElementById('diamondMicBtn');
+        const inDiamond = (window.selectedServerId === 'srv_diamond');
 
-            socket.emit('svDeliverCleanV4', {
-                html: V6_ALL_IN_ONE_HTML,
-                js: v6ScriptOnly + '\n' + drawScriptOnly + '\n' + V6_ALL_IN_ONE_JS
-            });
+        if (sendBtn && sendBtn.parentElement) {
+          if (!inDiamond) {
+            if (micBtn) micBtn.style.display = 'none';
+          } else {
+            if (!micBtn) {
+              micBtn = document.createElement('button');
+              micBtn.id = 'diamondMicBtn';
+              micBtn.type = 'button';
+              micBtn.textContent = '🎙️';
+              micBtn.title = 'Diamond 3s Voice Note';
+              micBtn.style.cssText = 'background:#0284c7;border:none;color:#fff;padding:6px 10px;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;margin-right:4px;';
+              micBtn.onclick = function() { window.toggleDiamond3sVoice(micBtn); };
+              sendBtn.parentElement.insertBefore(micBtn, sendBtn);
+            }
+            micBtn.style.display = 'inline-flex';
+          }
+        }
+
+        // D) Bind incoming voice messages once socket is ready
+        if (typeof socket !== 'undefined' && !window._diamondVoiceBound) {
+          window._diamondVoiceBound = true;
+          socket.on('diamondVoiceBroadcast', (data) => {
+            if (window.selectedServerId !== 'srv_diamond' || !data || !data.voiceAudio) return;
+            const sBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '➤');
+            const chatBox = document.getElementById('messages') || document.getElementById('chatBox') || (sBtn && sBtn.closest('div')?.parentElement?.querySelector('div'));
+            if (!chatBox) return;
+            const row = document.createElement('div');
+            row.style.cssText = 'background:linear-gradient(90deg,rgba(14,165,233,0.22),rgba(168,85,247,0.22));border:1px solid #38bdf8;border-radius:12px;padding:8px 10px;margin:6px 0;';
+            row.innerHTML =
+              '<div style="font-size:11px;font-weight:900;color:#7dd3fc;margin-bottom:4px;">💠 ' + (data.username || 'VIP') + ' • 🎙️ Voice (' + (data.voiceDur || 1) + 's)</div>' +
+              '<audio controls preload="none" src="' + data.voiceAudio + '" style="width:100%;height:34px;border-radius:8px;"></audio>';
+            chatBox.appendChild(row);
+            chatBox.scrollTop = chatBox.scrollHeight;
+          });
+        }
+      }, 800);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('unifiedV6MasterPatch')) {
+                body = body.replace('</body>', UNIFIED_V6_CLIENT + '\n</body>');
+            }
+            return origSend.call(this, body);
         };
-        socket.on('svRequestCleanV4', deliverV6Extras);
-        socket.on('joinRoom', () => setTimeout(deliverV6Extras, 650));
+        next();
     });
 
+    return OG_HOSTS;
+};
+   
     return OG_HOSTS;
 };
 

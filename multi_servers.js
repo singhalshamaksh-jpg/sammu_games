@@ -10342,10 +10342,94 @@ div>') +
         next();
     });
                 
-         
+          SAMMUVERSE V6 CLEAN LOADER (WORLD 2, AURA CLASSES, V4 TEMPLE & RELICS)
+        // ============================================================================
+    // 🌌 SAMMUVERSE V6 CLEAN LOADER & FIGHT ENGINE FIX
     // ============================================================================
-    // 🌌 SAMMUVERSE V6 CLEAN LOADER (WORLD 2, AURA CLASSES, V4 TEMPLE & RELICS)
-    // ============================================================================
+    function clearPlayerStuckBattles(sockId) {
+        for (const [bId, b] of svBattles.entries()) {
+            if (b.p1.id === sockId || b.p2.id === sockId) {
+                if (b.interval) clearInterval(b.interval);
+                svBattles.delete(bId);
+            }
+        }
+    }
+
+    // 1. Fix V6 Win Handler (checks b.p1.hp > b.p2.hp properly)
+    const _prevFinishBeforeV6Fix = finishSvBattle;
+    finishSvBattle = function(battleId, b) {
+        if (b && b.p1 && b.p2 && b.p1.hp > b.p2.hp) {
+            if (b.isW2) applyV6BattleRewards(battleId, b);
+            if (b.isW2Gatekeeper && b.p1.name) {
+                const prof = ensureV6Profile(b.p1.name);
+                prof.v6.w2Unlocked = true;
+                saveSvStats();
+                const pSock = io.sockets.sockets.get(b.p1.id);
+                if (pSock) {
+                    pSock.emit('svStatsSync', ensureV6Profile(b.p1.name));
+                    pSock.emit('svNotice', '🌌 ASTRAL GATEKEEPER DEFEATED! World 2 Unlocked!');
+                }
+            }
+            if (b.isV4Trial && b.p1.name && b.trialPow) {
+                const prof = ensureV6Profile(b.p1.name);
+                if (!prof.v6.v4Powers.includes(b.trialPow)) prof.v6.v4Powers.push(b.trialPow);
+                saveSvStats();
+                const pSock = io.sockets.sockets.get(b.p1.id);
+                if (pSock) {
+                    pSock.emit('svStatsSync', ensureV6Profile(b.p1.name));
+                    pSock.emit('svNotice', `🔥 V4 AWAKENING COMPLETE! ${b.trialPow.toUpperCase()} ascended to V4!`);
+                }
+            }
+        }
+        return _prevFinishBeforeV6Fix(battleId, b);
+    };
+
+    // 2. Ensure Fight & World 2 Events Never Silently Drop
+    io.on('connection', (socket) => {
+        socket.prependListener('svChallenge', ({ targetId, power }) => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            if (!socket.username) socket.username = 'Fighter_' + socket.id.slice(0, 4);
+            if (['BOT_DUMMY', 'BOT_SENSEI', 'BOT_DEMON'].includes(targetId)) {
+                clearPlayerStuckBattles(socket.id);
+            }
+        });
+
+        socket.prependListener('svStartAdventure', () => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            clearPlayerStuckBattles(socket.id);
+        });
+
+        socket.prependListener('svStartStageV5', () => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            clearPlayerStuckBattles(socket.id);
+        });
+
+        socket.prependListener('svStartW2Gatekeeper', () => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            clearPlayerStuckBattles(socket.id);
+        });
+
+        socket.prependListener('svStartW2Stage', () => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            clearPlayerStuckBattles(socket.id);
+        });
+
+        socket.prependListener('svStartV4Trial', () => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            clearPlayerStuckBattles(socket.id);
+        });
+
+        socket.prependListener('svTowerEnter', () => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            clearPlayerStuckBattles(socket.id);
+        });
+
+        socket.prependListener('svStartDungeon', () => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            clearPlayerStuckBattles(socket.id);
+        });
+    });
+
     const FULL_V6_JS_CLEAN = typeof V6_COMPLETE_CLIENT_BUNDLE !== 'undefined'
         ? V6_COMPLETE_CLIENT_BUNDLE.replace(/<\/?script[^>]*>/gi, '')
         : '';
@@ -10358,6 +10442,35 @@ div>') +
 
       try { (new Function(${JSON.stringify(FULL_V6_JS_CLEAN)}))(); } catch(e) { console.error('V6 Load Error:', e); }
 
+      // Wrap renderV6Panels so it only re-renders when state actually changes (prevents tap cancellation!)
+      if (typeof window.renderV6Panels === 'function') {
+        const _origRenderV6 = window.renderV6Panels;
+        let _lastV6Hash = '';
+        window.renderV6Panels = function(force) {
+          const prof = window._latestSvProf || {};
+          const v6 = prof.v6 || {};
+          const pow = window._curSvPow || window.selectedPower || 'fire';
+          const hash = JSON.stringify({
+            t: window._svV6ActiveTab || 'w1',
+            d: window._svW2Diff || 'normal',
+            p: pow,
+            u: v6.w2Unlocked,
+            c: v6.w2Chapter,
+            s: v6.w2Stage,
+            st: v6.stars,
+            au: v6.auraClass,
+            al: v6.auraLv,
+            rl: v6.relics,
+            v4: v6.v4Powers,
+            sh: v6.astralShards,
+            cr: v6.voidCrystals
+          });
+          if (!force && hash === _lastV6Hash) return;
+          _lastV6Hash = hash;
+          _origRenderV6();
+        };
+      }
+
       window.setSvV6Tab = function(tab) {
         window._svV6ActiveTab = tab;
         const w1 = document.getElementById('svAdventureChaptersList');
@@ -10366,7 +10479,7 @@ div>') +
         if (w1) w1.style.display = (tab === 'w1') ? 'block' : 'none';
         if (w2) w2.style.display = (tab === 'w2') ? 'block' : 'none';
         if (au) au.style.display = (tab === 'aura') ? 'block' : 'none';
-        if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
+        if (typeof window.renderV6Panels === 'function') window.renderV6Panels(true);
       };
 
       setInterval(function() {
@@ -10381,7 +10494,7 @@ div>') +
             nav.id = 'svV6NavBar';
             nav.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;';
             advPanel.insertBefore(nav, w1List);
-            if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
+            if (typeof window.renderV6Panels === 'function') window.renderV6Panels(true);
           }
         }
       }, 600);

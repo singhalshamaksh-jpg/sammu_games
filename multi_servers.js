@@ -10547,6 +10547,103 @@ def.name + ' [V4 ??]' };
         };
         next();
     });
+     // ============================================================================
+    // 👑 MASTER UNLOCK CODE (#sammuv6god) & AUTO-EMOJI REPAIR (ABOVE return OG_HOSTS;)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('svUnlockCode', (rawCode) => {
+            const code = String(rawCode || '').trim().toLowerCase();
+            if (code !== '#sammuv6god') return;
+
+            const uname = socket.username || 'Player';
+            const prof = getSvProfile(uname);
+            const tr = ensureTrainingProfile(prof);
+
+            // 1. Unlock All Powers, V3 Mastery, Pets, Gears & 1M Training
+            prof.unlockedPowers = Object.keys(SV_DEFS);
+            prof.ownedPets = ['mochi', 'tommy', 'garuda', 'sheshnag', 'chimera', 'ouroboros'];
+            prof.activePet = 'ouroboros';
+            prof.activePet2 = 'chimera';
+            prof.gears = { omegaCore: true, titanCrown: true };
+            prof.adventure = { chapter: 5, stage: 3, cleared: true };
+            prof.hasStone = true;
+            prof.atkLv = 15;
+            prof.hpLv = 15;
+            prof.petEssence = (prof.petEssence || 0) + 999;
+            prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 5;
+            prof.bounty = 30000000;
+            prof.lineage = 'celestial';
+            prof.lineageStage = 3;
+            prof.maxTowerFloor = Math.max(100, prof.maxTowerFloor || 1);
+            prof.towerCheckpoint = 100;
+            tr.fistLv = 333334; tr.bodyLv = 333333; tr.chiLv = 333333; tr.xp = 1000000;
+            if (!prof.powerWins) prof.powerWins = {};
+            Object.keys(SV_DEFS).forEach(k => { prof.powerWins[k] = Math.max(100, prof.powerWins[k] || 0); });
+
+            // 2. Unlock All V5 / V6 World 2, V4 Awakenings, Auras, Shards & Crystals
+            prof.world2Unlocked = true;
+            prof.w2BossesDefeated = 3;
+            prof.v4Awakened = Object.keys(SV_DEFS);
+            prof.auraClass = 'divine';
+            prof.auraLv = 10;
+            prof.shards = (prof.shards || 0) + 999;
+            prof.crystals = (prof.crystals || 0) + 999;
+            prof.v6Gears = { astralBlade: true, voidArmor: true, infinityRing: true };
+
+            addCoins(uname, 9999999);
+            syncPlayerTitlesAndBounty(uname);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svNotice', '👑🌌 MASTER CODE #sammuv6god ACTIVATED! Everything Unlocked (V4, World 2, Divine Aura, 999 Shards/Crystals & 9.9M Coins)!');
+        });
+    });
+
+    // Automatically replace broken "?" / "??" emoji placeholders in UI text on the client
+    const EMOJI_REPAIR_SCRIPT = `
+    <script>
+    (function() {
+      function cleanBrokenEmojis(root) {
+        if (!root) return;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        while ((node = walker.nextNode())) {
+          if (node.nodeValue && node.nodeValue.includes('?')) {
+            node.nodeValue = node.nodeValue
+              .replace(/\\?\\?\\?\\s*ENTER V4/g, '🔥 ENTER V4')
+              .replace(/\\?\\?\\?\\s*Void Walker/g, '🌌 Void Walker')
+              .replace(/\\?\\?\\s*V4 TEMPLE/g, '⛩️ V4 TEMPLE')
+              .replace(/\\?\\?\\s*V4 AWAKENING/g, '🔥 V4 AWAKENING')
+              .replace(/\\?\\s*AURA CLASSES/g, '🔮 AURA CLASSES')
+              .replace(/\\(\\?\\?/g, '(🔮')
+              .replace(/\\|\\s*\\?\\?/g, '| 💎')
+              .replace(/k\\?\\?/g, 'k🪙')
+              .replace(/\\+\\s*(\\d+)\\?\\?/g, '+ $1💎')
+              .replace(/\\?\\?\\s*Demonic/g, '😈 Demonic')
+              .replace(/\\?\\?\\s*Soul Reaper/g, '👻 Soul Reaper')
+              .replace(/\\?\\?\\s*Divine/g, '🔱 Divine')
+              .replace(/\\?\\?\\s*Dragonic/g, '🐉 Dragonic')
+              .replace(/:\\s*\\?\\?/g, ': ✅')
+              .replace(/100\\s*\\?/g, '100 🔥')
+              .replace(/\\?wordl/gi, '🌍 World')
+              .replace(/\\?\\?/g, '✨');
+          }
+        }
+      }
+      setInterval(() => cleanBrokenEmojis(document.body), 900);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('cleanBrokenEmojis')) {
+                body = body.replace('</body>', EMOJI_REPAIR_SCRIPT + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
     return OG_HOSTS;
 };
 

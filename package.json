@@ -1,13 +1,14 @@
 {
   "name": "sammu_games_server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "SammuVerse Multiplayer Gaming & Chat Arena",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Shamaksh",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

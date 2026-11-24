@@ -10341,10 +10341,8 @@ div>') +
         };
         next();
     });
-                
-          
-      
-    // 🌌 SAMMUVERSE V6 CLEAN LOADER & FIGHT ENGINE FIX//
+    // ============================================================================
+    // 🌌 SAMMUVERSE V6 SOCKET LOADER & INSTANT FIGHT FIX
     // ============================================================================
     function clearPlayerStuckBattles(sockId) {
         for (const [bId, b] of svBattles.entries()) {
@@ -10355,7 +10353,6 @@ div>') +
         }
     }
 
-    // 1. Fix V6 Win Handler (checks b.p1.hp > b.p2.hp properly)
     const _prevFinishBeforeV6Fix = finishSvBattle;
     finishSvBattle = function(battleId, b) {
         if (b && b.p1 && b.p2 && b.p1.hp > b.p2.hp) {
@@ -10377,135 +10374,117 @@ div>') +
                 const pSock = io.sockets.sockets.get(b.p1.id);
                 if (pSock) {
                     pSock.emit('svStatsSync', ensureV6Profile(b.p1.name));
-                    pSock.emit('svNotice', `🔥 V4 AWAKENING COMPLETE! ${b.trialPow.toUpperCase()} ascended to V4!`);
+                    pSock.emit('svNotice', '🔥 V4 AWAKENING COMPLETE! ' + b.trialPow.toUpperCase() + ' ascended to V4!');
                 }
             }
         }
         return _prevFinishBeforeV6Fix(battleId, b);
     };
 
-    // 2. Ensure Fight & World 2 Events Never Silently Drop
     io.on('connection', (socket) => {
-        socket.prependListener('svChallenge', ({ targetId, power }) => {
+        const ensureReady = () => {
             if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
             if (!socket.username) socket.username = 'Fighter_' + socket.id.slice(0, 4);
-            if (['BOT_DUMMY', 'BOT_SENSEI', 'BOT_DEMON'].includes(targetId)) {
+            clearPlayerStuckBattles(socket.id);
+        };
+
+        socket.prependListener('svChallenge', (d) => {
+            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
+            if (!socket.username) socket.username = 'Fighter_' + socket.id.slice(0, 4);
+            if (d && ['BOT_DUMMY', 'BOT_SENSEI', 'BOT_DEMON'].includes(d.targetId)) {
                 clearPlayerStuckBattles(socket.id);
             }
         });
+        socket.prependListener('svStartAdventure', ensureReady);
+        socket.prependListener('svStartStageV5', ensureReady);
+        socket.prependListener('svStartW2Gatekeeper', ensureReady);
+        socket.prependListener('svStartW2Stage', ensureReady);
+        socket.prependListener('svStartV4Trial', ensureReady);
+        socket.prependListener('svTowerEnter', ensureReady);
+        socket.prependListener('svStartDungeon', ensureReady);
 
-        socket.prependListener('svStartAdventure', () => {
-            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
-            clearPlayerStuckBattles(socket.id);
-        });
-
-        socket.prependListener('svStartStageV5', () => {
-            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
-            clearPlayerStuckBattles(socket.id);
-        });
-
-        socket.prependListener('svStartW2Gatekeeper', () => {
-            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
-            clearPlayerStuckBattles(socket.id);
-        });
-
-        socket.prependListener('svStartW2Stage', () => {
-            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
-            clearPlayerStuckBattles(socket.id);
-        });
-
-        socket.prependListener('svStartV4Trial', () => {
-            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
-            clearPlayerStuckBattles(socket.id);
-        });
-
-        socket.prependListener('svTowerEnter', () => {
-            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
-            clearPlayerStuckBattles(socket.id);
-        });
-
-        socket.prependListener('svStartDungeon', () => {
-            if (!socket.activeServerId) socket.activeServerId = lastActiveServerId || 'srv_samaksh';
-            clearPlayerStuckBattles(socket.id);
-        });
+        // Send V6 World 2 + Fight Patch directly via Socket.IO (immune to HTML script tag errors!)
+        const pushV6ViaSocket = () => {
+            const rawV6 = (typeof V6_COMPLETE_CLIENT_BUNDLE === 'string')
+                ? V6_COMPLETE_CLIENT_BUNDLE.replace(/<\/?script[^>]*>/gi, '')
+                : '';
+            socket.emit('svApplyV6Patch', rawV6);
+        };
+        socket.on('svRequestCleanV4', pushV6ViaSocket);
+        socket.on('joinRoom', () => setTimeout(pushV6ViaSocket, 550));
     });
 
-    const FULL_V6_JS_CLEAN = typeof V6_COMPLETE_CLIENT_BUNDLE !== 'undefined'
-        ? V6_COMPLETE_CLIENT_BUNDLE.replace(/<\/?script[^>]*>/gi, '')
-        : '';
-
-    const CLEAN_V6_MASTER_SCRIPT = `
-    <script id="sammuverseV6MasterFix">
+    const V6_SOCKET_RECEIVER = `
+    <script id="svV6SocketReceiver">
     (function() {
-      if (window._svV6MasterReady) return;
-      window._svV6MasterReady = true;
+      if (window._svV6ReceiverBound) return;
+      window._svV6ReceiverBound = true;
 
-      try { (new Function(${JSON.stringify(FULL_V6_JS_CLEAN)}))(); } catch(e) { console.error('V6 Load Error:', e); }
+      const waitSock = setInterval(function() {
+        if (typeof socket === 'undefined') return;
+        clearInterval(waitSock);
+        window.socket = socket;
 
-      // Wrap renderV6Panels so it only re-renders when state actually changes (prevents tap cancellation!)
-      if (typeof window.renderV6Panels === 'function') {
-        const _origRenderV6 = window.renderV6Panels;
-        let _lastV6Hash = '';
-        window.renderV6Panels = function(force) {
-          const prof = window._latestSvProf || {};
-          const v6 = prof.v6 || {};
-          const pow = window._curSvPow || window.selectedPower || 'fire';
-          const hash = JSON.stringify({
-            t: window._svV6ActiveTab || 'w1',
-            d: window._svW2Diff || 'normal',
-            p: pow,
-            u: v6.w2Unlocked,
-            c: v6.w2Chapter,
-            s: v6.w2Stage,
-            st: v6.stars,
-            au: v6.auraClass,
-            al: v6.auraLv,
-            rl: v6.relics,
-            v4: v6.v4Powers,
-            sh: v6.astralShards,
-            cr: v6.voidCrystals
-          });
-          if (!force && hash === _lastV6Hash) return;
-          _lastV6Hash = hash;
-          _origRenderV6();
-        };
-      }
+        socket.on('svApplyV6Patch', function(codeStr) {
+          if (codeStr && !window._svV6CodeEvaled) {
+            window._svV6CodeEvaled = true;
+            try { (new Function(codeStr))(); } catch (e) { console.error('V6 Eval:', e); }
+          }
 
-      window.setSvV6Tab = function(tab) {
-        window._svV6ActiveTab = tab;
-        const w1 = document.getElementById('svAdventureChaptersList');
-        const w2 = document.getElementById('svV6W2Box');
-        const au = document.getElementById('svV6AuraBox');
-        if (w1) w1.style.display = (tab === 'w1') ? 'block' : 'none';
-        if (w2) w2.style.display = (tab === 'w2') ? 'block' : 'none';
-        if (au) au.style.display = (tab === 'aura') ? 'block' : 'none';
-        if (typeof window.renderV6Panels === 'function') window.renderV6Panels(true);
-      };
+          window.setSvV6Tab = function(tab) {
+            window._svV6ActiveTab = tab;
+            const w1 = document.getElementById('svAdventureChaptersList');
+            const w2 = document.getElementById('svV6W2Box');
+            const au = document.getElementById('svV6AuraBox');
+            if (w1) w1.style.display = (tab === 'w1') ? 'block' : 'none';
+            if (w2) w2.style.display = (tab === 'w2') ? 'block' : 'none';
+            if (au) au.style.display = (tab === 'aura') ? 'block' : 'none';
+            if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
+          };
+        });
 
-      setInterval(function() {
-        if (typeof socket !== 'undefined') window.socket = socket;
-        window.selectedPower = window._curSvPow || window.selectedPower || 'fire';
+        // Guarantee ⚔️ FIGHT button & World 2 tabs always stay wired
+        setInterval(function() {
+          window.socket = socket;
+          window.selectedPower = window._curSvPow || window.selectedPower || 'fire';
 
-        const advPanel = document.getElementById('svAdvPanel');
-        const w1List = document.getElementById('svAdventureChaptersList');
-        if (advPanel && w1List) {
-          if (!document.getElementById('svV6NavBar')) {
+          const advPanel = document.getElementById('svAdvPanel');
+          const w1List = document.getElementById('svAdventureChaptersList');
+          if (advPanel && w1List && !document.getElementById('svV6NavBar')) {
             const nav = document.createElement('div');
             nav.id = 'svV6NavBar';
             nav.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;';
             advPanel.insertBefore(nav, w1List);
-            if (typeof window.renderV6Panels === 'function') window.renderV6Panels(true);
+            if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
           }
-        }
-      }, 600);
+
+          // Backup direct click handler on ⚔️ FIGHT button in case inline onclick is blocked
+          const fightBtn = Array.from(document.querySelectorAll('#svFightPanel button')).find(function(b) {
+            return (b.textContent || '').includes('FIGHT');
+          });
+          if (fightBtn && !fightBtn.dataset.directFightWired) {
+            fightBtn.dataset.directFightWired = '1';
+            fightBtn.onclick = function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              const sel = document.getElementById('svOpponentSelect');
+              const targetId = sel ? sel.value : 'BOT_DUMMY';
+              const pow = window._curSvPow || window.selectedPower || 'fire';
+              socket.emit('svChallenge', { targetId: targetId, power: pow });
+            };
+          }
+        }, 700);
+
+        socket.emit('svRequestCleanV4');
+      }, 400);
     })();
     </script>`;
 
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuverseV6MasterFix')) {
-                body = body.replace('</body>', CLEAN_V6_MASTER_SCRIPT + '\n</body>');
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svV6SocketReceiver')) {
+                body = body.replace('</body>', V6_SOCKET_RECEIVER + '\n</body>');
             }
             return origSend.call(this, body);
         };
@@ -10514,3 +10493,5 @@ div>') +
 
     return OG_HOSTS;
 };
+                
+          

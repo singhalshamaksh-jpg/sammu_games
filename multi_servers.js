@@ -10490,6 +10490,67 @@ div>') +
         };
         next();
     });
+    // ============================================================================
+    // ⚡ ANTI-LAG PERFORMANCE BOOSTER + 30-MIN AUTO-PROMO BOT
+    // ============================================================================
+    if (io && io.engine && io.engine.opts) {
+        io.engine.opts.perMessageDeflate = { threshold: 256 };
+    }
+
+    // 1. Auto-Promo every 30 minutes across active rooms (only when players are online)
+    if (!global._sammuAutoPromoStarted) {
+        global._sammuAutoPromoStarted = true;
+        setInterval(() => {
+            Object.keys(serversDB).forEach((srvId) => {
+                const room = io.sockets.adapter.rooms.get(srvId);
+                if (room && room.size > 0) {
+                    io.to(srvId).emit('message', {
+                        username: "Sammu's Bot",
+                        text: `🔥📢 **subscribe to verma_diary_18 ❤️** | Enjoying SammuVerse? Invite your squad & share the link! 🚀`,
+                        _serverId: srvId
+                    });
+                }
+            });
+        }, 30 * 60 * 1000);
+    }
+
+    // 2. Client Anti-Lag Engine (Slows down heavy background DOM scanners & enables GPU smoothness)
+    const ANTI_LAG_BOOSTER_UI = `
+    <script id="sammuAntiLagBooster">
+    (function() {
+      if (window._antiLagApplied) return;
+      window._antiLagApplied = true;
+
+      // Throttle heavy background button-scanner intervals so mobile keyboards & chat never lag
+      const _rawSetInterval = window.setInterval;
+      window.setInterval = function(fn, ms, ...args) {
+        const src = fn ? fn.toString() : '';
+        const isHeavyDomScan = src.includes('querySelectorAll') || src.includes('renderV6Panels') || src.includes('renderV5StoryMode') || src.includes('diamondMicBtn');
+        if (isHeavyDomScan && ms < 3500) {
+          return _rawSetInterval(fn, 4000, ...args);
+        }
+        return _rawSetInterval(fn, ms, ...args);
+      };
+
+      // Pause background animations when tab/phone screen is minimized
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && typeof window.stopPhonkLoop === 'function') {
+          window.stopPhonkLoop();
+        }
+      });
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuAntiLagBooster')) {
+                body = body.replace('</body>', ANTI_LAG_BOOSTER_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
     return OG_HOSTS;
 };

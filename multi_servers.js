@@ -10342,158 +10342,21 @@ div>') +
         next();
     });
                 
-         // ============================================================================
-    // 🎙️ DIAMOND SERVER 12s VOICE CHAT & WORLD 2 LOADER — PIECE 1/2
+         
     // ============================================================================
-    io.on('connection', (socket) => {
-        socket.on('diamondVoiceMsg', (payload) => {
-            if (socket.activeServerId !== 'srv_diamond') return;
-            const uname = (socket.username || '').trim();
-            if (!uname || !payload || typeof payload.audio !== 'string') return;
-
-            if (!payload.audio.startsWith('data:audio/') || payload.audio.length > 1500000) {
-                return socket.emit('svNotice', '⚠️ Voice note too long (max 12 seconds)!');
-            }
-
-            const sec = Math.min(12, Math.max(1, Number(payload.duration) || 1));
-            io.to('srv_diamond').emit('diamondVoiceBroadcast', {
-                username: uname,
-                voiceAudio: payload.audio,
-                voiceDur: sec,
-                _serverId: 'srv_diamond',
-                ts: Date.now()
-            });
-        });
-    });
-
-    const FULL_V6_JS = typeof V6_COMPLETE_CLIENT_BUNDLE !== 'undefined'
+    // 🌌 SAMMUVERSE V6 CLEAN LOADER (WORLD 2, AURA CLASSES, V4 TEMPLE & RELICS)
+    // ============================================================================
+    const FULL_V6_JS_CLEAN = typeof V6_COMPLETE_CLIENT_BUNDLE !== 'undefined'
         ? V6_COMPLETE_CLIENT_BUNDLE.replace(/<\/?script[^>]*>/gi, '')
         : '';
 
-           const MASTER_V6_CLIENT_PART1 = `
-    <script id="masterV6AndVoiceScript">
+    const CLEAN_V6_MASTER_SCRIPT = `
+    <script id="sammuverseV6MasterFix">
     (function() {
-      if (window._masterV6VoiceDone) return;
-      window._masterV6VoiceDone = true;
+      if (window._svV6MasterReady) return;
+      window._svV6MasterReady = true;
 
-      try { (new Function(${JSON.stringify(FULL_V6_JS)}))(); } catch(e) { console.error('V6JS:', e); }
-
-      function findRealChatFeed() {
-        const direct = document.getElementById('messages') || document.getElementById('chatMessages') || document.getElementById('chatBox');
-        if (direct && direct.scrollHeight >= direct.clientHeight && direct.clientHeight > 80) return direct;
-
-        const sendBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '➤');
-        if (sendBtn) {
-          let parent = sendBtn.parentElement;
-          for (let i = 0; i < 5 && parent; i++) {
-            const divs = Array.from(parent.querySelectorAll('div')).filter(d => {
-              const st = window.getComputedStyle(d);
-              return (st.overflowY === 'auto' || st.overflowY === 'scroll') && d.clientHeight > 100 && !d.closest('#svModal') && !d.closest('#srvBrowserOverlay');
-            });
-            if (divs.length > 0) return divs.sort((a, b) => b.clientHeight - a.clientHeight)[0];
-            parent = parent.parentElement;
-          }
-        }
-        return null;
-      }
-
-      function appendWhatsAppVoiceBubble(data) {
-        const feed = findRealChatFeed();
-        if (!feed || !data || !data.voiceAudio) return;
-
-        const dur = Math.min(12, Math.max(1, Number(data.voiceDur) || 1));
-        const uid = 'wa_v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-
-        const bubble = document.createElement('div');
-        bubble.style.cssText = 'background:linear-gradient(135deg,#075e54,#128c7e);border:1.5px solid #25d366;border-radius:16px 16px 16px 4px;padding:8px 12px;margin:6px 4px;max-width:270px;color:#fff;box-shadow:0 3px 12px rgba(0,0,0,0.35);';
-        bubble.innerHTML =
-          '<div style="font-size:11px;font-weight:900;color:#a7f3d0;margin-bottom:5px;">💠 ' + (data.username || 'VIP') + '</div>' +
-          '<div style="display:flex;align-items:center;gap:8px;">' +
-            '<button id="' + uid + '_btn" type="button" style="width:34px;height:34px;border-radius:50%;border:none;background:#25d366;color:#052e16;font-size:14px;font-weight:900;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">▶️</button>' +
-            '<div style="flex:1;background:rgba(0,0,0,0.3);height:6px;border-radius:999px;overflow:hidden;">' +
-              '<div id="' + uid + '_bar" style="width:0%;height:100%;background:#6ee7b7;transition:width 0.15s linear;"></div>' +
-            '</div>' +
-            '<span id="' + uid + '_time" style="font-size:11px;font-weight:bold;color:#ecfdf5;min-width:30px;text-align:right;">0:' + (dur < 10 ? '0' + dur : dur) + '</span>' +
-          '</div>';
-
-        feed.appendChild(bubble);
-        feed.scrollTop = feed.scrollHeight;
-
-        const audio = new Audio(data.voiceAudio);
-        const playBtn = document.getElementById(uid + '_btn');
-        const progBar = document.getElementById(uid + '_bar');
-        const timeLbl = document.getElementById(uid + '_time');
-
-        playBtn.onclick = function() {
-          if (audio.paused) { audio.play().catch(() => {}); playBtn.textContent = '⏸️'; }
-          else { audio.pause(); playBtn.textContent = '▶️'; }
-        };
-        audio.ontimeupdate = function() {
-          const total = (audio.duration && isFinite(audio.duration)) ? audio.duration : dur;
-          progBar.style.width = Math.min(100, Math.round((audio.currentTime / total) * 100)) + '%';
-          const rem = Math.max(0, Math.ceil(total - audio.currentTime));
-          timeLbl.textContent = '0:' + (rem < 10 ? '0' + rem : rem);
-        };
-        audio.onended = function() {
-          playBtn.textContent = '▶️';
-          progBar.style.width = '0%';
-          timeLbl.textContent = '0:' + (dur < 10 ? '0' + dur : dur);
-        };
-      }
-    `;
-
-    const MASTER_V6_CLIENT_PART2 = `
-      let dRec = null, dChunks = [], dTimer = null, dCountInt = null, dStart = 0;
-      window.toggleDiamondVoice = async function(btn) {
-        if (dRec && dRec.state === 'recording') {
-          clearTimeout(dTimer);
-          clearInterval(dCountInt);
-          dRec.stop();
-          return;
-        }
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          dChunks = [];
-          dStart = Date.now();
-          const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
-          const chosenType = types.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
-          dRec = chosenType ? new MediaRecorder(stream, { mimeType: chosenType }) : new MediaRecorder(stream);
-
-          dRec.ondataavailable = (e) => { if (e.data && e.data.size > 0) dChunks.push(e.data); };
-          dRec.onstop = () => {
-            clearInterval(dCountInt);
-            stream.getTracks().forEach(t => t.stop());
-            btn.textContent = '🎙️';
-            btn.style.background = '#0284c7';
-            const dur = Math.min(12, Math.max(1, Math.round((Date.now() - dStart) / 1000)));
-            const blob = new Blob(dChunks, { type: dRec.mimeType || 'audio/webm' });
-
-            if (blob.size > 1400000) {
-              alert('⚠️ Audio too large! Keep under 12 seconds.');
-              return;
-            }
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              if (typeof socket !== 'undefined') {
-                socket.emit('diamondVoiceMsg', { audio: reader.result, duration: dur });
-              }
-            };
-            reader.readAsDataURL(blob);
-          };
-
-          dRec.start(250);
-          let secLeft = 12;
-          btn.textContent = '⏹️ ' + secLeft + 's';
-          btn.style.background = '#dc2626';
-          dCountInt = setInterval(() => {
-            secLeft = Math.max(1, secLeft - 1);
-            if (dRec && dRec.state === 'recording') btn.textContent = '⏹️ ' + secLeft + 's';
-          }, 1000);
-          dTimer = setTimeout(() => { if (dRec && dRec.state === 'recording') dRec.stop(); }, 12000);
-        } catch (err) {
-          alert('🎙️ Mic Error: ' + (err.message || 'Allow Microphone permission!'));
-        }
-      };
+      try { (new Function(${JSON.stringify(FULL_V6_JS_CLEAN)}))(); } catch(e) { console.error('V6 Load Error:', e); }
 
       window.setSvV6Tab = function(tab) {
         window._svV6ActiveTab = tab;
@@ -10507,6 +10370,7 @@ div>') +
       };
 
       setInterval(function() {
+        if (typeof socket !== 'undefined') window.socket = socket;
         window.selectedPower = window._curSvPow || window.selectedPower || 'fire';
 
         const advPanel = document.getElementById('svAdvPanel');
@@ -10517,47 +10381,18 @@ div>') +
             nav.id = 'svV6NavBar';
             nav.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;';
             advPanel.insertBefore(nav, w1List);
-          }
-          if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
-        }
-
-        const sendBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '➤');
-        let micBtn = document.getElementById('diamondMicBtn');
-        const inDiamond = (window.selectedServerId === 'srv_diamond');
-
-        if (sendBtn && sendBtn.parentElement) {
-          if (!inDiamond) {
-            if (micBtn) micBtn.style.display = 'none';
-          } else {
-            if (!micBtn) {
-              micBtn = document.createElement('button');
-              micBtn.id = 'diamondMicBtn';
-              micBtn.type = 'button';
-              micBtn.textContent = '🎙️';
-              micBtn.title = 'Record 12s Diamond Voice Note';
-              micBtn.style.cssText = 'background:#0284c7;border:none;color:#fff;padding:6px 10px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;margin-right:4px;white-space:nowrap;';
-              micBtn.onclick = function() { window.toggleDiamondVoice(micBtn); };
-              sendBtn.parentElement.insertBefore(micBtn, sendBtn);
-            }
-            micBtn.style.display = 'inline-flex';
+            if (typeof window.renderV6Panels === 'function') window.renderV6Panels();
           }
         }
-
-        if (typeof socket !== 'undefined' && !window._diamondVoiceReceiverBound) {
-          window._diamondVoiceReceiverBound = true;
-          socket.on('diamondVoiceBroadcast', (data) => {
-            if (window.selectedServerId === 'srv_diamond') appendWhatsAppVoiceBubble(data);
-          });
-        }
-      }, 700);
+      }, 600);
     })();
     </script>`;
 
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('masterV6AndVoiceScript')) {
-                body = body.replace('</body>', MASTER_V6_CLIENT_PART1 + '\n' + MASTER_V6_CLIENT_PART2 + '\n</body>');
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuverseV6MasterFix')) {
+                body = body.replace('</body>', CLEAN_V6_MASTER_SCRIPT + '\n</body>');
             }
             return origSend.call(this, body);
         };
@@ -10566,4 +10401,3 @@ div>') +
 
     return OG_HOSTS;
 };
-       

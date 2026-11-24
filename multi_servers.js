@@ -9732,7 +9732,7 @@ div>') +
                 });
             }
         });
-        
+    });
      // ============================================================================
     // 🌌 SAMMUVERSE V6 - CLEAN PIECE 1/4 (W2 POWERS, REALMS 11-15, RELICS & AURAS)
     // ============================================================================
@@ -10366,12 +10366,7 @@ div>') +
                 ts: Date.now()
             };
 
-            if (!multiDB.chatHistory['srv_diamond']) multiDB.chatHistory['srv_diamond'] = [];
-            multiDB.chatHistory['srv_diamond'].push(msgObj);
-            if (multiDB.chatHistory['srv_diamond'].length > 50) {
-                multiDB.chatHistory['srv_diamond'] = multiDB.chatHistory['srv_diamond'].slice(-50);
-            }
-
+            
             io.to('srv_diamond').emit('diamondVoiceBroadcast', msgObj);
         });
     });
@@ -10481,6 +10476,272 @@ div>') +
         next();
     });
 
+    // ============================================================================
+    // 🎨 PRO ARTIST STUDIO DRAW PAD — PIECE 1/2 (STYLES & MODAL HTML)
+    // ============================================================================
+    const PRO_DRAWPAD_PART1 = `
+    <style>
+      #proArtModal { display:none; position:fixed; inset:0; background:rgba(5,8,20,0.96); z-index:9999998; align-items:center; justify-content:center; padding:8px; backdrop-filter:blur(10px); font-family:inherit; }
+      #proArtCard { background:linear-gradient(155deg,#0f172a,#1e1b4b); border:2px solid #38bdf8; border-radius:20px; padding:11px; width:100%; max-width:420px; color:#fff; box-shadow:0 0 35px rgba(56,189,248,0.45); }
+      .art-row { display:flex; gap:5px; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; }
+      .art-tool { background:#1e293b; border:1px solid #475569; color:#fff; border-radius:8px; padding:5px 7px; font-size:11px; font-weight:800; cursor:pointer; }
+      .art-tool.active { background:#0284c7; border-color:#7dd3fc; box-shadow:0 0 10px rgba(56,189,248,0.5); }
+      .art-swatch { width:22px; height:22px; border-radius:50%; border:2px solid #fff; cursor:pointer; flex-shrink:0; }
+    </style>
+
+    <div id="proArtModal">
+      <div id="proArtCard">
+        <div class="art-row">
+          <span style="font-weight:900;font-size:14px;color:#38bdf8;">🎨 PRO ARTIST STUDIO</span>
+          <div style="display:flex;gap:5px;">
+            <button onclick="proArtUndo()" class="art-tool">↩️ Undo</button>
+            <button onclick="proArtClear()" class="art-tool" style="background:#991b1b;">🗑️ Clear</button>
+            <button onclick="document.getElementById('proArtModal').style.display='none'" class="art-tool" style="background:#ef4444;">✕</button>
+          </div>
+        </div>
+
+        <div class="art-row" id="proBrushBar">
+          <button class="art-tool active" data-b="pen" onclick="setProBrush('pen',this)">🖊️ Pen</button>
+          <button class="art-tool" data-b="brush" onclick="setProBrush('brush',this)">🖌️ Brush</button>
+          <button class="art-tool" data-b="neon" onclick="setProBrush('neon',this)">✨ Neon</button>
+          <button class="art-tool" data-b="spray" onclick="setProBrush('spray',this)">💨 Spray</button>
+          <button class="art-tool" data-b="rainbow" onclick="setProBrush('rainbow',this)">🌈 Rainbow</button>
+          <button class="art-tool" data-b="fill" onclick="setProBrush('fill',this)">🪣 Fill</button>
+          <button class="art-tool" data-b="eraser" onclick="setProBrush('eraser',this)">🧽 Erase</button>
+        </div>
+
+        <div class="art-row">
+          <button class="art-tool" id="proMirrorBtn" onclick="window._artMirror=!window._artMirror;this.classList.toggle('active',window._artMirror)">🪞 Mirror: OFF</button>
+          <select onchange="setProCanvasBg(this.value)" style="background:#0f172a;color:#fff;border:1px solid #38bdf8;border-radius:8px;padding:4px 6px;font-size:11px;">
+            <option value="#090d16">🌑 Dark Canvas</option>
+            <option value="#ffffff">⬜ White Paper</option>
+            <option value="#1e1b4b">🌌 Midnight Indigo</option>
+            <option value="#fef3c7">📜 Warm Sketch</option>
+          </select>
+          <span style="font-size:11px;">Size: <input id="proBrushSize" type="range" min="2" max="28" value="6" style="width:65px;vertical-align:middle;"></span>
+        </div>
+
+        <div class="art-row" style="justify-content:flex-start;">
+          <input type="color" id="proColorPicker" value="#38bdf8" onchange="window._artColor=this.value" style="width:28px;height:24px;border:none;background:none;cursor:pointer;">
+          <div class="art-swatch" style="background:#ffffff;" onclick="pickArtColor('#ffffff')"></div>
+          <div class="art-swatch" style="background:#ef4444;" onclick="pickArtColor('#ef4444')"></div>
+          <div class="art-swatch" style="background:#f97316;" onclick="pickArtColor('#f97316')"></div>
+          <div class="art-swatch" style="background:#facc15;" onclick="pickArtColor('#facc15')"></div>
+          <div class="art-swatch" style="background:#4ade80;" onclick="pickArtColor('#4ade80')"></div>
+          <div class="art-swatch" style="background:#38bdf8;" onclick="pickArtColor('#38bdf8')"></div>
+          <div class="art-swatch" style="background:#c084fc;" onclick="pickArtColor('#c084fc')"></div>
+          <div class="art-swatch" style="background:#ec4899;" onclick="pickArtColor('#ec4899')"></div>
+        </div>
+
+        <canvas id="proArtCanvas" width="380" height="290" style="width:100%;border:2px solid #38bdf8;border-radius:12px;background:#090d16;touch-action:none;cursor:crosshair;display:block;"></canvas>
+
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button onclick="saveProArtLocal()" style="flex:1;padding:9px;border:none;border-radius:10px;background:#334155;color:#fff;font-weight:900;font-size:12px;cursor:pointer;">💾 Save PNG</button>
+          <button onclick="sendProArtToChat()" style="flex:2;padding:9px;border:none;border-radius:10px;background:linear-gradient(90deg,#0284c7,#9333ea);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🚀 Post Art to Chat!</button>
+        </div>
+      </div>
+    </div>`;
+    // ============================================================================
+    // 🎨 PRO ARTIST STUDIO DRAW PAD — PIECE 2/2 (BRUSH ENGINE & INJECTOR)
+    // ============================================================================
+    const PRO_DRAWPAD_PART2 = `
+    <script id="proArtistStudioScript">
+    (function() {
+      if (window._proArtLoaded) return;
+      window._proArtLoaded = true;
+
+      window._artBrush = 'pen';
+      window._artColor = '#38bdf8';
+      window._artBg = '#090d16';
+      window._artMirror = false;
+      let drawing = false, lastX = 0, lastY = 0, hue = 0, history = [];
+
+      window.pickArtColor = function(hex) {
+        window._artColor = hex;
+        const p = document.getElementById('proColorPicker');
+        if (p) p.value = hex;
+      };
+
+      window.setProBrush = function(b, el) {
+        window._artBrush = b;
+        document.querySelectorAll('#proBrushBar .art-tool').forEach(x => x.classList.remove('active'));
+        if (el) el.classList.add('active');
+      };
+
+      function saveHistory() {
+        const c = document.getElementById('proArtCanvas');
+        if (!c) return;
+        if (history.length > 15) history.shift();
+        history.push(c.toDataURL());
+      }
+
+      window.proArtUndo = function() {
+        const c = document.getElementById('proArtCanvas');
+        if (!c || history.length <= 1) return;
+        history.pop();
+        const img = new Image();
+        img.onload = () => {
+          const ctx = c.getContext('2d');
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = history[history.length - 1];
+      };
+
+      window.proArtClear = function() {
+        const c = document.getElementById('proArtCanvas');
+        if (!c) return;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = window._artBg;
+        ctx.fillRect(0, 0, c.width, c.height);
+        saveHistory();
+      };
+
+      window.setProCanvasBg = function(col) {
+        window._artBg = col;
+        window.proArtClear();
+      };
+
+      window.openProArtistModal = function() {
+        const m = document.getElementById('proArtModal');
+        if (!m) return;
+        m.style.display = 'flex';
+        const c = document.getElementById('proArtCanvas');
+        if (c && !c.dataset.ready) {
+          c.dataset.ready = '1';
+          window.proArtClear();
+          bindCanvasEvents(c);
+        }
+      };
+
+      function getPos(c, e) {
+        const r = c.getBoundingClientRect();
+        const t = e.touches ? e.touches : e;
+        return {
+          x: (t.clientX - r.left) * (c.width / r.width),
+          y: (t.clientY - r.top) * (c.height / r.height)
+        };
+      }
+
+      function strokeSegment(ctx, x1, y1, x2, y2, size) {
+        const b = window._artBrush;
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = size;
+
+        if (b === 'eraser') {
+          ctx.strokeStyle = window._artBg;
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        } else if (b === 'brush') {
+          ctx.globalAlpha = 0.28;
+          ctx.strokeStyle = window._artColor;
+          ctx.shadowColor = window._artColor;
+          ctx.shadowBlur = size * 0.9;
+          ctx.lineWidth = size * 1.6;
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        } else if (b === 'spray') {
+          ctx.fillStyle = window._artColor;
+          for (let i = 0; i < 22; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const rad = Math.random() * size * 1.8;
+            ctx.fillRect(x2 + Math.cos(ang) * rad, y2 + Math.sin(ang) * rad, 1.5, 1.5);
+          }
+        } else {
+          const col = b === 'rainbow' ? ('hsl(' + (hue = (hue + 4) % 360) + ',100%,55%)') : window._artColor;
+          ctx.strokeStyle = col;
+          if (b === 'neon') {
+            ctx.shadowColor = col;
+            ctx.shadowBlur = size * 2.2;
+          }
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function bindCanvasEvents(c) {
+        const ctx = c.getContext('2d');
+        const start = (e) => {
+          e.preventDefault();
+          const p = getPos(c, e);
+          if (window._artBrush === 'fill') {
+            ctx.fillStyle = window._artColor;
+            ctx.fillRect(0, 0, c.width, c.height);
+            saveHistory();
+            return;
+          }
+          drawing = true;
+          lastX = p.x;
+          lastY = p.y;
+        };
+        const move = (e) => {
+          if (!drawing) return;
+          e.preventDefault();
+          const p = getPos(c, e);
+          const sz = Number(document.getElementById('proBrushSize')?.value || 6);
+          strokeSegment(ctx, lastX, lastY, p.x, p.y, sz);
+          if (window._artMirror) {
+            strokeSegment(ctx, c.width - lastX, lastY, c.width - p.x, p.y, sz);
+          }
+          lastX = p.x;
+          lastY = p.y;
+        };
+        const end = () => {
+          if (drawing) { drawing = false; saveHistory(); }
+        };
+
+        c.addEventListener('mousedown', start);
+        c.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end);
+        c.addEventListener('touchstart', start, { passive: false });
+        c.addEventListener('touchmove', move, { passive: false });
+        c.addEventListener('touchend', end);
+      }
+
+      window.saveProArtLocal = function() {
+        const c = document.getElementById('proArtCanvas');
+        if (!c) return;
+        const a = document.createElement('a');
+        a.download = 'sammu-art-' + Date.now() + '.png';
+        a.href = c.toDataURL('image/png');
+        a.click();
+      };
+
+      window.sendProArtToChat = function() {
+        const c = document.getElementById('proArtCanvas');
+        if (!c || typeof socket === 'undefined') return;
+        const imgData = c.toDataURL('image/jpeg', 0.78);
+        socket.emit('postArenaMeme', { image: imgData });
+        document.getElementById('proArtModal').style.display = 'none';
+      };
+
+      setInterval(() => {
+        const btn = Array.from(document.querySelectorAll('button')).find(b => /draw\s*pad|🎨/i.test(b.textContent || '') && !b.closest('#proArtModal'));
+        if (btn && !btn.dataset.proArtHooked) {
+          btn.dataset.proArtHooked = '1';
+          btn.textContent = '🎨 Pro Draw Pad';
+          btn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.openProArtistModal();
+          };
+        }
+      }, 1200);
+    })();
+    </script>`;
+
+    const PRO_DRAWPAD_FULL = PRO_DRAWPAD_PART1 + '\n' + PRO_DRAWPAD_PART2;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('proArtistStudioScript')) {
+                body = body.replace('</body>', PRO_DRAWPAD_FULL + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
     return OG_HOSTS;
 };

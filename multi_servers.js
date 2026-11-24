@@ -10551,6 +10551,42 @@ div>') +
         };
         next();
     });
+    // ============================================================================
+    // 🌌 V6 STAT & 30K+ HP RESTORE PATCH (PASTE RIGHT BEFORE return OG_HOSTS;)
+    // ============================================================================
+    const _prevBuildFighterV6Fix = buildFighterObj;
+    buildFighterObj = function(sockId, uname, powKey, customHp, customAtk, isBot = false, botId = null) {
+        const f = _prevBuildFighterV6Fix(sockId, uname, powKey, customHp, customAtk, isBot, botId);
+        if (isBot) return f;
+
+        const prof = ensureV6Profile(uname);
+        const v6 = prof.v6 || {};
+        const rel = v6.relics || {};
+        const auraLv = v6.auraLv || 1;
+
+        const voidArmorMult = 1 + ((rel.voidArmor || 0) * 0.30);
+        const infRingMult   = 1 + ((rel.infinityRing || 0) * 0.20);
+        const astralAtkMult = 1 + ((rel.astralBlade || 0) * 0.25);
+        const auraHpMult    = v6.auraClass === 'divine' ? (1 + auraLv * 0.16) : (v6.auraClass === 'dragonic' ? (1 + auraLv * 0.22) : 1);
+        const auraAtkMult   = v6.auraClass ? (1 + auraLv * 0.16) : 1;
+        const v4Mult        = (Array.isArray(v6.v4Powers) && v6.v4Powers.includes(powKey)) ? 1.50 : 1.0;
+
+        f.maxHp = Math.round(f.maxHp * voidArmorMult * infRingMult * auraHpMult * v4Mult);
+        f.hp = f.maxHp;
+        f.bonusAtk = Math.round(f.bonusAtk * astralAtkMult * infRingMult * auraAtkMult * v4Mult);
+        return f;
+    };
+
+    const _prevMasterGodV6Fix = applyMasterGodUnlock;
+    applyMasterGodUnlock = function(uname) {
+        const prof = _prevMasterGodV6Fix(uname);
+        if (prof && prof.v5) {
+            prof.v5.equip = { weapon: 4, armor: 4, charm: 4 };
+            prof.v5.rebirths = Math.max(5, prof.v5.rebirths || 0);
+        }
+        saveSvStats();
+        return ensureV6Profile(uname);
+    };
 
     return OG_HOSTS;
 };

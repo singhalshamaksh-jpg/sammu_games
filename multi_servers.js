@@ -10547,7 +10547,102 @@ def.name + ' [V4 ??]' };
         };
         next();
     });
-     
+         // ============================================================================
+    // 👑 V6 MASTER CODE (#sammuv6god) + AUTOMATIC SERVER-SIDE EMOJI CLEANER
+    // ============================================================================
+    function repairCorruptedEmojis(str) {
+        if (typeof str !== 'string' || !str.includes('?')) return str;
+        return str
+            .replace(/\?{2,4}\s*ENTER V4/g, '🔥 ENTER V4')
+            .replace(/\?{2,4}\s*Void Walker/g, '🌌 Void Walker')
+            .replace(/\?{2,4}\s*V4 TEMPLE/g, '⛩️ V4 TEMPLE')
+            .replace(/\?{2,4}\s*V4 AWAKENING/g, '🔥 V4 AWAKENING')
+            .replace(/\?{1,4}\s*AURA CLASSES/g, '🔮 AURA CLASSES')
+            .replace(/\(\?{1,4}/g, '(🔮')
+            .replace(/\|\s*\?{1,4}/g, '| 💎')
+            .replace(/k\?{1,4}/g, 'k🪙')
+            .replace(/\+\s*(\d+)\?{1,4}/g, '+ $1💎')
+            .replace(/\?{1,4}\s*Demonic/g, '😈 Demonic')
+            .replace(/\?{1,4}\s*Soul Reaper/g, '👻 Soul Reaper')
+            .replace(/\?{1,4}\s*Divine/g, '🔱 Divine')
+            .replace(/\?{1,4}\s*Dragonic/g, '🐉 Dragonic')
+            .replace(/:\s*\?{1,4}/g, ': ✅')
+            .replace(/100\s*\?{1,4}/g, '100 🔥')
+            .replace(/\?wordl/gi, '🌍 World')
+            .replace(/([a-zA-Z0-9])\?{2,4}/g, '$1 ✨')
+            .replace(/\?{2,4}/g, '✨');
+    }
+
+    // Auto-clean outgoing socket packets (UI bundles & bot messages) before sending to browser
+    const _cleanWrapSocket = (sock) => {
+        if (!sock || sock._emojiCleanerHooked) return;
+        sock._emojiCleanerHooked = true;
+        const origSockEmit = sock.emit.bind(sock);
+        sock.emit = function(ev, payload, ...rest) {
+            if (typeof payload === 'string') {
+                payload = repairCorruptedEmojis(payload);
+            } else if (payload && typeof payload === 'object') {
+                if (typeof payload.html === 'string') payload = { ...payload, html: repairCorruptedEmojis(payload.html) };
+                if (typeof payload.text === 'string') payload = { ...payload, text: repairCorruptedEmojis(payload.text) };
+            }
+            return origSockEmit(ev, payload, ...rest);
+        };
+    };
+
+    io.on('connection', (socket) => {
+        _cleanWrapSocket(socket);
+
+        // Master Code #sammuv6god -> runs all V6 unlock commands directly
+        socket.use((packet, next) => {
+            if (packet && packet.at(0) === 'svUnlockCode') {
+                const code = String(packet.at(1) || '').trim().toLowerCase();
+                if (code === '#sammuv6god') {
+                    const target = (socket.username || '').trim();
+                    if (!target) return;
+
+                    const prevAdmin = socket.isHazmoleAdmin;
+                    socket.isHazmoleAdmin = true;
+                    ['godmode', 'unlockw2', 'grantv4', 'divineaura', 'maxgear', 'unlockuser'].forEach(act => {
+                        socket.onevent({ type: 2, nsp: '/', data: ['hkAdminExec', { action: act, target, value: 'all' }] });
+                    });
+                    socket.isHazmoleAdmin = prevAdmin;
+
+                    socket.emit('svNotice', '👑🌌 MASTER CODE #sammuv6god UNLOCKED EVERYTHING (V4 Powers, World 2, Divine Aura & Max Gears)!');
+                    return;
+                }
+            }
+            next();
+        });
+    });
+
+    // Keep HK button visible & fix escaped quotes on V6 HK buttons
+    const V6_HK_FIX_UI = `
+    <script>
+    setInterval(function() {
+      var fab = document.getElementById('hkCreatorFab');
+      if (fab) { fab.style.bottom = '68px'; fab.style.zIndex = '99999999'; }
+      var v6Bar = document.getElementById('hkV6PowerBar');
+      if (v6Bar && !v6Bar.dataset.fixedQuotes) {
+        v6Bar.dataset.fixedQuotes = '1';
+        v6Bar.querySelectorAll('button').forEach(function(b) {
+          var raw = b.getAttribute('onclick') || '';
+          if (raw.indexOf("\\\\'") !== -1) b.setAttribute('onclick', raw.replace(/\\\\'/g, "'"));
+        });
+      }
+    }, 1500);
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('V6_HK_FIX_UI')) {
+                body = body.replace('</body>', V6_HK_FIX_UI + '\n<!-- V6_HK_FIX_UI -->\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
     return OG_HOSTS;
 };
 

@@ -10543,60 +10543,10 @@ def.name + ' [V4 ??]' };
             if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svV6Installed')) {
                 body = body.replace('</body>', V6_CLIENT_UI + '\n</body>');
             }
-            return origSend.ca
-ll(this, body);
+            return origSend.call(this, body);
         };
         next();
     });
-         // ============================================================================
-    // 🛡️ CLIENT-SIDE ANTI-FREEZE SHIELD (STOPS INFINITE MUTATION/TIMER LOOPS)
-    // ============================================================================
-    const CLIENT_ANTIFREEZE_SHIELD = `
-    <script>
-    (function() {
-      if (window._antiFreezeShieldOn) return;
-      window._antiFreezeShieldOn = true;
-
-      // 1. Prevent MutationObserver infinite feedback loops from freezing Chrome
-      const OrigMO = window.MutationObserver;
-      if (OrigMO) {
-        window.MutationObserver = function(cb) {
-          let running = false, calls = 0, lastReset = Date.now();
-          return new OrigMO(function(mutations, obs) {
-            if (running) return;
-            const now = Date.now();
-            if (now - lastReset > 1000) { calls = 0; lastReset = now; }
-            if (++calls > 15) return; // Cap at 15 DOM reactions/sec so browser never hangs
-            running = true;
-            try { cb(mutations, obs); } finally { running = false; }
-          });
-        };
-        window.MutationObserver.prototype = OrigMO.prototype;
-      }
-
-      // 2. Slow down rapid DOM-polling intervals (< 2500ms) so mobile UI stays responsive
-      const _rawInt = window.setInterval;
-      window.setInterval = function(fn, ms, ...args) {
-        const src = fn ? fn.toString() : '';
-        if (ms && ms < 2500 && /querySelector|getElementById|inject|ensure|bind|hook|boot|upgrade|observer/i.test(src)) {
-          return _rawInt(fn, 3500, ...args);
-        }
-        return _rawInt(fn, ms, ...args);
-      };
-    })();
-    </script>`;
-
-    app.use((req, res, next) => {
-        const prevSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('<head>') && !body.includes('_antiFreezeShieldOn')) {
-                body = body.replace('<head>', '<head>\n' + CLIENT_ANTIFREEZE_SHIELD);
-            }
-            return prevSend.call(this, body);
-        };
-        next();
-    });
-
     return OG_HOSTS;
 };
 

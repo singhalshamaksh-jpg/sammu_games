@@ -9726,8 +9726,7 @@ div>') +
                 io.to(srvId).emit('message', {
                     username: "Sammu's Bot",
                     text: `??? **USER UNLOCKED:** **${target}**'s device lock was cleared! All coins, powers & stats are safe.`,
-                    _ser
-verId: srvId
+                    _serverId: srvId
                 });
             }
         });
@@ -10216,9 +10215,7 @@ in}? XP${dropTxt})!`, _serverId: b.srvId });
         });
     });
  
-### ?? PIECE 5/8 - Supercharged `#hazmolerangola` Host Power & 7 New Codes
- 
-```javascript
+
     // ============================================================================
     // ?? SAMMUVERSE V6 - PIECE 5/8 (#hazmolerangola GOD HOST & NEW CODES)
     // ============================================================================

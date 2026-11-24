@@ -8993,7 +8993,1565 @@ module.exports = function initMultiServers(app, io) {
         };
         next();
     });
-
+    // ============================================================================
+    // ??? ALL-IN-ONE IN-APP BROWSER & MULTI-DEVICE PATCH (PASTE BEFORE return OG_HOSTS;)
+    // ============================================================================
+    verifyPlayerAccountOwnership = function(uname, socket, forceRelink = false) {
+        if (!uname || !socket) return false;
+        const clean = uname.trim().toLowerCase();
+        // Never lock default fallback names
+        if (clean === 'player' || clean === 'guest') return true;
+ 
+        const devId = socket.trackedDeviceId || null;
+        const prof = getSvProfile(uname);
+        if (!devId) return true;
+ 
+        if (!prof.ownerDevId || forceRelink) {
+            prof.ownerDevId = devId;
+            saveSvStats();
+            return true;
+        }
+        if (prof.ownerDevId !== devId) {
+            socket.emit('svNotice', '??? "' + uname + '" is already claimed on another device! Use a unique name.');
+            return false;
+        }
+        return true;
+    };
+ 
+    io.on('connection', (socket) => {
+        // Ensure socket.username is always saved immediately on join
+        socket.on('joinRoom', (data) => {
+            if (data && data.username && data.username.trim()) {
+                socket.username = data.username.trim();
+            }
+        });
+ 
+        // Allow buying powers by label for 2-tap mobile/in-app browser support
+        socket.on('svBuyPowerByLabel', (rawLabel) => {
+            const cleanLabel = String(rawLabel || '').toLowerCase();
+            const foundEntry = Object.entries(SV_DEFS).find(([, def]) =>
+                def && def.cost && cleanLabel.includes(def.name.toLowerCase())
+            );
+            if (!foundEntry) return;
+            const [pKey, def] = foundEntry;
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
+            const prof = getSvProfile(uname);
+            if (prof.unlockedPowers.includes(pKey)) return;
+            if (getCoins(uname) < def.cost) return socket.emit('svNotice', `?? Need ${def.cost} Coins!`);
+            addCoins(uname, -def.cost);
+            prof.unlockedPowers.push(pKey);
+            saveSvStats();
+            socket.emit('svStatsSync', getSvProfile(uname));
+            socket.emit('svNotice', `?? Unlocked ${def.icon} ${def.name}!`);
+        });
+    });
+ 
+    const IN_APP_BROWSER_PATCH_UI = `
+    <script>
+    (function() {
+      if (window._inAppPatchApplied) return;
+      window._inAppPatchApplied = true;
+ 
+      // 1. Floating Toast Banner (replaces blocked alert() in WhatsApp/Instagram browsers)
+      window.showSvToast = function(msg) {
+        let toast = document.getElementById('svGlobalToast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'svGlobalToast';
+          toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99999999;background:linear-gradient(90deg,#1e1b4b,#581c87);border:2px solid #facc15;color:#fef08a;padding:10px 16px;border-radius:14px;font-size:12px;font-weight:900;text-align:center;max-width:340px;box-shadow:0 8px 25px rgba(0,0,0,0.8);transition:opacity 0.25s;pointer-events:none;';
+          document.body.appendChild(toast);
+        }
+        toast.textContent = String(msg || '');
+        toast.style.opacity = '1';
+        toast.style.display = 'block';
+        clearTimeout(window._svToastTimer);
+        window._svToastTimer = setTimeout(() => {
+          toast.style.opacity = '0';
+          setTimeout(() => { toast.style.display = 'none'; }, 250);
+        }, 3400);
+      };
+ 
+      window.alert = function(msg) { window.showSvToast(msg); };
+ 
+      // 2. Replace blocked confirm() on locked powers with a 2-Tap Buy button
+      document.addEventListener('click', function(e) {
+        const btn = e.target && e.target.closest ? e.target.closest('#svPowerGrid .sv-pwr-btn.locked-coin') : null;
+        if (!btn) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+ 
+        if (btn.dataset.armed !== '1') {
+          btn.dataset.origLabel = btn.textContent;
+          btn.dataset.armed = '1';
+          btn.style.borderColor = '#4ade80';
+          btn.style.background = 'rgba(22,163,74,0.3)';
+          btn.textContent = '? Tap Again to Confirm Buy!';
+          setTimeout(() => {
+            if (btn.dataset.armed === '1') {
+              btn.dataset.armed = '';
+              btn.textContent = btn.dataset.origLabel || btn.textContent;
+              btn.style.borderColor = '';
+              btn.style.background = '';
+            }
+          }, 3000);
+        } else {
+          btn.dataset.armed = '';
+          const orig = btn.dataset.origLabel || '';
+          btn.textContent = '? Unlocking...';
+          if (typeof socket !== 'undefined') {
+            socket.emit('svBuyPowerByLabel', orig);
+          }
+        }
+      }, true);
+ 
+      // 3. Ensure global socket reference for Daily Wheel & inline buttons
+      const syncSockRef = setInterval(() => {
+        if (typeof socket !== 'undefined') {
+          window.socket = socket;
+          clearInterval(syncSockRef);
+        }
+      }, 400);
+    })();
+    </script>`;
+ 
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_inAppPatchApplied')) {
+                body = body.replace('</body>', IN_APP_B
+ROWSER_PATCH_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+    // ============================================================================
+    // ?? SAMMUVERSE V5 EXPANSION - PIECE 1/3 (DATA, GEAR, EMOJI CAP & REBIRTH)
+    // ============================================================================
+    function keepLastThreeEmojis(str) {
+        const s = String(str || '?').trim();
+        if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+            const segs = Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s)).map(x => x.segment);
+            return segs.slice(-3).join('');
+        }
+        return Array.from(s).slice(-3).join('');
+    }
+ 
+    Object.values(SV_DEFS).forEach(d => {
+        if (d && d.fused && d.icon) d.icon = keepLastThreeEmojis(d.icon);
+    });
+    Object.values(svPlayerStats).forEach(st => {
+        if (Array.isArray(st.customPowers)) {
+            st.customPowers.forEach(cp => {
+                if (cp && cp.def && cp.def.icon) {
+                    cp.def.icon = keepLastThreeEmojis(cp.def.icon);
+                    if (SV_DEFS[cp.id]) SV_DEFS[cp.id].icon = cp.def.icon;
+                }
+            });
+        }
+    });
+ 
+    const V5_CHAPTERS = [
+        { ch: 1, title: '?? Ch.1: Whispering Dojo', stages: ['?? Rogue Disciple', '?? Shadow Wolf', '?? Dojo Sensei Boss'], pKey: 'rubber', baseHp: 210, baseAtk: 6, coins: 350, xp: 200, ess: 15, drop: 'soul' },
+        { ch: 2, title: '?? Ch.2: Crimson Volcano', stages: ['?? Magma Salamander', '?? Flame Knight', '?? Magma Wyrm Boss'], pKey: 'fire', baseHp: 340, baseAtk: 14, coins: 700, xp: 450, ess: 30, drop: 'core' },
+        { ch: 3, title: '?? Ch.3: Abyssal Trench', stages: ['?? Depth Stalker', '?? Kraken Tentacle', '?? Leviathan Boss'], pKey: 'water', baseHp: 520, baseAtk: 22, coins: 1200, xp: 800, ess: 50, drop: 'soul' },
+        { ch: 4, title: '? Ch.4: Celestial Citadel', stages: ['?? Sky Valkyrie', '? Thunder Golem', '?? Raijin Sovereign Boss'], pKey: 'lightning', baseHp: 780, baseAtk: 30, coins: 2200, xp: 1400, ess: 80, drop: 'core' },
+        { ch: 5, title: '?? Ch.5: Void Throne', stages: ['?? Void Phantom', '??? Singularity Knight', '?? Abyssal God Boss'], pKey: 'antimatter', baseHp: 1150, baseAtk: 40, coins: 5000, xp: 3000, ess: 150, drop: 'soul' },
+        { ch: 6, title: '?? Ch.6: Frostbite Glacier', stages: ['?? Ice Direwolf', '?? Frost Giant', '?? Absolute Zero Monarch'], pKey: 'ice', baseHp: 1650, baseAtk: 52, coins: 8500, xp: 4500, ess: 200, drop: 'core' },
+        { ch: 7, title: '?? Ch.7: Crimson Moon Palace', stages: ['?? Blood Knight', '?? Eclipse Assassin', '?? Demon Progenitor'], pKey: 'blood', baseHp: 2300, baseAtk: 65, coins: 13000, xp: 6500, ess: 260, drop: 'soul' },
+        { ch: 8, title: '? Ch.8: Chrono Paradox Rift', stages: ['? Time Warden', '?? Reality Glitch', '? Chronos Sovereign'], pKey: 'chronovoid', baseHp: 3100, baseAtk: 80, coins: 19000, xp: 9000, ess: 340, drop: 'core' },
+        { ch: 9, title: '?? Ch.9: Asura Hell Arena', stages: ['??? Enma Spirit', '?? Oni Warlord', '?? King of Hell Zoro'], pKey: 'zoroking', baseHp: 4200, baseAtk: 98, coins: 28000, xp: 13000,ess: 450, drop: 'soul' },
+        { ch: 10, title: '?? Ch.10: Omni-Creator Realm', stages: ['?? Astral Seraph', '?? Cosmic Avatar', '?? MahaVishnu Supreme'], pKey: 'mahavishnu', baseHp: 5800, baseAtk: 120,coins: 45000, xp: 20000,ess: 650, drop: 'core' }
+    ];
+ 
+    const V5_GEAR_CATALOG = {
+        weapon: [
+            { tier: 0, name: 'None', atk: 0, crit: 0, cost: 0, souls: 0 },
+            { tier: 1, name: '??? Iron Katana [Common]', atk: 18, crit: 0.04, cost: 600, souls: 1 },
+            { tier: 2, name: '? Raijin Blade [Rare]', atk: 42, crit: 0.09, cost: 2500, souls: 3 },
+            { tier: 3, name: '?? Enma Hellblade [Epic]', atk: 85, crit: 0.15, cost: 9000, souls: 7 },
+            { tier: 4, name: '?? Sudarshana Edge [Mythic]', atk: 165, crit: 0.25, cost: 28000, souls: 15 }
+        ],
+        armor: [
+            { tier: 0, name: 'None', hp: 0, red: 0, cost: 0, cores: 0 },
+            { tier: 1, name: '?? Dojo Gi [Common]', hp: 120, red: 0.04, cost: 600, cores: 1 },
+            { tier: 2, name: '??? Aegis Plate [Rare]', hp: 300, red: 0.09, cost: 2500, cores: 3 },
+            { tier: 3, name: '?? Shadow Cloak [Epic]', hp: 650, red: 0.15, cost: 9000, cores: 7 },
+            { tier: 4, name: '?? Celestial Kavach [Mythic]', hp: 1350, red: 0.24, cost: 28000, cores: 15 }
+        ],
+        charm: [
+            { tier: 0, name: 'None', steal: 0, energy: 0, cost: 0, souls: 0 },
+            { tier: 1, name: '?? Spirit Bead [Common]', steal: 0.04, energy: 10, cost: 600, souls: 1 },
+            { tier: 2, name: '?? Crimson Fang [Rare]', steal: 0.09, energy: 20, cost: 2500, souls: 3 },
+            { tier: 3, name: '? Chrono Relic [Epic]', steal: 0.14, energy: 35, cost: 9000, souls: 7 },
+            { tier: 4, name: '?? Omni Crown [Mythic]', steal: 0.22, energy: 50, cost: 28000, souls: 15 }
+        ]
+    };
+ 
+    function ensureV5Profile(uname) {
+        const prof = getSvProfile(uname);
+        const today = new Date().toISOString().slice(0, 10);
+        if (!prof.v5) {
+            prof.v5 = {
+                stars: {}, difficulty: 'normal', bossSouls: 0, elemCores: 0,
+                equip: { weapon: 0, armor: 0, charm: 0 }, rebirths: 0,
+                questDay: today, quests: { stages: 0, wins: 0, trains: 0, dmg: 0, claimed: false }
+            };
+        }
+        if (prof.v5.questDay !== today) {
+            prof.v5.questDay = today;
+            prof.v5.quests = { stages: 0, wins: 0, trains: 0, dmg: 0, claimed: false };
+        }
+        (prof.customPowers || []).forEach(cp => {
+            if (cp && cp.def && cp.def.icon) {
+                cp.def.icon = keepLastThreeEmojis(cp.def.icon);
+                if (SV_DEFS[cp.id]) SV_DEFS[cp.id].icon = cp.def.icon;
+            }
+        });
+        return prof;
+    }
+ 
+    const _origGetSvProfileV5 = getSvProfile;
+    getSvProfile = function(uname) {
+        const p = _origGetSvProfileV5(uname);
+        if (!p.v5) {
+            p.v5 = {
+                stars: {}, difficulty: 'normal', bossSouls: 0, elemCores: 0,
+                equip: { weapon: 0, armor: 0, charm: 0 }, rebirths: 0,
+                questDay: new Date().toISOString().slice(0, 10),
+                quests: { stages: 0, wins: 0, trains: 0, dmg: 0, claimed: false }
+            };
+        }
+        (p.customPowers || []).forEach(cp => {
+            if (cp && cp.def && cp.def.icon) {
+                cp.def.icon = keepLastThreeEmojis(cp.def.icon);
+                if (SV_DEFS[cp.id]) SV_DEFS[cp.id].icon = cp.def.icon;
+            }
+        });
+        return p;
+    };
+ 
+    const _origBuildFighterV5 = buildFighterObj;
+    buildFighterObj = function(sockId, uname, powKey, customHp, customAtk, isBot = false, botId = null) {
+        const f = _origBuildFighterV5(sockId, uname, powKey, customHp, customAtk, isBot, botId);
+        if (isBot) return f;
+        const prof = ensureV5Profile(uname);
+        const v5 = prof.v5;
+        const w = V5_GEAR_CATALOG.weapon[v5.equip.weapon || 0];
+        const a = V5_GEAR_CATALOG.armor[v5.equip.armor || 0];
+        const c = V5_GEAR_CATALOG.charm[v5.equip.charm || 0];
+        const rebMult = 1 + ((v5.rebirths || 0) * 0.25);
+ 
+        f.maxHp = Math.round((f.maxHp + a.hp) * rebMult);
+        f.hp = f.maxHp;
+        f.bonusAtk = Math.round((f.bonusAtk + w.atk) * rebMult);
+        f.energy = Math.min(100, (f.energy || 50) + c.energy);
+        f.trainBonus = { ...(f.trainBonus || {}), critChance: Math.min(0.75, (f.trainBonus?.critChance || 0) + w.crit) };
+        if (a.red > 0) f.def = { ...f.def, passiveRed: Math.min(0.75, (f.def.passiveRed || 0) + a.red) };
+        if (c.steal > 0) f.enchant = { ...(f.enchant || { mult: 1, red: 0, heal: 0 }), heal: (f.enchant?.heal || 0) + c.steal };
+        return f;
+    };
+ 
+    const _prevIoToV5 = io.to.bind(io);
+    io.to = function(room) {
+        const bc = _prevIoToV5(room);
+        const origEmit = bc.emit.bind(bc);
+        bc.emit = function(ev, payload, ...rest) {
+            if (ev === 'message' && payload && typeof payload === 'object' && payload.username) {
+                const rawClean = String(payload.username).replace(/^\[.*?\]\s*/g, '');
+                const st = svPlayerStats[rawClean.toLowerCase().trim()];
+                if (st && st.v5 && st.v5.rebirths > 0 && !String(payload.username).includes('??R')) {
+                    payload = { ...payload, username: `[??R${st.v5.rebirths}] ${payload.username}` };
+                }
+            }
+            return origEmit(ev, payload, ...rest);
+        };
+        return bc;
+ 
+  };
+    // ============================================================================
+    // ?? SAMMUVERSE V5 EXPANSION - PART A/3 (STAGE ENGINE & REWARDS)
+    // ============================================================================
+    function launchV5Stage(socket, chNum, stgNum, powKey, diff, coopPartnerName) {
+        const srvId = socket.activeServerId;
+        const uname = socket.username || 'Hero';
+        const chObj = V5_CHAPTERS.find(c => c.ch === chNum) || V5_CHAPTERS.at(0);
+        const stageIdx = Math.max(0, Math.min(2, (stgNum || 1) - 1));
+        const enemyName = chObj.stages.at(stageIdx);
+        const diffMode = ['normal', 'hard', 'nightmare'].includes(diff) ? diff : 'normal';
+        const diffMult = diffMode === 'nightmare' ? 2.4 : (diffMode === 'hard' ? 1.55 : 1.0);
+        const stgMult = stageIdx === 2 ? 1.45 : (stageIdx === 1 ? 1.18 : 1.0);
+ 
+        const p1 = buildFighterObj(socket.id, uname, powKey || 'fire');
+        if (coopPartnerName) {
+            const partnerProf = ensureV5Profile(coopPartnerName);
+            p1.maxHp += 180 + ((partnerProf.hpLv || 0) * 25) + ((partnerProf.v5?.rebirths || 0) * 150);
+            p1.hp = p1.maxHp;
+            p1.bonusAtk += 25 + ((partnerProf.atkLv || 0) * 5) + ((partnerProf.v5?.rebirths || 0) * 30);
+            p1.name = `${uname} + ?? ${coopPartnerName}`;
+        }
+ 
+        const hp = Math.round(chObj.baseHp * stgMult * diffMult);
+        const atk = Math.round(chObj.baseAtk * stgMult * diffMult);
+        const p2 = buildFighterObj('ADV_FOE', `${enemyName} [${diffMode.toUpperCase()}]`, chObj.pKey, hp, atk, true, 'ADV_FOE');
+        p2.isV2 = chNum >= 3 || diffMode !== 'normal';
+        p2.isV3 = chNum >= 5 || diffMode === 'nightmare';
+ 
+        const battleId = 'adv5_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        const battle = {
+            id: battleId, srvId, isAdventureV5: true,
+            advChapter: chNum, advStage: stgNum, advDiff: diffMode, advTitle: chObj.title,
+            coopPartner: coopPartnerName || null,
+            turn: 1, timeLeft: 15,
+            lastLog: `??? <b>${chObj.title} (${diffMode.toUpperCase()} • Stage ${stgNum}/3)</b> - <b>${enemyName}</b> blocks your path!`,
+            p1, p2, interval: null
+        };
+        svBattles.set(battleId, battle);
+        battle.interval = setInterval(() => {
+            const cur = svBattles.get(battleId);
+            if (!cur) return;
+            cur.timeLeft--;
+            if (cur.timeLeft <= 0) resolveSvTurn(battleId);
+            else syncSvBattle(cur, null);
+        }, 1000);
+        syncSvBattle(battle, 'atk');
+    }
+ 
+    const _prevFinishSvBattleV5 = finishSvBattle;
+    finishSvBattle = function(battleId, b) {
+        if (!b) return;
+        if (!b.p1.isBot && b.p1.hp > b.p2.hp) {
+            const cleanP1 = b.p1.name.split(' + ?? ').at(0);
+            const qp = ensureV5Profile(cleanP1);
+            qp.v5.quests.wins = (qp.v5.quests.wins || 0) + 1;
+            qp.v5.quests.dmg = (qp.v5.quests.dmg || 0) + b.p2.maxHp;
+        }
+ 
+        if (!b.isAdventureV5) return _prevFinishSvBattleV5(battleId, b);
+ 
+        clearInterval(b.interval);
+        svBattles.delete(battleId);
+        const p1Won = b.p1.hp > b.p2.hp;
+        const pSock = io.sockets.sockets.get(b.p1.id);
+        io.to(b.p1.id).emit('svBattleEnd', { won: p1Won, _serverId: b.srvId });
+ 
+        const cleanName = b.p1.name.split(' + ?? ').at(0);
+        if (!p1Won || !pSock) {
+            io.to(b.srvId).emit('message', {
+                username: "Sammu's Bot",
+                text: `????? **STAGE DEFEAT!** **${b.p1.name}** fell in **${b.advTitle}** (${b.advDiff.toUpperCase()})! Upgrade Gear or bring a Co-Op partner!`,
+                _serverId: b.srvId
+            });
+            return;
+        }
+ 
+        const prof = ensureV5Profile(cleanName);
+        const v5 = prof.v5;
+        const chObj = V5_CHAPTERS.find(c => c.ch === b.advChapter) || V5_CHAPTERS.at(0);
+        const isBoss = b.advStage >= 3;
+        const diffMult = b.advDiff === 'nightmare' ? 2.5 : (b.advDiff === 'hard' ? 1.6 : 1.0);
+ 
+        let starsEarned = 1;
+        if (b.p1.hp >= Math.round(b.p1.maxHp * 0.5)) starsEarned = 2;
+        if (b.p1.hp >= Math.round(b.p1.maxHp * 0.5) && b.turn <= 4) starsEarned = 3;
+ 
+        const starKey = `${b.advChapter}_${b.advStage}_${b.advDiff}`;
+        v5.stars[starKey] = Math.max(v5.stars[starKey] || 0, starsEarned);
+ 
+        const cGain = Math.round((isBoss ? chObj.coins : chObj.coins * 0.45) * diffMult);
+        const xpGain = Math.round((isBoss ? chObj.xp : chObj.xp * 0.45) * diffMult);
+        const essGain = Math.round((isBoss ? chObj.ess : chObj.ess * 0.45) * diffMult);
+ 
+        addCoins(cleanName, cGain);
+        prof.training.xp = (prof.training.xp || 0) + xpGain;
+        prof.petEssence = (prof.petEssence || 0) + essGain;
+        v5.quests.stages = (v5.quests.stages || 0) + 1;
+        v5.quests.wins = (v5.quests.wins || 0) + 1;
+        v5.quests.dmg = (v5.quests.dmg || 0) + b.p2.maxHp;
+ 
+        let dropText = '';
+        if (isBoss || Math.random() < 0.45) {
+            if (chObj.drop === 'soul') { v5.bossSouls = (v5.bossSouls || 0) + 1; dropText = ' + ?? **1x Boss Soul**'; }
+            else { v5.elemCores = (v5.elemCores || 0) + 1; dropText = ' + ?? **1x Elemental Core**'; }
+        }
+        if (b.coopPartner) {
+            addCoins(b.coopPartner, Math.round(cGain * 0.5));
+            const pPartner = ensureV5Profile(b.coopPartner);
+            pPartner.petEssence = (pPartner.petEssence || 0) + Math.round(essGain * 0.5);
+        }
+ 
+        const adv = prof.adventure || { chapter: 1, stage: 1, cleared: false };
+        if (adv.chapter === b.advChapter && adv.stage === b.advStage) {
+            if (adv.stage < 3) adv.stage++;
+            else if (adv.chapter < 10) { adv.chapter++; adv.stage = 1; }
+            else adv.cleared = true;
+        }
+ 
+        syncPlayerTitlesAndBounty(cleanName);
+        saveSvStats();
+        pSock.emit('svStatsSync', ensureV5Profile(cleanName));
+        io.to(b.srvId).emit('message', {
+            username: "Sammu's Bot",
+            text: `???${'?'.repeat(starsEarned)} **STAGE CLEARED!** **${b.p1.name}** conquered **${b.p2.name}** (+
+${cGain.toLocaleString()}??, +${xpGain}? XP, +${essGain}??${dropText})!`,
+            _serverId: b.srvId
+        });
+    };
+    // ============================================================================
+    // ?? SAMMUVERSE V5 EXPANSION - PART B/3 (SOCKET LISTENERS)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('svTrainAction', () => {
+            const uname = socket.username;
+            if (!uname) return;
+            const prof = ensureV5Profile(uname);
+            prof.v5.quests.trains = (prof.v5.quests.trains || 0) + 1;
+            saveSvStats();
+            socket.emit('svStatsSync', prof);
+        });
+ 
+        socket.on('svStartStageV5', ({ ch, stg, power, diff, coopPartner }) => {
+            if (!socket.activeServerId || findPlayerActiveSvBattle(socket.id)) {
+                return socket.emit('svNotice', '?? Finish your current battle first!');
+            }
+            launchV5Stage(socket, Number(ch) || 1, Number(stg) || 1, power || 'fire', diff || 'normal', coopPartner || '');
+        });
+ 
+        socket.on('svUpgradeGearV5', (slot) => {
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false) || !['weapon', 'armor', 'charm'].includes(slot)) return;
+            const prof = ensureV5Profile(uname);
+            const v5 = prof.v5;
+            const curTier = v5.equip[slot] || 0;
+            const nextItem = V5_GEAR_CATALOG[slot].at(curTier + 1);
+            if (!nextItem) return socket.emit('svNotice', '?? Already at MYTHIC Max Tier!');
+ 
+            if (getCoins(uname) < nextItem.cost) return socket.emit('svNotice', `?? Need ${nextItem.cost.toLocaleString()} Coins!`);
+            if (nextItem.souls && (v5.bossSouls || 0) < nextItem.souls) return socket.emit('svNotice', `?? Need ${nextItem.souls} Boss Souls!`);
+            if (nextItem.cores && (v5.elemCores || 0) < nextItem.cores) return socket.emit('svNotice', `?? Need ${nextItem.cores} Elemental Cores!`);
+ 
+            addCoins(uname, -nextItem.cost);
+            if (nextItem.souls) v5.bossSouls -= nextItem.souls;
+            if (nextItem.cores) v5.elemCores -= nextItem.cores;
+            v5.equip[slot] = curTier + 1;
+ 
+            saveSvStats();
+            socket.emit('svStatsSync', ensureV5Profile(uname));
+            socket.emit('svNotice', `?? Upgraded ${slot.toUpperCase()} to ${nextItem.name}!`);
+        });
+ 
+        socket.on('svClaimDailyQuestV5', () => {
+            const uname = socket.username || 'Player';
+            const prof = ensureV5Profile(uname);
+            const q = prof.v5.quests;
+            if (q.claimed) return socket.emit('svNotice', '? Daily Mythic Crate already claimed today!');
+            if ((q.stages || 0) < 2 || (q.wins || 0) < 1 || (q.trains || 0) < 3 || (q.dmg || 0) < 500) {
+                return socket.emit('svNotice', '?? Complete all 4 Daily Quests first!');
+            }
+            q.claimed = true;
+            addCoins(uname, 3000);
+            prof.petEssence = (prof.petEssence || 0) + 50;
+            prof.freeFusionPasses = (prof.freeFusionPasses || 0) + 1;
+            saveSvStats();
+            socket.emit('svStatsSync', ensureV5Profile(uname));
+            socket.emit('svNotice', '???? DAILY MYTHIC CRATE OPENED! +3,000??, +50?? Essence & +1 Free Fusion Pass!');
+        });
+ 
+        socket.on('svRebirthV5', () => {
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
+            const prof = ensureV5Profile(uname);
+            const canRebirth = (prof.maxTowerFloor || 1) >= 25 || (prof.adventure?.chapter || 1) >= 5 || prof.adventure?.cleared;
+            if (!canRebirth) return socket.emit('svNotice', '?? Reach Tower Floor 25 or Adventure Chapter 5 to Rebirth!');
+ 
+            prof.v5.rebirths = (prof.v5.rebirths || 0) + 1;
+            prof.atkLv = 0;
+            prof.hpLv = 0;
+            prof.adventure = { chapter: 1, stage: 1, cleared: false };
+            addCoins(uname, 5000);
+            saveSvStats();
+            socket.emit('svStatsSync', ensureV5Profile(uname));
+            io.to(socket.activeServerId).emit('message', {
+                username: "Sammu's Bot",
+                text: `???? **REBIRTH ASCENSION!** **${uname}** reached **Rebirth ${prof.v5.rebirths}** (+${prof.v5.rebirths * 25}% Permanent All-Stats & Chat Badge)!`,
+       
+        _serverId: socket.activeServerId
+            });
+        });
+    });
+    // ============================================================================
+    // ?? SAMMUVERSE V5 - PART C-1 (10-REALM STORY & CO-OP UI)
+    // ============================================================================
+    const V5_UI_C1 = `
+    <script>
+    (function() {
+      if (window._svV5Installed) return;
+      window._svV5Installed = true;
+ 
+      const V5_CH_CLIENT = [
+        { ch: 1, title: '?? Ch.1: Whispering Dojo', reward: '350?? • ?? Soul' },
+        { ch: 2, title: '?? Ch.2: Crimson Volcano', reward: '700?? • ?? Core' },
+        { ch: 3, title: '?? Ch.3: Abyssal Trench', reward: '1.2k?? • ?? Soul' },
+        { ch: 4, title: '? Ch.4: Celestial Citadel', reward: '2.2k?? • ?? Core' },
+        { ch: 5, title: '?? Ch.5: Void Throne', reward: '5.0k?? • ?? Soul' },
+        { ch: 6, title: '?? Ch.6: Frostbite Glacier', reward: '8.5k?? • ?? Core' },
+        { ch: 7, title: '?? Ch.7: Crimson Moon Palace', reward: '13k?? • ?? Soul' },
+        { ch: 8, title: '? Ch.8: Chrono Paradox Rift', reward: '19k?? • ?? Core' },
+        { ch: 9, title: '?? Ch.9: Asura Hell Arena', reward: '28k?? • ?? Soul' },
+        { ch: 10, title: '?? Ch.10: Omni-Creator Realm', reward: '45k?? • ?? Core' }
+      ];
+ 
+      window._v5Diff = 'normal';
+      window._v5Coop = '';
+ 
+      function keep3EmojisClient(str) {
+        const s = String(str || '?').trim();
+        if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+          return Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s)).map(x => x.segment).slice(-3).join('');
+        }
+        return Array.from(s).slice(-3).join('');
+      }
+ 
+      window.renderV5StoryMode = function() {
+        const prof = window._latestSvProf || {};
+        const v5 = prof.v5 || { stars: {}, bossSouls: 0, elemCores: 0 };
+ 
+        document.querySelectorAll('#svPowerGrid .sv-pwr-btn').forEach(btn => {
+          const txt = btn.textContent || '';
+          if (txt.includes('[#')) {
+                        let parts = txt.split(' ');
+            const first = parts.at(0);
+            if (first && Array.from(first).length > 4) {
+              parts[0] = keep3EmojisClient(first);
+              btn.textContent = parts.join(' ');
+       
+    }
+          }
+        });
+ 
+        const advPanel = document.getElementById('svAdvPanel');
+        const listBox = document.getElementById('svAdventureChaptersList');
+        if (!advPanel || !listBox) return;
+ 
+        let toolbar = document.getElementById('v5StoryToolbar');
+        if (!toolbar) {
+          toolbar = document.createElement('div');
+          toolbar.id = 'v5StoryToolbar';
+          toolbar.style.cssText = 'background:#090d16;border:1px solid #38bdf8;border-radius:11px;padding:7px;margin-bottom:8px;font-size:11px;';
+          advPanel.insertBefore(toolbar, listBox);
+        }
+ 
+        const totalStars = Object.values(v5.stars || {}).reduce((a, b) => a + b, 0);
+        const liveOpts = Array.from(document.querySelectorAll('#svOpponentSelect option'))
+          .filter(o => !o.value.startsWith('BOT_'))
+          .map(o => {
+            const cleanN = o.textContent.split(' (').at(0).replace('?? ', '');
+            return '<option value="' + cleanN + '"' + (window._v5Coop === cleanN ? ' selected' : '') + '>?? Co-Op: ' + cleanN + '</option>';
+          }).join('');
+ 
+        toolbar.innerHTML =
+          '<div style="display:flex;justify-content:space-between;font-weight:900;color:#fde047;margin-bottom:5px;">' +
+            '<span>? Stars: ' + totalStars + '/90</span>' +
+            '<span>?? Souls: ' + (v5.bossSouls || 0) + ' | ?? Cores: ' + (v5.elemCores || 0) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;gap:4px;margin-bottom:5px;">' +
+            new Array('normal', 'hard', 'nightmare').map(d =>
+              '<button onclick="window._v5Diff=\\'' + d + '\\';renderV5StoryMode()" style="flex:1;padding:5px;border-radius:8px;border:1px solid #facc15;background:' + (window._v5Diff === d ? '#d97706' : '#1e293b') + ';color:#fff;font-weight:900;font-size:10px;cursor:pointer;">' + d.toUpperCase() + '</button>'
+            ).join('') +
+          '</div>' +
+          '<select onchange="window._v5Coop=this.value" style="width:100%;padding:5px;border-radius:8px;border:1px solid #4ade80;background:#1e293b;color:#fff;font-size:10px;">' +
+            '<option value="">?? Solo Stage Run (Or Pick Co-Op Partner)</option>' + liveOpts +
+          '</select>';
+ 
+        const adv = prof.adventure || { chapter: 1, stage: 1, cleared: false };
+        listBox.innerHTML = V5_CH_CLIENT.map(c => {
+          const unlocked = adv.cleared || adv.chapter >= c.ch;
+          const curStg = (!adv.cleared && adv.chapter === c.ch) ? (adv.stage || 1) : 3;
+          const s1 = v5.stars?.[c.ch + '_1_' + window._v5Diff] || 0;
+          const s2 = v5.stars?.[c.ch + '_2_' + window._v5Diff] || 0;
+          const s3 = v5.stars?.[c.ch + '_3_' + window._v5Diff] || 0;
+          const stageBtns = new Array(1, 2, 3).map(stNum => {
+            const canPlay = adv.cleared || adv.chapter > c.ch || stNum <= curStg;
+            const stStars = stNum === 1 ? s1 : (stNum === 2 ? s2 : s3);
+            return '<button ' + (canPlay ? '' : 'disabled') + ' onclick="socket.emit(\\'svStartStageV5\\',{ch:' + c.ch + ',stg:' + stNum + ',power:window._curSvPow||\\'fire\\',diff:window._v5Diff,coopPartner:window._v5Coop})" style="padding:5px 2px;border:none;border-radius:7px;background:' + (canPlay ? '#16a34a' : '#334155') + ';color:#fff;font-size:10px;font-weight:bold;cursor:pointer;">' +
+              (canPlay ? ('S' + stNum + ' ' + '?'.repeat(stStars)) : '?? S' + stNum) + '</button>';
+          }).join('');
+ 
+          return '<div class="sv-shop-card" style="border-color:' + (unlocked ? '#38bdf8' : '#334155') + ';flex-direction:column;align-items:stretch;gap:5px;">' +
+            '<div style="display:flex;justify-content:space-between;">' +
+              '<b style="color:' + (unlocked ? '#fde047' : '#94a3b8') + ';">' + c.title + '</b>' +
+              '<span style="color:#4ade80;font-weight:bold;">' + c.reward + '</span>' +
+            '</div>' +
+            (unlocked ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">' + stageBtns + '</div>' : '<div style="font-size:10px;color:#94a3b8;">?? Clear Chapter ' + (c.ch - 1) + ' first</
+div>') +
+          '</div>';
+        }).join('');
+      };
+    `;
+    // ============================================================================
+    // ?? SAMMUVERSE V5 - PART C-2 (GEAR FORGE, DAILY QUESTS & REBIRTH UI)
+    // ============================================================================
+    const V5_UI_C2 = `
+      const V5_GEAR_UI = {
+        weapon: new Array('None', '??? Iron Katana (600??+1??)', '? Raijin Blade (2.5k??+3??)', '?? Enma Hellblade (9k??+7??)', '?? Sudarshana Edge (28k??+15??)'),
+        armor: new Array('None', '?? Dojo Gi (600??+1??)', '??? Aegis Plate (2.5k??+3??)', '?? Shadow Cloak (9k??+7??)', '?? Celestial Kavach (28k??+15??)'),
+        charm: new Array('None', '?? Spirit Bead (600??+1??)', '?? Crimson Fang (2.5k??+3??)', '? Chrono Relic (9k??+7??)', '?? Omni Crown (28k??+15??)')
+      };
+ 
+      window.renderV5DojoAndQuests = function() {
+        const prof = window._latestSvProf || {};
+        const v5 = prof.v5 || { bossSouls: 0, elemCores: 0, equip: { weapon: 0, armor: 0, charm: 0 }, rebirths: 0, quests: {} };
+        const dojoPanel = document.getElementById('svDojoPanel');
+        if (!dojoPanel) return;
+ 
+        let v5Box = document.getElementById('v5DojoExpansionBox');
+        if (!v5Box) {
+          v5Box = document.createElement('div');
+          v5Box.id = 'v5DojoExpansionBox';
+          dojoPanel.insertBefore(v5Box, dojoPanel.children.at(1) || dojoPanel.firstChild);
+        }
+ 
+        const q = v5.quests || { stages: 0, wins: 0, trains: 0, dmg: 0, claimed: false };
+        const wLv = v5.equip?.weapon || 0;
+        const aLv = v5.equip?.armor || 0;
+        const cLv = v5.equip?.charm || 0;
+ 
+        v5Box.innerHTML =
+          '<div style="background:rgba(56,189,248,0.12);border:1.5px solid #38bdf8;border-radius:11px;padding:8px;margin-bottom:7px;text-align:left;">' +
+            '<div style="font-size:11px;font-weight:900;color:#7dd3fc;margin-bottom:5px;">?? 3-SLOT GEAR FORGE (??' + (v5.bossSouls || 0) + ' Souls | ??' + (v5.elemCores || 0) + ' Cores)</div>' +
+            '<div class="sv-shop-card"><div><b>?? Weapon:</b> ' + V5_GEAR_UI.weapon.at(wLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.weapon.at(wLv + 1) || 'MAXED ??') + '</span></div><button ' + (wLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\\'svUpgradeGearV5\\',\\'weapon\\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (wLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
+            '<div class="sv-shop-card"><div><b>??? Armor:</b> ' + V5_GEAR_UI.armor.at(aLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.armor.at(aLv + 1) || 'MAXED ??') + '</span></div><button ' + (aLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\\'svUpgradeGearV5\\',\\'armor\\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (aLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
+            '<div class="sv-shop-card"><div><b>?? Charm:</b> ' + V5_GEAR_UI.charm.at(cLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.charm.at(cLv + 1) || 'MAXED ??') + '</span></div><button ' + (cLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\\'svUpgradeGearV5\\',\\'charm\\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (cLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
+          '</div>' +
+ 
+          '<div style="background:rgba(250,204,21,0.12);border:1.5px solid #facc15;border-radius:11px;padding:8px;margin-bottom:7px;text-align:left;">' +
+            '<div style="font-size:11px;font-weight:900;color:#fde047;margin-bottom:4px;">?? DAILY QUESTS (Reward: 3,000?? + 50?? + Free Fusion)</div>' +
+            '<div style="font-size:10px;color:#e2e8f0;line-height:1.5;">' +
+              '• Clear 2 Stages: <b>' + Math.min(2, q.stages || 0) + '/2</b> ' + ((q.stages || 0) >= 2 ? '?' : '') + '<br>' +
+              '• Win 1 Battle: <b>' + Math.min(1, q.wins || 0) + '/1</b> ' + ((q.wins || 0) >= 1 ? '?' : '') + '<br>' +
+              '• Train 3 Times: <b>' + Math.min(3, q.trains || 0) + '/3</b> ' + ((q.trains || 0) >= 3 ? '?' : '') + '<br>' +
+              '• Deal 500 DMG: <b>' + Math.min(500, q.dmg || 0) + '/500</b> ' + ((q.dmg || 0) >= 500 ? '?' : '') +
+            '</div>' +
+            '<button ' + (q.claimed ? 'disabled' : '') + ' onclick="socket.emit(\\'svClaimDailyQuestV5\\')" style="width:100%;margin-top:5px;padding:7px;border:none;border-radius:8px;background:' + (q.claimed ? '#334155' : 'linear-gradient(90deg,#f59e0b,#ec4899)') + ';color:#fff;font-weight:900;font-size:11px;cursor:pointer;">' + (q.claimed ? '? Daily Mythic Crate Claimed' : '?? Claim Daily Mythic Crate!') + '</button>' +
+          '</div>' +
+ 
+          '<div class="sv-shop-card" style="border-color:#e879f9;">' +
+            '<div><b style="color:#f0abfc;">?? Rebirth Ascension (Rebirth ' + (v5.rebirths || 0) + ')</b><br><span style="color:#cbd5e1;">Permanent +' + (((v5.rebirths || 0) + 1) * 25) + '% All-Stats & [??R' + ((v5.rebirths || 0) + 1) + '] Badge</span></div>' +
+            '<button onclick="socket.emit(\\'svRebirthV5\\')" style="background:#9333ea;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">?? Rebirth</button>' +
+          '</div>';
+      };
+ 
+      setInterval(() => {
+        if (typeof window.renderV5StoryMode === 'function') window.renderV5StoryMode();
+        if (typeof window.renderV5DojoAndQuests === 'function') window.renderV5DojoAndQuests();
+      }, 1200);
+    })();
+    </script>`;
+ 
+    const V5_EXPANSION_UI = V5_UI_C1 + '\n' + V5_UI_C2;
+ 
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svV5Installed')) {
+                body = body.replace('</body>', V5_EXPANSION_UI + '\n</body>');
+            }
+            re
+turn origSend.call(this, body);
+        };
+        next();
+    });
+     // ============================================================================
+    // ?? ADMIN /UNLOCKUSER COMMAND (UNLOCKS DEVICE LOCK WITHOUT WIPING STATS)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const clean = raw.trim();
+            const low = clean.toLowerCase();
+            const sender = (socket.username || (payload && payload.username) || '').toLowerCase().trim();
+ 
+            // Auto-relink SammuVerse RPG lock when an OG Host uses a Master Key
+            if (MASTER_KEYS.has(clean) && OG_HOSTS.has(sender)) {
+                const prof = getSvProfile(sender);
+                if (socket.trackedDeviceId) {
+                    prof.ownerDevId = socket.trackedDeviceId;
+                    saveSvStats();
+                    socket.emit('svStatsSync', prof);
+                }
+                socket.emit('svNotice', `?? OG Host & RPG Account re-linked to this phone for ${sender}!`);
+                return;
+            }
+ 
+            // Admin check (#hazmolerangola or Creators sammu/samaksh)
+            const isAdmin = Boolean(
+                socket.isHazmoleAdmin ||
+                unlockedCommandAdmins.has(sender) ||
+                sender === 'sammu' ||
+                sender === 'samaksh'
+            );
+            if (!isAdmin) return;
+ 
+            if (low.startsWith('/unlockuser ') || low.startsWith('/unlock ')) {
+                const argStr = low.startsWith('/unlockuser ') ? clean.slice(12) : clean.slice(8);
+                const target = argStr.replace(/^@/, '').trim().toLowerCase();
+                if (!target) {
+                    return socket.emit('message', { username: 'SYSTEM', text: '?? Usage: `/unlockuser @moon`', _serverId: srvId });
+                }
+ 
+                // 1. Clear OG Host Triple-Lock
+                if (lockedOGSignatures[target]) {
+                    delete lockedOGSignatures[target];
+                    saveDB();
+                }
+ 
+                // 2. Clear SammuVerse RPG Device Lock (keeps all coins, powers & stats)
+                const prof = getSvProfile(target);
+                delete prof.ownerDevId;
+                saveSvStats();
+ 
+                // 3. Re-bind & notify immediately if the user is currently in the room
+                for (const [, s] of io.sockets.sockets) {
+                    if (s && s.username && s.username.toLowerCase().trim() === target) {
+                        if (s.trackedDeviceId) {
+                            prof.ownerDevId = s.trackedDeviceId;
+                            saveSvStats();
+                        }
+                        s.emit('svStatsSync', prof);
+                        s.emit('svNotice', `?? Your account (${target}) was unlocked by Admin! You can spin & buy now!`);
+                    }
+                }
+ 
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: `??? **USER UNLOCKED:** **${target}**'s device lock was cleared! All coins, powers & stats are safe.`,
+                    _ser
+verId: srvId
+                });
+            }
+        });
+    });
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PIECE 1/8 (W2 POWERS, REALMS 11-20 & GOD TIER GEAR)
+    // ============================================================================
+    Object.assign(SV_DEFS, {
+        voidsov: {
+            w2Only: true, cost: 35000, icon: '??', name: 'Void Sovereign [W2]', hp: 460, passiveRed: 0.35, strong: ['antimatter', 'blackhole', 'space'],
+            moves: [
+                { label: 'Void Erasure (75 DMG)', dmg: 75 },
+                { label: 'Singularity Collapse (105 True DMG)', dmg: 105, trueDmg: true },
+                { label: 'Null Dimension (Evade +90 HP)', evade: true, heal: 90 },
+                { label: '???? ABSOLUTE VOID ULT (195 True DMG + Stun)', dmg: 195, trueDmg: true, stun: true, cut: { theme: 'vishwaroopa', emoji: '????', title: 'ABSOLUTE VOID SOVEREIGN!' } }
+            ]
+        },
+        astralshenron: {
+            w2Only: true, cost: 45000, icon: '??', name: 'Astral Shenron [W2]', hp: 490, passiveRed: 0.36, strong: ['fire', 'lightning', 'storm'],
+            moves: [
+                { label: 'Cosmic Dragon Breath (80 DMG)', dmg: 80 },
+                { label: 'Wish Fulfillment (+65 HP & 95 DMG)', dmg: 95, heal: 65 },
+                { label: 'Celestial Scales (Block 85%)', block: 0.85 },
+                { label: '???? ETERNAL DRAGON ULT (205 True DMG)', dmg: 205, trueDmg: true, cut: { theme: 'lightning', emoji: '????', title: 'ETERNAL ASTRAL SHENRON!' } }
+            ]
+        },
+        hypernova: {
+            w2Only: true, cost: 55000, icon: '??', name: 'Hypernova Star [W2]', hp: 475, passiveRed: 0.34, strong: ['ice', 'shadow', 'venom'],
+            moves: [
+                { label: 'Gamma Ray Burst (85 DMG)', dmg: 85 },
+                { label: 'Supernova Implosion (115 DMG)', dmg: 115 },
+                { label: 'Corona Plasma Shield (Block 80%)', block: 0.80 },
+                { label: '???? GALAXY SUPERNOVA ULT (215 True DMG)', dmg: 215, trueDmg: true, cut: { theme: 'fire', emoji: '????', title: 'HYPERNOVA GALAXY COLLAPSE!' } }
+            ]
+        },
+        omnislayer: {
+            w2Only: true, cost: 65000, icon: '??', name: 'Omni-Slayer [W2]', hp: 500, passiveRed: 0.38, strong: ['blood', 'zoro', 'zoroking'],
+            moves: [
+                { label: 'Dimension Slash (88 True DMG)', dmg: 88, trueDmg: true },
+                { label: '10,000-Blade Storm (120 DMG)', dmg: 120 },
+                { label: 'Godspeed Parry (Evade +85 HP)', evade: true, heal: 85 },
+                { label: '???? OMNI-REALITY CLEAVE ULT (225 True DMG + Stun)', dmg: 225, trueDmg: true, stun: true, cut: { theme: 'zoro', emoji: '????', title: 'OMNI-REALITY CLEAVE!' } }
+            ]
+        },
+        rinnegod: {
+            w2Only: true, cost: 80000, icon: '???', name: 'Rinne-Sharingan [W2]', hp: 520, passiveRed: 0.40, strong: ['gravity', 'time', 'space'],
+            moves: [
+                { label: 'Almighty Push (90 True DMG)', dmg: 90, trueDmg: true },
+                { label: 'Chibaku Meteor (125 DMG + Stun)', dmg: 125, stunChance: 0.55 },
+                { label: 'Limbo Clone Swap (Evade +100 HP)', evade: true, heal: 100 },
+                { label: '????? INFINITE TSUKUYOMI ULT (235 True DMG + Stun)', dmg: 235, trueDmg: true, stun: true, cut: { theme: 'moon', emoji: '?????', title: 'INFINITE TSUKUYOMI!' } }
+            ]
+        },
+        ultrainstinct: {
+            w2Only: true, cost: 100000, icon: '?', name: 'Ultra Instinct [W2]', hp: 540, passiveRed: 0.42, strong: ['mahavishnu', 'mahadev', 'antimatter'],
+            moves: [
+                { label: 'Autonomous Strike (95 True DMG)', dmg: 95, trueDmg: true },
+                { label: 'Silver Kamehameha (135 True DMG)', dmg: 135, trueDmg: true },
+                { label: 'Mastered Auto-Dodge (Evade +110 HP)', evade: true, heal: 110 },
+                { label: '??? SUPREME SILVER FURY ULT (250 True DMG + Stun)', dmg: 250, trueDmg: true, stun: true, cut: { theme: 'awaken', emoji: '???', title: 'MASTERED ULTRA INSTINCT!' } }
+            ]
+        }
+    });
+ 
+    const W2_CHAPTERS = [
+        { ch: 11, title: '?? Ch.11: Astral Harbor', stages: ['?? Starlight Stalker', '??? Astral Sentinel', '?? Nebula Warden'], pKey: 'voidsov', baseHp: 7800, baseAtk: 145, coins: 75000, xp: 30000, ess: 800, drop: 'shard' },
+        { ch: 12, title: '?? Ch.12: Dragon Nebula', stages: ['?? Wyvern Hatchling', '?? Starfire Drake', '?? Astral Shenron'], pKey: 'astralshenron', baseHp: 10500, baseAtk: 170, coins: 110000, xp: 42000, ess: 1000, drop: 'crystal' },
+        { ch: 13, title: '?? Ch.13: Hypernova Core', stages: ['? Solar Wisp', '?? Plasma Colossus', '?? Hypernova Avatar'], pKey: 'hypernova', baseHp: 14000, baseAtk: 195, coins: 150000, xp: 55000, ess: 1250, drop: 'shard' },
+        { ch: 14, title: '?? Ch.14: Blade Dimension', stages: ['??? Phantom Ronin', '?? Asura Knight', '?? Omni-Slayer Prime'], pKey: 'omnislayer', baseHp: 18500, baseAtk: 225, coins: 200000, xp: 70000, ess: 1500, drop: 'crystal' },
+        { ch: 15, title: '??? Ch.15: Infinite Illusion', stages: ['?? Mirage Keeper', '?? Limbo Shadow', '??? Rinne-God Emperor'], pKey: 'rinnegod', baseHp: 24000, baseAtk: 260, coins: 260000, xp: 90000, ess: 1800, drop: 'shard' },
+        { ch: 16, title: '? Ch.16: Tournament of Gods', stages: ['?? Pride Trooper', '?? God of Destruction', '? Ultra Instinct Master'], pKey: 'ultrainstinct', baseHp: 31000, baseAtk: 300, coins: 340000, xp: 115000,ess: 2200, drop: 'crystal' },
+        { ch: 17, title: '??? Ch.17: Event Horizon Abyss', stages: ['?? Dark Singularity', '? Chrono Eater', '??? Void Monarch EX'], pKey: 'voidsov', baseHp: 40000, baseAtk: 345, coins: 450000, xp: 145000,ess: 2700, drop: 'shard' },
+        { ch: 18, title: '?? Ch.18: Kailash Astral Peak', stages: ['?? Cosmic Naga', '?? Rudra Avatar', '?? Mahadev Supreme'], pKey: 'mahadev', baseHp: 52000, baseAtk: 395, coins: 600000, xp: 180000,ess: 3300, drop: 'crystal' },
+        { ch: 19, title: '?? Ch.19: Vaikuntha Eternity', stages: ['?? Astral Garuda', '?? Chakra Guardian', '?? MahaVishnu Omega'], pKey: 'mahavishnu', baseHp: 68000, baseAtk: 450, coins: 800000, xp: 230000,ess: 4000, drop: 'shard' },
+        { ch: 20, title: '?? Ch.20: Sammu Creator Throne', stages: ['?? Diamond Seraph', '? Samaksh Avatar', '?? SAMMU OMNI-CREATOR'], pKey: 'ultrainstinct', baseHp: 90000, baseAtk: 520, coins: 1200000,xp: 300000,ess: 5000, drop: 'crystal' }
+    ];
+ 
+    if (typeof V5_GEAR_CATALOG !== 'undefined') {
+        V5_GEAR_CATALOG.weapon.push(
+            { tier: 5, name: '?? Astral Saber [Celestial]', atk: 310, crit: 0.32, cost: 75000, shards: 5 },
+            { tier: 6, name: '?? Void Cleaver [Cosmic]', atk: 550, crit: 0.40, cost: 200000, shards: 12 },
+            { tier: 7, name: '?? Sammu Omni-Blade [GOD]', atk: 950, crit: 0.50, cost: 500000, shards: 25 }
+        );
+        V5_GEAR_CATALOG.armor.push(
+            { tier: 5, name: '?? Astral Mantle [Celestial]', hp: 2600, red: 0.30, cost: 75000, crystals: 5 },
+            { tier: 6, name: '?? Void Exosuit [Cosmic]', hp: 4800, red: 0.36, cost: 200000, crystals: 12 },
+            { tier: 7, name: '?? Sammu Omni-Aegis [GOD]', hp: 8500, red: 0.44, cost: 500000, crystals: 25 }
+        );
+        V5_GEAR_CATALOG.charm.push(
+            { tier: 5, name: '?? Starlight Core [Celestial]', steal: 0.28, energy: 65, cost: 75000, shards: 5 },
+            { tier: 6, name: '?? Singularity Ring [Cosmic]', steal: 0.35, energy: 80, cost: 200000, shards: 12 },
+            { tier: 7, name: '?? Creator Halo [GOD]', steal: 0.45, energy: 100, cost: 500000, shards: 25 }
+        );
+    }
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PIECE 2/8 (AURA CLASSES, 25-FUSION CAP & DELETE)
+    // ============================================================================
+    const V6_AURAS = {
+        demonic: { icon: '??', name: 'Demonic Overlord Aura', cost: 15000, shards: 3, desc: '+18% Lifesteal & +15% DMG/Lv', steal: 0.18, dmgMult: 0.15, hpMult: 0.05, crit: 0.05 },
+        reaper: { icon: '??', name: 'Soul Reaper Bankai Aura', cost: 15000, shards: 3, desc: '+20% Crit & +18% DMG/Lv', steal: 0.05, dmgMult: 0.18, hpMult: 0.05, crit: 0.20 },
+        divine: { icon: '??', name: 'Divine Celestial Aura', cost: 25000, shards: 5, desc: '+16% All-Stats & Stun Immune', steal: 0.08, dmgMult: 0.16, hpMult: 0.16, crit: 0.10, stunImmune: true },
+        dragonic: { icon: '??', name: 'Dragonic Emperor Aura', cost: 20000, shards: 4, desc: '+22% HP & +16% DMG/Lv', steal: 0.04, dmgMult: 0.16, hpMult: 0.22, crit: 0.08 },
+        voidwalker: { icon: '???', name: 'Void Walker Phantom Aura',cost: 30000, shards: 6, desc: '+20% DMG & +15% Armor/Lv', steal: 0.10, dmgMult: 0.20, hpMult: 0.10, crit: 0.15, red: 0.15 }
+    };
+ 
+    function ensureV6Profile(uname) {
+        const prof = typeof ensureV5Profile === 'function' ? ensureV5Profile(uname) : getSvProfile(uname);
+        if (!prof.v6) {
+            prof.v6 = {
+                w2Unlocked: false, w2Chapter: 11, w2Stage: 1, w2Cleared: false,
+                astralShards: 0, voidCrystals: 0,
+                auraClass: null, auraLv: 0, unlockedAuras: [],
+                w2BossKills: 0, v4Unlocked: {}
+            };
+        }
+        return prof;
+    }
+ 
+    const _origGetSvProfileV6 = getSvProfile;
+    getSvProfile = function(uname) {
+        const p = _origGetSvProfileV6(uname);
+        if (!p.v6) {
+            p.v6 = {
+                w2Unlocked: false, w2Chapter: 11, w2Stage: 1, w2Cleared: false,
+                astralShards: 0, voidCrystals: 0,
+                auraClass: null, auraLv: 0, unlockedAuras: [],
+                w2BossKills: 0, v4Unlocked: {}
+            };
+        }
+        return p;
+    };
+ 
+    // Enforce MAX 25 FUSIONS + Delete Fused Avatar Handler
+    io.on('connection', (socket) => {
+        socket.use((packet, next) => {
+            if (packet && packet.at(0) === 'svForgeCustomPower') {
+                const prof = ensureV6Profile(socket.username || 'Player');
+                if ((prof.customPowers || []).length >= 25) {
+                    socket.emit('svNotice', '?? MAX 25 FUSIONS REACHED! Delete an old fused avatar in Dojo to forge a new one.');
+                    return;
+                }
+            }
+            next();
+        });
+ 
+        socket.on('svDeleteCustomPower', (cid) => {
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false)) return;
+            const prof = ensureV6Profile(uname);
+            const idx = (prof.customPowers || []).findIndex(c => c && c.id === cid);
+            if (idx === -1) return socket.emit('svNotice', '?? Fused avatar not found!');
+            const removedName = prof.customPowers[idx].def?.name || 'Fusion';
+            prof.customPowers.splice(idx, 1);
+            prof.unlockedPowers = (prof.unlockedPowers || []).filter(k => k !== cid);
+            if (prof.powerWins) delete prof.powerWins[cid];
+            if (prof.v6 && prof.v6.v4Unlocked) delete prof.v6.v4Unlocked[cid];
+            delete SV_DEFS[cid];
+            saveSvStats();
+            socket.emit('svStatsSync', ensureV6Profile(uname));
+            socket.emit('svNotice', `??? Deleted "${removedName}" (${prof.customPowers.length}/25 slots used).`);
+        });
+    });
+ 
+    // Apply Aura Class + V4 Awakening Stats in Combat
+    const _origBuildFighterV6 = buildFighterObj;
+    buildFighterObj = function(sockId, uname, powKey, customHp, customAtk, isBot = false, botId = null) {
+        const f = _origBuildFighterV6(sockId, uname, powKey, customHp, customAtk, isBot, botId);
+        if (isBot) return f;
+        const prof = ensureV6Profile(uname);
+        const v6 = prof.v6;
+ 
+        if (v6.auraClass && V6_AURAS[v6.auraClass]) {
+            const au = V6_AURAS[v6.auraClass];
+            const lvScale = 1 + ((Math.max(1, v6.auraLv || 1) - 1) * 0.20);
+            f.maxHp = Math.round(f.maxHp * (1 + (au.hpMult * lvScale)));
+            f.hp = f.maxHp;
+            f.bonusAtk = Math.round(f.bonusAtk * (1 + (au.dmgMult * lvScale))) + Math.round(25 * lvScale);
+            f.trainBonus = { ...(f.trainBonus || {}), critChance: Math.min(0.85, (f.trainBonus?.critChance || 0) + au.crit) };
+            if (au.steal > 0) f.enchant = { ...(f.enchant || { mult: 1, red: 0, heal: 0 }), heal: (f.enchant?.heal || 0) + au.steal };
+            if (au.red > 0) f.def = { ...f.def, passiveRed: Math.min(0.80, (f.def.passiveRed || 0) + au.red) };
+            if (au.stunImmune) f.lineageObj = { ...(f.lineageObj || {}), stunImmune: true };
+        }
+ 
+        if (v6.v4Unlocked && v6.v4Unlocked[powKey]) {
+            f.isV4 = true;
+            f.maxHp += 350;
+            f.hp = f.maxHp;
+            f.bonusAtk = Math.round(f.bonusAtk * 1.45) + 45;
+            f.def = { ...f.def, name: f.
+def.name + ' [V4 ??]' };
+        }
+        return f;
+    };
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PIECE 3/8 (W2 CHAT BADGE & BATTLE FINISHERS)
+    // ============================================================================
+    const _prevIoToV6 = io.to.bind(io);
+    io.to = function(room) {
+        const bc = _prevIoToV6(room);
+        const origEmit = bc.emit.bind(bc);
+        bc.emit = function(ev, payload, ...rest) {
+            if (ev === 'message' && payload && typeof payload === 'object' && payload.username) {
+                const rawClean = String(payload.username).replace(/^\[.*?\]\s*/g, '');
+                const st = svPlayerStats[rawClean.toLowerCase().trim()];
+                if (st && st.v6 && st.v6.w2Unlocked && !String(payload.username).includes('??W2')) {
+                    payload = { ...payload, username: `[??W2] ${payload.username}` };
+                }
+            }
+            return origEmit(ev, payload, ...rest);
+        };
+        return bc;
+    };
+ 
+    function checkW2GateRequirements(uname) {
+        const prof = ensureV6Profile(uname);
+        const totalStars = Object.values(prof.v5?.stars || {}).reduce((a, b) => a + b, 0);
+        const storyOk = Boolean(prof.adventure?.cleared || (prof.adventure?.chapter || 1) > 10 || totalStars >= 45);
+        const rebirthOk = (prof.v5?.rebirths || 0) >= 1;
+        const towerOk = (prof.maxTowerFloor || 1) >= 30;
+        const matsOk = getCoins(uname) >= 25000 && (prof.v5?.bossSouls || 0) >= 5 && (prof.v5?.elemCores || 0) >= 5;
+        return { storyOk, rebirthOk, towerOk, matsOk, allOk: storyOk && rebirthOk && towerOk && matsOk };
+    }
+ 
+    const _prevFinishSvBattleV6 = finishSvBattle;
+    finishSvBattle = function(battleId, b) {
+        if (!b) return;
+        if (b.isW2Gatekeeper) {
+            clearInterval(b.interval);
+            svBattles.delete(battleId);
+            const won = b.p1.hp > b.p2.hp;
+            const pSock = io.sockets.sockets.get(b.p1.id);
+            io.to(b.p1.id).emit('svBattleEnd', { won, _serverId: b.srvId });
+            if (!won || !pSock) {
+                return io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `???? **GATEKEEPER DEFEAT!** **${b.p1.name}** was repelled by the **Astral Gatekeeper**!`, _serverId: b.srvId });
+            }
+            const prof = ensureV6Profile(b.p1.name);
+            prof.v6.w2Unlocked = true;
+            saveSvStats();
+            pSock.emit('svStatsSync', prof);
+            pSock.emit('svNotice', '???? WORLD 2 UNLOCKED! Welcome to the Astral Dimension ([??W2] Badge Earned)!');
+            return io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `???? **WORLD 2 UNLOCKED!!** **${b.p1.name}** defeated the **Astral Gatekeeper** and entered **World 2**!`, _serverId: b.srvId });
+        }
+ 
+        if (b.isV4Trial) {
+            clearInterval(b.interval);
+            svBattles.delete(battleId);
+            const won = b.p1.hp > b.p2.hp && b.turn <= 8;
+            const pSock = io.sockets.sockets.get(b.p1.id);
+            io.to(b.p1.id).emit('svBattleEnd', { won, _serverId: b.srvId });
+            if (!won || !pSock) {
+                return io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `???? **V4 TRIAL FAILED!** **${b.p1.name}** must beat their Shadow Mirror within **8 turns**!`, _serverId: b.srvId });
+            }
+            const prof = ensureV6Profile(b.p1.name);
+            prof.v6.v4Unlocked[b.trialPowerKey] = true;
+            saveSvStats();
+            pSock.emit('svStatsSync', prof);
+            pSock.emit('svNotice', `???? V4 AWAKENING COMPLETE! ${b.trialPowerName} is now [V4 ??]!`);
+            return io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `???? **V4 AWAKENING!!** **${b.p1.name}** awakened **${b.trialPowerName} [V4 ??]**!`, _serverId: b.srvId });
+        }
+ 
+        if (b.isW2Stage) {
+            clearInterval(b.interval);
+            svBattles.delete(battleId);
+            const won = b.p1.hp > b.p2.hp;
+            const pSock = io.sockets.sockets.get(b.p1.id);
+            io.to(b.p1.id).emit('svBattleEnd', { won, _serverId: b.srvId });
+            const cleanName = b.p1.name.split(' + ?? ');
+            if (!won || !pSock) {
+                return io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `???? **WORLD 2 DEFEAT!** **${b.p1.name}** fell in **${b.advTitle}**!`, _serverId: b.srvId });
+            }
+            const prof = ensureV6Profile(cleanName);
+            const v6 = prof.v6;
+            const chObj = W2_CHAPTERS.find(c => c.ch === b.advChapter) || W2_CHAPTERS;
+            const isBoss = b.advStage >= 3;
+            const diffMult = b.advDiff === 'nightmare' ? 2.5 : (b.advDiff === 'hard' ? 1.6 : 1.0);
+ 
+            let stars = 1;
+            if (b.p1.hp >= Math.round(b.p1.maxHp * 0.5)) stars = 2;
+            if (b.p1.hp >= Math.round(b.p1.maxHp * 0.5) && b.turn <= 4) stars = 3;
+            prof.v5.stars[`${b.advChapter}_${b.advStage}_${b.advDiff}`] = Math.max(prof.v5.stars[`${b.advChapter}_${b.advStage}_${b.advDiff}`] || 0, stars);
+ 
+            const cGain = Math.round((isBoss ? chObj.coins : chObj.coins * 0.45) * diffMult);
+            const xpGain = Math.round((isBoss ? chObj.xp : chObj.xp * 0.45) * diffMult);
+            const essGain = Math.round((isBoss ? chObj.ess : chObj.ess * 0.45) * diffMult);
+            addCoins(cleanName, cGain);
+            prof.training.xp = (prof.training.xp || 0) + xpGain;
+            prof.petEssence = (prof.petEssence || 0) + essGain;
+ 
+            let dropTxt = '';
+            if (isBoss) {
+                v6.w2BossKills = (v6.w2BossKills || 0) + 1;
+                if (chObj.drop === 'shard') { v6.astralShards = (v6.astralShards || 0) + 2; dropTxt = ' + ?? **2x Astral Shards**'; }
+                else { v6.voidCrystals = (v6.voidCrystals || 0) + 2; dropTxt = ' + ?? **2x Void Crystals**'; }
+            } else if (Math.random() < 0.5) {
+                v6.astralShards = (v6.astralShards || 0) + 1;
+                dropTxt = ' + ?? **1x Astral Shard**';
+            }
+ 
+            if (b.coopPartner) addCoins(b.coopPartner, Math.round(cGain * 0.5));
+            if (v6.w2Chapter === b.advChapter && v6.w2Stage === b.advStage) {
+                if (v6.w2Stage < 3) v6.w2Stage++;
+                else if (v6.w2Chapter < 20) { v6.w2Chapter++; v6.w2Stage = 1; }
+                else v6.w2Cleared = true;
+            }
+            saveSvStats();
+            pSock.emit('svStatsSync', ensureV6Profile(cleanName));
+            return io.to(b.srvId).emit('message', { username: "Sammu's Bot", text: `??${'?'.repeat(stars)} **W2 CLEARED!** **${b.p1.name}** defeated **${b.p2.name}** (+${cGain.toLocaleString()}??, +${xpGa
+in}? XP${dropTxt})!`, _serverId: b.srvId });
+        }
+ 
+        return _prevFinishSvBattleV6(battleId, b);
+    };
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PIECE 4A (W2 GATEKEEPER & W2 STAGES SOCKET HANDLERS)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('svStartW2Gatekeeper', (powKey) => {
+            const uname = socket.username || 'Player';
+            if (!socket.activeServerId || findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '?? Finish your current battle first!');
+            const prof = ensureV6Profile(uname);
+            if (prof.v6.w2Unlocked) return socket.emit('svNotice', '? World 2 is already unlocked!');
+            const chk = checkW2GateRequirements(uname);
+            if (!chk.allOk) return socket.emit('svNotice', '?? Complete all 4 World 2 Gatekeeper requirements first!');
+ 
+            addCoins(uname, -25000);
+            prof.v5.bossSouls -= 5;
+            prof.v5.elemCores -= 5;
+            saveSvStats();
+ 
+            const p1 = buildFighterObj(socket.id, uname, powKey || 'fire');
+            const p2 = buildFighterObj('W2_GATE', '?? ASTRAL GATEKEEPER', 'voidsov', 6500, 135, true, 'W2_GATE');
+            p2.isV2 = true; p2.isV3 = true;
+ 
+            const battleId = 'w2gate_' + Date.now();
+            const battle = { id: battleId, srvId: socket.activeServerId, isW2Gatekeeper: true, turn: 1, timeLeft: 15, lastLog: '?? <b>ASTRAL GATEKEEPER</b> blocks the portal to World 2!', p1, p2, interval: null };
+            svBattles.set(battleId, battle);
+            battle.interval = setInterval(() => {
+                const c = svBattles.get(battleId);
+                if (!c) return;
+                c.timeLeft--;
+                if (c.timeLeft <= 0) resolveSvTurn(battleId);
+                else syncSvBattle(c, null);
+            }, 1000);
+            syncSvBattle(battle, 'ult');
+        });
+ 
+        socket.on('svStartW2Stage', ({ ch, stg, power, diff, coopPartner }) => {
+            const uname = socket.username || 'Player';
+            if (!socket.activeServerId || findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '?? Finish your current battle first!');
+            const prof = ensureV6Profile(uname);
+            if (!prof.v6.w2Unlocked) return socket.emit('svNotice', '?? Defeat the Astral Gatekeeper to unlock World 2!');
+ 
+            // Strictly block World 1 players from World 2 Co-Op
+            if (coopPartner) {
+                const pProf = ensureV6Profile(coopPartner);
+                if (!pProf.v6.w2Unlocked) {
+                    return socket.emit('svNotice', `?? BLOCKED! ${coopPartner} is still in World 1 and cannot enter World 2!`);
+                }
+            }
+ 
+            const chObj = W2_CHAPTERS.find(c => c.ch === Number(ch)) || W2_CHAPTERS.at(0);
+            const stgIdx = Math.max(0, Math.min(2, (Number(stg) || 1) - 1));
+            const diffMode = ['normal', 'hard', 'nightmare'].includes(diff) ? diff : 'normal';
+            const diffMult = diffMode === 'nightmare' ? 2.4 : (diffMode === 'hard' ? 1.55 : 1.0);
+            const stgMult = stgIdx === 2 ? 1.45 : (stgIdx === 1 ? 1.18 : 1.0);
+ 
+            const p1 = buildFighterObj(socket.id, uname, power || 'voidsov');
+            if (coopPartner) {
+                const pp = ensureV6Profile(coopPartner);
+                p1.maxHp += 500 + ((pp.hpLv || 0) * 40) + ((pp.v5?.rebirths || 0) * 300);
+                p1.hp = p1.maxHp;
+                p1.bonusAtk += 75 + ((pp.atkLv || 0) * 10) + ((pp.v5?.rebirths || 0) * 60);
+                p1.name = `${uname} + ?? ${coopPartner}`;
+            }
+ 
+            const p2 = buildFighterObj('W2_FOE', `${chObj.stages.at(stgIdx)} [${diffMode.toUpperCase()}]`, chObj.pKey, Math.round(chObj.baseHp * stgMult * diffMult), Math.round(chObj.baseAtk * stgMult * diffMult), true, 'W2_FOE');
+            p2.isV2 = true; p2.isV3 = true;
+ 
+            const battleId = 'w2stg_' + Date.now();
+            const battle = { id: battleId, srvId: socket.activeServerId, isW2Stage: true, advChapter: chObj.ch, advStage: stgIdx + 1, advDiff: diffMode, advTitle: chObj.title, coopPartner: coopPartner || null, turn: 1, timeLeft: 15, lastLog: `?? <b>${chObj.title}</b> - Battle Start!`, p1, p2, interval: null };
+            svBattles.set(battleId, battle);
+            battle.interval = setInterval(() => {
+                const c = svBattles.get(battleId);
+                if (!c) return;
+                c.timeLeft--;
+                if (c.timeLeft <= 0) resolveSvTurn(battleId);
+                else syncSvBattle(c, null);
+       
+    }, 1000);
+            syncSvBattle(battle, 'ult');
+        });
+    });
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PIECE 4B (AURA CLASSES, V4 TRIAL & TIERS 5-7 GEAR)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('svAuraAction', (auraKey) => {
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false) || !V6_AURAS[auraKey]) return;
+            const prof = ensureV6Profile(uname);
+            const v6 = prof.v6;
+            const au = V6_AURAS[auraKey];
+ 
+            if (!v6.unlockedAuras.includes(auraKey)) {
+                if (getCoins(uname) < au.cost || (v6.astralShards || 0) < au.shards) {
+                    return socket.emit('svNotice', `?? Need ${au.cost.toLocaleString()}?? + ${au.shards}?? Astral Shards!`);
+                }
+                addCoins(uname, -au.cost);
+                v6.astralShards -= au.shards;
+                v6.unlockedAuras.push(auraKey);
+                v6.auraClass = auraKey;
+                v6.auraLv = 1;
+                saveSvStats();
+                socket.emit('svStatsSync', prof);
+                return socket.emit('svNotice', `? Awakened ${au.icon} ${au.name} (Lv.1)!`);
+            }
+ 
+            if (v6.auraClass !== auraKey) {
+                v6.auraClass = auraKey;
+                saveSvStats();
+                return socket.emit('svStatsSync', prof);
+            }
+ 
+            const upCost = 15000 * (v6.auraLv || 1);
+            const upShards = 3 * (v6.auraLv || 1);
+            if ((v6.auraLv || 1) >= 5) return socket.emit('svNotice', '?? Aura already at MAX Level 5!');
+            if (getCoins(uname) < upCost || (v6.astralShards || 0) < upShards) {
+                return socket.emit('svNotice', `?? Need ${upCost.toLocaleString()}?? + ${upShards}?? Shards to upgrade!`);
+            }
+            addCoins(uname, -upCost);
+            v6.astralShards -= upShards;
+            v6.auraLv = (v6.auraLv || 1) + 1;
+            saveSvStats();
+            socket.emit('svStatsSync', prof);
+            socket.emit('svNotice', `?? Upgraded ${au.name} to Lv.${v6.auraLv}!`);
+        });
+ 
+        socket.on('svStartV4Trial', (powKey) => {
+            const uname = socket.username || 'Player';
+            if (!socket.activeServerId || findPlayerActiveSvBattle(socket.id)) return socket.emit('svNotice', '?? Finish your current battle first!');
+            const prof = ensureV6Profile(uname);
+            if (!prof.v6.w2Unlocked) return socket.emit('svNotice', '?? Unlock World 2 first to enter the V4 Temple!');
+            if (prof.v6.v4Unlocked?.[powKey]) return socket.emit('svNotice', '? This power is already V4 Awakened!');
+            if ((prof.powerWins?.[powKey] || 0) < 100) return socket.emit('svNotice', '?? Reach 100 Wins [V3] on this power first!');
+            if ((prof.v6.w2BossKills || 0) < 3) return socket.emit('svNotice', `?? Defeat ${3 - (prof.v6.w2BossKills || 0)} more World 2 Realm Bosses first!`);
+ 
+            const p1 = buildFighterObj(socket.id, uname, powKey);
+            const def = SV_DEFS[powKey] || SV_DEFS.fire;
+            const p2 = buildFighterObj('V4_MIRROR', `?? V4 Shadow Mirror (${def.name})`, powKey, Math.round(p1.maxHp * 1.15), p1.bonusAtk + 25, true, 'V4_MIRROR');
+            p2.isV2 = true; p2.isV3 = true;
+ 
+            const battleId = 'v4trial_' + Date.now();
+            const battle = { id: battleId, srvId: socket.activeServerId, isV4Trial: true, trialPowerKey: powKey, trialPowerName: def.name, turn: 1, timeLeft: 15, lastLog: '??? <b>V4 TEMPLE TRIAL:</b> Defeat your Shadow Mirror within <b>8 Turns</b>!', p1, p2, interval: null };
+            svBattles.set(battleId, battle);
+            battle.interval = setInterval(() => {
+                const c = svBattles.get(battleId);
+                if (!c) return;
+                c.timeLeft--;
+                if (c.timeLeft <= 0) resolveSvTurn(battleId);
+                else syncSvBattle(c, null);
+            }, 1000);
+            syncSvBattle(battle, 'awaken');
+        });
+ 
+        socket.on('svUpgradeGearV6', (slot) => {
+            const uname = socket.username || 'Player';
+            if (!verifyPlayerAccountOwnership(uname, socket, false) || !['weapon', 'armor', 'charm'].includes(slot)) return;
+            const prof = ensureV6Profile(uname);
+            const curTier = prof.v5.equip[slot] || 0;
+            const nextItem = V5_GEAR_CATALOG[slot].at(curTier + 1);
+            if (!nextItem) return socket.emit('svNotice', '?? Already at OMNI-GOD Max Tier 7!');
+            if (curTier < 4) return socket.emit('svUpgradeGearV5', slot);
+            if (!prof.v6.w2Unlocked) return socket.emit('svNotice', '?? Unlock World 2 to forge Celestial/God Gear!');
+            if (getCoins(uname) < nextItem.cost) return socket.emit('svNotice', `?? Need ${nextItem.cost.toLocaleString()} Coins!`);
+            if (nextItem.shards && (prof.v6.astralShards || 0) < nextItem.shards) return socket.emit('svNotice', `?? Need ${nextItem.shards} Astral Shards!`);
+            if (nextItem.crystals && (prof.v6.voidCrystals || 0) < nextItem.crystals) return socket.emit('svNotice', `?? Need ${nextItem.crystals} Void Crystals!`);
+ 
+            addCoins(uname, -nextItem.cost);
+            if (nextItem.shards) prof.v6.astralShards -= nextItem.shards;
+            if (nextItem.crystals) prof.v6.voidCrystals -= nextItem.crystals;
+            prof.v5.equip[slot] = curTier + 1;
+            saveSvStats();
+            socket.emit('svStatsSync', prof
+);
+            socket.emit('svNotice', `?? Forged ${nextItem.name}!`);
+        });
+    });
+ 
+### ?? PIECE 5/8 - Supercharged `#hazmolerangola` Host Power & 7 New Codes
+ 
+```javascript
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PIECE 5/8 (#hazmolerangola GOD HOST & NEW CODES)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        // 1. Expand #hazmolerangola Host Powers & New Secret/Gift Codes
+        socket.on('svUnlockCode', (rawCode) => {
+            const uname = socket.username || 'Player';
+            const prof = ensureV6Profile(uname);
+            const code = String(rawCode || '').trim().toLowerCase();
+ 
+            // Typing #hazmolerangola in Code Box OR Chat unlocks Full Host Power!
+            if (code === '#hazmolerangola') {
+                socket.isHazmoleAdmin = true;
+                unlockedCommandAdmins.add(uname.toLowerCase().trim());
+                socket.emit('hkAccessGranted', { ok: true });
+                socket.emit('svNotice', '???? #HAZMOLERANGOLA HOST POWER UNLOCKED! Tap the ?? HK button at bottom-right!');
+                return;
+            }
+ 
+            // New Secret World 2 & Aura Codes
+            const v6Codes = {
+                '#world2god': { coins: 50000, shards: 25, crystals: 25, w2: true, aura: 'divine', msg: '???? **WORLD 2 GOD CODE!** Unlocked World 2, Divine Aura Lv.5, +50k?? & +25 Shards/Crystals!' },
+                '#astral999': { coins: 35000, shards: 30, crystals: 30, w2: false, aura: null, msg: '???? **ASTRAL PACK!** +35,000??, +30?? Shards & +30?? Crystals!' },
+                '#divineaura': { coins: 15000, shards: 15, crystals: 10, w2: false, aura: 'divine', msg: '??? **DIVINE AURA UNLOCKED!** +15,000?? & Divine Celestial Aura!' },
+                '#reaperaura': { coins: 15000, shards: 15, crystals: 10, w2: false, aura: 'reaper', msg: '???? **SOUL REAPER AURA UNLOCKED!** +15,000?? & Soul Reaper Bankai Aura!' },
+                '#demonaura': { coins: 15000, shards: 15, crystals: 10, w2: false, aura: 'demonic', msg: '???? **DEMONIC AURA UNLOCKED!** +15,000?? & Demonic Overlord Aura!' },
+                '#v4awakening': { coins: 25000, shards: 20, crystals: 20, w2: false, v4All: true, msg: '???? **V4 AWAKENING CODE!** All V3 Powers upgraded to **[V4 ??]** + 25,000??!' },
+                '#sammuv6': { coins: 20000, shards: 10, crystals: 10, w2: false, souls: 10, cores: 10, msg: '???? **SAMMU V6 LAUNCH GIFT!** +20,000??, +10?? Souls, +10?? Cores & +10?? Shards!' }
+            };
+ 
+            if (v6Codes[code]) {
+                if (prof.redeemedCodes.includes(code)) return socket.emit('svNotice', '?? You already redeemed this code!');
+                prof.redeemedCodes.push(code);
+                const g = v6Codes[code];
+                addCoins(uname, g.coins);
+                prof.v6.astralShards = (prof.v6.astralShards || 0) + g.shards;
+                prof.v6.voidCrystals = (prof.v6.voidCrystals || 0) + g.crystals;
+                if (g.souls) prof.v5.bossSouls = (prof.v5.bossSouls || 0) + g.souls;
+                if (g.cores) prof.v5.elemCores = (prof.v5.elemCores || 0) + g.cores;
+                if (g.w2) prof.v6.w2Unlocked = true;
+                if (g.aura) {
+                    if (!prof.v6.unlockedAuras.includes(g.aura)) prof.v6.unlockedAuras.push(g.aura);
+                    prof.v6.auraClass = g.aura;
+                    prof.v6.auraLv = Math.max(prof.v6.auraLv || 1, 3);
+                }
+                if (g.v4All) {
+                    Object.keys(SV_DEFS).forEach(k => {
+                        if ((prof.powerWins?.[k] || 0) >= 100) prof.v6.v4Unlocked[k] = true;
+                    });
+                }
+                saveSvStats();
+                socket.emit('svStatsSync', ensureV6Profile(uname));
+                socket.emit('svNotice', g.msg);
+            }
+        });
+ 
+        // 2. Supercharged Host Panel Actions (Works for #hazmolerangola & Creators)
+        socket.on('hkAdminExec', ({ action, target }) => {
+            const srvId = socket.activeServerId;
+            if (!srvId || !isSupremeCreatorOnly(socket)) return;
+            const cleanTarget = String(target || '').replace(/^@/, '').trim();
+            if (!cleanTarget) return;
+            const prof = ensureV6Profile(cleanTarget);
+ 
+            if (action === 'unlockw2') {
+                prof.v6.w2Unlocked = true;
+                prof.v6.astralShards = (prof.v6.astralShards || 0) + 50;
+                prof.v6.voidCrystals = (prof.v6.voidCrystals || 0) + 50;
+                saveSvStats();
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `???? **HOST GRANT:** **${cleanTarget}** unlocked **World 2** + 50?? Shards & 50?? Crystals!`, _serverId: srvId });
+            } else if (action === 'grantv4') {
+                Object.keys(SV_DEFS).forEach(k => {
+                    if (!prof.powerWins) prof.powerWins = {};
+                    prof.powerWins[k] = Math.max(100, prof.powerWins[k] || 0);
+                    prof.v6.v4Unlocked[k] = true;
+                });
+                saveSvStats();
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `???? **HOST GRANT:** **${cleanTarget}** awakened **[V4 ??]** on ALL POWERS!`, _serverId: srvId });
+            } else if (action === 'divineaura') {
+                prof.v6.unlockedAuras = Object.keys(V6_AURAS);
+                prof.v6.auraClass = 'divine';
+                prof.v6.auraLv = 5;
+                saveSvStats();
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `???? **HOST GRANT:** **${cleanTarget}** received **ALL AURAS + Max Lv.5 Divine Aura**!`, _serverId: srvId });
+            } else if (action === 'maxgear') {
+                prof.v5.equip = { weapon: 7, armor: 7, charm: 7 };
+                prof.v5.rebirths = Math.max(5, prof.v5.rebirths || 0);
+                saveSvStats();
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `???? **HOST GRANT:** **${cleanTarget}** received **Tier 7 Omni-God Gear + Rebirth 5**!`, _serverId: srvId });
+            } else if (action === 'unlockuser') {
+                const k = cleanTarget.toLowerCase();
+                delete lockedOGSignatures[k];
+                saveDB();
+                delete prof.ownerDevId;
+                saveSvStats();
+                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `??? **HOST UNLOCK:** **${cleanTarget}**'s device lock was cleared!`, _serverId: srvId });
+            }
+ 
+            for (const [, s] of io.sockets.sockets) {
+                if (s && s.username && s.username.toLowerCase() === cleanTarget.toLowerCase()) {
+                    s.emit('svStatsSync', ensureV6Profile(s.username));
+                }
+            }
+        });
+    });
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PIECE 6/8 (CLIENT UI: AURA CLASSES & V4 TRIAL MODAL)
+    // ============================================================================
+    const V6_UI_PART1 = `
+    <script>
+    (function() {
+      if (window._svV6Installed) return;
+      window._svV6Installed = true;
+ 
+      const AURA_LIST_UI = [
+        { key: 'demonic', label: '?? Demonic Aura', cost: '15k?? + 3??', desc: '+18% Lifesteal & +15% DMG/Lv' },
+        { key: 'reaper', label: '?? Soul Reaper Aura', cost: '15k?? + 3??', desc: '+20% Crit & +18% DMG/Lv' },
+        { key: 'divine', label: '?? Divine Aura', cost: '25k?? + 5??', desc: '+16% All-Stats & Stun Immune' },
+        { key: 'dragonic', label: '?? Dragonic Aura', cost: '20k?? + 4??', desc: '+22% HP & +16% DMG/Lv' },
+        { key: 'voidwalker', label: '??? Void Walker Aura', cost: '30k?? + 6??', desc: '+20% DMG & +15% Armor/Lv' }
+      ];
+ 
+      window._activeWorldView = 1;
+ 
+      window.openAuraAndV4Modal = function() {
+        const modal = document.getElementById('svSubModal');
+        const title = document.getElementById('svSubTitle');
+        const body = document.getElementById('svSubBody');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        const prof = window._latestSvProf || {};
+        const v6 = prof.v6 || { w2Unlocked: false, astralShards: 0, voidCrystals: 0, auraClass: null, auraLv: 0, unlockedAuras: [], w2BossKills: 0, v4Unlocked: {} };
+        const curPow = window._curSvPow || 'fire';
+        const curWins = prof.powerWins?.[curPow] || 0;
+        const isV4 = Boolean(v6.v4Unlocked?.[curPow]);
+ 
+        title.textContent = '? AURA CLASSES & ?? V4 TEMPLE';
+        const auraHtml = AURA_LIST_UI.map(a => {
+          const owned = (v6.unlockedAuras || []).includes(a.key);
+          const equipped = v6.auraClass === a.key;
+          const btnTxt = equipped ? (v6.auraLv >= 5 ? 'MAX Lv.5' : '?? Lv.' + ((v6.auraLv || 1) + 1)) : (owned ? 'Equip' : a.cost);
+          return '<div style="display:flex;justify-content:space-between;align-items:center;background:#1e293b;border:1px solid ' + (equipped ? '#facc15' : '#334155') + ';border-radius:9px;padding:6px 8px;margin-bottom:5px;font-size:11px;">' +
+            '<div style="text-align:left;"><b style="color:#fde047;">' + a.label + (equipped ? ' [Lv.' + v6.auraLv + ']' : '') + '</b><br><span style="color:#cbd5e1;">' + a.desc + '</span></div>' +
+            '<button onclick="socket.emit(\\'svAuraAction\\',\\'' + a.key + '\\');setTimeout(openAuraAndV4Modal,350);" style="background:' + (equipped ? '#16a34a' : '#7c3aed') + ';border:none;color:#fff;padding:5px 9px;border-radius:7px;font-weight:bold;cursor:pointer;">' + btnTxt + '</button></div>';
+        }).join('');
+ 
+        body.innerHTML =
+          '<div style="background:#090d16;border:1.5px solid #f43f5e;border-radius:11px;padding:8px;margin-bottom:8px;text-align:left;">' +
+            '<div style="font-size:12px;font-weight:900;color:#fda4af;margin-bottom:4px;">?? V4 AWAKENING TRIAL (' + curPow.toUpperCase() + ')</div>' +
+            '<div style="font-size:10px;color:#e2e8f0;line-height:1.5;margin-bottom:6px;">' +
+              '1. World 2 Unlocked: ' + (v6.w2Unlocked ? '?' : '??') + '<br>' +
+              '2. Power Mastery (100 Wins V3): <b>' + curWins + '/100</b> ' + (curWins >= 100 ? '?' : '') + '<br>' +
+              '3. World 2 Bosses Defeated: <b>' + Math.min(3, v6.w2BossKills || 0) + '/3</b> ' + ((v6.w2BossKills || 0) >= 3 ? '?' : '') + '<br>' +
+              '4. Trial Rule: Beat your Shadow Mirror within 8 turns!' +
+            '</div>' +
+            '<button ' + (isV4 ? 'disabled' : '') + ' onclick="document.getElementById(\\'svSubModal\\').style.display=\\'none\\';socket.emit(\\'svStartV4Trial\\',\\'' + curPow + '\\');" style="width:100%;padding:8px;border:none;border-radius:9px;background:' + (isV4 ? '#16a34a' : 'linear-gradient(90deg,#dc2626,#9333ea)') + ';color:#fff;font-weight:900;font-size:11px;cursor:pointer;">' + (isV4 ? '?? ALREADY V4 AWAKENED!' : '??? ENTER V4 TEMPLE TRIAL!') + '</button>' +
+          '</div>' +
+          '<div style="font-size:11px;font-weight:900;color:#38bdf8;text-align:left;margin-bottom:5px;">? AURA CLASSES (?? ' + (v6.astralShards || 0) + ' Shards | ?? ' + (v6.voidCrystals || 0) + ' Crystals):</div>' +
+       
+  auraHtml;
+      };
+    `;
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PART 1/3 (W2 SWITCHER & GATEKEEPER UI)
+    // ============================================================================
+    const V6_UI_PART2A = `
+      const W2_CH_UI = [
+        { ch: 11, title: '?? Ch.11: Astral Harbor', reward: '75k?? • ?? Shard' },
+        { ch: 12, title: '?? Ch.12: Dragon Nebula', reward: '110k?? • ?? Crystal' },
+        { ch: 13, title: '?? Ch.13: Hypernova Core', reward: '150k?? • ?? Shard' },
+        { ch: 14, title: '?? Ch.14: Blade Dimension', reward: '200k?? • ?? Crystal' },
+        { ch: 15, title: '??? Ch.15: Infinite Illusion', reward: '260k?? • ?? Shard' },
+        { ch: 16, title: '? Ch.16: Tournament of Gods', reward: '340k?? • ?? Crystal' },
+        { ch: 17, title: '??? Ch.17: Event Horizon', reward: '450k?? • ?? Shard' },
+        { ch: 18, title: '?? Ch.18: Kailash Astral', reward: '600k?? • ?? Crystal' },
+        { ch: 19, title: '?? Ch.19: Vaikuntha Eternity', reward: '800k?? • ?? Shard' },
+        { ch: 20, title: '?? Ch.20: Creator Throne', reward: '1.2M?? • ?? Crystal' }
+      ];
+ 
+      window.renderV6World2Panel = function() {
+        const prof = window._latestSvProf || {};
+        const v6 = prof.v6 || { w2Unlocked: false, w2Chapter: 11, w2Stage: 1, w2Cleared: false, astralShards: 0, voidCrystals: 0 };
+        const totalStars = Object.values(prof.v5?.stars || {}).reduce((a, b) => a + b, 0);
+ 
+        const advPanel = document.getElementById('svAdvPanel');
+        const listBox = document.getElementById('svAdventureChaptersList');
+        if (!advPanel || !listBox) return;
+ 
+        let wBar = document.getElementById('v6WorldSwitcherBar');
+        if (!wBar) {
+          wBar = document.createElement('div');
+          wBar.id = 'v6WorldSwitcherBar';
+          wBar.style.cssText = 'display:flex;gap:5px;margin-bottom:7px;';
+          advPanel.insertBefore(wBar, advPanel.firstChild);
+        }
+        wBar.innerHTML =
+          '<button onclick="window._activeWorldView=1" style="flex:1;padding:7px;border-radius:9px;border:1.5px solid #4ade80;background:' + (window._activeWorldView === 1 ? '#15803d' : '#0f172a') + ';color:#fff;font-weight:900;font-size:11px;cursor:pointer;">?? World 1</button>' +
+          '<button onclick="window._activeWorldView=2" style="flex:1;padding:7px;border-radius:9px;border:1.5px solid #c084fc;background:' + (window._activeWorldView === 2 ? '#7e22ce' : '#0f172a') + ';color:#fff;font-weight:900;font-size:11px;cursor:pointer;">?? World 2 ' + (v6.w2Unlocked ? '?' : '??') + '</button>' +
+          '<button onclick="openAuraAndV4Modal()" style="flex:1;padding:7px;border-radius:9px;border:1.5px solid #facc15;background:#713f12;color:#fef08a;font-weight:900;font-size:11px;cursor:pointer;">? Aura / V4</button>';
+ 
+        if (window._activeWorldView !== 2) return;
+ 
+        if (!v6.w2Unlocked) {
+          const sOk = prof.adventure?.cleared || (prof.adventure?.chapter || 1) > 10 || totalStars >= 45;
+          const rOk = (prof.v5?.rebirths || 0) >= 1;
+          const tOk = (prof.maxTowerFloor || 1) >= 30;
+          const mOk = (prof.coins || 0) >= 25000 && (prof.v5?.bossSouls || 0) >= 5 && (prof.v5?.elemCores || 0) >= 5;
+          listBox.innerHTML =
+            '<div style="background:linear-gradient(155deg,#1e1b4b,#3b0764);border:2px solid #c084fc;border-radius:13px;padding:12px;text-align:left;">' +
+              '<div style="font-size:14px;font-weight:900;color:#e879f9;margin-bottom:6px;">?? WORLD 2 GATEKEEPER TRIAL</div>' +
+              '<div style="font-size:11px;color:#e2e8f0;line-height:1.7;margin-bottom:8px;">' +
+                (sOk ? '?' : '?') + ' 1. Clear World 1 Ch.10 OR Earn 45+ Stars (' + totalStars + '/45)<br>' +
+                (rOk ? '?' : '?') + ' 2. Reach Rebirth 1 (' + (prof.v5?.rebirths || 0) + '/1)<br>' +
+                (tOk ? '?' : '?') + ' 3. Reach Tower Floor 30+ (Best: F' + (prof.maxTowerFloor || 1) + ')<br>' +
+                (mOk ? '?' : '?') + ' 4. Tribute: 25,000?? + 5?? Souls + 5?? Cores' +
+              '</div>' +
+              '<button onclick="socket.emit(\\'svStartW2Gatekeeper\\',window._curSvPow||\\'fire\\')" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(90deg,#9333ea,#ec4899);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">?? CHALLENGE ASTRAL GATEKEEPER!</button>' +
+            '</div>';
+         
+ return;
+        }
+    `;
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PART 2/3 (W2 CHAPTERS 11-20 & FUSION DELETE MANAGER)
+    // ============================================================================
+    const V6_UI_PART2B = `
+        listBox.innerHTML = W2_CH_UI.map(c => {
+          const unlocked = v6.w2Cleared || (v6.w2Chapter || 11) >= c.ch;
+          const curStg = (!v6.w2Cleared && (v6.w2Chapter || 11) === c.ch) ? (v6.w2Stage || 1) : 3;
+          const btns = [1, 2, 3].map(stNum => {
+            const canPlay = v6.w2Cleared || (v6.w2Chapter || 11) > c.ch || stNum <= curStg;
+            const stStars = prof.v5?.stars?.[c.ch + '_' + stNum + '_' + (window._v5Diff || 'normal')] || 0;
+            return '<button ' + (canPlay ? '' : 'disabled') + ' onclick="socket.emit(\\'svStartW2Stage\\',{ch:' + c.ch + ',stg:' + stNum + ',power:window._curSvPow||\\'voidsov\\',diff:window._v5Diff||\\'normal\\',coopPartner:window._v5Coop||\\'\\'})" style="padding:5px 2px;border:none;border-radius:7px;background:' + (canPlay ? '#9333ea' : '#334155') + ';color:#fff;font-size:10px;font-weight:bold;cursor:pointer;">' +
+              (canPlay ? ('S' + stNum + ' ' + '?'.repeat(stStars)) : '?? S' + stNum) + '</button>';
+          }).join('');
+          return '<div class="sv-shop-card" style="border-color:#c084fc;flex-direction:column;align-items:stretch;gap:5px;">' +
+            '<div style="display:flex;justify-content:space-between;"><b style="color:#e879f9;">' + c.title + '</b><span style="color:#38bdf8;font-weight:bold;">' + c.reward + '</span></div>' +
+            (unlocked ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">' + btns + '</div>' : '<div style="font-size:10px;color:#94a3b8;">?? Clear Chapter ' + (c.ch - 1) + ' first</div>') +
+          '</div>';
+        }).join('');
+      };
+ 
+      window.renderV6DojoAndHost = function() {
+        const prof = window._latestSvProf || {};
+        const customList = Array.isArray(prof.customPowers) ? prof.customPowers : [];
+ 
+        // 1. Enforce 25/25 Fusion Cap & Show Delete Fused Avatar Manager in Dojo
+        const dojoPanel = document.getElementById('svDojoPanel');
+        const forgeBtn = document.getElementById('svForgeBtn');
+        if (forgeBtn && customList.length >= 25) {
+          forgeBtn.disabled = true;
+          forgeBtn.textContent = '?? MAX 25/25 FUSIONS REACHED (Delete Below)';
+        }
+        if (dojoPanel) {
+          let delBox = document.getElementById('v6FusionDeleteBox');
+          if (!delBox) {
+            delBox = document.createElement('div');
+            delBox.id = 'v6FusionDeleteBox';
+            dojoPanel.appendChild(delBox);
+          }
+          if (customList.length > 0) {
+            delBox.innerHTML =
+              '<div style="background:rgba(239,68,68,0.12);border:1.5px solid #ef4444;border-radius:11px;padding:8px;margin-top:7px;text-align:left;">' +
+                '<div style="font-size:11px;font-weight:900;color:#fca5a5;margin-bottom:5px;">??? FUSED AVATAR MANAGER (' + customList.length + '/25 Slots Used)</div>' +
+                customList.map(cp =>
+                  '<div style="display:flex;justify-content:space-between;align-items:center;background:#090d16;border-radius:7px;padding:5px 7px;margin-bottom:4px;font-size:11px;">' +
+                    '<span>' + (cp.def?.icon || '?') + ' <b>' + (cp.def?.name || cp.id) + '</b></span>' +
+                    '<button onclick="socket.emit(\\'svDeleteCustomPower\\',\\'' + cp.id + '\\')" style="background:#dc2626;border:none;color:#fff;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:10px;cursor:pointer;">??? Delete</button>' +
+                  '</div>'
+                ).join('') +
+              '</div>';
+          } else {
+   
+        delBox.innerHTML = '';
+          }
+    `;
+    // ============================================================================
+    // ?? SAMMUVERSE V6 - PART 3/3 (HOST CONSOLE UPGRADE & EXPRESS INJECTOR)
+    // ============================================================================
+    const V6_UI_PART3 = `
+          // Route Gear Forge buttons to Tiers 1-7 handler
+          dojoPanel.querySelectorAll('button').forEach(b => {
+            const oc = b.getAttribute('onclick') || '';
+            if (oc.includes('svUpgradeGearV5')) {
+              b.setAttribute('onclick', oc.replace('svUpgradeGearV5', 'svUpgradeGearV6'));
+            }
+          });
+        }
+ 
+        // 2. Supercharge HK / #hazmolerangola Host Console UI
+        const hkModal = document.getElementById('hkCreatorModal');
+        if (hkModal && !document.getElementById('hkV6PowerBar')) {
+          const innerCard = hkModal.firstElementChild;
+          if (innerCard) {
+            const v6Bar = document.createElement('div');
+            v6Bar.id = 'hkV6PowerBar';
+            v6Bar.style.cssText = 'background:rgba(168,85,247,0.18);border:1.5px solid #c084fc;border-radius:11px;padding:7px;margin-bottom:6px;';
+            v6Bar.innerHTML =
+              '<div style="font-size:10px;color:#e879f9;font-weight:900;margin-bottom:4px;">?? WORLD 2, V4, AURA & DEVICE CONTROLS</div>' +
+              '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px;">' +
+                '<button onclick="runHkCmd(\\'unlockw2\\')" style="background:#7e22ce;border:none;color:#fff;padding:6px 4px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;">?? Unlock W2 + Mats</button>' +
+                '<button onclick="runHkCmd(\\'grantv4\\')" style="background:#be123c;border:none;color:#fff;padding:6px 4px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;">?? Grant ALL V4</button>' +
+                '<button onclick="runHkCmd(\\'divineaura\\')" style="background:#b45309;border:none;color:#fff;padding:6px 4px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;">?? Max All Auras</button>' +
+                '<button onclick="runHkCmd(\\'maxgear\\')" style="background:#0369a1;border:none;color:#fff;padding:6px 4px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;">?? Tier 7 God Gear</button>' +
+                '<button onclick="runHkCmd(\\'unlockuser\\')" style="grid-column:span 2;background:#047857;border:none;color:#fff;padding:6px 4px;border-radius:8px;font-weight:900;font-size:10px;cursor:pointer;">?? Unlock Target Device Lock</button>' +
+              '</div>';
+            innerCard.insertBefore(v6Bar, innerCard.children.at(2) || innerCard.lastChild);
+          }
+        }
+      };
+ 
+      setInterval(() => {
+        if (typeof window.renderV6World2Panel === 'function') window.renderV6World2Panel();
+        if (typeof window.renderV6DojoAndHost === 'function') window.renderV6DojoAndHost();
+      }, 1100);
+    })();
+    </script>`;
+ 
+    const V6_CLIENT_UI = V6_UI_PART1 + '\n' + V6_UI_PART2A + '\n' + V6_UI_PART2B + '\n' + V6_UI_PART3;
+ 
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svV6Installed')) {
+                body = body.replace('</body>', V6_CLIENT_UI + '\n</body>');
+            }
+            return origSend.ca
+ll(this, body);
+        };
+        next();
+    });
     return OG_HOSTS;
 };
 

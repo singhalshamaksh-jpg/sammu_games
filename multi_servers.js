@@ -11061,81 +11061,120 @@ div>') +
             });
         });
     });
-         // ============================================================================
-    // 🌊 WATER.IO V2 — PART 1/3: SERVER OCEAN PHYSICS, AI BOTS & TURBO BOOST
+                   
+          // ============================================================================
+    // 🌊 WATER.IO V4 — PIECE 1/6: EVOLUTIONS, SPECIES & OCEAN HAZARDS
     // ============================================================================
-    const WATER_WORLD_SIZE = 2400;
+    const WATER_WORLD_SIZE = 2800;
+    const WATER_EVOLUTIONS = [
+        { minMass: 0,    tier: 1, title: 'Hatchling',        iconOverride: null },
+        { minMass: 120,  tier: 2, title: 'Reef Hunter',      iconOverride: '🐬' },
+        { minMass: 300,  tier: 3, title: 'Apex Predator',    iconOverride: '🦈' },
+        { minMass: 650,  tier: 4, title: 'Abyssal Kraken',   iconOverride: '🐙' },
+        { minMass: 1200, tier: 5, title: 'Cosmic Leviathan', iconOverride: '🐉' }
+    ];
+
     const WATER_FISH_SPECIES = {
-        clownfish: { icon: '🐠', name: 'Clownfish',     color: '#fb923c', speed: 6.4 },
-        shark:     { icon: '🦈', name: 'Great White',   color: '#38bdf8', speed: 6.0 },
-        orca:      { icon: '🐋', name: 'Shadow Orca',   color: '#a855f7', speed: 5.7 },
-        puffer:    { icon: '🐡', name: 'Spike Puffer',  color: '#facc15', speed: 6.2 },
-        octopus:   { icon: '🐙', name: 'Kraken Octo',   color: '#f43f5e', speed: 6.1 },
-        dolphin:   { icon: '🐬', name: 'Cyber Dolphin', color: '#2dd4bf', speed: 6.8 }
+        clownfish: { icon: '🐠', name: 'Clownfish',     color: '#fb923c', speed: 6.6, skill: 'shield' },
+        shark:     { icon: '🦈', name: 'Great White',   color: '#38bdf8', speed: 6.2, skill: 'dash'   },
+        orca:      { icon: '🐋', name: 'Shadow Orca',   color: '#a855f7', speed: 5.9, skill: 'blast'  },
+        puffer:    { icon: '🐡', name: 'Spike Puffer',  color: '#facc15', speed: 6.3, skill: 'blast'  },
+        octopus:   { icon: '🐙', name: 'Kraken Octo',   color: '#f43f5e', speed: 6.1, skill: 'blast'  },
+        dolphin:   { icon: '🐬', name: 'Cyber Dolphin', color: '#2dd4bf', speed: 7.0, skill: 'dash'   }
     };
 
     const waterRoom = {
         players: new Map(),
+        bots: new Map(),
         food: [],
-        bots: new Map()
+        pearls: [],
+        hazards: [
+            { id: 'wp1', type: 'whirlpool', x: 650,  y: 650,  tx: 2150, ty: 2150, r: 58 },
+            { id: 'wp2', type: 'whirlpool', x: 2150, y: 650,  tx: 650,  ty: 2150, r: 58 },
+            { id: 'jf1', type: 'jelly',     x: 1400, y: 800,  r: 42 },
+            { id: 'jf2', type: 'jelly',     x: 1400, y: 2000, r: 42 },
+            { id: 'jf3', type: 'jelly',     x: 800,  y: 1400, r: 42 },
+            { id: 'jf4', type: 'jelly',     x: 2000, y: 1400, r: 42 }
+        ],
+        foodDirty: false
     };
 
-    function spawnWaterFood(count = 160) {
+    function getWaterEvolution(mass, baseIcon) {
+        let cur = WATER_EVOLUTIONS[0];
+        for (let i = WATER_EVOLUTIONS.length - 1; i >= 0; i--) {
+            if (mass >= WATER_EVOLUTIONS[i].minMass) { cur = WATER_EVOLUTIONS[i]; break; }
+        }
+        return { tier: cur.tier, title: cur.title, icon: cur.iconOverride || baseIcon };
+    }
+
+    function spawnWaterFoodAndPearls() {
         const colors = ['#4ade80', '#38bdf8', '#facc15', '#f472b6', '#c084fc', '#fb923c'];
-        while (waterRoom.food.length < count) {
+        let changed = false;
+        while (waterRoom.food.length < 150) {
             waterRoom.food.push({
-                id: Math.random().toString(36).slice(2, 9),
-                x: Math.floor(Math.random() * (WATER_WORLD_SIZE - 80)) + 40,
-                y: Math.floor(Math.random() * (WATER_WORLD_SIZE - 80)) + 40,
-                r: Math.random() < 0.16 ? 9 : 5,
-                val: Math.random() < 0.16 ? 6 : 2,
+                x: Math.floor(Math.random() * (WATER_WORLD_SIZE - 100)) + 50,
+                y: Math.floor(Math.random() * (WATER_WORLD_SIZE - 100)) + 50,
+                r: Math.random() < 0.18 ? 9 : 5,
+                val: Math.random() < 0.18 ? 6 : 2,
                 color: colors[Math.floor(Math.random() * colors.length)]
             });
+            changed = true;
         }
+        while (waterRoom.pearls.length < 4) {
+            waterRoom.pearls.push({
+                x: Math.floor(Math.random() * (WATER_WORLD_SIZE - 300)) + 150,
+                y: Math.floor(Math.random() * (WATER_WORLD_SIZE - 300)) + 150,
+                r: 18,
+                val: 45
+            });
+            changed = true;
+        }
+        if (changed) waterRoom.foodDirty = true;
     }
 
     function ensureWaterBots() {
-        const botNames = ['🤖 ReefBot', '🦈 JawsAI', '🐙 AbyssBot', '🐬 FinBot', '🐡 PuffyAI', '🐋 LeviathanBot'];
+        const botNames = ['🤖 ReefBot', '🦈 JawsAI', '🐙 AbyssBot', '🐬 FinBot', '🐡 PuffyAI', '🐋 LeviathanAI', '🐉 HydraBot'];
         const speciesKeys = Object.keys(WATER_FISH_SPECIES);
-        while (waterRoom.bots.size < 6) {
+        while (waterRoom.bots.size < 7) {
             const id = 'WBOT_' + Math.random().toString(36).slice(2, 7);
             const spKey = speciesKeys[Math.floor(Math.random() * speciesKeys.length)];
             const sp = WATER_FISH_SPECIES[spKey];
             waterRoom.bots.set(id, {
-                id,
-                username: botNames[waterRoom.bots.size % botNames.length],
-                species: spKey,
-                icon: sp.icon,
-                color: sp.color,
-                x: Math.floor(Math.random() * (WATER_WORLD_SIZE - 200)) + 100,
-                y: Math.floor(Math.random() * (WATER_WORLD_SIZE - 200)) + 100,
-                vx: (Math.random() - 0.5) * 4.2,
-                vy: (Math.random() - 0.5) * 4.2,
-                mass: Math.floor(Math.random() * 45) + 25,
-                isBot: true
+                id, username: botNames[waterRoom.bots.size % botNames.length],
+                species: spKey, baseIcon: sp.icon, icon: sp.icon, color: sp.color,
+                x: Math.floor(Math.random() * (WATER_WORLD_SIZE - 300)) + 150,
+                y: Math.floor(Math.random() * (WATER_WORLD_SIZE - 300)) + 150,
+                vx: (Math.random() - 0.5) * 4.5, vy: (Math.random() - 0.5) * 4.5,
+                mass: Math.floor(Math.random() * 65) + 25,
+                tier: 1, shieldUntil: 0, stunUntil: 0, tpCd: 0, isBot: true
             });
         }
     }
 
-    spawnWaterFood(160);
-    ensureWaterBots();
-
     function massToRadius(mass) {
-        return Math.min(135, Math.max(18, Math.round(14 + Math.sqrt(mass) * 3.1)));
+        return Math.min(145, Math.max(18, Math.round(14 + Math.sqrt(mass) * 3.1)));
     }
 
-    // 60ms Ocean World Simulation Tick
+    spawnWaterFoodAndPearls();
+    ensureWaterBots();
+    // ============================================================================
+    // 🌊 WATER.IO V4 — PIECE 2/6: 85ms REAL-TIME SIMULATION LOOP
+    // ============================================================================
+    let waterTickCount = 0;
     setInterval(() => {
         if (waterRoom.players.size === 0) return;
+        waterTickCount++;
+        const now = Date.now();
 
-        spawnWaterFood(160);
+        spawnWaterFoodAndPearls();
         ensureWaterBots();
 
         waterRoom.bots.forEach(bot => {
-            if (Math.random() < 0.04) {
+            if (bot.stunUntil > now) return;
+            if (Math.random() < 0.05) {
                 const ang = Math.random() * Math.PI * 2;
-                bot.vx = Math.cos(ang) * 3.8;
-                bot.vy = Math.sin(ang) * 3.8;
+                bot.vx = Math.cos(ang) * 4.3;
+                bot.vy = Math.sin(ang) * 4.3;
             }
             bot.x = Math.max(30, Math.min(WATER_WORLD_SIZE - 30, bot.x + bot.vx));
             bot.y = Math.max(30, Math.min(WATER_WORLD_SIZE - 30, bot.y + bot.vy));
@@ -11146,27 +11185,66 @@ div>') +
         const allEntities = [...waterRoom.players.values(), ...waterRoom.bots.values()];
 
         allEntities.forEach(ent => {
-            if (!ent.isBot) {
+            if (!ent.isBot && ent.stunUntil <= now) {
                 const sp = WATER_FISH_SPECIES[ent.species] || WATER_FISH_SPECIES.clownfish;
-                const sizePenalty = Math.max(0.58, 1 - (ent.mass / 1900));
+                const sizePenalty = Math.max(0.58, 1 - (ent.mass / 2200));
                 const throttle = Math.min(1, Math.max(0, ent.throttle || 0));
+                const isDashing = ent.dashUntil > now;
                 const isBoosting = Boolean(ent.boost && ent.mass > 22);
-                const spd = sp.speed * sizePenalty * throttle * (isBoosting ? 2.15 : 1.0);
+                const mult = isDashing ? 3.2 : (isBoosting ? 2.1 : 1.0);
+                const spd = sp.speed * 1.45 * sizePenalty * (isDashing ? 1 : throttle) * mult;
 
-                if (isBoosting) {
-                    ent.mass = Math.max(20, ent.mass - 0.14);
-                }
+                if (isBoosting && !isDashing) ent.mass = Math.max(20, ent.mass - 0.16);
                 ent.x = Math.max(25, Math.min(WATER_WORLD_SIZE - 25, ent.x + ent.dirX * spd));
                 ent.y = Math.max(25, Math.min(WATER_WORLD_SIZE - 25, ent.y + ent.dirY * spd));
             }
 
+            const evo = getWaterEvolution(ent.mass, ent.baseIcon);
+            if (evo.tier > (ent.tier || 1)) {
+                ent.tier = evo.tier;
+                ent.icon = evo.icon;
+                if (!ent.isBot) {
+                    io.to(ent.id).emit('waterFxEvent', { type: 'evolve' });
+                    io.to('waterio_ocean').emit('waterChatMsg', {
+                        user: '✨ EVOLUTION',
+                        text: `${evo.icon} ${ent.username} evolved into Tier ${evo.tier}: ${evo.title}!`
+                    });
+                }
+            }
+
+            waterRoom.hazards.forEach(hz => {
+                const dist = Math.hypot(ent.x - hz.x, ent.y - hz.y);
+                if (hz.type === 'whirlpool' && dist < hz.r && (ent.tpCd || 0) < now) {
+                    ent.x = hz.tx + (Math.random() * 80 - 40);
+                    ent.y = hz.ty + (Math.random() * 80 - 40);
+                    ent.tpCd = now + 5000;
+                    if (!ent.isBot) io.to(ent.id).emit('waterFxEvent', { type: 'warp' });
+                } else if (hz.type === 'jelly' && dist < hz.r && (ent.shieldUntil || 0) < now && (ent.stunUntil || 0) < now) {
+                    ent.stunUntil = now + 1500;
+                    ent.mass = Math.max(20, ent.mass - 5);
+                    if (!ent.isBot) io.to(ent.id).emit('waterFxEvent', { type: 'zap' });
+                }
+            });
+
             const r = massToRadius(ent.mass);
             for (let i = waterRoom.food.length - 1; i >= 0; i--) {
                 const f = waterRoom.food[i];
-                const dx = ent.x - f.x, dy = ent.y - f.y;
-                if (dx * dx + dy * dy <= (r + f.r) * (r + f.r)) {
+                if ((ent.x - f.x) ** 2 + (ent.y - f.y) ** 2 <= (r + f.r) ** 2) {
                     ent.mass += f.val;
                     waterRoom.food.splice(i, 1);
+                    waterRoom.foodDirty = true;
+                }
+            }
+            for (let i = waterRoom.pearls.length - 1; i >= 0; i--) {
+                const pr = waterRoom.pearls[i];
+                if ((ent.x - pr.x) ** 2 + (ent.y - pr.y) ** 2 <= (r + pr.r) ** 2) {
+                    ent.mass += pr.val;
+                    waterRoom.pearls.splice(i, 1);
+                    waterRoom.foodDirty = true;
+                    if (!ent.isBot) {
+                        addCoins(ent.username, 25);
+                        io.to(ent.id).emit('waterFxEvent', { type: 'pearl' });
+                    }
                 }
             }
         });
@@ -11175,172 +11253,193 @@ div>') +
             const a = allEntities[i];
             if (!a || a.dead) continue;
             const ra = massToRadius(a.mass);
-
             for (let j = 0; j < allEntities.length; j++) {
                 if (i === j) continue;
                 const b = allEntities[j];
-                if (!b || b.dead) continue;
-
-                if (a.mass > b.mass * 1.15) {
-                    const dx = a.x - b.x, dy = a.y - b.y;
-                    if (Math.hypot(dx, dy) < ra * 0.82) {
-                        a.mass += Math.round(b.mass * 0.75);
-                        b.dead = true;
-
-                        if (b.isBot) {
-                            waterRoom.bots.delete(b.id);
-                        } else {
-                            waterRoom.players.delete(b.id);
-                            if (!a.isBot) addCoins(a.username, 75);
-                            io.to(b.id).emit('waterEaten', { by: a.username, finalScore: Math.round(b.mass) });
-                            io.to('waterio_ocean').emit('waterChatMsg', {
-                                user: '🌊 OCEAN FEED',
-                                text: `🦈 ${a.username} swallowed ${b.username} whole!`
-                            });
-                        }
+                if (!b || b.dead || (b.shieldUntil || 0) > now) continue;
+                if (a.mass > b.mass * 1.15 && Math.hypot(a.x - b.x, a.y - b.y) < ra * 0.82) {
+                    a.mass += Math.round(b.mass * 0.78);
+                    a.kills = (a.kills || 0) + 1;
+                    b.dead = true;
+                    if (!a.isBot) io.to(a.id).emit('waterFxEvent', { type: 'chomp' });
+                    if (b.isBot) {
+                        waterRoom.bots.delete(b.id);
+                    } else {
+                        waterRoom.players.delete(b.id);
+                        if (!a.isBot) addCoins(a.username, 100);
+                        io.to(b.id).emit('waterEaten', { by: a.username, finalScore: Math.round(b.mass), kills: b.kills || 0 });
+                        io.to('waterio_ocean').emit('waterChatMsg', {
+                            user: '🦈 APEX FEED',
+                            text: `${a.icon} ${a.username} devoured ${b.username} (${Math.round(b.mass)} mass)!`
+                        });
                     }
                 }
             }
         }
 
-        const leaderboard = [...waterRoom.players.values(), ...waterRoom.bots.values()]
-            .filter(e => !e.dead)
-            .sort((a, b) => b.mass - a.mass)
-            .slice(0, 5)
-            .map(e => ({ name: e.username, icon: e.icon, score: Math.round(e.mass) }));
-
         const swimmers = [...waterRoom.players.values(), ...waterRoom.bots.values()]
             .filter(e => !e.dead)
             .map(e => ({
-                id: e.id,
-                name: e.username,
-                icon: e.icon,
-                color: e.color,
-                x: Math.round(e.x),
-                y: Math.round(e.y),
-                r: massToRadius(e.mass),
-                mass: Math.round(e.mass),
-                dirX: e.dirX || e.vx || 1,
-                boost: Boolean(e.boost && e.mass > 22)
+                id: e.id, name: e.username, icon: e.icon, color: e.color,
+                x: Math.round(e.x), y: Math.round(e.y),
+                r: massToRadius(e.mass), mass: Math.round(e.mass),
+                tier: e.tier || 1, dirX: e.dirX || e.vx || 1,
+                boost: Boolean((e.boost && e.mass > 22) || (e.dashUntil || 0) > now),
+                shield: (e.shieldUntil || 0) > now,
+                stun: (e.stunUntil || 0) > now
             }));
 
-        io.to('waterio_ocean').emit('waterState', { swimmers, food: waterRoom.food, leaderboard });
-    }, 60);
+        const packet = { swimmers };
+        if (waterRoom.foodDirty || waterTickCount % 16 === 0) {
+            packet.food = waterRoom.food;
+            packet.pearls = waterRoom.pearls;
+            waterRoom.foodDirty = false;
+        }
+        if (waterTickCount % 5 === 0) {
+            packet.leaderboard = [...waterRoom.players.values(), ...waterRoom.bots.values()]
+                .filter(e => !e.dead)
+                .sort((a, b) => b.mass - a.mass)
+                .slice(0, 5)
+                .map(e => ({ name: e.username, icon: e.icon, score: Math.round(e.mass) }));
+        }
+        io.to('waterio_ocean').emit('waterState', packet);
+    }, 85);
     // ============================================================================
-    // 🌊 WATER.IO V2 — PART 2/3: FULL-PAGE UI, ROBLOX CHAT & ANALOG JOYSTICK
+    // 🌊 WATER.IO V4 — PIECE 3/6: FULL-PAGE HTML & HUD LAYOUT
     // ============================================================================
     const WATER_IO_PAGE_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>🌊 Water.io — Ocean World Simulator</title>
+  <title>🌊 Water.io — Abyssal Evolution</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
     body { background: #020b18; color: #fff; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
-    canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
-
-    /* Roblox-Style Top-Left Transparent Chat */
-    #rblxChatBox { position: fixed; top: 10px; left: 10px; width: 265px; max-width: 60vw; z-index: 30; background: rgba(7, 16, 32, 0.56); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; backdrop-filter: blur(6px); padding: 7px; display: flex; flex-direction: column; gap: 5px; }
-    #rblxMessages { height: 110px; overflow-y: auto; font-size: 11px; line-height: 1.35; display: flex; flex-direction: column; gap: 3px; text-shadow: 0 1px 2px #000; }
+    canvas#oceanCanvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+    #rblxChatBox { position: fixed; top: 10px; left: 10px; width: 255px; max-width: 56vw; z-index: 30; background: rgba(7, 16, 32, 0.56); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; backdrop-filter: blur(6px); padding: 7px; display: flex; flex-direction: column; gap: 5px; }
+    #rblxMessages { height: 96px; overflow-y: auto; font-size: 11px; line-height: 1.35; display: flex; flex-direction: column; gap: 3px; text-shadow: 0 1px 2px #000; }
     .rblx-line b { color: #38bdf8; }
     #rblxInputRow { display: flex; gap: 4px; }
     #rblxInput { flex: 1; background: rgba(15, 23, 42, 0.88); border: 1px solid #38bdf8; border-radius: 8px; color: #fff; padding: 5px 8px; font-size: 12px; outline: none; user-select: text; -webkit-user-select: text; }
-    #rblxSendBtn { background: #0284c7; border: none; color: #fff; border-radius: 8px; padding: 0 10px; font-weight: 900; font-size: 11px; cursor: pointer; }
-
-    /* Top-Right Top 5 Leaderboard */
-    #top5Box { position: fixed; top: 10px; right: 10px; width: 170px; z-index: 30; background: rgba(7, 16, 32, 0.62); border: 1px solid rgba(250, 204, 21, 0.45); border-radius: 12px; backdrop-filter: blur(6px); padding: 8px; font-size: 11px; }
-    #top5Title { font-weight: 900; color: #fde047; text-align: center; margin-bottom: 5px; font-size: 11px; }
+    #rblxSendBtn { background: #0284c7; border: none; color: #fff; border-radius: 8px; padding: 0 9px; font-weight: 900; font-size: 11px; cursor: pointer; }
+    #topRightHud { position: fixed; top: 10px; right: 10px; z-index: 30; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none; }
+    #top5Box { width: 165px; background: rgba(7, 16, 32, 0.65); border: 1px solid rgba(250, 204, 21, 0.45); border-radius: 12px; backdrop-filter: blur(6px); padding: 7px; font-size: 10px; }
+    #top5Title { font-weight: 900; color: #fde047; text-align: center; margin-bottom: 4px; font-size: 11px; }
     .lb-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-
-    /* Left Analog Joystick Zone & Right Turbo Boost Button */
-    #joyZone { position: fixed; bottom: 18px; left: 18px; width: 130px; height: 130px; z-index: 28; border-radius: 50%; background: rgba(56, 189, 248, 0.12); border: 2px solid rgba(56, 189, 248, 0.35); touch-action: none; display: flex; align-items: center; justify-content: center; }
-    #joyKnob { width: 52px; height: 52px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #7dd3fc, #0284c7); border: 2px solid #fff; box-shadow: 0 0 16px rgba(56, 189, 248, 0.7); pointer-events: none; transition: transform 0.04s linear; }
-
-    #rightControls { position: fixed; bottom: 22px; right: 18px; z-index: 28; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-    #massPill { background: rgba(7, 16, 32, 0.8); border: 1.5px solid #38bdf8; padding: 6px 13px; border-radius: 999px; font-weight: 900; font-size: 12px; color: #7dd3fc; }
-    #boostBtn { width: 88px; height: 88px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #fbbf24, #ef4444); border: 3px solid #fef08a; color: #fff; font-weight: 900; font-size: 13px; box-shadow: 0 0 24px rgba(245, 158, 11, 0.65); cursor: pointer; touch-action: none; }
-    #boostBtn.active, #boostBtn:active { transform: scale(0.92); box-shadow: 0 0 36px #facc15; }
-
-    /* Fish Selection & Play Overlay */
-    #startOverlay { position: fixed; inset: 0; z-index: 50; background: radial-gradient(circle at top, rgba(14, 116, 144, 0.88), rgba(2, 11, 24, 0.96)); display: flex; align-items: center; justify-content: center; padding: 14px; backdrop-filter: blur(8px); }
-    #startCard { background: rgba(15, 23, 42, 0.94); border: 2px solid #38bdf8; border-radius: 22px; padding: 18px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 45px rgba(56, 189, 248, 0.5); }
-    .fish-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
-    .fish-card { background: #1e293b; border: 2px solid #334155; border-radius: 14px; padding: 10px 4px; cursor: pointer; transition: 0.15s; }
+    #radarCanvas { width: 92px; height: 92px; border-radius: 50%; background: rgba(4, 18, 36, 0.78); border: 2px solid #38bdf8; box-shadow: 0 0 14px rgba(56, 189, 248, 0.4); }
+    #evoBanner { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 25; background: rgba(7, 16, 32, 0.82); border: 1.5px solid #38bdf8; padding: 5px 14px; border-radius: 999px; font-weight: 900; font-size: 11px; color: #7dd3fc; pointer-events: none; white-space: nowrap; }
+    #leftTouchArea { position: fixed; bottom: 0; left: 0; width: 52vw; height: 55vh; z-index: 26; touch-action: none; }
+    #joyBase { position: fixed; bottom: 24px; left: 24px; width: 118px; height: 118px; border-radius: 50%; background: rgba(56, 189, 248, 0.14); border: 2px solid rgba(56, 189, 248, 0.42); pointer-events: none; display: flex; align-items: center; justify-content: center; }
+    #joyKnob { width: 48px; height: 48px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #7dd3fc, #0284c7); border: 2px solid #fff; box-shadow: 0 0 16px rgba(56, 189, 248, 0.8); }
+    #rightActions { position: fixed; bottom: 22px; right: 18px; z-index: 28; display: flex; align-items: flex-end; gap: 12px; }
+    #skillBtn { width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #c084fc, #6d28d9); border: 2.5px solid #f3e8ff; color: #fff; font-weight: 900; font-size: 11px; box-shadow: 0 0 20px rgba(168, 85, 247, 0.65); cursor: pointer; touch-action: none; }
+    #skillBtn:disabled { opacity: 0.45; filter: grayscale(0.7); }
+    #boostBtn { width: 88px; height: 88px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #fbbf24, #ef4444); border: 3px solid #fef08a; color: #fff; font-weight: 900; font-size: 13px; box-shadow: 0 0 24px rgba(245, 158, 11, 0.7); cursor: pointer; touch-action: none; }
+    #boostBtn.active, #boostBtn:active { transform: scale(0.91); box-shadow: 0 0 38px #facc15; }
+    #startOverlay { position: fixed; inset: 0; z-index: 50; background: radial-gradient(circle at top, rgba(14, 116, 144, 0.9), rgba(2, 11, 24, 0.97)); display: flex; align-items: center; justify-content: center; padding: 14px; backdrop-filter: blur(8px); }
+    #startCard { background: rgba(15, 23, 42, 0.95); border: 2px solid #38bdf8; border-radius: 22px; padding: 16px; width: 100%; max-width: 410px; text-align: center; box-shadow: 0 0 45px rgba(56, 189, 248, 0.5); }
+    .fish-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 10px 0; }
+    .fish-card { background: #1e293b; border: 2px solid #334155; border-radius: 13px; padding: 8px 4px; cursor: pointer; transition: 0.15s; }
     .fish-card.selected { border-color: #facc15; background: rgba(250, 204, 21, 0.18); transform: translateY(-2px); box-shadow: 0 0 15px rgba(250, 204, 21, 0.4); }
-    #playOceanBtn { width: 100%; padding: 14px; border: none; border-radius: 14px; background: linear-gradient(90deg, #06b6d4, #2563eb); color: #fff; font-size: 17px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 22px rgba(6, 182, 212, 0.5); margin-top: 6px; }
+    #playOceanBtn { width: 100%; padding: 13px; border: none; border-radius: 14px; background: linear-gradient(90deg, #06b6d4, #2563eb); color: #fff; font-size: 16px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 22px rgba(6, 182, 212, 0.5); margin-top: 4px; }
   </style>
 </head>
 <body>
   <canvas id="oceanCanvas"></canvas>
-
   <div id="rblxChatBox">
     <div id="rblxMessages">
-      <div class="rblx-line"><b>[SYSTEM]:</b> Use Joystick to swim & hold ⚡ BOOST for 2.2x speed! 🌊</div>
+      <div class="rblx-line"><b>[SYSTEM]:</b> Eat plankton & smaller fish to evolve into a Cosmic Leviathan! 🐉🌊</div>
     </div>
     <div id="rblxInputRow">
       <input id="rblxInput" placeholder="Tap to chat..." maxlength="90" onkeydown="if(event.key==='Enter')sendOceanChat()">
       <button id="rblxSendBtn" onclick="sendOceanChat()">Send</button>
     </div>
   </div>
-
-  <div id="top5Box">
-    <div id="top5Title">👑 TOP 5 OCEAN KINGS</div>
-    <div id="top5List"></div>
+  <div id="evoBanner">🐠 Tier 1 Hatchling • Mass: 25</div>
+  <div id="topRightHud">
+    <div id="top5Box"><div id="top5Title">👑 TOP 5 OCEAN KINGS</div><div id="top5List"></div></div>
+    <canvas id="radarCanvas" width="92" height="92"></canvas>
   </div>
-
-  <div id="joyZone"><div id="joyKnob"></div></div>
-
-  <div id="rightControls">
-    <div id="massPill">🐟 Mass: 25</div>
+  <div id="leftTouchArea"></div>
+  <div id="joyBase"><div id="joyKnob"></div></div>
+  <div id="rightActions">
+    <button id="skillBtn" onclick="triggerOceanSkill()">🔥<br>SKILL</button>
     <button id="boostBtn">⚡<br>BOOST</button>
   </div>
-
   <div id="startOverlay">
     <div id="startCard">
-      <div style="font-size:24px;font-weight:900;color:#38bdf8;">🌊 WATER.IO</div>
+      <div style="font-size:22px;font-weight:900;color:#38bdf8;">🌊 WATER.IO: ABYSSAL EVOLUTION</div>
       <div id="deathBanner" style="display:none;background:rgba(239,68,68,0.22);border:1px solid #f87171;border-radius:10px;padding:6px;margin-top:6px;font-size:12px;color:#fecaca;"></div>
-      <div style="font-size:12px;color:#cbd5e1;margin-top:4px;">Pick your Ocean Predator & dominate the deep!</div>
-
-      <input id="oceanNameInput" placeholder="Your Ocean Name..." maxlength="16" style="width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:14px;text-align:center;user-select:text;-webkit-user-select:text;">
-
+      <input id="oceanNameInput" placeholder="Your Ocean Name..." maxlength="16" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:14px;text-align:center;user-select:text;-webkit-user-select:text;">
       <div class="fish-grid" id="fishGrid">
-        <div class="fish-card selected" data-sp="clownfish" onclick="pickFish(this)"><div style="font-size:30px;">🐠</div><div style="font-size:11px;font-weight:bold;">Clownfish</div></div>
-        <div class="fish-card" data-sp="shark" onclick="pickFish(this)"><div style="font-size:30px;">🦈</div><div style="font-size:11px;font-weight:bold;">Great White</div></div>
-        <div class="fish-card" data-sp="orca" onclick="pickFish(this)"><div style="font-size:30px;">🐋</div><div style="font-size:11px;font-weight:bold;">Shadow Orca</div></div>
-        <div class="fish-card" data-sp="puffer" onclick="pickFish(this)"><div style="font-size:30px;">🐡</div><div style="font-size:11px;font-weight:bold;">Spike Puffer</div></div>
-        <div class="fish-card" data-sp="octopus" onclick="pickFish(this)"><div style="font-size:30px;">🐙</div><div style="font-size:11px;font-weight:bold;">Kraken Octo</div></div>
-        <div class="fish-card" data-sp="dolphin" onclick="pickFish(this)"><div style="font-size:30px;">🐬</div><div style="font-size:11px;font-weight:bold;">Cyber Dolphin</div></div>
+        <div class="fish-card selected" data-sp="clownfish" onclick="pickFish(this)"><div style="font-size:28px;">🐠</div><div style="font-size:11px;font-weight:bold;">Clownfish</div><div style="font-size:9px;color:#38bdf8;">🛡️ Shield</div></div>
+        <div class="fish-card" data-sp="shark" onclick="pickFish(this)"><div style="font-size:28px;">🦈</div><div style="font-size:11px;font-weight:bold;">Great White</div><div style="font-size:9px;color:#facc15;">⚡ Lunge</div></div>
+        <div class="fish-card" data-sp="orca" onclick="pickFish(this)"><div style="font-size:28px;">🐋</div><div style="font-size:11px;font-weight:bold;">Shadow Orca</div><div style="font-size:9px;color:#c084fc;">🌊 Sonic</div></div>
+        <div class="fish-card" data-sp="puffer" onclick="pickFish(this)"><div style="font-size:28px;">🐡</div><div style="font-size:11px;font-weight:bold;">Spike Puffer</div><div style="font-size:9px;color:#f87171;">💥 Nova</div></div>
+        <div class="fish-card" data-sp="octopus" onclick="pickFish(this)"><div style="font-size:28px;">🐙</div><div style="font-size:11px;font-weight:bold;">Kraken Octo</div><div style="font-size:9px;color:#f472b6;">🖤 Ink</div></div>
+        <div class="fish-card" data-sp="dolphin" onclick="pickFish(this)"><div style="font-size:28px;">🐬</div><div style="font-size:11px;font-weight:bold;">Cyber Dolphin</div><div style="font-size:9px;color:#2dd4bf;">🚀 Jet</div></div>
       </div>
-
-      <button id="playOceanBtn" onclick="startPlayingOcean()">🌊 PLAY NOW</button>
-      <div style="margin-top:10px;">
-        <a href="/" style="color:#94a3b8;font-size:12px;text-decoration:none;">⬅️ Back to SammuGames Chat Arena</a>
-      </div>
+      <button id="playOceanBtn" onclick="startPlayingOcean()">🌊 DIVE INTO OCEAN</button>
+      <div style="margin-top:8px;"><a href="/" style="color:#94a3b8;font-size:12px;text-decoration:none;">⬅️ Back to SammuGames Chat Arena</a></div>
     </div>
   </div>`;
-     // ============================================================================
-    // 🌊 WATER.IO V2 — PART 3A: ANALOG JOYSTICK, TURBO BOOST & OCEAN RENDERER
     // ============================================================================
-    const WATER_IO_CLIENT_SCRIPT = `
+    // 🌊 WATER.IO V4 — PIECE 4/6: FLOATING JOYSTICK, SKILL & AUDIO CONTROLS
+    // ============================================================================
+    const WATER_IO_CLIENT_JS_A = `
   <script>
-    const socket = io();
+    const socket = io({ transports: ['websocket', 'polling'] });
     const canvas = document.getElementById('oceanCanvas');
     const ctx = canvas.getContext('2d');
+    const radar = document.getElementById('radarCanvas');
+    const rctx = radar.getContext('2d');
+
     let selectedSpecies = 'clownfish';
-    let worldState = { swimmers: [], food: [], leaderboard: [] };
-    let myId = null;
-    let boostActive = false;
-    let bubbles = [];
+    let foodList = [], pearlList = [], entityMap = new Map();
+    let myId = null, boostActive = false, skillCooldownUntil = 0;
+    let bubbles = [], shockwaves = [];
+    let localDirX = 0, localDirY = 0, localThrottle = 0, lastEmitTime = 0, oceanAudio = null;
+
+    const SPECIES_SPEED = { clownfish: 6.6, shark: 6.2, orca: 5.9, puffer: 6.3, octopus: 6.1, dolphin: 7.0 };
+    const SPECIES_ICON  = { clownfish: '🐠', shark: '🦈', orca: '🐋', puffer: '🐡', octopus: '🐙', dolphin: '🐬' };
+    const TIER_NAMES    = ['', 'Hatchling', 'Reef Hunter', 'Apex Predator', 'Abyssal Kraken', 'Cosmic Leviathan'];
 
     const savedUname = localStorage.getItem('sammu_username') || localStorage.getItem('username') || '';
     if (savedUname) document.getElementById('oceanNameInput').value = savedUname;
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    function playOceanSfx(kind) {
+      try {
+        if (!oceanAudio) oceanAudio = new (window.AudioContext || window.webkitAudioContext)();
+        if (oceanAudio.state === 'suspended') oceanAudio.resume();
+        const now = oceanAudio.currentTime;
+        const osc = oceanAudio.createOscillator(), gain = oceanAudio.createGain();
+        if (kind === 'chomp' || kind === 'pearl') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(kind === 'pearl' ? 620 : 280, now);
+          osc.frequency.exponentialRampToValueAtTime(kind === 'pearl' ? 1180 : 90, now + 0.18);
+          gain.gain.setValueAtTime(0.28, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        } else if (kind === 'evolve') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.35);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        }
+        osc.connect(gain); gain.connect(oceanAudio.destination);
+        osc.start(now); osc.stop(now + 0.4);
+      } catch (e) {}
     }
+
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
@@ -11354,59 +11453,63 @@ div>') +
       const uname = (document.getElementById('oceanNameInput').value || '').trim() || ('Fish_' + Math.floor(Math.random() * 900 + 100));
       localStorage.setItem('sammu_username', uname);
       document.getElementById('startOverlay').style.display = 'none';
+      entityMap.set(myId, {
+        id: myId, name: uname, icon: SPECIES_ICON[selectedSpecies] || '🐠',
+        color: '#38bdf8', x: 1400, y: 1400, tx: 1400, ty: 1400, r: 22, mass: 25, tier: 1, dirX: 1, boost: false
+      });
       socket.emit('waterSpawn', { username: uname, species: selectedSpecies });
+      playOceanSfx('evolve');
     };
 
-    // Multi-Touch Analog Joystick Controller
-    const joyZone = document.getElementById('joyZone');
-    const joyKnob = document.getElementById('joyKnob');
-    let joyPointerId = null;
-    const maxRadius = 42;
-
-    function handleJoyMove(clientX, clientY) {
-      const rect = joyZone.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      let dx = clientX - cx;
-      let dy = clientY - cy;
-      const dist = Math.hypot(dx, dy);
-
-      if (dist > maxRadius) {
-        dx = (dx / dist) * maxRadius;
-        dy = (dy / dist) * maxRadius;
-      }
-      joyKnob.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
-
-      const throttle = Math.min(1, dist / maxRadius);
-      if (dist > 4) {
-        socket.emit('waterSteer', { dirX: dx / dist, dirY: dy / dist, throttle });
-      } else {
-        socket.emit('waterSteer', { dirX: 0, dirY: 0, throttle: 0 });
-      }
+    function syncSteerToServer(force) {
+      const now = performance.now();
+      if (!force && now - lastEmitTime < 50) return;
+      lastEmitTime = now;
+      socket.emit('waterSteer', { dirX: localDirX, dirY: localDirY, throttle: localThrottle });
     }
 
-    joyZone.addEventListener('pointerdown', (e) => {
+    const leftTouch = document.getElementById('leftTouchArea');
+    const joyBase = document.getElementById('joyBase');
+    const joyKnob = document.getElementById('joyKnob');
+    let joyPointerId = null, joyOriginX = 83, joyOriginY = window.innerHeight - 83;
+    const maxRadius = 44;
+
+    leftTouch.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       joyPointerId = e.pointerId;
-      joyZone.setPointerCapture(e.pointerId);
-      handleJoyMove(e.clientX, e.clientY);
+      leftTouch.setPointerCapture(e.pointerId);
+      joyOriginX = e.clientX; joyOriginY = e.clientY;
+      joyBase.style.left = (joyOriginX - 59) + 'px';
+      joyBase.style.top = (joyOriginY - 59) + 'px';
+      joyBase.style.bottom = 'auto';
+      joyKnob.style.transform = 'translate3d(0px, 0px, 0)';
     });
 
-    joyZone.addEventListener('pointermove', (e) => {
+    leftTouch.addEventListener('pointermove', (e) => {
       if (e.pointerId !== joyPointerId) return;
-      handleJoyMove(e.clientX, e.clientY);
+      let dx = e.clientX - joyOriginX, dy = e.clientY - joyOriginY;
+      const dist = Math.hypot(dx, dy);
+      if (dist > maxRadius) { dx = (dx / dist) * maxRadius; dy = (dy / dist) * maxRadius; }
+      joyKnob.style.transform = 'translate3d(' + dx + 'px, ' + dy + 'px, 0)';
+      if (dist > 4) {
+        localDirX = dx / dist; localDirY = dy / dist; localThrottle = Math.min(1, dist / maxRadius);
+      } else {
+        localDirX = 0; localDirY = 0; localThrottle = 0;
+      }
+      syncSteerToServer(false);
     });
 
-    function resetJoystick(e) {
+    function resetFloatingJoy(e) {
       if (e && e.pointerId !== joyPointerId) return;
       joyPointerId = null;
-      joyKnob.style.transform = 'translate(0px, 0px)';
-      socket.emit('waterSteer', { dirX: 0, dirY: 0, throttle: 0 });
+      joyBase.style.left = '24px'; joyBase.style.top = 'auto'; joyBase.style.bottom = '24px';
+      joyKnob.style.transform = 'translate3d(0px, 0px, 0)';
+      localDirX = 0; localDirY = 0; localThrottle = 0;
+      syncSteerToServer(true);
     }
-    joyZone.addEventListener('pointerup', resetJoystick);
-    joyZone.addEventListener('pointercancel', resetJoystick);
+    leftTouch.addEventListener('pointerup', resetFloatingJoy);
+    leftTouch.addEventListener('pointercancel', resetFloatingJoy);
 
-    // Multi-Touch Speed Boost Button (Hold or Spacebar/Shift)
     const boostBtn = document.getElementById('boostBtn');
     function triggerBoost(state) {
       boostActive = Boolean(state);
@@ -11418,27 +11521,18 @@ div>') +
     boostBtn.addEventListener('pointercancel', () => triggerBoost(false));
     boostBtn.addEventListener('pointerleave', () => triggerBoost(false));
 
-    // Optional WASD + Spacebar Keyboard Support
-    const keys = {};
-    window.addEventListener('keydown', (e) => {
-      if (document.activeElement === document.getElementById('rblxInput')) return;
-      keys[e.key.toLowerCase()] = true;
-      if (e.code === 'Space' || e.key === 'Shift') triggerBoost(true);
-      updateKeyboardSteer();
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key.toLowerCase()] = false;
-      if (e.code === 'Space' || e.key === 'Shift') triggerBoost(false);
-      updateKeyboardSteer();
-    });
-    function updateKeyboardSteer() {
-      let kx = (keys['d'] || keys['arrowright'] ? 1 : 0) - (keys['a'] || keys['arrowleft'] ? 1 : 0);
-      let ky = (keys['s'] || keys['arrowdown'] ? 1 : 0) - (keys['w'] || keys['arrowup'] ? 1 : 0);
-      const len = Math.hypot(kx, ky);
-      if (len > 0) socket.emit('waterSteer', { dirX: kx / len, dirY: ky / len, throttle: 1 });
-      else if (joyPointerId === null) socket.emit('waterSteer', { dirX: 0, dirY: 0, throttle: 0 });
-    }
-
+    window.triggerOceanSkill = function() {
+      const now = Date.now();
+      if (now  {
+        left--;
+        if (left <= 0) { clearInterval(cdTimer); sBtn.disabled = false; sBtn.innerHTML = '🔥<br>SKILL'; }
+        else { sBtn.innerHTML = '⏳<br>' + left + 's'; }
+      }, 1000);
+    };`;
+    // ============================================================================
+    // 🌊 WATER.IO V4 — PIECE 5/6: 60FPS OCEAN RENDERER & SONAR RADAR
+    // ============================================================================
+    const WATER_IO_CLIENT_JS_B = `
     window.sendOceanChat = function() {
       const inp = document.getElementById('rblxInput');
       const txt = (inp.value || '').trim();
@@ -11448,21 +11542,46 @@ div>') +
       inp.value = '';
     };
 
-    socket.on('connect', () => {
-      myId = socket.id;
-      socket.emit('waterJoinSpectate');
+    socket.on('connect', () => { myId = socket.id; socket.emit('waterJoinSpectate'); });
+
+    socket.on('waterFxEvent', (ev) => {
+      if (!ev) return;
+      playOceanSfx(ev.type);
+      const me = entityMap.get(myId);
+      if (me && (ev.type === 'evolve' || ev.type === 'warp')) shockwaves.push({ x: me.x, y: me.y, r: me.r, alpha: 1 });
     });
 
     socket.on('waterState', (state) => {
-      worldState = state;
-      const lbBox = document.getElementById('top5List');
-      lbBox.innerHTML = (state.leaderboard || []).map((p, i) =>
-        '<div class="lb-row"><span>' + (i === 0 ? '👑' : '#' + (i + 1)) + ' ' + p.icon + ' ' + p.name.slice(0, 10) + '</span><b>' + p.score + '</b></div>'
-      ).join('');
+      if (Array.isArray(state.food)) foodList = state.food;
+      if (Array.isArray(state.pearls)) pearlList = state.pearls;
 
-      const me = (state.swimmers || []).find(s => s.id === myId);
+      if (Array.isArray(state.leaderboard)) {
+        const lbBox = document.getElementById('top5List');
+        lbBox.innerHTML = state.leaderboard.map((p, i) =>
+          '<div class="lb-row"><span>' + (i === 0 ? '👑' : '#' + (i + 1)) + ' ' + p.icon + ' ' + p.name.slice(0, 9) + '</span><b>' + p.score + '</b></div>'
+        ).join('');
+      }
+
+      const activeIds = new Set();
+      (state.swimmers || []).forEach(s => {
+        activeIds.add(s.id);
+        const existing = entityMap.get(s.id);
+        if (existing) {
+          existing.tx = s.x; existing.ty = s.y; existing.r = s.r; existing.mass = s.mass;
+          existing.tier = s.tier; existing.dirX = s.dirX; existing.boost = s.boost;
+          existing.shield = s.shield; existing.stun = s.stun; existing.icon = s.icon; existing.name = s.name;
+          if (Math.hypot(existing.x - s.x, existing.y - s.y) > 260) { existing.x = s.x; existing.y = s.y; }
+        } else {
+          entityMap.set(s.id, { ...s, tx: s.x, ty: s.y });
+        }
+      });
+
+      for (const id of entityMap.keys()) { if (!activeIds.has(id)) entityMap.delete(id); }
+
+      const me = entityMap.get(myId);
       if (me) {
-        document.getElementById('massPill').textContent = me.icon + ' Mass: ' + me.mass + (me.boost ? ' ⚡' : '');
+        const tName = TIER_NAMES[me.tier || 1] || 'Hatchling';
+        document.getElementById('evoBanner').textContent = me.icon + ' T' + (me.tier || 1) + ' ' + tName + ' • Mass: ' + me.mass;
       }
     });
 
@@ -11472,98 +11591,135 @@ div>') +
       div.className = 'rblx-line';
       div.innerHTML = '<b>' + msg.user + ':</b> ' + msg.text.replace(/</g, '&lt;');
       box.appendChild(div);
-      while (box.children.length > 35) box.removeChild(box.firstElementChild);
+      while (box.children.length > 30) box.removeChild(box.firstElementChild);
       box.scrollTop = box.scrollHeight;
     });
 
-    socket.on('waterEaten', ({ by, finalScore }) => {
+    socket.on('waterEaten', ({ by, finalScore, kills }) => {
       triggerBoost(false);
+      entityMap.delete(myId);
       const ov = document.getElementById('startOverlay');
       const ban = document.getElementById('deathBanner');
       ban.style.display = 'block';
-      ban.innerHTML = '🦈 Eaten by <b>' + by + '</b>! Final Mass: <b>' + finalScore + '</b>';
+      ban.innerHTML = '🦈 Eaten by <b>' + by + '</b>! Final Mass: <b>' + finalScore + '</b> • Kills: <b>' + (kills || 0) + '</b>';
       ov.style.display = 'flex';
     });
 
-    function renderLoop() {
+    function drawRadarMinimap(me) {
+      rctx.clearRect(0, 0, 92, 92);
+      const scale = 92 / 2800;
+      rctx.fillStyle = '#fde047';
+      pearlList.forEach(p => { rctx.beginPath(); rctx.arc(p.x * scale, p.y * scale, 2.5, 0, Math.PI * 2); rctx.fill(); });
+      entityMap.forEach((s, id) => {
+        rctx.fillStyle = id === myId ? '#ffffff' : (me && s.mass > me.mass * 1.15 ? '#ef4444' : '#38bdf8');
+        rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
+      });
+    }
+
+    const CLIENT_HAZARDS = [
+      { type: 'whirlpool', x: 650,  y: 650,  r: 58 }, { type: 'whirlpool', x: 2150, y: 650,  r: 58 },
+      { type: 'jelly',     x: 1400, y: 800,  r: 42 }, { type: 'jelly',     x: 1400, y: 2000, r: 42 },
+      { type: 'jelly',     x: 800,  y: 1400, r: 42 }, { type: 'jelly',     x: 2000, y: 1400, r: 42 }
+    ];
+
+    let lastFrame = performance.now();
+    function renderLoop(now) {
+      const dt = Math.min(0.05, (now - lastFrame) / 1000);
+      lastFrame = now;
+
+      entityMap.forEach((s, id) => {
+        if (id === myId) {
+          if (!s.stun) {
+            const baseSpd = (SPECIES_SPEED[selectedSpecies] || 6.4) * 17.5;
+            const sizePenalty = Math.max(0.58, 1 - (s.mass / 2200));
+            const mult = (boostActive && s.mass > 22) ? 2.1 : 1.0;
+            s.x = Math.max(25, Math.min(2775, s.x + localDirX * localThrottle * baseSpd * sizePenalty * mult * dt));
+            s.y = Math.max(25, Math.min(2775, s.y + localDirY * localThrottle * baseSpd * sizePenalty * mult * dt));
+          }
+          s.x += (s.tx - s.x) * 0.2; s.y += (s.ty - s.y) * 0.2;
+          if (localDirX !== 0) s.dirX = localDirX;
+        } else {
+          s.x += (s.tx - s.x) * 0.28; s.y += (s.ty - s.y) * 0.28;
+        }
+      });
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const me = entityMap.get(myId);
+      const camX = me ? me.x : 1400, camY = me ? me.y : 1400;
 
-      const me = (worldState.swimmers || []).find(s => s.id === myId);
-      const camX = me ? me.x : 1200;
-      const camY = me ? me.y : 1200;
-
-      const grad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 40, canvas.width / 2, canvas.height / 2, canvas.width * 0.8);
-      grad.addColorStop(0, me && me.boost ? '#0c4a6e' : '#072a4a');
-      grad.addColorStop(1, '#020b18');
-      ctx.fillStyle = grad;
+      ctx.fillStyle = (me && boostActive) ? '#082f49' : '#031527';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
       ctx.save();
       ctx.translate(canvas.width / 2 - camX, canvas.height / 2 - camY);
 
+      const startX = Math.max(0, Math.floor((camX - canvas.width / 2) / 140) * 140);
+      const endX   = Math.min(2800, camX + canvas.width / 2 + 140);
+      const startY = Math.max(0, Math.floor((camY - canvas.height / 2) / 140) * 140);
+      const endY   = Math.min(2800, camY + canvas.height / 2 + 140);
+
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
       ctx.lineWidth = 1;
-      for (let x = 0; x <= 2400; x += 120) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 2400); ctx.stroke();
-      }
-      for (let y = 0; y <= 2400; y += 120) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(2400, y); ctx.stroke();
-      }
+      ctx.beginPath();
+      for (let x = startX; x <= endX; x += 140) { ctx.moveTo(x, startY); ctx.lineTo(x, endY); }
+      for (let y = startY; y <= endY; y += 140) { ctx.moveTo(startX, y); ctx.lineTo(endX, y); }
+      ctx.stroke();
 
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 8;
-      ctx.strokeRect(0, 0, 2400, 2400);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 10; ctx.strokeRect(0, 0, 2800, 2800);
 
-      (worldState.food || []).forEach(f => {
-        ctx.fillStyle = f.color;
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-        ctx.fill();
+      CLIENT_HAZARDS.forEach(hz => {
+        ctx.font = hz.type === 'whirlpool' ? '32px serif' : '34px serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if (hz.type === 'whirlpool') {
+          ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(hz.x, hz.y, hz.r * (0.85 + Math.sin(now * 0.006) * 0.15), 0, Math.PI * 2); ctx.stroke();
+          ctx.fillText('🌀', hz.x, hz.y);
+        } else {
+          ctx.fillText('🪼', hz.x, hz.y + Math.sin(now * 0.005) * 6);
+        }
       });
 
-      const sorted = [...(worldState.swimmers || [])].sort((a, b) => a.r - b.r);
-      sorted.forEach(s => {
-        if (s.boost) {
-          bubbles.push({ x: s.x + (Math.random() - 0.5) * s.r, y: s.y + (Math.random() - 0.5) * s.r, r: Math.random() * 5 + 2, alpha: 0.9 });
+      const halfW = canvas.width / 2 + 50, halfH = canvas.height / 2 + 50;
+      for (let i = 0; i < foodList.length; i++) {
+        const f = foodList[i];
+        if (Math.abs(f.x - camX) > halfW || Math.abs(f.y - camY) > halfH) continue;
+        ctx.fillStyle = f.color; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
+      }
+
+      pearlList.forEach(pr => {
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.25)'; ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.r + 8, 0, Math.PI * 2); ctx.fill();
+        ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔮', pr.x, pr.y);
+      });
+
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i]; sw.r += 7; sw.alpha -= 0.035;
+        if (sw.alpha  a.r - b.r).forEach(s => {
+        const isBoostingNow = (s.id === myId) ? boostActive : s.boost;
+        if (isBoostingNow && bubbles.length < 40) {
+          bubbles.push({ x: s.x + (Math.random() - 0.5) * s.r, y: s.y + (Math.random() - 0.5) * s.r, r: Math.random() * 4 + 2, alpha: 0.85 });
         }
+        ctx.fillStyle = s.shield ? 'rgba(56, 189, 248, 0.35)' : (isBoostingNow ? 'rgba(250, 204, 21, 0.25)' : (s.color + '33'));
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r + (s.shield ? 11 : 6), 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = s.shield ? '#7dd3fc' : (isBoostingNow ? '#fde047' : (s.id === myId ? '#facc15' : s.color));
+        ctx.lineWidth = s.shield || isBoostingNow ? 4 : 2; ctx.stroke();
 
-        ctx.fillStyle = s.boost ? 'rgba(250, 204, 21, 0.28)' : (s.color + '33');
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r + (s.boost ? 9 : 5), 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = s.boost ? '#fde047' : (s.id === myId ? '#facc15' : s.color);
-        ctx.lineWidth = s.boost ? 4 : (s.id === myId ? 3 : 2);
-        ctx.stroke();
-
-        ctx.save();
-        ctx.translate(s.x, s.y);
+        ctx.save(); ctx.translate(s.x, s.y);
         if (s.dirX > 0) ctx.scale(-1, 1);
-        ctx.font = Math.round(s.r * 1.45) + 'px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(s.icon, 0, 2);
-        ctx.restore();
+        ctx.font = Math.round(s.r * 1.45) + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(s.icon, 0, 2); ctx.restore();
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold ' + Math.max(11, Math.round(s.r * 0.34)) + 'px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(s.name + ' (' + s.mass + ')', s.x, s.y - s.r - 8);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold ' + Math.max(11, Math.round(s.r * 0.32)) + 'px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(s.name + ' (' + s.mass + ')' + (s.stun ? ' ⚡STUN' : ''), s.x, s.y - s.r - 9);
       });
 
       for (let i = bubbles.length - 1; i >= 0; i--) {
-        const b = bubbles[i];
-        b.y -= 1.2;
-        b.alpha -= 0.03;
+        const b = bubbles[i]; b.y -= 1.5; b.alpha -= 0.04;
         if (b.alpha <= 0) { bubbles.splice(i, 1); continue; }
-        ctx.strokeStyle = 'rgba(186, 230, 253, ' + b.alpha + ')';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.strokeStyle = 'rgba(186, 230, 253, ' + b.alpha + ')'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
       }
 
       ctx.restore();
+      drawRadarMinimap(me);
       requestAnimationFrame(renderLoop);
     }
     requestAnimationFrame(renderLoop);
@@ -11571,11 +11727,11 @@ div>') +
 </body>
 </html>`;
     // ============================================================================
-    // 🌊 WATER.IO V2 — PART 3B: EXPRESS ROUTE, LOBBY BUTTON & SOCKET HANDLERS
+    // 🌊 WATER.IO V4 — PIECE 6/6: ROUTE, LOBBY BUTTON & SOCKET HANDLERS
     // ============================================================================
     app.get('/waterio', (req, res) => {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.send(WATER_IO_PAGE_HTML + '\n' + WATER_IO_CLIENT_SCRIPT);
+        res.send(WATER_IO_PAGE_HTML + '\n' + WATER_IO_CLIENT_JS_A + '\n' + WATER_IO_CLIENT_JS_B);
     });
 
     const WATER_IO_LOBBY_BTN = `
@@ -11625,24 +11781,19 @@ div>') +
             socket.username = cleanName;
 
             waterRoom.players.set(socket.id, {
-                id: socket.id,
-                username: cleanName,
-                species: spKey,
-                icon: sp.icon,
-                color: sp.color,
-                x: Math.floor(Math.random() * (WATER_WORLD_SIZE - 300)) + 150,
-                y: Math.floor(Math.random() * (WATER_WORLD_SIZE - 300)) + 150,
-                dirX: 1,
-                dirY: 0,
-                throttle: 0,
-                mass: 25,
-                boost: false,
+                id: socket.id, username: cleanName, species: spKey,
+                baseIcon: sp.icon, icon: sp.icon, color: sp.color,
+                x: Math.floor(Math.random() * (WATER_WORLD_SIZE - 400)) + 200,
+                y: Math.floor(Math.random() * (WATER_WORLD_SIZE - 400)) + 200,
+                dirX: 1, dirY: 0, throttle: 0,
+                mass: 25, tier: 1, kills: 0,
+                boost: false, dashUntil: 0, shieldUntil: 0, stunUntil: 0, skillCd: 0,
                 isBot: false
             });
 
             io.to('waterio_ocean').emit('waterChatMsg', {
                 user: '🌊 OCEAN',
-                text: `${sp.icon} ${cleanName} dove into the ocean!`
+                text: `${sp.icon} ${cleanName} entered the Abyssal Ocean!`
             });
         });
 
@@ -11659,6 +11810,32 @@ div>') +
             if (p) p.boost = Boolean(on);
         });
 
+        socket.on('waterUseSkill', () => {
+            const p = waterRoom.players.get(socket.id);
+            const now = Date.now();
+            if (!p || now < (p.skillCd || 0)) return;
+            p.skillCd = now + 5500;
+
+            const sp = WATER_FISH_SPECIES[p.species] || WATER_FISH_SPECIES.clownfish;
+            if (sp.skill === 'dash') {
+                p.dashUntil = now + 650;
+            } else if (sp.skill === 'shield') {
+                p.shieldUntil = now + 4000;
+            } else if (sp.skill === 'blast') {
+                const all = [...waterRoom.players.values(), ...waterRoom.bots.values()];
+                all.forEach(other => {
+                    if (other.id === p.id) return;
+                    const dx = other.x - p.x, dy = other.y - p.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > 0 && dist < 240) {
+                        other.x = Math.max(30, Math.min(WATER_WORLD_SIZE - 30, other.x + (dx / dist) * 110));
+                        other.y = Math.max(30, Math.min(WATER_WORLD_SIZE - 30, other.y + (dy / dist) * 110));
+                        other.stunUntil = now + 1400;
+                    }
+                });
+            }
+        });
+
         socket.on('waterChatSend', ({ user, text }) => {
             const cleanTxt = String(text || '').trim().slice(0, 90);
             const cleanUsr = String(user || socket.username || 'Fish').trim().slice(0, 16);
@@ -11670,6 +11847,8 @@ div>') +
             waterRoom.players.delete(socket.id);
         });
     });
+
+
 
  return OG_HOSTS;
 };

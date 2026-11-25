@@ -9,6 +9,7 @@
   let gainNode = null;
   let activeAudio = null;
   const audioPool = {};
+  let preloadStarted = false;
 
   const MP3_TRACKS = {
     brazil:    { url: '/public_phonk_batidao.mp3',                           label: '🇧🇷 No Batidão (Brazilian Phonk)' },
@@ -39,7 +40,6 @@
       const Ctx = window.AudioContext || window.webkitAudioContext;
       audioCtx = new Ctx();
 
-      // Dynamic compressor keeps loudness balanced & punchy without clipping
       compressor = audioCtx.createDynamicsCompressor();
       compressor.threshold.setValueAtTime(-18, audioCtx.currentTime);
       compressor.knee.setValueAtTime(24, audioCtx.currentTime);
@@ -72,12 +72,23 @@
       const ctx = getAudioContext();
       const source = ctx.createMediaElementSource(audio);
       source.connect(compressor);
-    } catch (e) {
-      // Fallback to native audio output if Web Audio routing is restricted
-    }
+    } catch (e) {}
 
     audioPool[style] = audio;
     return audio;
+  }
+
+  // Silently caches all tracks one-by-one in the background without choking bandwidth
+  async function prewarmQueue() {
+    if (preloadStarted) return;
+    preloadStarted = true;
+    const keys = ['shayari', ...Object.keys(MP3_TRACKS).filter(k => k !== 'shayari')];
+    for (const key of keys) {
+      if (audioPool[key]) continue;
+      await new Promise(r => setTimeout(r, 1500));
+      const a = getOrCreateAudio(key);
+      a.load();
+    }
   }
 
   function stopCurrentAudio() {
@@ -181,6 +192,7 @@
         if (np) np.textContent = (djName ? '🎧 DJ ' + djName + ': ' : '🔥 LIVE: ') + chosen.label;
         if (miniLbl) miniLbl.textContent = '🎧 ' + chosen.label;
         if (!vizTimer) vizTimer = setInterval(bounceBars, 220);
+        prewarmQueue();
       };
 
       await audio.play();
@@ -244,8 +256,6 @@
     });
   }, 500);
 
-  // Pre-warm Shayari metadata & buffer slightly after page load so it starts fast
-  setTimeout(() => { getOrCreateAudio('shayari'); }, 2000);
-
+  setTimeout(() => { getOrCreateAudio('shayari').load(); }, 1500);
   injectCustomButtons();
 })();

@@ -3628,308 +3628,277 @@
   }, 800);
 })();
 </script>
-<!-- ============================================================================ -->
-<!-- 👑 ROYAL BOARD & CARD LOUNGE — PIECE 1/5 (STYLES & TOP BAR)                  -->
+      <!-- ============================================================================ -->
+<!-- 👑 MAX-UPGRADED 5-STAR VIP MONTE CARLO LOUNGE — PIECE 1/2                    -->
 <!-- ============================================================================ -->
 <style>
-  .lounge-modal {
-    display: none; position: fixed; inset: 0; background: rgba(4, 7, 18, 0.94);
-    z-index: 999999; align-items: center; justify-content: center; padding: 10px;
-    backdrop-filter: blur(10px); font-family: inherit;
+  @keyframes vipHaloPulse {
+    0%, 100% { box-shadow: 0 0 22px rgba(250, 204, 21, 0.45), inset 0 0 18px rgba(250, 204, 21, 0.12); }
+    50% { box-shadow: 0 0 40px rgba(250, 204, 21, 0.9), inset 0 0 26px rgba(250, 204, 21, 0.25); }
+  }
+  @keyframes vipDiceSpin {
+    0% { transform: rotate(-180deg) scale(0.6); opacity: 0.4; }
+    70% { transform: rotate(15deg) scale(1.25); opacity: 1; }
+    100% { transform: rotate(0deg) scale(1); }
   }
   .lounge-box {
-    background: linear-gradient(160deg, #0f172a, #1e1b4b);
-    border: 2px solid #facc15; border-radius: 20px; padding: 14px;
-    width: 100%; max-width: 410px; max-height: 92vh; overflow-y: auto;
-    color: #fff; text-align: center; box-shadow: 0 0 35px rgba(250, 204, 21, 0.4);
+    background: radial-gradient(circle at top, #1e1b4b 0%, #060913 85%) !important;
+    border: 2.5px solid #facc15 !important;
+    animation: vipHaloPulse 3.2s infinite ease-in-out;
   }
-  .uno-card {
-    width: 54px; height: 78px; border-radius: 10px; border: 2px solid #fff;
-    display: inline-flex; flex-direction: column; justify-content: space-between;
-    padding: 4px; font-weight: 900; cursor: pointer; user-select: none;
+  .uno-card:not(.dim) {
+    box-shadow: 0 0 14px rgba(250, 204, 21, 0.75) !important;
+    transform: translateY(-3px);
   }
-  .uno-card.dim { opacity: 0.4; cursor: not-allowed; }
-  .uno-oval {
-    background: rgba(255,255,255,0.92); border-radius: 50%; width: 34px; height: 42px;
-    margin: auto; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 900; transform: rotate(-15deg); color: #111;
+  .vip-pot-pill {
+    display: inline-block; background: linear-gradient(90deg, #78350f, #b45309);
+    border: 1px solid #fde047; color: #fef08a; font-size: 10px; font-weight: 900;
+    padding: 2px 10px; border-radius: 999px; margin-bottom: 6px; letter-spacing: 0.4px;
   }
-  .u-red    { background: linear-gradient(145deg, #ef4444, #991b1b); }
-  .u-blue   { background: linear-gradient(145deg, #3b82f6, #1e3a8a); }
-  .u-green  { background: linear-gradient(145deg, #22c55e, #14532d); }
-  .u-yellow { background: linear-gradient(145deg, #facc15, #ca8a04); color: #111; }
-  .u-wild   { background: conic-gradient(#ef4444 0 90deg, #3b82f6 90deg 180deg, #eab308 180deg 270deg, #22c55e 270deg 360deg); }
+  .vip-emote-bar {
+    display: flex; gap: 5px; justify-content: center; margin-top: 8px;
+    padding-top: 7px; border-top: 1px solid rgba(250, 204, 21, 0.25);
+  }
+  .vip-emote-btn {
+    background: #1e293b; border: 1px solid #facc15; color: #fde047;
+    border-radius: 999px; padding: 4px 9px; font-size: 10px; font-weight: 800; cursor: pointer;
+  }
+  .vip-dice-3d {
+    display: inline-block; font-size: 18px; vertical-align: middle;
+    animation: vipDiceSpin 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  }
 </style>
 
-<div id="royalLoungeBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999990;justify-content:center;padding:0 8px;pointer-events:none;">
-  <div style="pointer-events:auto;background:linear-gradient(135deg,rgba(15,23,42,0.97),rgba(6,78,59,0.97));border:2px solid #facc15;border-radius:16px;padding:8px 10px;width:100%;max-width:420px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(250,204,21,0.4);">
-    <div style="font-size:11px;font-weight:900;color:#fde047;margin-bottom:5px;">👑 ROYAL BOARD & CARD LOUNGE</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">
-      <button onclick="socket.emit('chatMessage','!uno')" style="background:#dc2626;border:1px solid #fff;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">🃏 UNO</button>
-      <button onclick="socket.emit('loungeStartChess')" style="background:#334155;border:1px solid #38bdf8;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">♟️ Chess</button>
-      <button onclick="socket.emit('loungeStartCarrom')" style="background:#b45309;border:1px solid #fde047;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">🎯 Carrom</button>
-      <button onclick="socket.emit('loungeStartLudo')" style="background:#15803d;border:1px solid #4ade80;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">🎲 6P Ludo</button>
-      <button onclick="socket.emit('loungeStartSnakes')" style="background:#7e22ce;border:1px solid #e879f9;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">🐍 Snakes</button>
-    </div>
-  </div>
-</div>
-<!-- ============================================================================ -->
-<!-- 👑 ROYAL BOARD & CARD LOUNGE — PIECE 2/5 (UNO & CHESS MODALS)                -->
-<!-- ============================================================================ -->
-<div id="unoModal" class="lounge-modal">
-  <div class="lounge-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-weight:900;font-size:14px;color:#fde047;">🃏 UNO ROYALE (10P)</span>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <span id="unoTimer" style="font-size:11px;color:#38bdf8;font-weight:900;">⏳ 20s</span>
-        <button onclick="document.getElementById('unoModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
-      </div>
-    </div>
-    <div id="unoSeats" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:8px;font-size:10px;"></div>
-    <div id="unoFelt" style="background:#064e3b;border:2px solid #34d399;border-radius:14px;padding:12px;margin-bottom:8px;"></div>
-    <div id="unoWildBox" style="display:none;gap:6px;justify-content:center;margin-bottom:8px;">
-      <button onclick="pickUnoColor('red')" style="background:#dc2626;border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;">🔴 RED</button>
-      <button onclick="pickUnoColor('blue')" style="background:#2563eb;border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;">🔵 BLUE</button>
-      <button onclick="pickUnoColor('green')" style="background:#16a34a;border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;">🟢 GREEN</button>
-      <button onclick="pickUnoColor('yellow')" style="background:#eab308;border:1px solid #fff;color:#111;padding:6px 10px;border-radius:8px;font-weight:900;">🟡 YELLOW</button>
-    </div>
-    <div id="unoCtrls" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;"></div>
-    <div id="unoHand" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-height:180px;overflow-y:auto;"></div>
-  </div>
-</div>
-
-<div id="chessModal" class="lounge-modal">
-  <div class="lounge-box" style="border-color:#38bdf8;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#38bdf8;">♟️ ROYAL CHESS</span>
-      <button onclick="document.getElementById('chessModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
-    </div>
-    <div id="chessStatus" style="font-size:11px;color:#fde047;font-weight:bold;margin-bottom:8px;">White vs Black</div>
-    <div id="chessGrid" style="display:grid;grid-template-columns:repeat(8,1fr);border:2px solid #facc15;border-radius:8px;overflow:hidden;aspect-ratio:1/1;max-width:310px;margin:0 auto;"></div>
-  </div>
-</div>
-<!-- ============================================================================ -->
-<!-- 👑 ROYAL BOARD & CARD LOUNGE — PIECE 3/5 (CARROM, LUDO & SNAKES MODALS)      -->
-<!-- ============================================================================ -->
-<div id="carromModal" class="lounge-modal">
-  <div class="lounge-box" style="border-color:#f59e0b;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#fbbf24;">🎯 ROYAL CARROM</span>
-      <button onclick="document.getElementById('carromModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
-    </div>
-    <div id="carromScore" style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:8px;">P1: 0 | P2: 0</div>
-    <div id="carromBoard" style="background:radial-gradient(circle,#fef3c7,#d97706);border:6px solid #78350f;border-radius:16px;padding:14px;margin-bottom:10px;color:#451a03;font-weight:900;"></div>
-    <div id="carromBtns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
-  </div>
-</div>
-
-<div id="ludoModal" class="lounge-modal">
-  <div class="lounge-box" style="border-color:#4ade80;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#4ade80;">🎲 6-PLAYER LUDO ROYALE</span>
-      <button onclick="document.getElementById('ludoModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
-    </div>
-    <div id="ludoBanner" style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:8px;">Roll the dice!</div>
-    <div id="ludoPlayersList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;max-height:220px;overflow-y:auto;"></div>
-    <div id="ludoControls" style="display:flex;gap:8px;justify-content:center;"></div>
-  </div>
-</div>
-
-<div id="snakesModal" class="lounge-modal">
-  <div class="lounge-box" style="border-color:#e879f9;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#e879f9;">🐍🪜 6P SNAKES & LADDERS</span>
-      <button onclick="document.getElementById('snakesModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
-    </div>
-    <div id="snakesBanner" style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:6px;">Race to Tile 100!</div>
-    <div id="snakesEventLog" style="font-size:11px;color:#67e8f9;margin-bottom:8px;min-height:16px;"></div>
-    <div id="snakesPlayersList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;max-height:220px;overflow-y:auto;"></div>
-    <div id="snakesControls" style="display:flex;justify-content:center;"></div>
-  </div>
-</div>
-<!-- ============================================================================ -->
-<!-- 👑 ROYAL BOARD & CARD LOUNGE — PIECE 4/5 (SCRIPT START & UNO LOGIC)          -->
-<!-- ============================================================================ -->
 <script>
 (function() {
-  let wildIdx = null, chessSel = null;
-  const CHESS_ICON = { r:'♜', n:'♞', b:'♝', q:'♛', k:'♚', p:'♟', R:'♖', N:'♘', B:'♗', Q:'♕', K:'♔', P:'♙' };
+  let vipCtx = null, jazzTimer = null, jazzOn = false;
+  function getAudio() {
+    if (!vipCtx) vipCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (vipCtx.state === 'suspended') vipCtx.resume();
+    return vipCtx;
+  }
 
-  setInterval(function() {
+  window.playVipSfx = function(kind) {
+    try {
+      const ctx = getAudio(), now = ctx.currentTime;
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      if (kind === 'card' || kind === 'chess') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(kind === 'card' ? 560 : 290, now);
+        osc.frequency.exponentialRampToValueAtTime(130, now + 0.08);
+        g.gain.setValueAtTime(0.16, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.start(now); osc.stop(now + 0.09);
+      } else {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(720, now + 0.14);
+        g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
+      }
+    } catch (e) {}
+  };
+
+  window.toggleVipJazz = function(btn) {
+    jazzOn = !jazzOn;
+    if (btn) btn.textContent = jazzOn ? '🎷 Jazz: ON' : '🔇 Jazz: OFF';
+    if (!jazzOn) { clearInterval(jazzTimer); jazzTimer = null; return; }
+    const chords = [
+      [261.63, 329.63, 392.00, 493.88],
+      [220.00, 261.63, 329.63, 392.00],
+      [174.61, 220.00, 261.63, 329.63],
+      [196.00, 246.94, 293.66, 349.23]
+    ];
+    let step = 0;
+    const playChord = () => {
+      if (!jazzOn) return;
+      try {
+        const ctx = getAudio(), now = ctx.currentTime;
+        chords[step % chords.length].forEach(freq => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'sine'; o.frequency.setValueAtTime(freq, now);
+          g.gain.setValueAtTime(0.001, now);
+          g.gain.linearRampToValueAtTime(0.025, now + 0.25);
+          g.gain.exponentialRampToValueAtTime(0.0008, now + 2.1);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(now); o.stop(now + 2.15);
+        });
+        step++;
+      } catch (e) {}
+    };
+    playChord();
+    jazzTimer = setInterval(playChord, 2200);
+  };
+
+  window.sendVipLoungeReaction = function(txt) {
+    if (typeof socket !== 'undefined') socket.emit('chatMessage', '👑 [VIP Table] ' + txt);
+  };
+
+  let carromAimAngle = -Math.PI / 2;
+  let carromStrikerX = 140;
+  let carromAnimCoins = [];
+
+  window.initCarromCanvasCoins = function(count, hasQueen) {
+    carromAnimCoins = [];
+    if (hasQueen) carromAnimCoins.push({ x: 140, y: 140, color: '#dc2626', r: 8 });
+    for (let i = 0; i < count; i++) {
+      const ang = (i / Math.max(1, count)) * Math.PI * 2;
+      carromAnimCoins.push({
+        x: 140 + Math.cos(ang) * 24,
+        y: 140 + Math.sin(ang) * 24,
+        color: i % 2 === 0 ? '#0f172a' : '#f8fafc',
+        r: 8
+      });
+    }
+  };
+
+  window.renderCarromCanvas = function(canShoot) {
+    const cv = document.getElementById('vipCarromCanvas');
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, 280, 280);
+
+    const grd = ctx.createRadialGradient(140, 140, 15, 140, 140, 140);
+    grd.addColorStop(0, '#fef3c7'); grd.addColorStop(1, '#d97706');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, 280, 280);
+
+    ctx.strokeStyle = 'rgba(120, 53, 15, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(34, 34, 212, 212);
+
+    ctx.beginPath(); ctx.arc(140, 140, 38, 0, Math.PI * 2);
+    ctx.strokeStyle = '#b45309'; ctx.stroke();
+
+    [,,,].forEach(([px, py]) => {
+      ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2);
+      ctx.fillStyle = '#090d16'; ctx.fill();
+      ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2; ctx.stroke();
+    });
+
+    carromAnimCoins.forEach(c => {
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.fillStyle = c.color; ctx.fill();
+      ctx.strokeStyle = '#78350f'; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+
+    const sy = 236;
+    if (canShoot) {
+      ctx.beginPath();
+      ctx.setLineDash();
+      ctx.moveTo(carromStrikerX, sy);
+      ctx.lineTo(carromStrikerX + Math.cos(carromAimAngle) * 145, sy + Math.sin(carromAimAngle) * 145);
+      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.beginPath(); ctx.arc(carromStrikerX, sy, 11, 0, Math.PI * 2);
+    ctx.fillStyle = '#38bdf8'; ctx.fill();
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2.5; ctx.stroke();
+  };
+
+  window.setCarromAim = function(ang) { carromAimAngle = ang; };
+  window.getCarromStrikerX = function() { return carromStrikerX; };
+  window.setCarromStrikerX = function(val) { carromStrikerX = val; };
+
+  window.fireVipCarromCanvas = function(shotType) {
+    playVipSfx('carrom');
+    carromAnimCoins.forEach(c => {
+      c.x = Math.max(30, Math.min(250, c.x + (Math.random() - 0.5) * 70));
+      c.y = Math.max(30, Math.min(210, c.y + (Math.random() - 0.5) * 70));
+    });
+    renderCarromCanvas(false);
+    setTimeout(() => socket.emit('loungeCarromShoot', shotType), 260);
+  };
+<!-- ============================================================================ -->
+<!-- 👑 MAX-UPGRADED 5-STAR VIP MONTE CARLO LOUNGE — PIECE 2/2                    -->
+<!-- ============================================================================ -->
+  setTimeout(function() {
     const bar = document.getElementById('royalLoungeBar');
-    if (bar) bar.style.display = (window.selectedServerId === 'srv_lounge') ? 'flex' : 'none';
-  }, 800);
-
-  window.tapUnoCard = function(idx, isWild) {
-    if (isWild) {
-      wildIdx = idx;
-      document.getElementById('unoWildBox').style.display = 'flex';
-      return;
+    if (bar && !document.getElementById('vipJazzToggleBtn')) {
+      const topRow = bar.querySelector('div > div');
+      if (topRow) {
+        topRow.innerHTML = '👑 VIP MONTE CARLO LOUNGE <button id="vipJazzToggleBtn" onclick="toggleVipJazz(this)" style="margin-left:6px;background:#1e293b;border:1px solid #facc15;color:#fde047;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:900;cursor:pointer;">🔇 Jazz: OFF</button>';
+      }
     }
-    document.getElementById('unoWildBox').style.display = 'none';
-    socket.emit('unoPlayCard', { idx: idx });
-  };
 
-  window.pickUnoColor = function(col) {
-    document.getElementById('unoWildBox').style.display = 'none';
-    if (wildIdx !== null) {
-      socket.emit('unoPlayCard', { idx: wildIdx, chosenColor: col });
-      wildIdx = null;
+    const cTable = document.getElementById('realCarromTable');
+    if (cTable && !document.getElementById('vipCarromCanvas')) {
+      cTable.style.cssText = 'width:280px;height:280px;margin:0 auto 10px;border-radius:22px;border:10px solid #451a03;overflow:hidden;box-shadow:0 8px 25px rgba(0,0,0,0.7);';
+      cTable.innerHTML = '<canvas id="vipCarromCanvas" width="280" height="280" style="display:block;touch-action:none;cursor:crosshair;"></canvas>';
+      const cv = document.getElementById('vipCarromCanvas');
+      const aimAt = (clientX, clientY) => {
+        const rect = cv.getBoundingClientRect();
+        const x = (clientX - rect.left) * (280 / rect.width);
+        const y = (clientY - rect.top) * (280 / rect.height);
+        setCarromAim(Math.atan2(Math.min(210, y) - 236, x - getCarromStrikerX()));
+        renderCarromCanvas(true);
+      };
+      cv.addEventListener('pointerdown', e => aimAt(e.clientX, e.clientY));
+      cv.addEventListener('pointermove', e => { if (e.buttons) aimAt(e.clientX, e.clientY); });
     }
-  };
 
-  function bindLoungeSockets() {
-    if (typeof socket === 'undefined' || window._cleanLoungeBound) return;
-    window._cleanLoungeBound = true;
-
-    socket.on('unoSync', function(d) {
-      if (d._serverId && d._serverId !== window.selectedServerId) return;
-      document.getElementById('unoModal').style.display = 'flex';
-      document.getElementById('unoTimer').textContent = '⏳ ' + d.timeLeft + 's';
-      const seats = document.getElementById('unoSeats');
-      const felt = document.getElementById('unoFelt');
-      const ctrls = document.getElementById('unoCtrls');
-      const hand = document.getElementById('unoHand');
-      ctrls.innerHTML = ''; hand.innerHTML = '';
-
-      if (d.phase === 'lobby') {
-        const joined = d.players.some(p => p.id === socket.id);
-        seats.innerHTML = d.players.map(p => '<span style="background:#1e293b;border:1px solid #38bdf8;padding:2px 8px;border-radius:999px;">🃏 ' + p.username + '</span>').join('');
-        felt.innerHTML =
-          '<div style="font-weight:900;color:#fde047;margin-bottom:8px;">UNO LOBBY (' + d.players.length + '/10)</div>' +
-          '<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">' +
-            (!joined ? '<button onclick="socket.emit(\'unoJoin\')" style="background:#16a34a;border:1px solid #fff;color:#fff;padding:7px 12px;border-radius:9px;font-weight:900;">➕ Join</button>' : '') +
-            (joined ? '<button onclick="socket.emit(\'unoAddBot\')" style="background:#0284c7;border:1px solid #fff;color:#fff;padding:7px 12px;border-radius:9px;font-weight:900;">🤖 +Bot</button>' : '') +
-            (joined && d.players.length >= 2 ? '<button onclick="socket.emit(\'unoForceStart\')" style="background:#f59e0b;border:1px solid #fff;color:#111;padding:7px 12px;border-radius:9px;font-weight:900;">🚀 Start</button>' : '') +
-          '</div>';
-        return;
+    document.querySelectorAll('.lounge-box').forEach(box => {
+      if (!box.querySelector('.vip-pot-pill')) {
+        const pill = document.createElement('div');
+        pill.className = 'vip-pot-pill';
+        pill.textContent = '🏆 VIP TABLE JACKPOT: +250🪙 WINNER TAKES ALL';
+        box.insertBefore(pill, box.children);
       }
-
-      seats.innerHTML = d.players.map(p =>
-        '<span style="background:' + (p.isTurn ? '#7c3aed' : '#1e293b') + ';border:1px solid #facc15;padding:2px 8px;border-radius:999px;">' +
-        (p.isTurn ? '👉 ' : '') + p.username + ' (' + p.count + '🃏)</span>'
-      ).join('');
-
-      const sym = d.topCard.v === 'SKIP' ? '🚫' : (d.topCard.v === 'REV' ? '🔄' : d.topCard.v);
-      felt.innerHTML =
-        '<div class="uno-card u-' + d.activeColor + '" style="margin:0 auto;">' +
-          '<div style="font-size:10px;text-align:left;">' + sym + '</div>' +
-          '<div class="uno-oval">' + sym + '</div>' +
-          '<div style="font-size:10px;text-align:right;">' + sym + '</div>' +
-        '</div>' +
-        '<div style="margin-top:6px;font-size:11px;font-weight:900;color:#fde047;">' +
-          (d.isMyTurn ? '🔥 YOUR TURN!' : ('Turn: ' + d.turnName)) +
-        '</div>';
-
-      if (d.phase === 'spectate') return;
-      if (d.isMyTurn) {
-        const db = document.createElement('button');
-        db.style.cssText = 'background:#0284c7;border:1px solid #fff;color:#fff;padding:6px 12px;border-radius:9px;font-weight:900;font-size:11px;';
-        db.textContent = '📥 Draw Card';
-        db.onclick = () => socket.emit('unoDrawCard');
-        ctrls.appendChild(db);
-      }
-      if (d.myHand.length <= 2 && !d.saidUno) {
-        const ub = document.createElement('button');
-        ub.style.cssText = 'background:#dc2626;border:1px solid #fff;color:#fff;padding:6px 12px;border-radius:9px;font-weight:900;font-size:11px;';
-        ub.textContent = '🚨 UNO!';
-        ub.onclick = () => socket.emit('unoCallShout');
-        ctrls.appendChild(ub);
-      }
-      hand.innerHTML = d.myHand.map((c, i) => {
-        const can = d.isMyTurn && (c.c === 'wild' || c.c === d.activeColor || c.v === d.topCard.v);
-        const s = c.v === 'SKIP' ? '🚫' : (c.v === 'REV' ? '🔄' : (c.v === 'WILD' ? '🌈' : c.v));
-        return '<div class="uno-card u-' + c.c + (can ? '' : ' dim') + '" ' +
-          (can ? 'onclick="tapUnoCard(' + i + ',' + (c.c === 'wild') + ')"' : '') + '>' +
-          '<div style="font-size:10px;text-align:left;">' + s + '</div>' +
-          '<div class="uno-oval">' + s + '</div>' +
-          '<div style="font-size:10px;text-align:right;">' + s + '</div></div>';
-      }).join('');
-    });
-    socket.on('unoEnd', () => { document.getElementById('unoModal').style.display = 'none'; });
-<!-- ============================================================================ -->
-<!-- 👑 ROYAL BOARD & CARD LOUNGE — PIECE 5/5 (CHESS, CARROM, LUDO, SNAKES JS)    -->
-<!-- ============================================================================ -->
-    socket.on('chessSync', function(d) {
-      if (d._serverId && d._serverId !== window.selectedServerId) return;
-      document.getElementById('chessModal').style.display = 'flex';
-      const myCol = d.whiteId === socket.id ? 'w' : (d.blackId === socket.id ? 'b' : 'spec');
-      const myTurn = d.turn === myCol;
-      document.getElementById('chessStatus').textContent = '⚪ ' + d.whiteName + ' vs ⚫ ' + d.blackName + ' • ' + (myTurn ? '🔥 YOUR MOVE' : 'Opponent Turn');
-      const grid = document.getElementById('chessGrid'); grid.innerHTML = '';
-      for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-          const sq = document.createElement('div');
-          const sel = chessSel && chessSel.r === r && chessSel.c === c;
-          sq.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;background:' +
-            (sel ? '#facc15' : ((r + c) % 2 === 0 ? '#e2e8f0' : '#475569')) + ';color:' +
-            (d.board[r][c] && d.board[r][c] === d.board[r][c].toUpperCase() ? '#0f172a' : '#7f1d1d') + ';';
-          sq.textContent = CHESS_ICON[d.board[r][c]] || '';
-          sq.onclick = () => {
-            if (!myTurn) return;
-            if (!chessSel) { if (d.board[r][c]) { chessSel = { r, c }; sq.style.background = '#facc15'; } }
-            else { socket.emit('loungeChessMove', { r1: chessSel.r, c1: chessSel.c, r2: r, c2: c }); chessSel = null; }
-          };
-          grid.appendChild(sq);
-        }
+      if (!box.querySelector('.vip-emote-bar')) {
+        const em = document.createElement('div');
+        em.className = 'vip-emote-bar';
+        em.innerHTML =
+          '<button class="vip-emote-btn" onclick="sendVipLoungeReaction(\'🔥 GG!\')">🔥 GG</button>' +
+          '<button class="vip-emote-btn" onclick="sendVipLoungeReaction(\'😱 Clutch!\')">😱 Clutch</button>' +
+          '<button class="vip-emote-btn" onclick="sendVipLoungeReaction(\'🎲 Rigged!\')">🎲 Rigged</button>' +
+          '<button class="vip-emote-btn" onclick="sendVipLoungeReaction(\'👑 Bow Down!\')">👑 King</button>';
+        box.appendChild(em);
       }
     });
-    socket.on('chessEnd', () => { document.getElementById('chessModal').style.display = 'none'; });
+  }, 1100);
+
+  const DICE_3D = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+  const bindVipHooks = setInterval(function() {
+    if (typeof socket === 'undefined' || window._maxVipLoungeBound) return;
+    window._maxVipLoungeBound = true;
+    clearInterval(bindVipHooks);
+
+    socket.on('unoSync', () => playVipSfx('card'));
+    socket.on('chessSync', () => playVipSfx('chess'));
 
     socket.on('carromSync', function(d) {
       if (d._serverId && d._serverId !== window.selectedServerId) return;
-      document.getElementById('carromModal').style.display = 'flex';
-      document.getElementById('carromScore').textContent = d.p1.username + ': ' + d.p1.score + ' | ' + d.p2.username + ': ' + d.p2.score;
-      document.getElementById('carromBoard').innerHTML =
-        '<div>Coins Left: ' + d.coinsLeft + ' | ' + (d.queenOnBoard ? '🔴 Queen (+3)' : '👑 Queen Taken') + '</div>' +
-        '<div style="font-size:24px;margin:6px 0;">' + '⚫'.repeat(d.coinsLeft) + (d.queenOnBoard ? '🔴' : '') + '</div>' +
-        '<div style="font-size:11px;">' + d.lastShot + '</div>';
-      document.getElementById('carromBtns').innerHTML = d.turnId === socket.id
-        ? '<button onclick="socket.emit(\'loungeCarromShoot\',\'safe\')" style="background:#16a34a;border:1px solid #fff;color:#fff;padding:8px;border-radius:9px;font-weight:900;">🎯 Cut Shot</button>' +
-          '<button onclick="socket.emit(\'loungeCarromShoot\',\'queen\')" style="background:#dc2626;border:1px solid #fff;color:#fff;padding:8px;border-radius:9px;font-weight:900;">👑 Queen Shot</button>'
-        : '<div style="grid-column:span 2;font-size:11px;color:#fde047;">⏳ Opponent aiming...</div>';
+      initCarromCanvasCoins(d.coinsLeft, d.queenOnBoard);
+      const myTurn = d.turnId === socket.id;
+      renderCarromCanvas(myTurn);
+      const btns = document.getElementById('carromBtns');
+      if (btns && myTurn) {
+        btns.innerHTML =
+          '<div style="font-size:10px;color:#fde047;margin-bottom:4px;">Slide Striker & Tap Board to Aim Laser!</div>' +
+          '<input type="range" min="48" max="232" value="' + getCarromStrikerX() + '" oninput="setCarromStrikerX(Number(this.value));renderCarromCanvas(true);" style="width:100%;margin-bottom:6px;">' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+            '<button onclick="fireVipCarromCanvas(\'safe\')" style="background:#16a34a;border:1.5px solid #fff;color:#fff;padding:8px;border-radius:9px;font-weight:900;">🎯 Cut Coin</button>' +
+            '<button onclick="fireVipCarromCanvas(\'queen\')" style="background:#dc2626;border:1.5px solid #fff;color:#fff;padding:8px;border-radius:9px;font-weight:900;">👑 Queen Shot</button>' +
+          '</div>';
+      }
     });
-    socket.on('carromEnd', () => { document.getElementById('carromModal').style.display = 'none'; });
 
     socket.on('ludoSync', function(d) {
-      if (d._serverId && d._serverId !== window.selectedServerId) return;
-      document.getElementById('ludoModal').style.display = 'flex';
-      const cur = d.players[d.turnIdx];
-      const myTurn = cur && cur.id === socket.id;
-      document.getElementById('ludoBanner').textContent = (myTurn ? '🔥 YOUR TURN!' : ('Turn: ' + (cur ? cur.username : ''))) + (d.lastDice ? (' • 🎲 ' + d.lastDice) : '');
-      document.getElementById('ludoPlayersList').innerHTML = d.players.map(p => {
-        const t1 = p.tokens === -1 ? '🏠 Base' : (p.tokens >= 24 ? '👑 HOME' : ('Tile ' + p.tokens + '/24'));
-        const t2 = p.tokens === -1 ? '🏠 Base' : (p.tokens >= 24 ? '👑 HOME' : ('Tile ' + p.tokens + '/24'));
-        return '<div style="background:#0f172a;border:1px solid #334155;border-radius:9px;padding:6px;font-size:11px;display:flex;justify-content:space-between;"><b>' + p.color + ' ' + p.username + '</b><span>T1: ' + t1 + ' | T2: ' + t2 + '</span></div>';
-      }).join('');
-      const ctrl = document.getElementById('ludoControls');
-      if (!myTurn) { ctrl.innerHTML = '<span style="font-size:11px;color:#94a3b8;">Waiting for roll...</span>'; return; }
-      ctrl.innerHTML = !d.rolled
-        ? '<button onclick="socket.emit(\'loungeLudoRoll\')" style="background:#16a34a;border:2px solid #fff;color:#fff;padding:8px 16px;border-radius:10px;font-weight:900;">🎲 ROLL DICE</button>'
-        : '<button onclick="socket.emit(\'loungeLudoMove\',0)" style="background:#0284c7;border:1px solid #fff;color:#fff;padding:7px 12px;border-radius:9px;font-weight:900;">Move Token 1</button>' +
-          '<button onclick="socket.emit(\'loungeLudoMove\',1)" style="background:#7c3aed;border:1px solid #fff;color:#fff;padding:7px 12px;border-radius:9px;font-weight:900;">Move Token 2</button>';
+      playVipSfx('dice');
+      if (d.lastDice) {
+        const b = document.getElementById('ludoBanner');
+        if (b) b.innerHTML += ' <span class="vip-dice-3d">' + (DICE_3D[d.lastDice - 1] || '🎲') + '</span>';
+      }
     });
-    socket.on('ludoEnd', () => { document.getElementById('ludoModal').style.display = 'none'; });
 
     socket.on('snakesSync', function(d) {
-      if (d._serverId && d._serverId !== window.selectedServerId) return;
-      document.getElementById('snakesModal').style.display = 'flex';
-      const cur = d.players[d.turnIdx];
-      const myTurn = cur && cur.id === socket.id;
-      document.getElementById('snakesBanner').textContent = (myTurn ? '🔥 YOUR TURN!' : ('Turn: ' + (cur ? cur.username : ''))) + (d.lastDice ? (' • 🎲 ' + d.lastDice) : '');
-      document.getElementById('snakesEventLog').textContent = d.lastNote || '';
-      document.getElementById('snakesPlayersList').innerHTML = d.players.map(p =>
-        '<div style="background:#0f172a;border:1px solid #475569;border-radius:9px;padding:6px;font-size:11px;display:flex;justify-content:space-between;"><b>' + p.badge + ' ' + p.username + '</b><b style="color:#fde047;">Tile ' + p.pos + ' / 100</b></div>'
-      ).join('');
-      document.getElementById('snakesControls').innerHTML = myTurn
-        ? '<button onclick="socket.emit(\'loungeSnakesRoll\')" style="background:linear-gradient(90deg,#9333ea,#ec4899);border:2px solid #fff;color:#fff;padding:9px 20px;border-radius:11px;font-weight:900;font-size:13px;">🎲 ROLL DICE</button>'
-        : '<span style="font-size:11px;color:#94a3b8;">Waiting for roll...</span>';
+      playVipSfx('dice');
+      if (d.lastDice) {
+        const b = document.getElementById('snakesBanner');
+        if (b) b.innerHTML += ' <span class="vip-dice-3d">' + (DICE_3D[d.lastDice - 1] || '🎲') + '</span>';
+      }
     });
-    socket.on('snakesEnd', () => { document.getElementById('snakesModal').style.display = 'none'; });
-  }
-
-  window.addEventListener('DOMContentLoaded', bindLoungeSockets);
-  setInterval(bindLoungeSockets, 1000);
+  }, 800);
 })();
 </script>
 

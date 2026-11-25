@@ -3628,144 +3628,151 @@
   }, 800);
 })();
 </script>
-
-  <!-- ============================================================================ -->
-<!-- 👑 VIP MONTE CARLO LOUNGE (ALL-IN-ONE) — PIECE 1/4                           -->
-<!-- ============================================================================ -->
 <style>
   @keyframes vipHaloPulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.45); }
-    50% { box-shadow: 0 0 36px rgba(250, 204, 21, 0.9); }
+    0%, 100% { box-shadow: 0 0 24px rgba(250, 204, 21, 0.35), inset 0 0 20px rgba(168, 85, 247, 0.15); }
+    50% { box-shadow: 0 0 42px rgba(250, 204, 21, 0.75), inset 0 0 28px rgba(236, 72, 153, 0.25); }
+  }
+  @keyframes cardPopIn {
+    from { transform: translateY(12px) scale(0.92); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes diceBounce {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.22) rotate(12deg); }
   }
   .lounge-modal {
-    display: none; position: fixed; inset: 0; background: rgba(4, 7, 18, 0.95);
-    z-index: 999999; align-items: center; justify-content: center; padding: 8px;
-    backdrop-filter: blur(10px); font-family: inherit;
+    display: none; position: fixed; inset: 0; background: rgba(3, 5, 14, 0.92);
+    z-index: 999999; align-items: center; justify-content: center; padding: 10px;
+    backdrop-filter: blur(14px); font-family: inherit;
   }
   .lounge-box {
-    background: radial-gradient(circle at top, #1e1b4b 0%, #060913 85%);
-    border: 2.5px solid #facc15; border-radius: 20px; padding: 12px;
-    width: 100%; max-width: 395px; max-height: 94vh; overflow-y: auto;
-    color: #fff; text-align: center; animation: vipHaloPulse 3s infinite ease-in-out;
+    background: linear-gradient(160deg, rgba(15, 23, 42, 0.96), rgba(30, 27, 75, 0.96) 55%, rgba(9, 13, 22, 0.98));
+    border: 2px solid rgba(250, 204, 21, 0.75); border-radius: 24px; padding: 14px;
+    width: 100%; max-width: 405px; max-height: 94vh; overflow-y: auto;
+    color: #fff; text-align: center; animation: vipHaloPulse 3.5s infinite ease-in-out;
+  }
+  .lounge-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   }
   .uno-card {
-    width: 54px; height: 78px; border-radius: 10px; border: 2px solid #fff;
+    width: 56px; height: 82px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.9);
     display: inline-flex; flex-direction: column; justify-content: space-between;
-    padding: 4px; font-weight: 900; cursor: pointer; user-select: none;
+    padding: 4px 5px; font-weight: 900; cursor: pointer; user-select: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease; animation: cardPopIn 0.2s ease-out;
   }
-  .uno-card:not(.dim) { box-shadow: 0 0 12px rgba(250, 204, 21, 0.8); transform: translateY(-2px); }
-  .uno-card.dim { opacity: 0.4; cursor: not-allowed; }
+  .uno-card:not(.dim):hover { transform: translateY(-7px) scale(1.06); box-shadow: 0 10px 22px rgba(250, 204, 21, 0.75); }
+  .uno-card:not(.dim) { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); }
+  .uno-card.dim { opacity: 0.38; filter: grayscale(0.4); cursor: not-allowed; }
   .uno-oval {
-    background: rgba(255,255,255,0.92); border-radius: 50%; width: 34px; height: 42px;
+    background: linear-gradient(145deg, #ffffff, #e2e8f0); border-radius: 50%; width: 36px; height: 44px;
     margin: auto; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 900; transform: rotate(-15deg); color: #111;
+    font-size: 15px; font-weight: 900; transform: rotate(-16deg); color: #0f172a;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
   }
-  .u-red    { background: linear-gradient(145deg, #ef4444, #991b1b); }
-  .u-blue   { background: linear-gradient(145deg, #3b82f6, #1e3a8a); }
-  .u-green  { background: linear-gradient(145deg, #22c55e, #14532d); }
-  .u-yellow { background: linear-gradient(145deg, #facc15, #ca8a04); color: #111; }
+  .u-red    { background: linear-gradient(145deg, #f87171, #dc2626, #7f1d1d); }
+  .u-blue   { background: linear-gradient(145deg, #60a5fa, #2563eb, #1e3a8a); }
+  .u-green  { background: linear-gradient(145deg, #4ade80, #16a34a, #14532d); }
+  .u-yellow { background: linear-gradient(145deg, #fde047, #eab308, #a16207); color: #111; }
   .u-wild   { background: conic-gradient(#ef4444 0 90deg, #3b82f6 90deg 180deg, #eab308 180deg 270deg, #22c55e 270deg 360deg); }
-  
+  #chessGrid {
+    display: grid; grid-template-columns: repeat(8, 1fr);
+    border: 6px solid #451a03; border-radius: 14px; overflow: hidden;
+    width: 100%; max-width: 325px; aspect-ratio: 1/1; margin: 0 auto;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 0 2px #f59e0b;
+  }
   #realSnakesBoard {
     display: grid; grid-template-columns: repeat(10, 1fr);
-    width: 100%; max-width: 320px; aspect-ratio: 1/1; margin: 0 auto 8px;
-    border: 3px solid #e879f9; border-radius: 10px; overflow: hidden;
+    width: 100%; max-width: 328px; aspect-ratio: 1/1; margin: 0 auto 8px;
+    border: 3px solid #f472b6; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 10px 28px rgba(236, 72, 153, 0.35);
   }
-  .sn-cell { border: 0.5px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; line-height: 1.05; }
-  .vip-emote-bar { display: flex; gap: 5px; justify-content: center; margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(250,204,21,0.25); }
-  .vip-emote-btn { background: #1e293b; border: 1px solid #facc15; color: #fde047; border-radius: 999px; padding: 3px 9px; font-size: 10px; font-weight: 800; cursor: pointer; }
+  .sn-cell {
+    border: 0.5px solid rgba(255,255,255,0.12); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-size: 8px; font-weight: 900; line-height: 1.05;
+  }
+  .vip-emote-bar { display: flex; gap: 6px; justify-content: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(250,204,21,0.2); }
+  .vip-emote-btn {
+    background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid rgba(250,204,21,0.6);
+    color: #fde047; border-radius: 999px; padding: 4px 10px; font-size: 10px; font-weight: 800; cursor: pointer;
+  }
 </style>
 
-<!-- 👑 TOP BAR FOR ROYAL LOUNGE SERVER -->
 <div id="royalLoungeBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999990;justify-content:center;padding:0 8px;pointer-events:none;">
-  <div style="pointer-events:auto;background:linear-gradient(135deg,rgba(15,23,42,0.97),rgba(6,78,59,0.97));border:2px solid #facc15;border-radius:16px;padding:8px 10px;width:100%;max-width:420px;color:#fff;text-align:center;box-shadow:0 6px 24px rgba(250,204,21,0.45);">
-    <div style="font-size:11px;font-weight:900;color:#fde047;margin-bottom:5px;">
+  <div style="pointer-events:auto;background:linear-gradient(135deg,rgba(15,23,42,0.96),rgba(49,16,66,0.96));border:2px solid #facc15;border-radius:18px;padding:9px 12px;width:100%;max-width:420px;color:#fff;text-align:center;box-shadow:0 8px 28px rgba(250,204,21,0.45);backdrop-filter:blur(10px);">
+    <div style="font-size:11px;font-weight:900;color:#fde047;margin-bottom:6px;letter-spacing:0.5px;">
       👑 VIP MONTE CARLO LOUNGE
-      <button id="vipJazzBtn" onclick="toggleVipJazz(this)" style="margin-left:6px;background:#1e293b;border:1px solid #facc15;color:#fde047;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:900;cursor:pointer;">🔇 Jazz: OFF</button>
+      <button id="vipJazzBtn" onclick="toggleVipJazz(this)" style="margin-left:6px;background:#0f172a;border:1px solid #facc15;color:#fde047;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:900;cursor:pointer;">🔇 Jazz: OFF</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">
-      <button onclick="socket.emit('chatMessage','!uno')" style="background:#dc2626;border:1px solid #fff;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">🃏 UNO</button>
-      <button onclick="socket.emit('loungeStartChess')" style="background:#334155;border:1px solid #38bdf8;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">♟️ Chess</button>
-      <button onclick="socket.emit('loungeStartCarrom')" style="background:#b45309;border:1px solid #fde047;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">🎯 Carrom</button>
-      <button onclick="socket.emit('loungeStartLudo')" style="background:#15803d;border:1px solid #4ade80;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">🎲 6P Ludo</button>
-      <button onclick="socket.emit('loungeStartSnakes')" style="background:#7e22ce;border:1px solid #e879f9;color:#fff;padding:7px 2px;border-radius:9px;font-weight:900;font-size:10px;cursor:pointer;">🐍 Snakes</button>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+      <button onclick="socket.emit('chatMessage','!uno')" style="background:linear-gradient(135deg,#ef4444,#b91c1c);border:1px solid rgba(255,255,255,0.6);color:#fff;padding:8px 2px;border-radius:11px;font-weight:900;font-size:11px;cursor:pointer;box-shadow:0 4px 12px rgba(239,68,68,0.4);">🃏 UNO Royale</button>
+      <button onclick="socket.emit('loungeStartChess')" style="background:linear-gradient(135deg,#0284c7,#1e3a8a);border:1px solid rgba(255,255,255,0.6);color:#fff;padding:8px 2px;border-radius:11px;font-weight:900;font-size:11px;cursor:pointer;box-shadow:0 4px 12px rgba(56,189,248,0.4);">♟️ Pro Chess</button>
+      <button onclick="socket.emit('loungeStartSnakes')" style="background:linear-gradient(135deg,#9333ea,#be185d);border:1px solid rgba(255,255,255,0.6);color:#fff;padding:8px 2px;border-radius:11px;font-weight:900;font-size:11px;cursor:pointer;box-shadow:0 4px 12px rgba(192,132,252,0.4);">🐍 6P Snakes</button>
     </div>
   </div>
 </div>
-
-<!-- 1. UNO ROYALE MODAL -->
-<div id="unoModal" class="lounge-modal">
+    <div id="unoModal" class="lounge-modal">
   <div class="lounge-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#fde047;">🃏 UNO ROYALE (10P)</span>
+    <div class="lounge-header">
+      <span style="font-weight:900;font-size:14px;background:linear-gradient(90deg,#fde047,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🃏 UNO ROYALE VIP (10P)</span>
       <div style="display:flex;gap:6px;align-items:center;">
-        <span id="unoTimer" style="font-size:11px;color:#38bdf8;font-weight:900;">⏳ 20s</span>
-        <button onclick="document.getElementById('unoModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
+        <span id="unoTimer" style="background:rgba(56,189,248,0.15);border:1px solid #38bdf8;padding:2px 8px;border-radius:999px;font-size:11px;color:#38bdf8;font-weight:900;">⏳ 20s</span>
+        <button onclick="document.getElementById('unoModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:3px 9px;font-weight:bold;cursor:pointer;">✕</button>
       </div>
     </div>
-    <div id="unoSeats" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:8px;font-size:10px;"></div>
-    <div id="unoFelt" style="background:#064e3b;border:2px solid #34d399;border-radius:14px;padding:12px;margin-bottom:8px;"></div>
+    <div id="unoSeats" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:8px;font-size:10px;"></div>
+    <div id="unoFelt" style="background:radial-gradient(circle,#065f46,#022c22);border:2px solid #34d399;border-radius:18px;padding:14px;margin-bottom:9px;box-shadow:inset 0 0 24px rgba(0,0,0,0.6);"></div>
     <div id="unoWildBox" style="display:none;gap:6px;justify-content:center;margin-bottom:8px;">
-      <button onclick="pickUnoColor('red')" style="background:#dc2626;border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;">🔴 RED</button>
-      <button onclick="pickUnoColor('blue')" style="background:#2563eb;border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;">🔵 BLUE</button>
-      <button onclick="pickUnoColor('green')" style="background:#16a34a;border:1px solid #fff;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;">🟢 GREEN</button>
-      <button onclick="pickUnoColor('yellow')" style="background:#eab308;border:1px solid #fff;color:#111;padding:6px 10px;border-radius:8px;font-weight:900;">🟡 YELLOW</button>
+      <button onclick="pickUnoColor('red')" style="background:#dc2626;border:1.5px solid #fff;color:#fff;padding:6px 10px;border-radius:9px;font-weight:900;">🔴 RED</button>
+      <button onclick="pickUnoColor('blue')" style="background:#2563eb;border:1.5px solid #fff;color:#fff;padding:6px 10px;border-radius:9px;font-weight:900;">🔵 BLUE</button>
+      <button onclick="pickUnoColor('green')" style="background:#16a34a;border:1.5px solid #fff;color:#fff;padding:6px 10px;border-radius:9px;font-weight:900;">🟢 GREEN</button>
+      <button onclick="pickUnoColor('yellow')" style="background:#eab308;border:1.5px solid #fff;color:#111;padding:6px 10px;border-radius:9px;font-weight:900;">🟡 YELLOW</button>
     </div>
     <div id="unoCtrls" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;"></div>
-    <div id="unoHand" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-height:175px;overflow-y:auto;"></div>
+    <div id="unoHand" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:185px;overflow-y:auto;padding:4px;"></div>
   </div>
 </div>
-<!-- ============================================================================ -->
-<!-- 👑 VIP MONTE CARLO LOUNGE (ALL-IN-ONE) — PIECE 2/4 (4 BOARD MODALS)           -->
-<!-- ============================================================================ -->
-<!-- 2. CHESS MODAL -->
+
 <div id="chessModal" class="lounge-modal">
   <div class="lounge-box" style="border-color:#38bdf8;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#38bdf8;">♟️ ROYAL GRANDMASTER CHESS</span>
-      <button onclick="document.getElementById('chessModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
+    <div class="lounge-header">
+      <span style="font-weight:900;font-size:14px;color:#38bdf8;">♟️ GRANDMASTER CHESS ARENA</span>
+      <button onclick="document.getElementById('chessModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:3px 9px;font-weight:bold;cursor:pointer;">✕</button>
     </div>
-    <div id="chessStatus" style="font-size:11px;color:#fde047;font-weight:bold;margin-bottom:8px;">White vs Black</div>
-    <div id="chessGrid" style="display:grid;grid-template-columns:repeat(8,1fr);border:4px solid #78350f;border-radius:8px;overflow:hidden;width:100%;max-width:315px;aspect-ratio:1/1;margin:0 auto;"></div>
+    <div id="chessStatus" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:6px;font-size:11px;color:#fde047;font-weight:900;margin-bottom:10px;">White vs Black</div>
+    <div id="chessGrid"></div>
   </div>
 </div>
 
-
-
-<!-- 5. REAL 10x10 SNAKES & LADDERS MODAL -->
 <div id="snakesModal" class="lounge-modal">
   <div class="lounge-box" style="border-color:#e879f9;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#e879f9;">🐍🪜 6P SNAKES & LADDERS</span>
-      <button onclick="document.getElementById('snakesModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
+    <div class="lounge-header">
+      <span style="font-weight:900;font-size:14px;background:linear-gradient(90deg,#e879f9,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🐍🪜 6P SNAKES & LADDERS ROYALE</span>
+      <button onclick="document.getElementById('snakesModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:3px 9px;font-weight:bold;cursor:pointer;">✕</button>
     </div>
     <div id="snakesBanner" style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:4px;">Race to Tile 100!</div>
-    <div id="snakesEventLog" style="font-size:11px;color:#67e8f9;margin-bottom:6px;"></div>
+    <div id="snakesEventLog" style="background:rgba(168,85,247,0.16);border:1px solid rgba(232,121,249,0.4);border-radius:9px;padding:4px 8px;font-size:11px;color:#67e8f9;margin-bottom:7px;min-height:22px;"></div>
     <div id="realSnakesBoard"></div>
-    <div id="snakesPlayersList" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:8px;font-size:10px;"></div>
+    <div id="snakesPlayersList" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:9px;font-size:10px;"></div>
     <div id="snakesControls" style="display:flex;justify-content:center;"></div>
   </div>
 </div>
-<!-- ============================================================================ -->
-<!-- 👑 VIP MONTE CARLO LOUNGE (ALL-IN-ONE) — PIECE 3/4 (AUDIO & BOARD ENGINES)  -->
-<!-- ============================================================================ -->
+
 <script>
 (function() {
   let wildIdx = null, chessSel = null, vipCtx = null, jazzTimer = null, jazzOn = false;
-  
 
   const CHESS_ICON = { r:'♜', n:'♞', b:'♝', q:'♛', k:'♚', p:'♟', R:'♖', N:'♘', B:'♗', Q:'♕', K:'♔', P:'♙' };
-
+  const DICE_3D = ['⚀','⚁','⚂','⚃','⚄','⚅'];
   const MAP_LADDERS = { 4:25, 13:46, 33:49, 42:63, 50:69, 62:81, 74:92 };
   const MAP_SNAKES  = { 27:5, 40:3, 43:18, 54:31, 66:45, 76:58, 89:53, 99:41 };
 
-  // Show Top Lounge Bar whenever player enters 'srv_lounge'
   setInterval(function() {
     const bar = document.getElementById('royalLoungeBar');
     if (bar) bar.style.display = (window.selectedServerId === 'srv_lounge') ? 'flex' : 'none';
   }, 700);
 
-  // Inject VIP Emote bar into all 5 modals once
   setTimeout(function() {
     document.querySelectorAll('.lounge-box').forEach(function(box) {
       if (box.querySelector('.vip-emote-bar')) return;
@@ -3796,7 +3803,12 @@
     jazzOn = !jazzOn;
     if (btn) btn.textContent = jazzOn ? '🎷 Jazz: ON' : '🔇 Jazz: OFF';
     if (!jazzOn) { clearInterval(jazzTimer); jazzTimer = null; return; }
-    const chords = [,,,,];
+    const chords = [
+      [261.63, 329.63, 392.00, 493.88],
+      [220.00, 261.63, 329.63, 392.00],
+      [174.61, 220.00, 261.63, 329.63],
+      [196.00, 246.94, 293.66, 349.23]
+    ];
     let step = 0;
     const play = () => {
       if (!jazzOn) return;
@@ -3826,12 +3838,6 @@
     if (wildIdx !== null) { socket.emit('unoPlayCard', { idx: wildIdx, chosenColor: col }); wildIdx = null; }
   };
 
-  
-<!-- ============================================================================ -->
-<!-- 👑 VIP MONTE CARLO LOUNGE — PIECE 4A/4 (BOARD RENDERERS & UNO/CHESS)          -->
-<!-- ============================================================================ -->
-  
-
   function renderSnakes10(players) {
     const b = document.getElementById('realSnakesBoard'); if (!b) return;
     b.innerHTML = '';
@@ -3842,24 +3848,20 @@
         const ac = (row % 2 === 0) ? col : (9 - col);
         const num = row * 10 + ac + 1;
         const cell = document.createElement('div'); cell.className = 'sn-cell';
-        let bg = (num % 2 === 0) ? '#1e293b' : '#334155', ic = '';
-        if (num === 100) { bg = '#ca8a04'; ic = '👑'; }
-        else if (MAP_LADDERS[num]) { bg = '#15803d'; ic = '🪜' + MAP_LADDERS[num]; }
-        else if (MAP_SNAKES[num])  { bg = '#991b1b'; ic = '🐍' + MAP_SNAKES[num]; }
+        let bg = (num % 2 === 0) ? 'linear-gradient(145deg,#1e293b,#0f172a)' : 'linear-gradient(145deg,#312e81,#1e1b4b)', ic = '';
+        if (num === 100) { bg = 'linear-gradient(145deg,#f59e0b,#b45309)'; ic = '👑'; }
+        else if (MAP_LADDERS[num]) { bg = 'linear-gradient(145deg,#16a34a,#14532d)'; ic = '🪜' + MAP_LADDERS[num]; }
+        else if (MAP_SNAKES[num])  { bg = 'linear-gradient(145deg,#dc2626,#7f1d1d)'; ic = '🐍' + MAP_SNAKES[num]; }
         cell.style.background = bg;
-        cell.innerHTML = '<span>' + num + '</span><span>' + (pins[num] || ic) + '</span>';
+        cell.innerHTML = '<span style="opacity:0.85;">' + num + '</span><span style="font-size:10px;">' + (pins[num] || ic) + '</span>';
         b.appendChild(cell);
       }
     }
   }
-
-  function bindAllLounge() {
+    function bindAllLounge() {
     if (typeof socket === 'undefined' || window._vipAllLoungeBound) return;
     window._vipAllLoungeBound = true;
 
-    
-
-    // 1. UNO
     socket.on('unoSync', function(d) {
       if (d._serverId && d._serverId !== window.selectedServerId) return;
       playVipSfx(540, 160);
@@ -3871,24 +3873,24 @@
 
       if (d.phase === 'lobby') {
         const joined = d.players.some(p => p.id === socket.id);
-        seats.innerHTML = d.players.map(p => '<span style="background:#1e293b;border:1px solid #38bdf8;padding:2px 8px;border-radius:999px;">🃏 ' + p.username + '</span>').join('');
-        felt.innerHTML = '<div style="font-weight:900;color:#fde047;margin-bottom:8px;">UNO LOBBY (' + d.players.length + '/10)</div><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">' +
-          (!joined ? '<button onclick="socket.emit(\'unoJoin\')" style="background:#16a34a;border:1px solid #fff;color:#fff;padding:7px 12px;border-radius:9px;font-weight:900;">➕ Join</button>' : '') +
-          (joined ? '<button onclick="socket.emit(\'unoAddBot\')" style="background:#0284c7;border:1px solid #fff;color:#fff;padding:7px 12px;border-radius:9px;font-weight:900;">🤖 +Bot</button>' : '') +
-          (joined && d.players.length >= 2 ? '<button onclick="socket.emit(\'unoForceStart\')" style="background:#f59e0b;border:1px solid #fff;color:#111;padding:7px 12px;border-radius:9px;font-weight:900;">🚀 Start</button>' : '') + '</div>';
+        seats.innerHTML = d.players.map(p => '<span style="background:#1e293b;border:1px solid #38bdf8;padding:3px 9px;border-radius:999px;font-weight:700;">🃏 ' + p.username + '</span>').join('');
+        felt.innerHTML = '<div style="font-weight:900;color:#fde047;margin-bottom:8px;font-size:13px;">UNO ROYALE LOBBY (' + d.players.length + '/10)</div><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">' +
+          (!joined ? '<button onclick="socket.emit(\'unoJoin\')" style="background:#16a34a;border:1px solid #fff;color:#fff;padding:8px 14px;border-radius:10px;font-weight:900;">➕ Join Table</button>' : '') +
+          (joined ? '<button onclick="socket.emit(\'unoAddBot\')" style="background:#0284c7;border:1px solid #fff;color:#fff;padding:8px 14px;border-radius:10px;font-weight:900;">🤖 +AI Bot</button>' : '') +
+          (joined && d.players.length >= 2 ? '<button onclick="socket.emit(\'unoForceStart\')" style="background:linear-gradient(90deg,#f59e0b,#ec4899);border:1px solid #fff;color:#fff;padding:8px 14px;border-radius:10px;font-weight:900;">🚀 Deal Cards</button>' : '') + '</div>';
         return;
       }
-      seats.innerHTML = d.players.map(p => '<span style="background:' + (p.isTurn ? '#7c3aed' : '#1e293b') + ';border:1px solid #facc15;padding:2px 8px;border-radius:999px;">' + (p.isTurn ? '👉 ' : '') + p.username + ' (' + p.count + '🃏)</span>').join('');
+      seats.innerHTML = d.players.map(p => '<span style="background:' + (p.isTurn ? 'linear-gradient(90deg,#7c3aed,#ec4899)' : '#1e293b') + ';border:1px solid ' + (p.isTurn ? '#fde047' : '#475569') + ';padding:3px 9px;border-radius:999px;font-weight:800;">' + (p.isTurn ? '👉 ' : '') + p.username + ' (' + p.count + '🃏)</span>').join('');
       const sym = d.topCard.v === 'SKIP' ? '🚫' : (d.topCard.v === 'REV' ? '🔄' : d.topCard.v);
-      felt.innerHTML = '<div class="uno-card u-' + d.activeColor + '" style="margin:0 auto;"><div style="font-size:10px;text-align:left;">' + sym + '</div><div class="uno-oval">' + sym + '</div><div style="font-size:10px;text-align:right;">' + sym + '</div></div><div style="margin-top:6px;font-size:11px;font-weight:900;color:#fde047;">' + (d.isMyTurn ? '🔥 YOUR TURN!' : ('Turn: ' + d.turnName)) + '</div>';
+      felt.innerHTML = '<div class="uno-card u-' + d.activeColor + '" style="margin:0 auto;transform:scale(1.08);"><div style="font-size:10px;text-align:left;">' + sym + '</div><div class="uno-oval">' + sym + '</div><div style="font-size:10px;text-align:right;">' + sym + '</div></div><div style="margin-top:9px;font-size:12px;font-weight:900;color:#fde047;">' + (d.isMyTurn ? '🔥 YOUR TURN — TAP A GLOWING CARD!' : ('⏳ Waiting on ' + d.turnName + '...')) + '</div>';
       if (d.phase === 'spectate') return;
       if (d.isMyTurn) {
-        const db = document.createElement('button'); db.style.cssText = 'background:#0284c7;border:1px solid #fff;color:#fff;padding:6px 12px;border-radius:9px;font-weight:900;font-size:11px;';
+        const db = document.createElement('button'); db.style.cssText = 'background:linear-gradient(90deg,#0284c7,#2563eb);border:1.5px solid #fff;color:#fff;padding:7px 14px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;';
         db.textContent = '📥 Draw Card'; db.onclick = () => socket.emit('unoDrawCard'); ctrls.appendChild(db);
       }
       if (d.myHand.length <= 2 && !d.saidUno) {
-        const ub = document.createElement('button'); ub.style.cssText = 'background:#dc2626;border:1px solid #fff;color:#fff;padding:6px 12px;border-radius:9px;font-weight:900;font-size:11px;';
-        ub.textContent = '🚨 UNO!'; ub.onclick = () => socket.emit('unoCallShout'); ctrls.appendChild(ub);
+        const ub = document.createElement('button'); ub.style.cssText = 'background:linear-gradient(90deg,#dc2626,#f59e0b);border:1.5px solid #fff;color:#fff;padding:7px 14px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;';
+        ub.textContent = '🚨 SHOUT UNO!'; ub.onclick = () => socket.emit('unoCallShout'); ctrls.appendChild(ub);
       }
       hand.innerHTML = d.myHand.map((c, i) => {
         const can = d.isMyTurn && (c.c === 'wild' || c.c === d.activeColor || c.v === d.topCard.v);
@@ -3898,19 +3900,19 @@
     });
     socket.on('unoEnd', () => { document.getElementById('unoModal').style.display = 'none'; });
 
-    // 2. CHESS
     socket.on('chessSync', function(d) {
       if (d._serverId && d._serverId !== window.selectedServerId) return;
       playVipSfx(280, 120);
       document.getElementById('chessModal').style.display = 'flex';
       const myCol = d.whiteId === socket.id ? 'w' : (d.blackId === socket.id ? 'b' : 'spec'), myTurn = d.turn === myCol;
-      document.getElementById('chessStatus').textContent = '⚪ ' + d.whiteName + ' vs ⚫ ' + d.blackName + ' • ' + (myTurn ? '🔥 YOUR MOVE!' : 'Opponent Turn');
+      document.getElementById('chessStatus').innerHTML = '⚪ ' + d.whiteName + ' vs ⚫ ' + d.blackName + ' • ' + (myTurn ? '<span style="color:#4ade80;">🔥 YOUR MOVE!</span>' : '<span style="color:#94a3b8;">Opponent Turn</span>');
       const grid = document.getElementById('chessGrid'); grid.innerHTML = '';
       for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
           const sq = document.createElement('div'), piece = d.board[r][c], isW = piece && piece === piece.toUpperCase();
           const sel = chessSel && chessSel.r === r && chessSel.c === c;
-          sq.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:25px;cursor:pointer;background:' + (sel ? '#facc15' : ((r + c) % 2 === 0 ? '#fef3c7' : '#92400e')) + ';color:' + (isW ? '#fff' : '#090d16') + ';text-shadow:' + (isW ? '0 1px 3px #000' : 'none') + ';';
+          const sqBg = sel ? 'radial-gradient(circle,#fde047,#eab308)' : ((r + c) % 2 === 0 ? 'linear-gradient(145deg,#fef3c7,#fde68a)' : 'linear-gradient(145deg,#92400e,#78350f)');
+          sq.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;background:' + sqBg + ';color:' + (isW ? '#ffffff' : '#090d16') + ';text-shadow:' + (isW ? '0 2px 4px rgba(0,0,0,0.9)' : '0 1px 1px rgba(255,255,255,0.35)') + ';';
           sq.textContent = CHESS_ICON[piece] || '';
           sq.onclick = () => {
             if (!myTurn) return;
@@ -3922,24 +3924,19 @@
       }
     });
     socket.on('chessEnd', () => { document.getElementById('chessModal').style.display = 'none'; });
-<!-- ============================================================================ -->
-<!-- 👑 VIP MONTE CARLO LOUNGE — PIECE 4B/4 (CARROM, LUDO, SNAKES & CLOSING)       -->
-<!-- ============================================================================ -->
- 
-    
-    // 5. SNAKES & LADDERS
-    socket.on('snakesSync', function(d) {
+            socket.on('snakesSync', function(d) {
       if (d._serverId && d._serverId !== window.selectedServerId) return;
       playVipSfx(340, 680);
       document.getElementById('snakesModal').style.display = 'flex';
       renderSnakes10(d.players);
       const cur = d.players[d.turnIdx], myTurn = cur && cur.id === socket.id;
-      document.getElementById('snakesBanner').innerHTML = (myTurn ? '🔥 YOUR TURN!' : ('Turn: ' + (cur ? cur.username : ''))) + (d.lastDice ? (' • ' + (DICE_3D[d.lastDice - 1] || '🎲') + ' ' + d.lastDice) : '');
-      document.getElementById('snakesEventLog').textContent = d.lastNote || '';
-      document.getElementById('snakesPlayersList').innerHTML = d.players.map(p => '<span style="background:#1e293b;border:1px solid #e879f9;padding:2px 7px;border-radius:999px;">' + p.badge + ' ' + p.username + ': <b>' + p.pos + '</b></span>').join('');
+      const diceHtml = d.lastDice ? (' • <span style="display:inline-block;font-size:16px;animation:diceBounce 0.4s ease;">' + (DICE_3D[d.lastDice - 1] || '🎲') + '</span> <b>' + d.lastDice + '</b>') : '';
+      document.getElementById('snakesBanner').innerHTML = (myTurn ? '🔥 YOUR TURN TO ROLL!' : ('⏳ Turn: ' + (cur ? cur.username : ''))) + diceHtml;
+      document.getElementById('snakesEventLog').textContent = d.lastNote || 'Climb ladders 🪜, dodge snakes 🐍!';
+      document.getElementById('snakesPlayersList').innerHTML = d.players.map((p, idx) => '<span style="background:' + (idx === d.turnIdx ? 'rgba(232,121,249,0.28)' : '#1e293b') + ';border:1px solid #e879f9;padding:3px 8px;border-radius:999px;font-weight:700;">' + p.badge + ' ' + p.username + ': <b>' + p.pos + '</b></span>').join('');
       document.getElementById('snakesControls').innerHTML = myTurn
-        ? '<button onclick="socket.emit(\'loungeSnakesRoll\')" style="background:linear-gradient(90deg,#9333ea,#ec4899);border:2px solid #fff;color:#fff;padding:9px 20px;border-radius:11px;font-weight:900;">🎲 ROLL DICE</button>'
-        : '<span style="font-size:11px;color:#94a3b8;">Waiting for roll...</span>';
+        ? '<button onclick="socket.emit(\'loungeSnakesRoll\')" style="background:linear-gradient(90deg,#9333ea,#ec4899,#f59e0b);border:2px solid #fff;color:#fff;padding:10px 24px;border-radius:12px;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 0 20px rgba(236,72,153,0.6);">🎲 ROLL ROYAL DICE</button>'
+        : '<span style="font-size:11px;color:#94a3b8;">Waiting for current player to roll...</span>';
     });
     socket.on('snakesEnd', () => { document.getElementById('snakesModal').style.display = 'none'; });
   }
@@ -3948,12 +3945,10 @@
   setInterval(bindAllLounge, 900);
 })();
 </script>
-<!-- ============================================================================ -->
-<!-- 📺 VERMA DIARY 18 YOUTUBE SPONSOR CARD (WITH /VERMAAD ON|OFF CONTROL)        -->
-<!-- ============================================================================ -->
+
 <script>
 (function() {
-  const VERMA_URL = "https://youtube.com/@verma_diary_18?si=_eifE_LTlOLWg-B9";
+  const VERMA_URL = "https://youtube.com";
   window._vermaAdEnabled = true;
 
   const VERMA_CARD_HTML = `
@@ -3974,7 +3969,6 @@
   `;
 
   function syncVermaAdBoxes() {
-    // 1. Pre-lobby & server ADVERTISEMENT boxes
     document.querySelectorAll('[data-verma-box="1"]').forEach(function(box) {
       box.style.display = window._vermaAdEnabled ? '' : 'none';
     });
@@ -3995,7 +3989,6 @@
       });
     }
 
-    // 2. Floating in-server banner (if present)
     const banner = document.getElementById('vermaPromoBanner');
     if (banner) {
       if (!window._vermaAdEnabled || window._vermaPromoClosed) {

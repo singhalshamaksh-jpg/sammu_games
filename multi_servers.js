@@ -11923,6 +11923,28 @@ div>') +
         });
     });
 
+    // ============================================================================
+    // 🌊 WATER.IO V4 — BULLETPROOF ROUTE & POPUP OVERRIDE (PASTE ABOVE return OG_HOSTS;)
+    // ============================================================================
+    const waterIoHandler = (req, res, next) => {
+        const cleanUrl = (req.originalUrl || req.url || '').split('?').toLowerCase();
+        if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.status(200).send(WATER_IO_PAGE_HTML + '\n' + WATER_IO_CLIENT_JS_A + '\n' + WATER_IO_CLIENT_JS_B);
+        }
+        return next();
+    };
+
+    app.use(waterIoHandler);
+
+    // Move waterIoHandler to index 0 of Express stack (above static & '*' routes)
+    if (app._router && Array.isArray(app._router.stack)) {
+        const idx = app._router.stack.findIndex(layer => layer && layer.handle === waterIoHandler);
+        if (idx > 0) {
+            const [movedLayer] = app._router.stack.splice(idx, 1);
+            app._router.stack.unshift(movedLayer);
+        }
+    }
 
  return OG_HOSTS;
 };

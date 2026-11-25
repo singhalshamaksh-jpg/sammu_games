@@ -11848,6 +11848,61 @@ div>') +
         });
     });
 
+    // ============================================================================
+    // 🃏 UNO RE-LAUNCH & STUCK-LOBBY FIX (PASTE BEFORE return OG_HOSTS;)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.prependListener('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const srvId = socket.activeServerId;
+            if (!srvId || typeof raw !== 'string') return;
+            const cmd = raw.trim().toLowerCase();
+
+            // Allow stopping/resetting a stuck UNO game anytime
+            if (cmd === '!stopuno' || cmd === '/stopuno') {
+                const old = unoByServer.get(srvId);
+                if (old && old.interval) clearInterval(old.interval);
+                unoByServer.delete(srvId);
+                io.to(srvId).emit('unoEnd', { _serverId: srvId });
+                io.to(srvId).emit('message', {
+                    username: "Sammu's Bot",
+                    text: '🛑🃏 **UNO table cleared!** Type `!uno` anytime to start a fresh match!',
+                    _serverId: srvId
+                });
+                return;
+            }
+
+            if (cmd === '!uno') {
+                const existing = unoByServer.get(srvId);
+                if (existing) {
+                    // Check if any human player in the UNO game is still connected
+                    const anyHumanOnline = existing.players.some(p => !p.isBot && io.sockets.sockets.has(p.id));
+                    if (!anyHumanOnline) {
+                        if (existing.interval) clearInterval(existing.interval);
+                        unoByServer.delete(srvId);
+                    } else {
+                        // Re-link current socket if player reconnected with same username
+                        const uname = (socket.username || '').toLowerCase();
+                        const match = existing.players.find(p => !p.isBot && p.username.toLowerCase() === uname);
+                        if (match) match.id = socket.id;
+                        else if (existing.phase === 'lobby' && existing.players.length < 10) {
+                            existing.players.push({ id: socket.id, username: socket.username || 'Player', hand: [], saidUno: false });
+                        }
+                        broadcastUno(srvId);
+                    }
+                }
+            }
+        });
+
+        socket.on('unoResetTable', () => {
+            const srvId = socket.activeServerId;
+            if (!srvId) return;
+            const old = unoByServer.get(srvId);
+            if (old && old.interval) clearInterval(old.interval);
+            unoByServer.delete(srvId);
+            io.to(srvId).emit('unoEnd', { _serverId: srvId });
+        });
+    });
 
 
  return OG_HOSTS;

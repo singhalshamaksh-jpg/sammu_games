@@ -1,5 +1,8 @@
 (function () {
   let vizTimer = null;
+  let userClickedStop = false;
+  let currentStyle = null;
+  let lastPlayTime = 0;
 
   const MP3_TRACKS = {
     brazil:    { url: '/public_phonk_batidao.mp3',                           label: '🇧🇷 No Batidão (Brazilian Phonk)' },
@@ -38,6 +41,13 @@
       a.preload = 'auto';
       a.setAttribute('playsinline', '');
       document.body.appendChild(a);
+
+      a.addEventListener('pause', () => {
+        if (!userClickedStop && currentStyle && a.src) {
+          a.play().catch(() => {});
+        }
+      });
+
       window._sharedPhonkPlayer = a;
     }
     return window._sharedPhonkPlayer;
@@ -48,7 +58,7 @@
     if (tokyoBtn && tokyoBtn.textContent.includes('Tokyo')) {
       tokyoBtn.textContent = '👾 Bing Bing Boo';
     }
-    const grid = document.querySelector('#phonkDjCard .dj-loops');
+    const grid = document.querySelector('#phonkDjCard .dj-loops') || document.querySelector('.dj-loops');
     if (!grid) return;
 
     const customButtons = [
@@ -72,96 +82,110 @@
     });
   }
 
-  function installMp3Override() {
-    if (window._phonkPlayerVersion === 2) return;
-    window._phonkPlayerVersion = 2;
-
-    const origStopPhonkLoop = window.stopPhonkLoop;
-
-    // Kill any built-in synth loop once on startup, without touching our MP3 player
-    if (typeof origStopPhonkLoop === 'function') {
-      try { origStopPhonkLoop(); } catch (e) {}
+  document.addEventListener('pointerdown', (e) => {
+    const target = e.target.closest('button, [onclick]');
+    if (!target) return;
+    const txt = (target.textContent || '').toLowerCase();
+    const fn = (target.getAttribute('onclick') || '').toLowerCase();
+    if (txt.includes('stop') || fn.includes('stopphonkloop')) {
+      userClickedStop = true;
     }
+  }, true);
 
-    injectCustomButtons();
-    setInterval(injectCustomButtons, 800);
+  function startTrack(style, djName) {
+    userClickedStop = false;
+    currentStyle = style;
+    lastPlayTime = Date.now();
 
-    function startTrack(style, djName) {
-      if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
+    if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
+    document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
 
-      document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
+    const chosen = MP3_TRACKS[style];
+    if (!chosen) return;
 
-      const chosen = MP3_TRACKS[style];
-      if (!chosen) return;
+    window._activePhonkLabel = chosen.label;
 
-      window._activePhonkLabel = chosen.label;
+    const btn = document.getElementById(BTN_MAP[style]);
+    if (btn) btn.classList.add('active');
 
-      const btn = document.getElementById(BTN_MAP[style]);
-      if (btn) btn.classList.add('active');
+    const np = document.getElementById('djNowPlaying');
+    if (np) np.textContent = (djName ? '🎧 DJ ' + djName + ': ' : '🔥 LIVE: ') + chosen.label;
+    const miniLbl = document.getElementById('miniBarTrack');
+    if (miniLbl) miniLbl.textContent = '🎧 ' + chosen.label;
 
-      const np = document.getElementById('djNowPlaying');
-      if (np) np.textContent = (djName ? '🎧 DJ ' + djName + ': ' : '🔥 LIVE: ') + chosen.label;
-      const miniLbl = document.getElementById('miniBarTrack');
-      if (miniLbl) miniLbl.textContent = '🎧 ' + chosen.label;
+    const player = getPersistentAudio();
+    userClickedStop = true;
+    player.pause();
+    userClickedStop = false;
 
-      const player = getPersistentAudio();
+    player.src = encodeURI(chosen.url);
+    player.currentTime = 0;
+    player.loop = true;
+    player.volume = 0.85;
+
+    player.play().catch((err) => {
+      console.error('MP3 error:', err);
+      if (np) np.textContent = '⚠️ Tap screen once then retry: ' + chosen.url;
+    });
+
+    vizTimer = setInterval(bounceBars, 220);
+  }
+
+  function customStop(fromRemote) {
+    if (!fromRemote && !userClickedStop && currentStyle) return;
+
+    userClickedStop = true;
+    currentStyle = null;
+    if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
+
+    const player = window._sharedPhonkPlayer;
+    if (player) {
       player.pause();
-      player.src = encodeURI(chosen.url);
       player.currentTime = 0;
-      player.loop = true;
-      player.volume = 0.85;
-
-      const playPromise = player.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.error('MP3 error:', err);
-          if (np) np.textContent = '⚠️ Tap screen once then retry: ' + chosen.url;
-        });
-      }
-
-      vizTimer = setInterval(bounceBars, 220);
     }
+    window._activePhonkLabel = null;
+    document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
+    const bar = document.getElementById('phonkMiniBar');
+    if (bar) bar.style.display = 'none';
 
-    window.stopPhonkLoop = function (fromRemote) {
-      if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
-      const player = window._sharedPhonkPlayer;
-      if (player) {
-        player.pause();
-        player.currentTime = 0;
-      }
-      window._activePhonkLabel = null;
-      document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
-      const bar = document.getElementById('phonkMiniBar');
-      if (bar) bar.style.display = 'none';
-      if (typeof origStopPhonkLoop === 'function') {
-        try { origStopPhonkLoop(); } catch (e) {}
-      }
-      if (!fromRemote && typeof socket !== 'undefined') {
-        socket.emit('phonkTrackSync', { action: 'stop' });
-      }
-    };
-
-    window.togglePhonkBeat = function (style) {
-      startTrack(style, null);
-      if (typeof socket !== 'undefined') {
-        socket.emit('phonkTrackSync', { action: 'play', style });
-      }
-    };
-
-    const waitSock = setInterval(() => {
-      if (typeof socket === 'undefined') return;
-      clearInterval(waitSock);
-      socket.on('incomingPhonkTrack', (d) => {
-        if (!d || (d._serverId && d._serverId !== window.selectedServerId)) return;
-        if (d.action === 'stop') window.stopPhonkLoop(true);
-        else if (d.action === 'play' && d.style) startTrack(d.style, d.dj);
-      });
-    }, 800);
+    if (!fromRemote && typeof socket !== 'undefined') {
+      socket.emit('phonkTrackSync', { action: 'stop' });
+    }
   }
 
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(installMp3Override, 100);
-  } else {
-    window.addEventListener('DOMContentLoaded', () => setTimeout(installMp3Override, 100));
+  function customToggle(style) {
+    startTrack(style, null);
+    if (typeof socket !== 'undefined') {
+      socket.emit('phonkTrackSync', { action: 'play', style });
+    }
   }
+
+  // Lock functions so no inline script can overwrite them
+  try {
+    Object.defineProperty(window, 'togglePhonkBeat', { value: customToggle, writable: false, configurable: true });
+    Object.defineProperty(window, 'stopPhonkLoop',   { value: customStop,   writable: false, configurable: true });
+  } catch (e) {
+    window.togglePhonkBeat = customToggle;
+    window.stopPhonkLoop = customStop;
+  }
+
+  setInterval(() => {
+    if (window.togglePhonkBeat !== customToggle) window.togglePhonkBeat = customToggle;
+    if (window.stopPhonkLoop !== customStop) window.stopPhonkLoop = customStop;
+    injectCustomButtons();
+  }, 600);
+
+  const waitSock = setInterval(() => {
+    if (typeof socket === 'undefined') return;
+    clearInterval(waitSock);
+    socket.on('incomingPhonkTrack', (d) => {
+      if (!d || (d._serverId && d._serverId !== window.selectedServerId)) return;
+      // Ignore echo of our own just-started track within 2 seconds
+      if (d.action === 'play' && d.style === currentStyle && (Date.now() - lastPlayTime) < 2000) return;
+      if (d.action === 'stop') customStop(true);
+      else if (d.action === 'play' && d.style) startTrack(d.style, d.dj);
+    });
+  }, 500);
+
+  injectCustomButtons();
 })();

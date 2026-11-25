@@ -5,9 +5,10 @@
   let playToken = 0;
 
   let audioCtx = null;
+  let compressor = null;
   let gainNode = null;
-  let activeSource = null;
-  const decodedBuffers = {};
+  let activeAudio = null;
+  const audioPool = {};
 
   const MP3_TRACKS = {
     brazil:    { url: '/public_phonk_batidao.mp3',                           label: '🇧🇷 No Batidão (Brazilian Phonk)' },
@@ -22,22 +23,34 @@
     onelove:   { url: '/public_phonk_onelove.mp3',                           label: '💖 Shubh - One Love' },
     winning:   { url: '/public_phonk_winning.mp3',                           label: '🏆 Aujla - Winning Speech' },
     dopeshope: { url: '/Dope Shope International Villager 128 Kbps.mp3',     label: '🔥 Yo Yo - Dope Shope' },
-    passo:     { url: '/ATLXS - PASSO BEM SOLTO.mp3',                        label: '👣 Passo Bem Solto' }
+    passo:     { url: '/ATLXS - PASSO BEM SOLTO.mp3',                        label: '👣 Passo Bem Solto' },
+    shayari:   { url: '/5_6069160660401398338.m4a',                        label: '✍️ Shayari' }
   };
 
   const BTN_MAP = {
     drift: 'loopDrift', brazil: 'loopBrazil', murder: 'loopMurder', sigma: 'loopSigma',
     memphis: 'loopMemphis', cyber: 'loopCyber', tokyo: 'loopTokyo', demon: 'loopDemon',
     supreme: 'loopSupreme', onelove: 'loopOneLove', winning: 'loopWinning',
-    dopeshope: 'loopDopeShope', passo: 'loopPasso'
+    dopeshope: 'loopDopeShope', passo: 'loopPasso', shayari: 'loopShayari'
   };
 
   function getAudioContext() {
     if (!audioCtx) {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       audioCtx = new Ctx();
+
+      // Dynamic compressor keeps loudness balanced & punchy without clipping
+      compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-18, audioCtx.currentTime);
+      compressor.knee.setValueAtTime(24, audioCtx.currentTime);
+      compressor.ratio.setValueAtTime(4, audioCtx.currentTime);
+      compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+      compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+
       gainNode = audioCtx.createGain();
-      gainNode.gain.value = 0.85;
+      gainNode.gain.value = 0.9;
+
+      compressor.connect(gainNode);
       gainNode.connect(audioCtx.destination);
     }
     if (audioCtx.state === 'suspended') {
@@ -46,26 +59,37 @@
     return audioCtx;
   }
 
-  function stopCurrentBuffer() {
-    if (activeSource) {
-      try {
-        activeSource.onended = null;
-        activeSource.stop(0);
-        activeSource.disconnect();
-      } catch (e) {}
-      activeSource = null;
+  function getOrCreateAudio(style) {
+    if (audioPool[style]) return audioPool[style];
+    const track = MP3_TRACKS[style];
+    const audio = new Audio();
+    audio.src = encodeURI(track.url);
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+
+    try {
+      const ctx = getAudioContext();
+      const source = ctx.createMediaElementSource(audio);
+      source.connect(compressor);
+    } catch (e) {
+      // Fallback to native audio output if Web Audio routing is restricted
     }
+
+    audioPool[style] = audio;
+    return audio;
   }
 
-  async function loadDecodedBuffer(rawUrl) {
-    if (decodedBuffers[rawUrl]) return decodedBuffers[rawUrl];
-    const ctx = getAudioContext();
-    const res = await fetch(encodeURI(rawUrl));
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const arrayBuf = await res.arrayBuffer();
-    const audioBuf = await ctx.decodeAudioData(arrayBuf);
-    decodedBuffers[rawUrl] = audioBuf;
-    return audioBuf;
+  function stopCurrentAudio() {
+    if (activeAudio) {
+      try {
+        activeAudio.pause();
+        activeAudio.currentTime = 0;
+        activeAudio.onwaiting = null;
+        activeAudio.onplaying = null;
+      } catch (e) {}
+      activeAudio = null;
+    }
   }
 
   function bounceBars() {
@@ -87,7 +111,8 @@
       { id: 'loopOneLove',   key: 'onelove',   text: '💖 Shubh - One Love',       color: '#f472b6' },
       { id: 'loopWinning',   key: 'winning',   text: '🏆 Aujla - Winning Speech', color: '#38bdf8' },
       { id: 'loopDopeShope', key: 'dopeshope', text: '🔥 Yo Yo - Dope Shope',     color: '#fb923c' },
-      { id: 'loopPasso',     key: 'passo',     text: '👣 Passo Bem Solto',        color: '#4ade80' }
+      { id: 'loopPasso',     key: 'passo',     text: '👣 Passo Bem Solto',        color: '#4ade80' },
+      { id: 'loopShayari',   key: 'shayari',   text: '✍️ Shayari',                color: '#c084fc' }
     ];
 
     grids.forEach(grid => {
@@ -105,7 +130,6 @@
     });
   }
 
-  // Keep AudioContext awake on any screen interaction
   document.addEventListener('pointerdown', (e) => {
     if (audioCtx && audioCtx.state === 'suspended') {
       audioCtx.resume().catch(() => {});
@@ -127,8 +151,7 @@
     userClickedStop = false;
     currentStyle = style;
 
-    // Unlock Web Audio immediately inside the tap gesture
-    const ctx = getAudioContext();
+    getAudioContext();
 
     if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
     document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
@@ -138,31 +161,31 @@
 
     const np = document.getElementById('djNowPlaying');
     const miniLbl = document.getElementById('miniBarTrack');
-    if (np) np.textContent = '⏳ Decoding: ' + chosen.label;
+    if (np) np.textContent = '⏳ Loading: ' + chosen.label;
 
-    stopCurrentBuffer();
+    stopCurrentAudio();
 
     try {
-      const buffer = await loadDecodedBuffer(chosen.url);
-      if (myToken !== playToken || userClickedStop) return;
+      const audio = getOrCreateAudio(style);
+      activeAudio = audio;
 
-      if (ctx.state === 'suspended') await ctx.resume();
+      audio.onwaiting = () => {
+        if (myToken === playToken && np) {
+          np.textContent = '⏳ Buffering: ' + chosen.label;
+        }
+      };
 
-      stopCurrentBuffer();
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.loop = true;
-      source.connect(gainNode);
-      source.start(0);
-      activeSource = source;
+      audio.onplaying = () => {
+        if (myToken !== playToken) return;
+        window._activePhonkLabel = chosen.label;
+        if (np) np.textContent = (djName ? '🎧 DJ ' + djName + ': ' : '🔥 LIVE: ') + chosen.label;
+        if (miniLbl) miniLbl.textContent = '🎧 ' + chosen.label;
+        if (!vizTimer) vizTimer = setInterval(bounceBars, 220);
+      };
 
-      window._activePhonkLabel = chosen.label;
-      if (np) np.textContent = (djName ? '🎧 DJ ' + djName + ': ' : '🔥 LIVE: ') + chosen.label;
-      if (miniLbl) miniLbl.textContent = '🎧 ' + chosen.label;
-
-      vizTimer = setInterval(bounceBars, 220);
+      await audio.play();
     } catch (err) {
-      console.error('Audio decode error:', err);
+      console.error('Audio playback error:', err);
       if (np) np.textContent = '❌ Error: ' + err.message;
     }
   }
@@ -175,7 +198,7 @@
     currentStyle = null;
     if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
 
-    stopCurrentBuffer();
+    stopCurrentAudio();
     window._activePhonkLabel = null;
     document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
     const bar = document.getElementById('phonkMiniBar');
@@ -220,6 +243,9 @@
       else if (d.action === 'play' && d.style) startTrack(d.style, d.dj);
     });
   }, 500);
+
+  // Pre-warm Shayari metadata & buffer slightly after page load so it starts fast
+  setTimeout(() => { getOrCreateAudio('shayari'); }, 2000);
 
   injectCustomButtons();
 })();

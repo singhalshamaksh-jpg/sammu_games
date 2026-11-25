@@ -10960,5 +10960,43 @@ div>') +
             io.to(srvId).emit('snakesSync', st);
         });
     });
+        // ============================================================================
+    // ☁️ NATIVE HTTPS UPSTASH FIX (WORKS ON ALL NODE VERSIONS)
+    // ============================================================================
+    const https = require('https');
+    upstashCmd = function(cmdArray) {
+        return new Promise((resolve) => {
+            if (!UPSTASH_URL || !UPSTASH_TOKEN) return resolve(null);
+            try {
+                const u = new URL(UPSTASH_URL);
+                const body = JSON.stringify(cmdArray);
+                const req = https.request({
+                    hostname: u.hostname,
+                    path: u.pathname === '/' ? '' : u.pathname,
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${UPSTASH_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(body)
+                    }
+                }, (res) => {
+                    let raw = '';
+                    res.on('data', chunk => raw += chunk);
+                    res.on('end', () => {
+                        try {
+                            const parsed = JSON.parse(raw);
+                            if (parsed.error) console.error('Upstash Error:', parsed.error);
+                            resolve(parsed && parsed.result !== undefined ? parsed.result : null);
+                        } catch (e) { resolve(null); }
+                    });
+                });
+                req.on('error', (err) => { console.error('Upstash Net Error:', err.message); resolve(null); });
+                req.write(body);
+                req.end();
+            } catch (e) { resolve(null); }
+        });
+    };
+    forcePullFromUpstash();
+             
  return OG_HOSTS;
 };

@@ -11729,10 +11729,28 @@ div>') +
     // ============================================================================
     // 🌊 WATER.IO V4 — PIECE 6/6: ROUTE, LOBBY BUTTON & SOCKET HANDLERS
     // ============================================================================
-    app.get('/waterio', (req, res) => {
+        // ============================================================================
+    // 🌊 WATER.IO V4 — PRIORITY ROUTE FIX (BYPASSES SERVER.JS CATCH-ALL)
+    // ============================================================================
+    const serveWaterIoPage = (req, res) => {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(WATER_IO_PAGE_HTML + '\n' + WATER_IO_CLIENT_JS_A + '\n' + WATER_IO_CLIENT_JS_B);
-    });
+    };
+
+    app.get('/waterio', serveWaterIoPage);
+    app.get('/waterio/', serveWaterIoPage);
+
+    // Move /waterio routes to the very top of Express stack before any '*' wildcard
+    if (app._router && Array.isArray(app._router.stack)) {
+        const stack = app._router.stack;
+        const waterLayers = [];
+        for (let i = stack.length - 1; i >= 0; i--) {
+            if (stack[i].route && (stack[i].route.path === '/waterio' || stack[i].route.path === '/waterio/')) {
+                waterLayers.unshift(stack.splice(i, 1));
+            }
+        }
+        stack.unshift(...waterLayers);
+    }
 
     const WATER_IO_LOBBY_BTN = `
     <script id="waterIoLobbyInjector">
@@ -11757,7 +11775,7 @@ div>') +
     </script>`;
 
     app.use((req, res, next) => {
-        if (req.path === '/waterio') return next();
+        if (req.path === '/waterio' || req.path === '/waterio/') return next();
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>') && !body.includes('waterIoLobbyInjector')) {
@@ -11767,6 +11785,7 @@ div>') +
         };
         next();
     });
+
 
     io.on('connection', (socket) => {
         socket.on('waterJoinSpectate', () => {

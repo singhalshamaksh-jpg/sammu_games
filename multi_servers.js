@@ -11946,68 +11946,55 @@ div>') +
         }
     }
 
-        // ============================================================================
-    // 🌊 WATER.IO V4 — DIVE BUTTON & EVOLUTION FIX (PASTE ABOVE return OG_HOSTS;)
+            // ============================================================================
+    // 🌊 WATER.IO V4 — CLEAN DIVE BUTTON & EVOLUTION FIX (NO CONST REASSIGNMENT)
     // ============================================================================
-    getWaterEvolution = function(mass, baseIcon) {
-        let cur = WATER_EVOLUTIONS;
-        for (let i = WATER_EVOLUTIONS.length - 1; i >= 0; i--) {
-            if (mass >= WATER_EVOLUTIONS[i].minMass) {
-                cur = WATER_EVOLUTIONS[i];
-                break;
-            }
-        }
-        return {
-            tier: cur.tier,
-            title: cur.title,
-            icon: cur.iconOverride || baseIcon
-        };
-    };
-
-    const WATER_DIVE_HOTFIX = `
-    <script>
-    (function() {
-      function bindDiveFix() {
-        const btn = document.getElementById('playOceanBtn');
-        const ov = document.getElementById('startOverlay');
-        if (!btn || !ov || btn.dataset.diveFixed) return;
-        btn.dataset.diveFixed = '1';
-
-        btn.onclick = function(e) {
-          if (e) e.preventDefault();
-          const inp = document.getElementById('oceanNameInput');
-          const uname = (inp && inp.value ? inp.value.trim() : '') || ('Fish_' + Math.floor(Math.random() * 900 + 100));
-          localStorage.setItem('sammu_username', uname);
-
-          const selCard = document.querySelector('.fish-card.selected');
-          const sp = (selCard && selCard.dataset.sp) ? selCard.dataset.sp : 'clownfish';
-
-          ov.style.display = 'none';
-
-          if (typeof socket !== 'undefined') {
-            if (socket.id) myId = socket.id;
-            socket.emit('waterSpawn', { username: uname, species: sp });
-          }
-        };
-      }
-      bindDiveFix();
-      setInterval(bindDiveFix, 400);
-    })();
-    </script>`;
-
-    waterIoHandler = (req, res, next) => {
-        const cleanUrl = (req.originalUrl || req.url || '').split('?').toLowerCase();
+    app.use((req, res, next) => {
+        const cleanUrl = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
         if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') {
+            const diveFixScript = `
+            <script>
+            (function() {
+              function bindDiveFix() {
+                const btn = document.getElementById('playOceanBtn');
+                const ov = document.getElementById('startOverlay');
+                if (!btn || !ov || btn.dataset.diveFixed) return;
+                btn.dataset.diveFixed = '1';
+                btn.onclick = function(e) {
+                  if (e) e.preventDefault();
+                  const inp = document.getElementById('oceanNameInput');
+                  const uname = (inp && inp.value ? inp.value.trim() : '') || ('Fish_' + Math.floor(Math.random() * 900 + 100));
+                  localStorage.setItem('sammu_username', uname);
+                  const selCard = document.querySelector('.fish-card.selected');
+                  const sp = (selCard && selCard.dataset.sp) ? selCard.dataset.sp : 'clownfish';
+                  ov.style.display = 'none';
+                  if (typeof socket !== 'undefined') {
+                    if (socket.id) myId = socket.id;
+                    socket.emit('waterSpawn', { username: uname, species: sp });
+                  }
+                };
+              }
+              bindDiveFix();
+              setInterval(bindDiveFix, 400);
+            })();
+            </script>`;
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.status(200).send(
                 WATER_IO_PAGE_HTML + '\n' +
                 WATER_IO_CLIENT_JS_A + '\n' +
                 WATER_IO_CLIENT_JS_B + '\n' +
-                WATER_DIVE_HOTFIX
+                diveFixScript
             );
         }
         return next();
-    };
+    });
+
+    const stackRef = (app._router && app._router.stack) || (app.router && app.router.stack);
+    if (Array.isArray(stackRef) && stackRef.length > 1) {
+        const latestLayer = stackRef.pop();
+        stackRef.unshift(latestLayer);
+    }
+
 
 
  return OG_HOSTS;

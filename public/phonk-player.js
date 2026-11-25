@@ -10,10 +10,10 @@
     memphis:   { url: '/public_phonk_memphis.mp3',                           label: '👹 Montagem Memphis' },
     cyber:     { url: '/public_phonk_hardstyle.mp3',                         label: '🚀 Euphoric Hardstyle' },
     tokyo:     { url: '/public_phonk_bingbingboo.mp3',                       label: '👾 Bing Bing Boo' },
-    supreme:   { url: '/public_phonk_supreme.mp3',                           label: '👑 Shubh - Supreme' },
-    onelove:   { url: '/public_phonk_onelove.mp3',                           label: '💖 Shubh - One Love' },
-    winning:   { url: '/public_phonk_winning.mp3',                           label: '🏆 Aujla - Winning Speech' },
-    dopeshope: { url: '/Dope Shope International Villager 128 Kbps.mp3',     label: '🔥 Yo Yo - Dope Shope' },
+    supreme:   { url: '/public_phonk_supreme.mp3',                           label: '👑  Supreme' },
+    onelove:   { url: '/public_phonk_onelove.mp3',                           label: '💖  One Love' },
+    winning:   { url: '/public_phonk_winning.mp3',                           label: '🏆 Winning Speech' },
+    dopeshope: { url: '/Dope Shope International Villager 128 Kbps.mp3',     label: '🔥 Dope Shope' },
     passo:     { url: '/ATLXS - PASSO BEM SOLTO.mp3',                        label: '👣 Passo Bem Solto' }
   };
 

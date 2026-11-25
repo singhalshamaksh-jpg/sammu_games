@@ -3665,12 +3665,7 @@
   .u-green  { background: linear-gradient(145deg, #22c55e, #14532d); }
   .u-yellow { background: linear-gradient(145deg, #facc15, #ca8a04); color: #111; }
   .u-wild   { background: conic-gradient(#ef4444 0 90deg, #3b82f6 90deg 180deg, #eab308 180deg 270deg, #22c55e 270deg 360deg); }
-  #realLudoBoard {
-    display: grid; grid-template-columns: repeat(15, 1fr);
-    width: 100%; max-width: 320px; aspect-ratio: 1/1; margin: 0 auto 8px;
-    border: 3px solid #facc15; border-radius: 10px; overflow: hidden; background: #fff;
-  }
-  .ld-cell { border: 0.5px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; }
+  
   #realSnakesBoard {
     display: grid; grid-template-columns: repeat(10, 1fr);
     width: 100%; max-width: 320px; aspect-ratio: 1/1; margin: 0 auto 8px;
@@ -3735,35 +3730,7 @@
   </div>
 </div>
 
-<!-- 3. INTERACTIVE CANVAS CARROM MODAL -->
-<div id="carromModal" class="lounge-modal">
-  <div class="lounge-box" style="border-color:#f59e0b;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#fbbf24;">🎯 ROYAL CARROM CLUB</span>
-      <button onclick="document.getElementById('carromModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
-    </div>
-    <div id="carromScore" style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:6px;">P1: 0 | P2: 0</div>
-    <div style="width:270px;height:270px;margin:0 auto 8px;border-radius:20px;border:10px solid #451a03;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.7);">
-      <canvas id="vipCarromCanvas" width="270" height="270" style="display:block;touch-action:none;cursor:crosshair;"></canvas>
-    </div>
-    <div id="carromNote" style="font-size:11px;color:#fde047;margin-bottom:6px;">Slide striker & tap board to aim!</div>
-    <div id="carromBtns"></div>
-  </div>
-</div>
 
-<!-- 4. REAL 15x15 LUDO MODAL -->
-<div id="ludoModal" class="lounge-modal">
-  <div class="lounge-box" style="border-color:#4ade80;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:900;font-size:14px;color:#4ade80;">🎲 6P LUDO KING ROYALE</span>
-      <button onclick="document.getElementById('ludoModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:7px;padding:3px 8px;font-weight:bold;cursor:pointer;">✕</button>
-    </div>
-    <div id="ludoBanner" style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:6px;">Roll the dice!</div>
-    <div id="realLudoBoard"></div>
-    <div id="ludoPlayersList" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:8px;font-size:10px;"></div>
-    <div id="ludoControls" style="display:flex;gap:8px;justify-content:center;"></div>
-  </div>
-</div>
 
 <!-- 5. REAL 10x10 SNAKES & LADDERS MODAL -->
 <div id="snakesModal" class="lounge-modal">
@@ -3785,19 +3752,10 @@
 <script>
 (function() {
   let wildIdx = null, chessSel = null, vipCtx = null, jazzTimer = null, jazzOn = false;
-  let carromAim = -Math.PI / 2, strikerX = 135, carromCoins = [];
+  
 
   const CHESS_ICON = { r:'♜', n:'♞', b:'♝', q:'♛', k:'♚', p:'♟', R:'♖', N:'♘', B:'♗', Q:'♕', K:'♔', P:'♙' };
-  const DICE_3D = ['⚀','⚁','⚂','⚃','⚄','⚅'];
-  const LUDO_DOTS = ['🔴','🔵','🟢','🟡','🟣','🟠'];
-  const LUDO_PATH = [
-   ,,,,,,,,,
-   ,,,,,,,,,
-   ,,,,,,,,,,
-   ,,,,,,,,,
-   ,,,,,,,,,,
-   ,,
-  ];
+
   const MAP_LADDERS = { 4:25, 13:46, 33:49, 42:63, 50:69, 62:81, 74:92 };
   const MAP_SNAKES  = { 27:5, 40:3, 43:18, 54:31, 66:45, 76:58, 89:53, 99:41 };
 
@@ -3868,78 +3826,11 @@
     if (wildIdx !== null) { socket.emit('unoPlayCard', { idx: wildIdx, chosenColor: col }); wildIdx = null; }
   };
 
-  window.drawCarromBoard = function(canShoot) {
-    const cv = document.getElementById('vipCarromCanvas');
-    if (!cv) return;
-    const ctx = cv.getContext('2d');
-    const grd = ctx.createRadialGradient(135, 135, 15, 135, 135, 135);
-    grd.addColorStop(0, '#fef3c7'); grd.addColorStop(1, '#d97706');
-    ctx.fillStyle = grd; ctx.fillRect(0, 0, 270, 270);
-    ctx.strokeStyle = 'rgba(120,53,15,0.5)'; ctx.lineWidth = 2; ctx.strokeRect(32, 32, 206, 206);
-    [,,,].forEach(([px, py]) => {
-      ctx.beginPath(); ctx.arc(px, py, 13, 0, Math.PI * 2);
-      ctx.fillStyle = '#090d16'; ctx.fill(); ctx.strokeStyle = '#facc15'; ctx.stroke();
-    });
-    carromCoins.forEach(c => {
-      ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI * 2);
-      ctx.fillStyle = c.color; ctx.fill(); ctx.strokeStyle = '#78350f'; ctx.stroke();
-    });
-    if (canShoot) {
-      ctx.beginPath(); ctx.setLineDash(); ctx.moveTo(strikerX, 228);
-      ctx.lineTo(strikerX + Math.cos(carromAim) * 140, 228 + Math.sin(carromAim) * 140);
-      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
-    }
-    ctx.beginPath(); ctx.arc(strikerX, 228, 11, 0, Math.PI * 2);
-    ctx.fillStyle = '#38bdf8'; ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2.5; ctx.stroke();
-  };
-
-  window.shootVipCarrom = function(type) {
-    playVipSfx(320, 720);
-    carromCoins.forEach(c => {
-      c.x = Math.max(30, Math.min(240, c.x + (Math.random() - 0.5) * 65));
-      c.y = Math.max(30, Math.min(200, c.y + (Math.random() - 0.5) * 65));
-    });
-    drawCarromBoard(false);
-    setTimeout(() => socket.emit('loungeCarromShoot', type), 250);
-  };
-
-  window.setCarromStriker = function(v) { strikerX = Number(v); drawCarromBoard(true); };
+  
 <!-- ============================================================================ -->
 <!-- 👑 VIP MONTE CARLO LOUNGE — PIECE 4A/4 (BOARD RENDERERS & UNO/CHESS)          -->
 <!-- ============================================================================ -->
-  function renderLudo15(players) {
-    const b = document.getElementById('realLudoBoard'); if (!b) return;
-    b.innerHTML = '';
-    const map = {};
-    players.forEach((p, pi) => {
-      p.tokens.forEach(pos => {
-        if (pos >= 0 && pos < 24) {
-          const step = Math.floor((pos / 24) * LUDO_PATH.length);
-          const pt = LUDO_PATH[step];
-          const k = pt[0] + ',' + pt[1];
-          map[k] = (map[k] || '') + LUDO_DOTS[pi];
-        }
-      });
-    });
-    for (let r = 0; r < 15; r++) {
-      for (let c = 0; c < 15; c++) {
-        const cell = document.createElement('div'); cell.className = 'ld-cell';
-        let bg = '#fff';
-        if (r < 6 && c < 6) bg = '#ef4444';
-        else if (r < 6 && c > 8) bg = '#22c55e';
-        else if (r > 8 && c > 8) bg = '#eab308';
-        else if (r > 8 && c < 6) bg = '#3b82f6';
-        else if (r >= 6 && r <= 8 && c >= 6 && c <= 8) bg = 'conic-gradient(#ef4444 0 90deg,#22c55e 90deg 180deg,#eab308 180deg 270deg,#3b82f6 270deg 360deg)';
-        else if (r === 7 && c > 0 && c < 6) bg = '#fca5a5';
-        else if (c === 7 && r > 0 && r < 6) bg = '#86efac';
-        else if (r === 7 && c > 8 && c < 14) bg = '#fde047';
-        else if (c === 7 && r > 8 && r < 14) bg = '#93c5fd';
-        cell.style.background = bg;
-        if (map[r + ',' + c]) cell.textContent = map[r + ',' + c];
-        b.appendChild(cell);
-      }
-    }
-  }
+  
 
   function renderSnakes10(players) {
     const b = document.getElementById('realSnakesBoard'); if (!b) return;
@@ -3966,18 +3857,7 @@
     if (typeof socket === 'undefined' || window._vipAllLoungeBound) return;
     window._vipAllLoungeBound = true;
 
-    const cv = document.getElementById('vipCarromCanvas');
-    if (cv) {
-      const aim = e => {
-        const rect = cv.getBoundingClientRect();
-        const x = (e.clientX - rect.left) * (270 / rect.width);
-        const y = (e.clientY - rect.top) * (270 / rect.height);
-        carromAim = Math.atan2(Math.min(200, y) - 228, x - strikerX);
-        drawCarromBoard(true);
-      };
-      cv.addEventListener('pointerdown', aim);
-      cv.addEventListener('pointermove', e => { if (e.buttons) aim(e); });
-    }
+    
 
     // 1. UNO
     socket.on('unoSync', function(d) {
@@ -4045,42 +3925,8 @@
 <!-- ============================================================================ -->
 <!-- 👑 VIP MONTE CARLO LOUNGE — PIECE 4B/4 (CARROM, LUDO, SNAKES & CLOSING)       -->
 <!-- ============================================================================ -->
-    // 3. CARROM
-    socket.on('carromSync', function(d) {
-      if (d._serverId && d._serverId !== window.selectedServerId) return;
-      document.getElementById('carromModal').style.display = 'flex';
-      document.getElementById('carromScore').textContent = d.p1.username + ': ' + d.p1.score + ' | ' + d.p2.username + ': ' + d.p2.score;
-      document.getElementById('carromNote').textContent = d.lastShot;
-      carromCoins = [];
-      if (d.queenOnBoard) carromCoins.push({ x: 135, y: 135, color: '#dc2626' });
-      for (let i = 0; i < d.coinsLeft; i++) {
-        const a = (i / Math.max(1, d.coinsLeft)) * Math.PI * 2;
-        carromCoins.push({ x: 135 + Math.cos(a) * 24, y: 135 + Math.sin(a) * 24, color: i % 2 === 0 ? '#0f172a' : '#fff' });
-      }
-      const myTurn = d.turnId === socket.id;
-      drawCarromBoard(myTurn);
-      document.getElementById('carromBtns').innerHTML = myTurn
-        ? '<input type="range" min="48" max="222" value="' + strikerX + '" oninput="setCarromStriker(this.value)" style="width:100%;margin-bottom:6px;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"><button onclick="shootVipCarrom(\'safe\')" style="background:#16a34a;border:1px solid #fff;color:#fff;padding:8px;border-radius:9px;font-weight:900;">🎯 Cut Coin</button><button onclick="shootVipCarrom(\'queen\')" style="background:#dc2626;border:1px solid #fff;color:#fff;padding:8px;border-radius:9px;font-weight:900;">👑 Hit Queen</button></div>'
-        : '<div style="font-size:11px;color:#fde047;">⏳ Opponent aiming striker...</div>';
-    });
-    socket.on('carromEnd', () => { document.getElementById('carromModal').style.display = 'none'; });
-
-    // 4. LUDO
-    socket.on('ludoSync', function(d) {
-      if (d._serverId && d._serverId !== window.selectedServerId) return;
-      playVipSfx(340, 680);
-      document.getElementById('ludoModal').style.display = 'flex';
-      renderLudo15(d.players);
-      const cur = d.players[d.turnIdx], myTurn = cur && cur.id === socket.id;
-      document.getElementById('ludoBanner').innerHTML = (myTurn ? '🔥 YOUR TURN!' : ('Turn: ' + (cur ? cur.username : ''))) + (d.lastDice ? (' • ' + (DICE_3D[d.lastDice - 1] || '🎲') + ' ' + d.lastDice) : '');
-      document.getElementById('ludoPlayersList').innerHTML = d.players.map(p => '<span style="background:#1e293b;border:1px solid #4ade80;padding:2px 7px;border-radius:999px;">' + p.color + ' ' + p.username + ' (' + p.tokens[0] + ',' + p.tokens[1] + ')</span>').join('');
-      const ctrl = document.getElementById('ludoControls');
-      ctrl.innerHTML = !myTurn ? '<span style="font-size:11px;color:#94a3b8;">Waiting for roll...</span>' : (!d.rolled
-        ? '<button onclick="socket.emit(\'loungeLudoRoll\')" style="background:#16a34a;border:2px solid #fff;color:#fff;padding:8px 18px;border-radius:10px;font-weight:900;">🎲 ROLL DICE</button>'
-        : '<button onclick="socket.emit(\'loungeLudoMove\',0)" style="background:#0284c7;border:1px solid #fff;color:#fff;padding:7px 12px;border-radius:9px;font-weight:900;">Move Token 1</button><button onclick="socket.emit(\'loungeLudoMove\',1)" style="background:#7c3aed;border:1px solid #fff;color:#fff;padding:7px 12px;border-radius:9px;font-weight:900;">Move Token 2</button>');
-    });
-    socket.on('ludoEnd', () => { document.getElementById('ludoModal').style.display = 'none'; });
-
+ 
+    
     // 5. SNAKES & LADDERS
     socket.on('snakesSync', function(d) {
       if (d._serverId && d._serverId !== window.selectedServerId) return;

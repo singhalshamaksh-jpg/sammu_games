@@ -10710,14 +10710,14 @@ div>') +
         st.phase = 'play';
         st.deck = buildUnoDeck();
         st.players.forEach(p => { p.hand = drawUnoCards(st, 7); p.saidUno = false; });
-        let first = drawUnoCards(st, 1);
-        while (first && first.c === 'wild') { st.deck.unshift(first); first = drawUnoCards(st, 1); }
+                let first = drawUnoCards(st, 1)[0];
+        while (first && first.c === 'wild') {
+            st.deck.unshift(first);
+            first = drawUnoCards(st, 1)[0];
+        }
         st.discard = [first];
         st.activeColor = first.c;
-        st.turnIdx = 0; st.dir = 1; st.timeLeft = 20;
-        broadcastUno(srvId);
-        advanceUnoTurn(srvId, 0);
-    }
+
      // ============================================================================
     // 🎲 ROYAL LOUNGE BACKEND — PIECE 2/3 (CHESS, CARROM, 6P LUDO, 6P SNAKES)
     // ============================================================================

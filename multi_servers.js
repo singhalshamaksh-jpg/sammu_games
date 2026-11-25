@@ -8,6 +8,7 @@ module.exports = function initMultiServers(app, io) {
 
     const defaultServers = {
         srv_samaksh: { id: 'srv_samaksh', name: "💎 Samaksh's Arena",   owner: "samaksh", theme: "diamond", max: 20, type: "official" },
+        srv_lounge:  { id: 'srv_lounge',  name: "🎲 Royal Board & Card Lounge", owner: "sammu", theme: "gold", max: 20, type: "official" },
         srv_zoro:    { id: 'srv_zoro',    name: "⚔️ Zoro's Dojo",       owner: "zoro",    theme: "matrix",  max: 20, type: "official" },
         srv_milly:   { id: 'srv_milly',   name: "👑 Milly's Palace",    owner: "milly",   theme: "gold",    max: 20, type: "official" },
         srv_moon:    { id: 'srv_moon',    name: "🌙 Moon's Galaxy",     owner: "moon",    theme: "cyber",   max: 20, type: "official" },
@@ -10587,15 +10588,15 @@ div>') +
         saveSvStats();
         return ensureV6Profile(uname);
     };
-    // ============================================================================
-    // 🃏 #36 MULTIPLAYER UNO ARENA (MAX 10 PLAYERS) — PIECE 1/2
+    
+           // ============================================================================
+    // 🃏 ROYAL LOUNGE BACKEND — PIECE 1/3 (10-PLAYER UNO + SMART BOTS)
     // ============================================================================
     const unoByServer = new Map();
     const UNO_COLORS = ['red', 'blue', 'green', 'yellow'];
 
     function buildUnoDeck() {
         const deck = [];
-        // Double-deck (216 cards) so up to 10 players never run out of cards
         for (let copy = 0; copy < 2; copy++) {
             UNO_COLORS.forEach(c => {
                 deck.push({ c, v: '0' });
@@ -10631,91 +10632,28 @@ div>') +
     function broadcastUno(srvId) {
         const st = unoByServer.get(srvId);
         if (!st) return;
-
         if (st.phase === 'lobby') {
-            io.to(srvId).emit('unoSync', {
-                phase: 'lobby',
-                timeLeft: st.timeLeft,
+            return io.to(srvId).emit('unoSync', {
+                phase: 'lobby', timeLeft: st.timeLeft,
                 players: st.players.map(p => ({ id: p.id, username: p.username, count: 0 })),
                 _serverId: srvId
             });
-            return;
         }
-
         const curPlayer = st.players[st.turnIdx];
         const summary = st.players.map((p, idx) => ({
-            id: p.id,
-            username: p.username,
-            count: p.hand.length,
-            isTurn: idx === st.turnIdx,
-            saidUno: p.saidUno
+            id: p.id, username: p.username, count: p.hand.length,
+            isTurn: idx === st.turnIdx, saidUno: p.saidUno
         }));
-
         st.players.forEach(p => {
+            if (p.isBot) return;
             io.to(p.id).emit('unoSync', {
-                phase: 'play',
-                timeLeft: st.timeLeft,
-                topCard: st.discard[st.discard.length - 1],
-                activeColor: st.activeColor,
-                dir: st.dir,
+                phase: 'play', timeLeft: st.timeLeft,
+                topCard: st.discard[st.discard.length - 1], activeColor: st.activeColor,
                 turnName: curPlayer ? curPlayer.username : '',
                 isMyTurn: curPlayer && curPlayer.id === p.id,
-                myHand: p.hand,
-                saidUno: p.saidUno,
-                players: summary,
-                _serverId: srvId
+                myHand: p.hand, saidUno: p.saidUno, players: summary, _serverId: srvId
             });
         });
-
-        const inGameIds = new Set(st.players.map(p => p.id));
-        const roomSet = io.sockets.adapter.rooms.get(srvId) || new Set();
-        roomSet.forEach(sid => {
-            if (!inGameIds.has(sid)) {
-                io.to(sid).emit('unoSync', {
-                    phase: 'spectate',
-                    timeLeft: st.timeLeft,
-                    topCard: st.discard[st.discard.length - 1],
-                    activeColor: st.activeColor,
-                    turnName: curPlayer ? curPlayer.username : '',
-                    players: summary,
-                    _serverId: srvId
-                });
-            }
-        });
-    }
-
-    function startUnoMatch(srvId) {
-        const st = unoByServer.get(srvId);
-        if (!st || st.phase !== 'lobby') return;
-        if (st.players.length < 2) {
-            clearInterval(st.interval);
-            unoByServer.delete(srvId);
-            io.to(srvId).emit('unoEnd', { _serverId: srvId });
-            io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ UNO cancelled—need at least **2 players**!', _serverId: srvId });
-            return;
-        }
-
-        st.phase = 'play';
-        st.deck = buildUnoDeck();
-        st.players.forEach(p => { p.hand = drawUnoCards(st, 7); p.saidUno = false; });
-
-        let first = drawUnoCards(st, 1)[0];
-        while (first && first.c === 'wild') {
-            st.deck.unshift(first);
-            first = drawUnoCards(st, 1)[0];
-        }
-        st.discard = [first];
-        st.activeColor = first.c;
-        st.turnIdx = 0;
-        st.dir = 1;
-        st.timeLeft = 20;
-
-        io.to(srvId).emit('message', {
-            username: "Sammu's Bot",
-            text: `🃏🔥 **10-PLAYER UNO MATCH STARTED!** (${st.players.length}/10 Players) First card: **${first.c.toUpperCase()} ${first.v}** — **${st.players[0].username}**'s turn!`,
-            _serverId: srvId
-        });
-        broadcastUno(srvId);
     }
 
     function advanceUnoTurn(srvId, step = 1) {
@@ -10725,322 +10663,302 @@ div>') +
         st.turnIdx = ((st.turnIdx + (step * st.dir)) % n + n) % n;
         st.timeLeft = 20;
         broadcastUno(srvId);
-    }
-         // ============================================================================
-    // 🃏 #36 PREMIUM TABLETOP UNO UI & BOT ENGINE — PIECE 1/2
-    // ============================================================================
-    const PREMIUM_UNO_HTML = `
-    <style>
-      #unoPremiumModal {
-        display:none; position:fixed; inset:0; background:rgba(4,7,18,0.92);
-        z-index:9999998; align-items:center; justify-content:center; padding:10px;
-        backdrop-filter:blur(12px); font-family:inherit;
-      }
-      #unoTableCard {
-        background:radial-gradient(circle at top,#1e1b4b,#090d16 75%);
-        border:2.5px solid #facc15; border-radius:24px; padding:14px;
-        width:100%; max-width:430px; max-height:94vh; overflow-y:auto;
-        color:#fff; box-shadow:0 0 45px rgba(250,204,21,0.45); text-align:center;
-      }
-      .uno-card-ui {
-        width:56px; height:82px; border-radius:11px; border:2.5px solid #fff;
-        display:inline-flex; flex-direction:column; justify-content:space-between;
-        padding:4px 5px; font-weight:900; cursor:pointer; position:relative;
-        box-shadow:0 4px 12px rgba(0,0,0,0.6); transition:transform 0.14s ease, box-shadow 0.14s ease;
-        user-select:none; flex-shrink:0;
-      }
-      .uno-card-ui.playable:hover { transform:translateY(-7px) scale(1.05); box-shadow:0 8px 20px rgba(250,204,21,0.75); }
-      .uno-card-ui.dimmed { opacity:0.42; cursor:not-allowed; }
-      .uno-oval {
-        background:rgba(255,255,255,0.92); border-radius:50%; width:38px; height:46px;
-        margin:auto; display:flex; align-items:center; justify-content:center;
-        font-size:15px; font-weight:900; transform:rotate(-16deg);
-        box-shadow:inset 0 0 4px rgba(0,0,0,0.35);
-      }
-      .c-red    { background:linear-gradient(145deg,#ef4444,#991b1b); color:#fff; }
-      .c-red .uno-oval { color:#dc2626; }
-      .c-blue   { background:linear-gradient(145deg,#3b82f6,#1e3a8a); color:#fff; }
-      .c-blue .uno-oval { color:#1d4ed8; }
-      .c-green  { background:linear-gradient(145deg,#22c55e,#14532d); color:#fff; }
-      .c-green .uno-oval { color:#15803d; }
-      .c-yellow { background:linear-gradient(145deg,#facc15,#ca8a04); color:#111; }
-      .c-yellow .uno-oval { color:#a16207; }
-      .c-wild   { background:conic-gradient(#ef4444 0deg 90deg,#3b82f6 90deg 180deg,#eab308 180deg 270deg,#22c55e 270deg 360deg); color:#fff; text-shadow:0 1px 3px #000; }
-      .c-wild .uno-oval { color:#111; text-shadow:none; }
-      .uno-seat {
-        background:#1e293b; border:1.5px solid #475569; border-radius:999px;
-        padding:3px 9px; font-size:10px; font-weight:800; display:inline-flex; align-items:center; gap:4px;
-      }
-      .uno-seat.active-turn { background:#581c87; border-color:#facc15; box-shadow:0 0 12px rgba(250,204,21,0.6); }
-    </style>
 
-    <button id="unoMiniReopenBtn" onclick="document.getElementById('unoPremiumModal').style.display='flex';this.style.display='none';"
-      style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9999997;background:linear-gradient(90deg,#dc2626,#eab308);border:2px solid #fff;color:#fff;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,0.7);">
-      🃏 Return to UNO Table
-    </button>
-
-    <div id="unoPremiumModal">
-      <div id="unoTableCard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-weight:900;font-size:15px;color:#fde047;">🃏 SAMMU UNO ROYALE (10P)</span>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span id="unoTimerBadge" style="background:#0f172a;border:1px solid #38bdf8;color:#38bdf8;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:900;">⏳ 20s</span>
-            <button onclick="document.getElementById('unoPremiumModal').style.display='none';document.getElementById('unoMiniReopenBtn').style.display='block';"
-              style="background:#334155;border:1px solid #64748b;color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:bold;cursor:pointer;">💬 Chat</button>
-          </div>
-        </div>
-
-        <div id="unoSeatsWrap" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:10px;"></div>
-
-        <div id="unoCenterFelt" style="background:radial-gradient(circle,#065f46,#022c22);border:2px solid #34d399;border-radius:18px;padding:12px;margin-bottom:10px;"></div>
-
-        <div id="unoWildWheel" style="display:none;background:rgba(15,23,42,0.95);border:1.5px solid #facc15;border-radius:14px;padding:8px;margin-bottom:10px;">
-          <div style="font-size:11px;font-weight:900;color:#fde047;margin-bottom:6px;">🌈 CHOOSE WILD COLOR:</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-            <button onclick="submitUnoWild('red')" style="background:#dc2626;border:2px solid #fff;color:#fff;padding:8px 2px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🔴 RED</button>
-            <button onclick="submitUnoWild('blue')" style="background:#2563eb;border:2px solid #fff;color:#fff;padding:8px 2px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🔵 BLUE</button>
-            <button onclick="submitUnoWild('green')" style="background:#16a34a;border:2px solid #fff;color:#fff;padding:8px 2px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🟢 GREEN</button>
-            <button onclick="submitUnoWild('yellow')" style="background:#eab308;border:2px solid #fff;color:#111;padding:8px 2px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🟡 YELLOW</button>
-          </div>
-        </div>
-
-        <div id="unoActionControls" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;"></div>
-        <div id="unoMyHandDeck" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:195px;overflow-y:auto;padding:4px;"></div>
-      </div>
-    </div>`;
-             // ============================================================================
-    // 🃏 #36 PREMIUM TABLETOP UNO UI & BOT ENGINE — PIECE 2A/2
-    // ============================================================================
-    const PREMIUM_UNO_JS = `
-      let _unoWildCardIdx = null;
-
-      function formatUnoSymbol(v) {
-        if (v === 'SKIP') return '🚫';
-        if (v === 'REV')  return '🔄';
-        if (v === 'WILD') return '🌈';
-        return v;
-      }
-
-      function buildUnoCardHtml(card, playable, idx) {
-        const cls = 'c-' + (card.c || 'wild');
-        const sym = formatUnoSymbol(card.v);
-        const stateCls = playable ? 'playable' : 'dimmed';
-        const clickAttr = (typeof idx === 'number' && playable)
-          ? ('onclick="handleUnoCardTap(' + idx + ',' + (card.c === 'wild') + ')"')
-          : '';
-        return '<div class="uno-card-ui ' + cls + ' ' + stateCls + '" ' + clickAttr + '>' +
-          '<div style="font-size:11px;text-align:left;line-height:1;">' + sym + '</div>' +
-          '<div class="uno-oval">' + sym + '</div>' +
-          '<div style="font-size:11px;text-align:right;line-height:1;transform:rotate(180deg);">' + sym + '</div>' +
-        '</div>';
-      }
-
-      window.handleUnoCardTap = function(idx, isWild) {
-        if (isWild) {
-          _unoWildCardIdx = idx;
-          document.getElementById('unoWildWheel').style.display = 'block';
-          return;
-        }
-        document.getElementById('unoWildWheel').style.display = 'none';
-        if (typeof socket !== 'undefined') socket.emit('unoPlayCard', { idx });
-      };
-
-      window.submitUnoWild = function(col) {
-        document.getElementById('unoWildWheel').style.display = 'none';
-        if (_unoWildCardIdx !== null && typeof socket !== 'undefined') {
-          socket.emit('unoPlayCard', { idx: _unoWildCardIdx, chosenColor: col });
-          _unoWildCardIdx = null;
-        }
-      };
-
-      socket.on('unoDeliverModal', (html) => {
-        if (!document.getElementById('unoPremiumModal')) {
-          const wrap = document.createElement('div');
-          wrap.innerHTML = html;
-          document.body.appendChild(wrap);
-        }
-      });
-
-      setInterval(() => {
-        const anchor = Array.from(document.querySelectorAll('button')).find(b => /courtroom chaos|castaway island|bluff master/i.test(b.textContent || ''));
-        if (anchor && anchor.parentElement && !document.getElementById('btnLaunchUno36')) {
-          const btn = anchor.cloneNode(true);
-          btn.id = 'btnLaunchUno36';
-          btn.removeAttribute('onclick');
-          btn.textContent = '36. 🃏 UNO Royale';
-          btn.onclick = () => socket.emit('chatMessage', '!uno');
-          anchor.parentElement.appendChild(btn);
-        }
-      }, 1800);
-
-      socket.on('unoSync', (d) => {
-        if (d._serverId && d._serverId !== window.selectedServerId) return;
-        const mod = document.getElementById('unoPremiumModal');
-        const mini = document.getElementById('unoMiniReopenBtn');
-        if (!mod) return;
-        if (!mini || mini.style.display !== 'block') {
-          mod.style.display = 'flex';
-        }
-
-        document.getElementById('unoTimerBadge').textContent = '⏳ ' + d.timeLeft + 's';
-        const seats = document.getElementById('unoSeatsWrap');
-        const felt  = document.getElementById('unoCenterFelt');
-        const ctrls = document.getElementById('unoActionControls');
-        const hand  = document.getElementById('unoMyHandDeck');
-        ctrls.innerHTML = '';
-        hand.innerHTML  = '';
-
-        if (d.phase === 'lobby') {
-          const joined = d.players.some(p => p.id === socket.id);
-          seats.innerHTML = d.players.map(p => '<span class="uno-seat">🃏 ' + p.username + '</span>').join('');
-          felt.innerHTML =
-            '<div style="font-size:13px;font-weight:900;color:#fde047;margin-bottom:4px;">TABLE LOBBY (' + d.players.length + '/10 SEATS)</div>' +
-            '<div style="font-size:11px;color:#a7f3d0;margin-bottom:10px;">Invite friends or add a Smart UNO Bot to start right away!</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;">' +
-              (!joined && d.players.length < 10 ? '<button onclick="socket.emit(\\'unoJoin\\')" style="background:#16a34a;border:1.5px solid #fff;color:#fff;padding:8px 14px;border-radius:10px;font-weight:900;font-size:12px;cursor:pointer;">➕ Join Table</button>' : '') +
-              (joined && d.players.length < 10 ? '<button onclick="socket.emit(\\'unoAddBot\\')" style="background:#0284c7;border:1.5px solid #fff;color:#fff;padding:8px 12px;border-radius:10px;font-weight:900;font-size:12px;cursor:pointer;">🤖 +Add Bot</button>' : '') +
-              (joined && d.players.length >= 2 ? '<button onclick="socket.emit(\\'unoForceStart\\')" style="background:linear-gradient(90deg,#f59e0b,#ec4899);border:1.5px solid #fff;color:#fff;padding:8px 14px;border-radius:10px;font-weight:900;font-size:12px;cursor:pointer;">🚀 Deal Cards!</button>' : '') +
-            '</div>';
-          return;
-        }
-
-        seats.innerHTML = d.players.map(p => {
-          const catchBtn = (p.count === 1 && !p.saidUno && p.id !== socket.id)
-            ? '<button onclick="socket.emit(\\'unoCatch\\',\\'' + p.id + '\\')" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 6px;font-size:9px;font-weight:900;cursor:pointer;">🚨CATCH</button>'
-            : '';
-          return '<span class="uno-seat ' + (p.isTurn ? 'active-turn' : '') + '">' +
-            (p.isTurn ? '🔥 ' : '') + p.username + ' • <b>' + p.count + '🃏</b>' + (p.saidUno ? ' <span style="color:#fde047;">UNO!</span>' : '') + catchBtn +
-          '</span>';
-        }).join('');
-
-        const activeCardObj = { c: d.activeColor, v: d.topCard.v };
-        felt.innerHTML =
-          '<div style="display:flex;align-items:center;justify-content:center;gap:16px;">' +
-            '<div onclick="if(' + d.isMyTurn + ')socket.emit(\\'unoDrawCard\\')" style="width:56px;height:82px;border-radius:11px;border:2.5px solid #38bdf8;background:linear-gradient(145deg,#0f172a,#1e1b4b);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.6);">' +
-              '<span style="font-size:18px;">📥</span><span style="font-size:9px;font-weight:900;color:#38bdf8;margin-top:2px;">DRAW</span>' +
-            '</div>' +
-            buildUnoCardHtml(activeCardObj, true, null) +
-          '</div>' +
-          '<div style="margin-top:8px;font-size:12px;font-weight:900;color:' + (d.isMyTurn ? '#4ade80' : '#fde047') + ';">' +
-            (d.isMyTurn ? '⚡ YOUR TURN — Tap a glowing card or Draw!' : ('⏳ Waiting for ' + d.turnName + '...')) +
-          '</div>';
-
-        if (d.phase === 'spectate') {
-          hand.innerHTML = '<div style="font-size:12px;color:#94a3b8;padding:10px;">👀 Spectating live UNO table...</div>';
-          return;
-        }
-
-        if (d.isMyTurn) {
-          const drawBtn = document.createElement('button');
-          drawBtn.style.cssText = 'background:#0284c7;border:1.5px solid #fff;color:#fff;padding:7px 14px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;';
-          drawBtn.textContent = '📥 Draw 1 Card';
-          drawBtn.onclick = () => socket.emit('unoDrawCard');
-          ctrls.appendChild(drawBtn);
-        }
-
-        if (d.myHand.length <= 2 && !d.saidUno) {
-          const unoBtn = document.createElement('button');
-          unoBtn.style.cssText = 'background:linear-gradient(90deg,#dc2626,#f59e0b);border:1.5px solid #fff;color:#fff;padding:7px 14px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;box-shadow:0 0 14px #f59e0b;';
-          unoBtn.textContent = '🚨 SHOUT UNO!';
-          unoBtn.onclick = () => socket.emit('unoCallShout');
-          ctrls.appendChild(unoBtn);
-        }
-
-        hand.innerHTML = d.myHand.map((card, idx) => {
-          const canPlay = d.isMyTurn && (card.c === 'wild' || card.c === d.activeColor || card.v === d.topCard.v);
-          return buildUnoCardHtml(card, canPlay, idx);
-        }).join('');
-      });
-
-      socket.on('unoEnd', (d) => {
-        if (d._serverId && d._serverId !== window.selectedServerId) return;
-        const mod = document.getElementById('unoPremiumModal');
-        const mini = document.getElementById('unoMiniReopenBtn');
-        if (mod) mod.style.display = 'none';
-        if (mini) mini.style.display = 'none';
-      });
-    `;
-    // ============================================================================
-    // 🃏 #36 PREMIUM TABLETOP UNO UI & BOT ENGINE — PIECE 2B/2
-    // ============================================================================
-    function runUnoBotTurnIfNeeded(srvId) {
-        const st = unoByServer.get(srvId);
-        if (!st || st.phase !== 'play') return;
         const cur = st.players[st.turnIdx];
-        if (!cur || !cur.isBot) return;
-
-        setTimeout(() => {
-            const live = unoByServer.get(srvId);
-            if (!live || live.phase !== 'play') return;
-            const bot = live.players[live.turnIdx];
-            if (!bot || !bot.isBot) return;
-
-            const top = live.discard[live.discard.length - 1];
-            const validIdx = bot.hand.findIndex(c => c.c === 'wild' || c.c === live.activeColor || c.v === top.v);
-
-            if (validIdx === -1) {
-                bot.hand.push(...drawUnoCards(live, 1));
-                bot.saidUno = false;
-                advanceUnoTurn(srvId, 1);
-                return;
-            }
-
-            const [card] = bot.hand.splice(validIdx, 1);
-            live.discard.push(card);
-            live.activeColor = card.c === 'wild' ? UNO_COLORS[Math.floor(Math.random() * 4)] : card.c;
-            if (bot.hand.length === 1) bot.saidUno = true;
-
-            if (bot.hand.length === 0) {
-                clearInterval(live.interval);
-                unoByServer.delete(srvId);
-                io.to(srvId).emit('unoEnd', { _serverId: srvId });
-                io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🤖🃏 **${bot.username}** won the UNO match!`, _serverId: srvId });
-                return;
-            }
-
-            let step = 1;
-            const n = live.players.length;
-            const nextPlayer = live.players[((live.turnIdx + live.dir) % n + n) % n];
-            if (card.v === 'REV') { if (n === 2) step = 2; else live.dir *= -1; }
-            else if (card.v === 'SKIP') step = 2;
-            else if (card.v === '+2' && nextPlayer) { nextPlayer.hand.push(...drawUnoCards(live, 2)); step = 2; }
-            else if (card.v === '+4' && nextPlayer) { nextPlayer.hand.push(...drawUnoCards(live, 4)); step = 2; }
-
-            advanceUnoTurn(srvId, step);
-        }, 1100);
+        if (cur && cur.isBot) {
+            setTimeout(() => {
+                const live = unoByServer.get(srvId);
+                if (!live || live.phase !== 'play') return;
+                const bot = live.players[live.turnIdx];
+                if (!bot || !bot.isBot) return;
+                const top = live.discard[live.discard.length - 1];
+                const vIdx = bot.hand.findIndex(c => c.c === 'wild' || c.c === live.activeColor || c.v === top.v);
+                if (vIdx === -1) {
+                    bot.hand.push(...drawUnoCards(live, 1));
+                    return advanceUnoTurn(srvId, 1);
+                }
+                const [card] = bot.hand.splice(vIdx, 1);
+                live.discard.push(card);
+                live.activeColor = card.c === 'wild' ? UNO_COLORS[Math.floor(Math.random() * 4)] : card.c;
+                if (bot.hand.length === 1) bot.saidUno = true;
+                if (bot.hand.length === 0) {
+                    clearInterval(live.interval);
+                    unoByServer.delete(srvId);
+                    io.to(srvId).emit('unoEnd', { _serverId: srvId });
+                    return io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🤖🃏 **${bot.username}** won UNO!`, _serverId: srvId });
+                }
+                let s = 1;
+                const np = live.players[((live.turnIdx + live.dir) % live.players.length + live.players.length) % live.players.length];
+                if (card.v === 'REV') { if (live.players.length === 2) s = 2; else live.dir *= -1; }
+                else if (card.v === 'SKIP') s = 2;
+                else if (card.v === '+2' && np) { np.hand.push(...drawUnoCards(live, 2)); s = 2; }
+                else if (card.v === '+4' && np) { np.hand.push(...drawUnoCards(live, 4)); s = 2; }
+                advanceUnoTurn(srvId, s);
+            }, 1000);
+        }
     }
 
-    const _origAdvanceUno = advanceUnoTurn;
-    advanceUnoTurn = function(srvId, step = 1) {
-        _origAdvanceUno(srvId, step);
-        runUnoBotTurnIfNeeded(srvId);
-    };
+    function startUnoMatch(srvId) {
+        const st = unoByServer.get(srvId);
+        if (!st || st.phase !== 'lobby') return;
+        if (st.players.length < 2) {
+            clearInterval(st.interval);
+            unoByServer.delete(srvId);
+            io.to(srvId).emit('unoEnd', { _serverId: srvId });
+            return io.to(srvId).emit('message', { username: "Sammu's Bot", text: '⚠️ Need at least 2 players (or +Bot) for UNO!', _serverId: srvId });
+        }
+        st.phase = 'play';
+        st.deck = buildUnoDeck();
+        st.players.forEach(p => { p.hand = drawUnoCards(st, 7); p.saidUno = false; });
+        let first = drawUnoCards(st, 1);
+        while (first && first.c === 'wild') { st.deck.unshift(first); first = drawUnoCards(st, 1); }
+        st.discard = [first];
+        st.activeColor = first.c;
+        st.turnIdx = 0; st.dir = 1; st.timeLeft = 20;
+        broadcastUno(srvId);
+        advanceUnoTurn(srvId, 0);
+    }
+     // ============================================================================
+    // 🎲 ROYAL LOUNGE BACKEND — PIECE 2/3 (CHESS, CARROM, 6P LUDO, 6P SNAKES)
+    // ============================================================================
+    const loungeChessByServer  = new Map();
+    const loungeCarromByServer = new Map();
+    const loungeLudoByServer   = new Map();
+    const loungeSnakesByServer = new Map();
 
-    const _origStartUnoMatch = startUnoMatch;
-    startUnoMatch = function(srvId) {
-        _origStartUnoMatch(srvId);
-        runUnoBotTurnIfNeeded(srvId);
-    };
+    const LADDERS = { 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 };
+    const SNAKES  = { 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 76: 58, 89: 53, 99: 41 };
 
-    io.on('connection', (socket) => {
-        const sendUnoBundle = () => {
-            socket.emit('unoDeliverModal', PREMIUM_UNO_HTML);
-            socket.emit('svDeliverCleanV4', { html: '', js: PREMIUM_UNO_JS });
+    function initChessBoard() {
+        return [
+            ['r','n','b','q','k','b','n','r'],
+            ['p','p','p','p','p','p','p','p'],
+            ['','','','','','','',''],['','','','','','','',''],
+            ['','','','','','','',''],['','','','','','','',''],
+            ['P','P','P','P','P','P','P','P'],
+            ['R','N','B','Q','K','B','N','R']
+        ];
+    }
+
+    function isValidChessMove(board, r1, c1, r2, c2, turnColor) {
+        if (r1 === r2 && c1 === c2) return false;
+        const p = board[r1]?.[c1], target = board[r2]?.[c2];
+        if (!p) return false;
+        const isWhite = p === p.toUpperCase();
+        if ((turnColor === 'w') !== isWhite) return false;
+        if (target && (target === target.toUpperCase()) === isWhite) return false;
+        const dr = r2 - r1, dc = c2 - c1, adr = Math.abs(dr), adc = Math.abs(dc), type = p.toLowerCase();
+        const clear = () => {
+            const sr = Math.sign(dr), sc = Math.sign(dc);
+            let r = r1 + sr, c = c1 + sc;
+            while (r !== r2 || c !== c2) { if (board[r][c] !== '') return false; r += sr; c += sc; }
+            return true;
         };
-        socket.on('svRequestCleanV4', sendUnoBundle);
-        socket.on('joinRoom', () => setTimeout(sendUnoBundle, 750));
-
-        socket.on('unoAddBot', () => {
+        if (type === 'p') {
+            const dir = isWhite ? -1 : 1, start = isWhite ? 6 : 1;
+            if (dc === 0 && target === '' && (dr === dir || (r1 === start && dr === 2 * dir && board[r1 + dir][c1] === ''))) return true;
+            return adc === 1 && dr === dir && target !== '';
+        }
+        if (type === 'r') return (dr === 0 || dc === 0) && clear();
+        if (type === 'b') return adr === adc && clear();
+        if (type === 'q') return (dr === 0 || dc === 0 || adr === adc) && clear();
+        if (type === 'n') return (adr === 2 && adc === 1) || (adr === 1 && adc === 2);
+        if (type === 'k') return adr <= 1 && adc <= 1;
+        return false;
+    }
+     // ============================================================================
+    // 👑 ROYAL LOUNGE BACKEND — PIECE 3A/3 (UNO LISTENERS)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
             const srvId = socket.activeServerId;
-            const st = srvId ? unoByServer.get(srvId) : null;
-            if (!st || st.phase !== 'lobby' || st.players.length >= 10) return;
-            const botNum = st.players.filter(p => p.isBot).length + 1;
-            st.players.push({ id: 'UNOBOT_' + botNum + '_' + Date.now(), username: `🤖 UNO Bot #${botNum}`, hand: [], saidUno: false, isBot: true });
+            if (!srvId || typeof raw !== 'string' || raw.trim().toLowerCase() !== '!uno') return;
+            if (unoByServer.has(srvId)) return broadcastUno(srvId);
+            const st = {
+                phase: 'lobby', timeLeft: 20,
+                players: [{ id: socket.id, username: socket.username || 'Player', hand: [], saidUno: false }],
+                deck: [], discard: [], activeColor: 'red', turnIdx: 0, dir: 1, interval: null
+            };
+            unoByServer.set(srvId, st);
+            st.interval = setInterval(() => {
+                const cur = unoByServer.get(srvId);
+                if (!cur) return;
+                cur.timeLeft--;
+                if (cur.timeLeft <= 0) {
+                    if (cur.phase === 'lobby') startUnoMatch(srvId);
+                    else { const afk = cur.players[cur.turnIdx]; if (afk) afk.hand.push(...drawUnoCards(cur, 1)); advanceUnoTurn(srvId, 1); }
+                } else broadcastUno(srvId);
+            }, 1000);
             broadcastUno(srvId);
         });
-    });
 
-    return OG_HOSTS;
-};
-                
-          
+        socket.on('unoJoin', () => {
+            const st = unoByServer.get(socket.activeServerId);
+            if (st && st.phase === 'lobby' && st.players.length < 10 && !st.players.some(p => p.id === socket.id)) {
+                st.players.push({ id: socket.id, username: socket.username || 'Player', hand: [], saidUno: false });
+                broadcastUno(socket.activeServerId);
+            }
+        });
+
+        socket.on('unoAddBot', () => {
+            const st = unoByServer.get(socket.activeServerId);
+            if (st && st.phase === 'lobby' && st.players.length < 10) {
+                const n = st.players.filter(p => p.isBot).length + 1;
+                st.players.push({ id: 'BOT_' + n + '_' + Date.now(), username: `🤖 UNO Bot #${n}`, hand: [], saidUno: false, isBot: true });
+                broadcastUno(socket.activeServerId);
+            }
+        });
+
+        socket.on('unoForceStart', () => { startUnoMatch(socket.activeServerId); });
+
+        socket.on('unoDrawCard', () => {
+            const st = unoByServer.get(socket.activeServerId);
+            const cur = st && st.players[st.turnIdx];
+            if (st && st.phase === 'play' && cur && cur.id === socket.id) {
+                cur.hand.push(...drawUnoCards(st, 1)); cur.saidUno = false;
+                advanceUnoTurn(socket.activeServerId, 1);
+            }
+        });
+
+        socket.on('unoCallShout', () => {
+            const st = unoByServer.get(socket.activeServerId);
+            const me = st && st.players.find(p => p.id === socket.id);
+            if (me && me.hand.length <= 2) { me.saidUno = true; broadcastUno(socket.activeServerId); }
+        });
+
+        socket.on('unoPlayCard', ({ idx, chosenColor }) => {
+            const srvId = socket.activeServerId, st = unoByServer.get(srvId);
+            if (!st || st.phase !== 'play') return;
+            const cur = st.players[st.turnIdx];
+            if (!cur || cur.id !== socket.id) return;
+            const card = cur.hand[idx], top = st.discard[st.discard.length - 1];
+            if (!card || !(card.c === 'wild' || card.c === st.activeColor || card.v === top.v)) return;
+
+            cur.hand.splice(idx, 1); st.discard.push(card);
+            st.activeColor = (card.c === 'wild' && UNO_COLORS.includes(chosenColor)) ? chosenColor : card.c;
+            if (cur.hand.length > 1) cur.saidUno = false;
+
+            if (cur.hand.length === 0) {
+                clearInterval(st.interval); unoByServer.delete(srvId);
+                io.to(srvId).emit('unoEnd');
+                addCoins(cur.username, 250);
+                return io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🏆🃏 **UNO CHAMPION:** **${cur.username}** won **+250🪙**!`, _serverId: srvId });
+            }
+            let step = 1, n = st.players.length;
+            const np = st.players[((st.turnIdx + st.dir) % n + n) % n];
+            if (card.v === 'REV') { if (n === 2) step = 2; else st.dir *= -1; }
+            else if (card.v === 'SKIP') step = 2;
+            else if (card.v === '+2' && np) { np.hand.push(...drawUnoCards(st, 2)); step = 2; }
+            else if (card.v === '+4' && np) { np.hand.push(...drawUnoCards(st, 4)); step = 2; }
+            advanceUnoTurn(srvId, step);
+        });
+    });
+      // ============================================================================
+    // 👑 ROYAL LOUNGE BACKEND — PIECE 3B/3 (CHESS, CARROM, 6P LUDO, 6P SNAKES)
+    // ============================================================================
+    io.on('connection', (socket) => {
+        // --- CHESS ---
+        socket.on('loungeStartChess', () => {
+            const srvId = socket.activeServerId, players = getFullRoomPlayers(srvId);
+            const opp = players.find(p => p.id !== socket.id);
+            if (!opp) return socket.emit('svNotice', '⚠️ Need 2 players in the Lounge for Chess!');
+            const st = { board: initChessBoard(), turn: 'w', whiteId: socket.id, whiteName: socket.username || 'White', blackId: opp.id, blackName: opp.username, _serverId: srvId };
+            loungeChessByServer.set(srvId, st); io.to(srvId).emit('chessSync', st);
+        });
+
+        socket.on('loungeChessMove', ({ r1, c1, r2, c2 }) => {
+            const srvId = socket.activeServerId, st = loungeChessByServer.get(srvId);
+            if (!st || ((st.turn === 'w' && socket.id !== st.whiteId) || (st.turn === 'b' && socket.id !== st.blackId))) return;
+            if (!isValidChessMove(st.board, r1, c1, r2, c2, st.turn)) return;
+            const cap = st.board[r2][c2]; st.board[r2][c2] = st.board[r1][c1]; st.board[r1][c1] = '';
+            if (cap === 'k' || cap === 'K') {
+                loungeChessByServer.delete(srvId); io.to(srvId).emit('chessEnd');
+                const w = cap === 'k' ? st.whiteName : st.blackName; addCoins(w, 200);
+                return io.to(srvId).emit('message', { username: "Sammu's Bot", text: `♟️👑 **CHECKMATE:** **${w}** won **+200🪙**!`, _serverId: srvId });
+            }
+            st.turn = st.turn === 'w' ? 'b' : 'w'; io.to(srvId).emit('chessSync', st);
+        });
+
+        // --- CARROM ---
+        socket.on('loungeStartCarrom', () => {
+            const srvId = socket.activeServerId, opp = getFullRoomPlayers(srvId).find(p => p.id !== socket.id);
+            if (!opp) return socket.emit('svNotice', '⚠️ Need 2 players in the Lounge for Carrom!');
+            const st = { p1: { id: socket.id, username: socket.username || 'P1', score: 0 }, p2: { id: opp.id, username: opp.username, score: 0 }, turnId: socket.id, coinsLeft: 9, queenOnBoard: true, lastShot: 'Aim striker!', _serverId: srvId };
+            loungeCarromByServer.set(srvId, st); io.to(srvId).emit('carromSync', st);
+        });
+
+        socket.on('loungeCarromShoot', (shot) => {
+            const srvId = socket.activeServerId, st = loungeCarromByServer.get(srvId);
+            if (!st || st.turnId !== socket.id) return;
+            const me = st.p1.id === socket.id ? st.p1 : st.p2;
+            const hit = Math.random() < (shot === 'queen' ? 0.45 : 0.75);
+            if (hit && shot === 'queen' && st.queenOnBoard) { st.queenOnBoard = false; me.score += 3; st.lastShot = `👑 ${me.username} pocketed the Queen (+3)!`; }
+            else if (hit && st.coinsLeft > 0) { st.coinsLeft--; me.score += 1; st.lastShot = `🎯 ${me.username} pocketed a coin (+1)!`; }
+            else { st.lastShot = `💨 ${me.username} missed!`; st.turnId = st.turnId === st.p1.id ? st.p2.id : st.p1.id; }
+            if (st.coinsLeft <= 0 && !st.queenOnBoard) {
+                loungeCarromByServer.delete(srvId); io.to(srvId).emit('carromEnd');
+                const champ = st.p1.score >= st.p2.score ? st.p1 : st.p2; addCoins(champ.username, 200);
+                return io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🎯🏆 **CARROM WINNER:** **${champ.username}** won **+200🪙**!`, _serverId: srvId });
+            }
+            io.to(srvId).emit('carromSync', st);
+        });
+
+        // --- 6-PLAYER LUDO ---
+        socket.on('loungeStartLudo', () => {
+            const srvId = socket.activeServerId, players = getFullRoomPlayers(srvId);
+            if (players.length < 2) return socket.emit('svNotice', '⚠️ Need 2–6 players for Ludo!');
+            const cols = ['🔴 RED', '🔵 BLUE', '🟢 GREEN', '🟡 YELLOW', '🟣 PURPLE', '🟠 ORANGE'];
+            const st = { players: players.slice(0, 6).map((p, i) => ({ id: p.id, username: p.username, color: cols[i], tokens: [-1, -1] })), turnIdx: 0, lastDice: null, rolled: false, _serverId: srvId };
+            loungeLudoByServer.set(srvId, st); io.to(srvId).emit('ludoSync', st);
+        });
+
+        socket.on('loungeLudoRoll', () => {
+            const srvId = socket.activeServerId, st = loungeLudoByServer.get(srvId);
+            if (!st || st.rolled || st.players[st.turnIdx]?.id !== socket.id) return;
+            st.lastDice = Math.floor(Math.random() * 6) + 1; st.rolled = true; io.to(srvId).emit('ludoSync', st);
+        });
+
+        socket.on('loungeLudoMove', (tIdx) => {
+            const srvId = socket.activeServerId, st = loungeLudoByServer.get(srvId);
+            if (!st || !st.rolled || st.players[st.turnIdx]?.id !== socket.id) return;
+            const cur = st.players[st.turnIdx], i = tIdx === 1 ? 1 : 0, d = st.lastDice;
+            if (cur.tokens[i] === -1) { if (d === 6) cur.tokens[i] = 0; }
+            else if (cur.tokens[i] < 24) cur.tokens[i] = Math.min(24, cur.tokens[i] + d);
+            if (cur.tokens >= 24 && cur.tokens >= 24) {
+                loungeLudoByServer.delete(srvId); io.to(srvId).emit('ludoEnd'); addCoins(cur.username, 250);
+                return io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🎲👑 **LUDO CHAMPION:** **${cur.username}** won **+250🪙**!`, _serverId: srvId });
+            }
+            st.rolled = false; if (d !== 6) st.turnIdx = (st.turnIdx + 1) % st.players.length;
+            io.to(srvId).emit('ludoSync', st);
+        });
+
+        // --- 6-PLAYER SNAKES & LADDERS ---
+        socket.on('loungeStartSnakes', () => {
+            const srvId = socket.activeServerId, players = getFullRoomPlayers(srvId);
+            if (players.length < 2) return socket.emit('svNotice', '⚠️ Need 2–6 players for Snakes & Ladders!');
+            const badges = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠'];
+            const st = { players: players.slice(0, 6).map((p, i) => ({ id: p.id, username: p.username, badge: badges[i], pos: 1 })), turnIdx: 0, lastDice: null, lastNote: 'Race to Tile 100!', _serverId: srvId };
+            loungeSnakesByServer.set(srvId, st); io.to(srvId).emit('snakesSync', st);
+        });
+
+        socket.on('loungeSnakesRoll', () => {
+            const srvId = socket.activeServerId, st = loungeSnakesByServer.get(srvId);
+            if (!st || st.players[st.turnIdx]?.id !== socket.id) return;
+            const cur = st.players[st.turnIdx], dice = Math.floor(Math.random() * 6) + 1;
+            st.lastDice = dice; let next = cur.pos + dice, note = `${cur.username} rolled ${dice}`;
+            if (next > 100) { next = cur.pos; note += ' — needed exact roll!'; }
+            else if (LADDERS[next]) { note += ` — 🪜 LADDER ${next}→${LADDERS[next]}!`; next = LADDERS[next]; }
+            else if (SNAKES[next]) { note += ` — 🐍 SNAKE ${next}→${SNAKES[next]}!`; next = SNAKES[next]; }
+            else note += ` → Tile ${next}`;
+            cur.pos = next; st.lastNote = note;
+            if (cur.pos === 100) {
+                loungeSnakesByServer.delete(srvId); io.to(srvId).emit('snakesEnd'); addCoins(cur.username, 250);
+                return io.to(srvId).emit('message', { username: "Sammu's Bot", text: `🐍👑 **SNAKES & LADDERS WINNER:** **${cur.username}** hit 100 and won **+250🪙**!`, _serverId: srvId });
+            }
+            if (dice !== 6) st.turnIdx = (st.turnIdx + 1) % st.players.length;
+            io.to(srvId).emit('snakesSync', st);
+        });
+    });
+ return OG_HOSTS;
+ );

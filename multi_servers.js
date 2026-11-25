@@ -12275,96 +12275,6 @@ div>') +
           s.x += (s.tx - s.x) * 0.28; s.y += (s.ty - s.y) * 0.28;
         }
       });
-
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const me = entityMap.get(myId);
-        const camX = me ? me.x : 1400, camY = me ? me.y : 1400;
-
-        ctx.fillStyle = (me && boostActive) ? '#082f49' : '#031527';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.save();
-        ctx.translate(canvas.width / 2 - camX, canvas.height / 2 - camY);
-
-        const startX = Math.max(0, Math.floor((camX - canvas.width / 2) / 140) * 140);
-        const endX   = Math.min(2800, camX + canvas.width / 2 + 140);
-        const startY = Math.max(0, Math.floor((camY - canvas.height / 2) / 140) * 140);
-        const endY   = Math.min(2800, camY + canvas.height / 2 + 140);
-
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let x = startX; x <= endX; x += 140) { ctx.moveTo(x, startY); ctx.lineTo(x, endY); }
-        for (let y = startY; y <= endY; y += 140) { ctx.moveTo(startX, y); ctx.lineTo(endX, y); }
-        ctx.stroke();
-
-        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 10; ctx.strokeRect(0, 0, 2800, 2800);
-
-        CLIENT_HAZARDS.forEach(hz => {
-          ctx.font = hz.type === 'whirlpool' ? '32px serif' : '34px serif';
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          if (hz.type === 'whirlpool') {
-            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(hz.x, hz.y, hz.r * (0.85 + Math.sin(now * 0.006) * 0.15), 0, Math.PI * 2); ctx.stroke();
-            ctx.fillText('🌀', hz.x, hz.y);
-          } else {
-            ctx.fillText('🪼', hz.x, hz.y + Math.sin(now * 0.005) * 6);
-          }
-        });
-
-        const halfW = canvas.width / 2 + 50, halfH = canvas.height / 2 + 50;
-        for (let i = 0; i < foodList.length; i++) {
-          const f = foodList[i];
-          if (Math.abs(f.x - camX) > halfW || Math.abs(f.y - camY) > halfH) continue;
-          ctx.fillStyle = f.color; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
-        }
-
-        pearlList.forEach(pr => {
-          ctx.fillStyle = 'rgba(250, 204, 21, 0.25)'; ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.r + 8, 0, Math.PI * 2); ctx.fill();
-          ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔮', pr.x, pr.y);
-        });
-
-        for (let i = shockwaves.length - 1; i >= 0; i--) {
-          const sw = shockwaves[i]; sw.r += 7; sw.alpha -= 0.035;
-          if (sw.alpha  a.r - b.r).forEach(s => {
-          const isBoostingNow = (s.id === myId) ? boostActive : s.boost;
-          if (isBoostingNow && bubbles.length < 40) {
-            bubbles.push({ x: s.x + (Math.random() - 0.5) * s.r, y: s.y + (Math.random() - 0.5) * s.r, r: Math.random() * 4 + 2, alpha: 0.85 });
-          }
-          ctx.fillStyle = s.shield ? 'rgba(56, 189, 248, 0.35)' : (isBoostingNow ? 'rgba(250, 204, 21, 0.25)' : (s.color + '33'));
-          ctx.beginPath(); ctx.arc(s.x, s.y, s.r + (s.shield ? 11 : 6), 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = s.shield ? '#7dd3fc' : (isBoostingNow ? '#fde047' : (s.id === myId ? '#facc15' : s.color));
-          ctx.lineWidth = s.shield || isBoostingNow ? 4 : 2; ctx.stroke();
-
-          ctx.save(); ctx.translate(s.x, s.y);
-          if (s.dirX > 0) ctx.scale(-1, 1);
-          ctx.font = Math.round(s.r * 1.45) + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText(s.icon, 0, 2); ctx.restore();
-
-          ctx.fillStyle = '#ffffff'; ctx.font = 'bold ' + Math.max(11, Math.round(s.r * 0.32)) + 'px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText(s.name + ' (' + s.mass + ')' + (s.stun ? ' ⚡STUN' : ''), s.x, s.y - s.r - 9);
-        });
-
-        for (let i = bubbles.length - 1; i >= 0; i--) {
-          const b = bubbles[i]; b.y -= 1.5; b.alpha -= 0.04;
-          if (b.alpha <= 0) { bubbles.splice(i, 1); continue; }
-          ctx.strokeStyle = 'rgba(186, 230, 253, ' + b.alpha + ')'; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
-        }
-
-        ctx.restore();
-        drawRadarMinimap(me);
-      }
-      requestAnimationFrame(renderLoop);
-    }
-    requestAnimationFrame(renderLoop);
-  })();
-  </script>
-</body>
-</html>`;
-
-    const verifiedWaterRoute = (req, res, next) => {
-        const cleanUrl = (req.originalUrl || req.url || '').split('?').toLowerCase();
         if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.status(200).send(
@@ -12377,15 +12287,7 @@ div>') +
         return next();
     };
 
-    app.use(verifiedWaterRoute);
-    const verifiedStack = (app._router && app._router.stack) || (app.router && app.router.stack);
-    if (Array.isArray(verifiedStack)) {
-        const idx = verifiedStack.findIndex(layer => layer && layer.handle === verifiedWaterRoute);
-        if (idx > 0) {
-            const [moved] = verifiedStack.splice(idx, 1);
-            verifiedStack.unshift(moved);
-        }
-    }
+
 
  return OG_HOSTS;
 };

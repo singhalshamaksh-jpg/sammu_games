@@ -11922,12 +11922,11 @@ div>') +
             io.to(srvId).emit('unoEnd', { _serverId: srvId });
         });
     });
-
     // ============================================================================
-    // 🌊 WATER.IO V4 — BULLETPROOF ROUTE & POPUP OVERRIDE (PASTE ABOVE return OG_HOSTS;)
+    // 🌊 WATER.IO V4 — BULLETPROOF ROUTE & POPUP OVERRIDE (FIXED .split('?')[0])
     // ============================================================================
     const waterIoHandler = (req, res, next) => {
-        const cleanUrl = (req.originalUrl || req.url || '').split('?').toLowerCase();
+        const cleanUrl = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
         if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.status(200).send(WATER_IO_PAGE_HTML + '\n' + WATER_IO_CLIENT_JS_A + '\n' + WATER_IO_CLIENT_JS_B);
@@ -11937,14 +11936,17 @@ div>') +
 
     app.use(waterIoHandler);
 
-    // Move waterIoHandler to index 0 of Express stack (above static & '*' routes)
-    if (app._router && Array.isArray(app._router.stack)) {
-        const idx = app._router.stack.findIndex(layer => layer && layer.handle === waterIoHandler);
+    // Move waterIoHandler to index 0 of Express stack (Express 4 & Express 5 safe)
+    const routerStack = (app._router && app._router.stack) || (app.router && app.router.stack);
+    if (Array.isArray(routerStack)) {
+        const idx = routerStack.findIndex(layer => layer && layer.handle === waterIoHandler);
         if (idx > 0) {
-            const [movedLayer] = app._router.stack.splice(idx, 1);
-            app._router.stack.unshift(movedLayer);
+            const [movedLayer] = routerStack.splice(idx, 1);
+            routerStack.unshift(movedLayer);
         }
     }
+
+    
 
  return OG_HOSTS;
 };

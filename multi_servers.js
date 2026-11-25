@@ -12245,47 +12245,7 @@ div>') +
         rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
       });
     }`;
-    // ============================================================================
-    // 🌊 WATER.IO V4 — VERIFIED RENDERER & PRIORITY ROUTE (PIECE 2B)
-    // ============================================================================
-    const WATER_IO_VERIFIED_C = `
-    const CLIENT_HAZARDS = [
-      { type: 'whirlpool', x: 650,  y: 650,  r: 58 }, { type: 'whirlpool', x: 2150, y: 650,  r: 58 },
-      { type: 'jelly',     x: 1400, y: 800,  r: 42 }, { type: 'jelly',     x: 1400, y: 2000, r: 42 },
-      { type: 'jelly',     x: 800,  y: 1400, r: 42 }, { type: 'jelly',     x: 2000, y: 1400, r: 42 }
-    ];
-
-    let lastFrame = performance.now();
-    function renderLoop(now) {
-      const dt = Math.min(0.05, (now - lastFrame) / 1000);
-      lastFrame = now;
-
-      entityMap.forEach((s, id) => {
-        if (id === myId) {
-          if (!s.stun) {
-            const baseSpd = (SPECIES_SPEED[selectedSpecies] || 6.4) * 17.5;
-            const sizePenalty = Math.max(0.58, 1 - (s.mass / 2200));
-            const mult = (boostActive && s.mass > 22) ? 2.1 : 1.0;
-            s.x = Math.max(25, Math.min(2775, s.x + localDirX * localThrottle * baseSpd * sizePenalty * mult * dt));
-            s.y = Math.max(25, Math.min(2775, s.y + localDirY * localThrottle * baseSpd * sizePenalty * mult * dt));
-          }
-          s.x += (s.tx - s.x) * 0.2; s.y += (s.ty - s.y) * 0.2;
-          if (localDirX !== 0) s.dirX = localDirX;
-        } else {
-          s.x += (s.tx - s.x) * 0.28; s.y += (s.ty - s.y) * 0.28;
-        }
-      });
-        if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            return res.status(200).send(
-                WATER_IO_PAGE_HTML + '\n' +
-                WATER_IO_VERIFIED_A + '\n' +
-                WATER_IO_VERIFIED_B + '\n' +
-                WATER_IO_VERIFIED_C
-            );
-        }
-        return next();
-    };
+    
 
 
 

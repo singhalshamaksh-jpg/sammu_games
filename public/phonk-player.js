@@ -3,6 +3,7 @@
   let userClickedStop = false;
   let currentStyle = null;
   let lastPlayTime = 0;
+  let lastKnownTime = 0;
 
   const MP3_TRACKS = {
     brazil:    { url: '/public_phonk_batidao.mp3',                           label: '🇧🇷 No Batidão (Brazilian Phonk)' },
@@ -33,6 +34,37 @@
     setTimeout(() => bars.forEach(b => { b.style.height = '15%'; }), 140);
   }
 
+  function updateMediaSession(label) {
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: label,
+          artist: 'Sammu Games DJ',
+          album: 'Phonk Deck'
+        });
+        navigator.mediaSession.setActionHandler('play', () => {
+          const p = getPersistentAudio();
+          userClickedStop = false;
+          p.play().catch(() => {});
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          customStop(false);
+        });
+      } catch (e) {}
+    }
+  }
+
+  function recoverPlayback(a) {
+    if (userClickedStop || !currentStyle) return;
+    const chosen = MP3_TRACKS[currentStyle];
+    if (!chosen) return;
+    const resumeAt = a.currentTime > 1 ? a.currentTime : lastKnownTime;
+    a.src = encodeURI(chosen.url);
+    a.load();
+    a.currentTime = resumeAt;
+    a.play().catch(() => {});
+  }
+
   function getPersistentAudio() {
     if (!window._sharedPhonkPlayer) {
       const a = document.createElement('audio');
@@ -40,10 +72,24 @@
       a.loop = true;
       a.preload = 'auto';
       a.setAttribute('playsinline', '');
-      document.body.appendChild(a);
+      document.documentElement.appendChild(a);
+
+      a.addEventListener('timeupdate', () => {
+        if (a.currentTime > 0) lastKnownTime = a.currentTime;
+      });
 
       a.addEventListener('pause', () => {
         if (!userClickedStop && currentStyle && a.src) {
+          a.play().catch(() => {});
+        }
+      });
+
+      // Recover if server drops connection mid-song (common at ~60s)
+      a.addEventListener('stalled', () => recoverPlayback(a));
+      a.addEventListener('error', () => recoverPlayback(a));
+      a.addEventListener('ended', () => {
+        if (!userClickedStop && currentStyle) {
+          a.currentTime = 0;
           a.play().catch(() => {});
         }
       });
@@ -96,6 +142,7 @@
     userClickedStop = false;
     currentStyle = style;
     lastPlayTime = Date.now();
+    lastKnownTime = 0;
 
     if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
     document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
@@ -104,6 +151,7 @@
     if (!chosen) return;
 
     window._activePhonkLabel = chosen.label;
+    updateMediaSession(chosen.label);
 
     const btn = document.getElementById(BTN_MAP[style]);
     if (btn) btn.classList.add('active');
@@ -136,6 +184,7 @@
 
     userClickedStop = true;
     currentStyle = null;
+    lastKnownTime = 0;
     if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
 
     const player = window._sharedPhonkPlayer;
@@ -160,7 +209,6 @@
     }
   }
 
-  // Lock functions so no inline script can overwrite them
   try {
     Object.defineProperty(window, 'togglePhonkBeat', { value: customToggle, writable: false, configurable: true });
     Object.defineProperty(window, 'stopPhonkLoop',   { value: customStop,   writable: false, configurable: true });
@@ -169,18 +217,25 @@
     window.stopPhonkLoop = customStop;
   }
 
+  // Watchdog: keeps audio alive if browser/server pauses or drops it mid-track
   setInterval(() => {
     if (window.togglePhonkBeat !== customToggle) window.togglePhonkBeat = customToggle;
     if (window.stopPhonkLoop !== customStop) window.stopPhonkLoop = customStop;
     injectCustomButtons();
-  }, 600);
+
+    if (!userClickedStop && currentStyle) {
+      const p = getPersistentAudio();
+      if (p.paused && p.src) {
+        p.play().catch(() => {});
+      }
+    }
+  }, 1500);
 
   const waitSock = setInterval(() => {
     if (typeof socket === 'undefined') return;
     clearInterval(waitSock);
     socket.on('incomingPhonkTrack', (d) => {
       if (!d || (d._serverId && d._serverId !== window.selectedServerId)) return;
-      // Ignore echo of our own just-started track within 2 seconds
       if (d.action === 'play' && d.style === currentStyle && (Date.now() - lastPlayTime) < 2000) return;
       if (d.action === 'stop') customStop(true);
       else if (d.action === 'play' && d.style) startTrack(d.style, d.dj);

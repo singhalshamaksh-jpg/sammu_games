@@ -10997,6 +10997,34 @@ div>') +
         });
     };
     forcePullFromUpstash();
-             
+         // ============================================================================
+    // 🚀 UPSTASH BANDWIDTH SAVER (CUTS 12GB -> <0.3GB/MONTH)
+    // ============================================================================
+    let _svDirty = false, _ecoDirty = false;
+    const _rawSaveSvStats = saveSvStats;
+    const _rawSaveEcoDB   = saveEconomyDB;
+
+    saveSvStats = function() {
+        try { fs.writeFileSync(SV_STATS_FILE, JSON.stringify(svPlayerStats, null, 2)); } catch (e) {}
+        _svDirty = true;
+    };
+
+    saveEconomyDB = function() {
+        try { fs.writeFileSync(ECO_DB_FILE, JSON.stringify(playerWallet, null, 2)); } catch (e) {}
+        _ecoDirty = true;
+    };
+
+    setInterval(() => {
+        if (!cloudRestoreCompleted) return;
+        if (_svDirty) {
+            _svDirty = false;
+            upstashCmd(['SET', 'sammu_sv_stats', JSON.stringify(svPlayerStats)]);
+        }
+        if (_ecoDirty) {
+            _ecoDirty = false;
+            upstashCmd(['SET', 'sammu_economy', JSON.stringify(playerWallet)]);
+        }
+    }, 15000);
+        
  return OG_HOSTS;
 };

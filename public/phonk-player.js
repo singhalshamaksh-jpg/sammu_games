@@ -10,10 +10,10 @@
     memphis:   { url: '/public_phonk_memphis.mp3',                           label: '👹 Montagem Memphis' },
     cyber:     { url: '/public_phonk_hardstyle.mp3',                         label: '🚀 Euphoric Hardstyle' },
     tokyo:     { url: '/public_phonk_bingbingboo.mp3',                       label: '👾 Bing Bing Boo' },
-    supreme:   { url: '/public_phonk_supreme.mp3',                           label: '👑  Supreme' },
-    onelove:   { url: '/public_phonk_onelove.mp3',                           label: '💖  One Love' },
-    winning:   { url: '/public_phonk_winning.mp3',                           label: '🏆 Winning Speech' },
-    dopeshope: { url: '/Dope Shope International Villager 128 Kbps.mp3',     label: '🔥 Dope Shope' },
+    supreme:   { url: '/public_phonk_supreme.mp3',                           label: '👑 Shubh - Supreme' },
+    onelove:   { url: '/public_phonk_onelove.mp3',                           label: '💖 Shubh - One Love' },
+    winning:   { url: '/public_phonk_winning.mp3',                           label: '🏆 Aujla - Winning Speech' },
+    dopeshope: { url: '/Dope Shope International Villager 128 Kbps.mp3',     label: '🔥 Yo Yo - Dope Shope' },
     passo:     { url: '/ATLXS - PASSO BEM SOLTO.mp3',                        label: '👣 Passo Bem Solto' }
   };
 
@@ -43,48 +43,52 @@
     return window._sharedPhonkPlayer;
   }
 
+  function injectCustomButtons() {
+    const tokyoBtn = document.getElementById('loopTokyo');
+    if (tokyoBtn && tokyoBtn.textContent.includes('Tokyo')) {
+      tokyoBtn.textContent = '👾 Bing Bing Boo';
+    }
+    const grid = document.querySelector('#phonkDjCard .dj-loops');
+    if (!grid) return;
+
+    const customButtons = [
+      { id: 'loopSupreme',   key: 'supreme',   text: '👑 Shubh - Supreme',        color: '#facc15' },
+      { id: 'loopOneLove',   key: 'onelove',   text: '💖 Shubh - One Love',       color: '#f472b6' },
+      { id: 'loopWinning',   key: 'winning',   text: '🏆 Aujla - Winning Speech', color: '#38bdf8' },
+      { id: 'loopDopeShope', key: 'dopeshope', text: '🔥 Yo Yo - Dope Shope',     color: '#fb923c' },
+      { id: 'loopPasso',     key: 'passo',     text: '👣 Passo Bem Solto',        color: '#4ade80' }
+    ];
+
+    customButtons.forEach(item => {
+      if (!document.getElementById(item.id)) {
+        const btn = document.createElement('button');
+        btn.id = item.id;
+        btn.className = 'dj-loop-btn';
+        btn.style.borderColor = item.color;
+        btn.textContent = item.text;
+        btn.onclick = () => window.togglePhonkBeat(item.key);
+        grid.appendChild(btn);
+      }
+    });
+  }
+
   function installMp3Override() {
-    if (window._mp3OverrideInstalled) return;
-    window._mp3OverrideInstalled = true;
+    if (window._phonkPlayerVersion === 2) return;
+    window._phonkPlayerVersion = 2;
 
     const origStopPhonkLoop = window.stopPhonkLoop;
 
-    // Rename Tokyo button & inject custom track buttons
-    setInterval(() => {
-      const tokyoBtn = document.getElementById('loopTokyo');
-      if (tokyoBtn && tokyoBtn.textContent.includes('Tokyo')) {
-        tokyoBtn.textContent = '👾 Bing Bing Boo';
-      }
-      const grid = document.querySelector('#phonkDjCard .dj-loops');
-      if (grid) {
-        const customButtons = [
-          { id: 'loopSupreme',   key: 'supreme',   text: '👑 Shubh - Supreme',        color: '#facc15' },
-          { id: 'loopOneLove',   key: 'onelove',   text: '💖 Shubh - One Love',       color: '#f472b6' },
-          { id: 'loopWinning',   key: 'winning',   text: '🏆 Aujla - Winning Speech', color: '#38bdf8' },
-          { id: 'loopDopeShope', key: 'dopeshope', text: '🔥 Yo Yo - Dope Shope',     color: '#fb923c' },
-          { id: 'loopPasso',     key: 'passo',     text: '👣 Passo Bem Solto',        color: '#4ade80' }
-        ];
+    // Kill any built-in synth loop once on startup, without touching our MP3 player
+    if (typeof origStopPhonkLoop === 'function') {
+      try { origStopPhonkLoop(); } catch (e) {}
+    }
 
-        customButtons.forEach(item => {
-          if (!document.getElementById(item.id)) {
-            const btn = document.createElement('button');
-            btn.id = item.id;
-            btn.className = 'dj-loop-btn';
-            btn.style.borderColor = item.color;
-            btn.textContent = item.text;
-            btn.onclick = () => window.togglePhonkBeat(item.key);
-            grid.appendChild(btn);
-          }
-        });
-      }
-    }, 1000);
+    injectCustomButtons();
+    setInterval(injectCustomButtons, 800);
 
     function startTrack(style, djName) {
       if (vizTimer) { clearInterval(vizTimer); vizTimer = null; }
 
-      if (typeof origStopPhonkLoop === 'function') {
-        try { origStopPhonkLoop(); } catch (e) {}
-      }
       document.querySelectorAll('.dj-loop-btn').forEach(b => b.classList.remove('active'));
 
       const chosen = MP3_TRACKS[style];
@@ -106,10 +110,14 @@
       player.currentTime = 0;
       player.loop = true;
       player.volume = 0.85;
-      player.play().catch((err) => {
-        console.error('MP3 error:', err);
-        if (np) np.textContent = '⚠️ Tap screen once then retry: ' + chosen.url;
-      });
+
+      const playPromise = player.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.error('MP3 error:', err);
+          if (np) np.textContent = '⚠️ Tap screen once then retry: ' + chosen.url;
+        });
+      }
 
       vizTimer = setInterval(bounceBars, 220);
     }
@@ -151,5 +159,9 @@
     }, 800);
   }
 
-  window.addEventListener('load', () => setTimeout(installMp3Override, 300));
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(installMp3Override, 100);
+  } else {
+    window.addEventListener('DOMContentLoaded', () => setTimeout(installMp3Override, 100));
+  }
 })();

@@ -11996,6 +11996,396 @@ div>') +
     }
 
 
+    // ============================================================================
+    // 🌊 WATER.IO V4 — VERIFIED CLIENT SCRIPT (PIECE 1/2)
+    // ============================================================================
+    const WATER_IO_VERIFIED_A = `
+  <script>
+  (function() {
+    const socket = io({ transports: ['websocket', 'polling'] });
+    const canvas = document.getElementById('oceanCanvas');
+    const ctx = canvas.getContext('2d');
+    const radar = document.getElementById('radarCanvas');
+    const rctx = radar ? radar.getContext('2d') : null;
+
+    let selectedSpecies = 'clownfish';
+    let foodList = [], pearlList = [], entityMap = new Map();
+    let myId = null, boostActive = false, skillCooldownUntil = 0;
+    let bubbles = [], shockwaves = [];
+    let localDirX = 0, localDirY = 0, localThrottle = 0, lastEmitTime = 0, oceanAudio = null;
+
+    const SPECIES_SPEED = { clownfish: 6.6, shark: 6.2, orca: 5.9, puffer: 6.3, octopus: 6.1, dolphin: 7.0 };
+    const SPECIES_ICON  = { clownfish: '🐠', shark: '🦈', orca: '🐋', puffer: '🐡', octopus: '🐙', dolphin: '🐬' };
+    const TIER_NAMES    = ['', 'Hatchling', 'Reef Hunter', 'Apex Predator', 'Abyssal Kraken', 'Cosmic Leviathan'];
+
+    const nameInp = document.getElementById('oceanNameInput');
+    const savedUname = localStorage.getItem('sammu_username') || localStorage.getItem('username') || '';
+    if (savedUname && nameInp) nameInp.value = savedUname;
+
+    function playOceanSfx(kind) {
+      try {
+        if (!oceanAudio) oceanAudio = new (window.AudioContext || window.webkitAudioContext)();
+        if (oceanAudio.state === 'suspended') oceanAudio.resume();
+        const now = oceanAudio.currentTime;
+        const osc = oceanAudio.createOscillator(), gain = oceanAudio.createGain();
+        osc.type = (kind === 'chomp' || kind === 'pearl') ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(kind === 'evolve' ? 440 : 320, now);
+        osc.frequency.exponentialRampToValueAtTime(kind === 'evolve' ? 880 : 120, now + 0.22);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.connect(gain); gain.connect(oceanAudio.destination);
+        osc.start(now); osc.stop(now + 0.26);
+      } catch (e) {}
+    }
+
+    function resizeCanvas() {
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    window.pickFish = function(el) {
+      document.querySelectorAll('.fish-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedSpecies = el.dataset.sp || 'clownfish';
+    };
+
+    window.startPlayingOcean = function() {
+      const uname = (nameInp && nameInp.value ? nameInp.value.trim() : '') || ('Fish_' + Math.floor(Math.random() * 900 + 100));
+      localStorage.setItem('sammu_username', uname);
+      const ov = document.getElementById('startOverlay');
+      if (ov) ov.style.display = 'none';
+      if (socket.id) myId = socket.id;
+      entityMap.set(myId, {
+        id: myId, name: uname, icon: SPECIES_ICON[selectedSpecies] || '🐠',
+        color: '#38bdf8', x: 1400, y: 1400, tx: 1400, ty: 1400, r: 22, mass: 25, tier: 1, dirX: 1, boost: false
+      });
+      socket.emit('waterSpawn', { username: uname, species: selectedSpecies });
+      playOceanSfx('evolve');
+    };
+
+    const playBtn = document.getElementById('playOceanBtn');
+    if (playBtn) playBtn.onclick = window.startPlayingOcean;
+
+    function syncSteerToServer(force) {
+      const now = performance.now();
+      if (!force && now - lastEmitTime < 50) return;
+      lastEmitTime = now;
+      socket.emit('waterSteer', { dirX: localDirX, dirY: localDirY, throttle: localThrottle });
+    }
+
+    const leftTouch = document.getElementById('leftTouchArea');
+    const joyBase = document.getElementById('joyBase');
+    const joyKnob = document.getElementById('joyKnob');
+    let joyPointerId = null, joyOriginX = 83, joyOriginY = window.innerHeight - 83;
+    const maxRadius = 44;
+
+    if (leftTouch && joyBase && joyKnob) {
+      leftTouch.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        joyPointerId = e.pointerId;
+        leftTouch.setPointerCapture(e.pointerId);
+        joyOriginX = e.clientX; joyOriginY = e.clientY;
+        joyBase.style.left = (joyOriginX - 59) + 'px';
+        joyBase.style.top = (joyOriginY - 59) + 'px';
+        joyBase.style.bottom = 'auto';
+        joyKnob.style.transform = 'translate3d(0px, 0px, 0)';
+      });
+
+      leftTouch.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== joyPointerId) return;
+        let dx = e.clientX - joyOriginX, dy = e.clientY - joyOriginY;
+        const dist = Math.hypot(dx, dy);
+        if (dist > maxRadius) { dx = (dx / dist) * maxRadius; dy = (dy / dist) * maxRadius; }
+        joyKnob.style.transform = 'translate3d(' + dx + 'px, ' + dy + 'px, 0)';
+        if (dist > 4) {
+          localDirX = dx / dist; localDirY = dy / dist; localThrottle = Math.min(1, dist / maxRadius);
+        } else {
+          localDirX = 0; localDirY = 0; localThrottle = 0;
+        }
+        syncSteerToServer(false);
+      });
+
+      function resetFloatingJoy(e) {
+        if (e && e.pointerId !== joyPointerId) return;
+        joyPointerId = null;
+        joyBase.style.left = '24px'; joyBase.style.top = 'auto'; joyBase.style.bottom = '24px';
+        joyKnob.style.transform = 'translate3d(0px, 0px, 0)';
+        localDirX = 0; localDirY = 0; localThrottle = 0;
+        syncSteerToServer(true);
+      }
+      leftTouch.addEventListener('pointerup', resetFloatingJoy);
+      leftTouch.addEventListener('pointercancel', resetFloatingJoy);
+    }
+
+    const boostBtn = document.getElementById('boostBtn');
+    function triggerBoost(state) {
+      boostActive = Boolean(state);
+      if (boostBtn) boostBtn.classList.toggle('active', boostActive);
+      socket.emit('waterBoost', boostActive);
+    }
+    if (boostBtn) {
+      boostBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); triggerBoost(true); });
+      boostBtn.addEventListener('pointerup', () => triggerBoost(false));
+      boostBtn.addEventListener('pointercancel', () => triggerBoost(false));
+      boostBtn.addEventListener('pointerleave', () => triggerBoost(false));
+    }
+
+    window.triggerOceanSkill = function() {
+      const now = Date.now();
+      if (now  {
+        left--;
+        if (left <= 0) {
+          clearInterval(cdTimer);
+          sBtn.disabled = false;
+          sBtn.innerHTML = '🔥<br>SKILL';
+        } else {
+          sBtn.innerHTML = '⏳<br>' + left + 's';
+        }
+      }, 1000);
+    };
+
+    window.sendOceanChat = function() {
+      const inp = document.getElementById('rblxInput');
+      const txt = (inp && inp.value ? inp.value.trim() : '');
+      if (!txt) return;
+      const uname = (nameInp && nameInp.value ? nameInp.value.trim() : '') || 'Fish';
+      socket.emit('waterChatSend', { user: uname, text: txt });
+      inp.value = '';
+    };
+
+    const sendBtn = document.getElementById('rblxSendBtn');
+    if (sendBtn) sendBtn.onclick = window.sendOceanChat;`;
+    // ============================================================================
+    // 🌊 WATER.IO V4 — VERIFIED RENDERER & PRIORITY ROUTE (PIECE 2A)
+    // ============================================================================
+    const WATER_IO_VERIFIED_B = `
+    socket.on('connect', () => {
+      myId = socket.id;
+      socket.emit('waterJoinSpectate');
+    });
+
+    socket.on('waterFxEvent', (ev) => {
+      if (!ev) return;
+      playOceanSfx(ev.type);
+      const me = entityMap.get(myId);
+      if (me && (ev.type === 'evolve' || ev.type === 'warp')) shockwaves.push({ x: me.x, y: me.y, r: me.r, alpha: 1 });
+    });
+
+    socket.on('waterState', (state) => {
+      if (Array.isArray(state.food)) foodList = state.food;
+      if (Array.isArray(state.pearls)) pearlList = state.pearls;
+
+      if (Array.isArray(state.leaderboard)) {
+        const lbBox = document.getElementById('top5List');
+        if (lbBox) {
+          lbBox.innerHTML = state.leaderboard.map((p, i) =>
+            '<div class="lb-row"><span>' + (i === 0 ? '👑' : '#' + (i + 1)) + ' ' + p.icon + ' ' + p.name.slice(0, 9) + '</span><b>' + p.score + '</b></div>'
+          ).join('');
+        }
+      }
+
+      const activeIds = new Set();
+      (state.swimmers || []).forEach(s => {
+        activeIds.add(s.id);
+        const existing = entityMap.get(s.id);
+        if (existing) {
+          existing.tx = s.x; existing.ty = s.y; existing.r = s.r; existing.mass = s.mass;
+          existing.tier = s.tier; existing.dirX = s.dirX; existing.boost = s.boost;
+          existing.shield = s.shield; existing.stun = s.stun; existing.icon = s.icon; existing.name = s.name;
+          if (Math.hypot(existing.x - s.x, existing.y - s.y) > 260) { existing.x = s.x; existing.y = s.y; }
+        } else {
+          entityMap.set(s.id, { ...s, tx: s.x, ty: s.y });
+        }
+      });
+
+      for (const id of entityMap.keys()) { if (!activeIds.has(id)) entityMap.delete(id); }
+
+      const me = entityMap.get(myId);
+      const evoBan = document.getElementById('evoBanner');
+      if (me && evoBan) {
+        const tName = TIER_NAMES[me.tier || 1] || 'Hatchling';
+        evoBan.textContent = me.icon + ' T' + (me.tier || 1) + ' ' + tName + ' • Mass: ' + me.mass;
+      }
+    });
+
+    socket.on('waterChatMsg', (msg) => {
+      const box = document.getElementById('rblxMessages');
+      if (!box) return;
+      const div = document.createElement('div');
+      div.className = 'rblx-line';
+      div.innerHTML = '<b>' + msg.user + ':</b> ' + String(msg.text || '').replace(/</g, '&lt;');
+      box.appendChild(div);
+      while (box.children.length > 30) box.removeChild(box.firstElementChild);
+      box.scrollTop = box.scrollHeight;
+    });
+
+    socket.on('waterEaten', ({ by, finalScore, kills }) => {
+      triggerBoost(false);
+      entityMap.delete(myId);
+      const ov = document.getElementById('startOverlay');
+      const ban = document.getElementById('deathBanner');
+      if (ban) {
+        ban.style.display = 'block';
+        ban.innerHTML = '🦈 Eaten by <b>' + by + '</b>! Final Mass: <b>' + finalScore + '</b> • Kills: <b>' + (kills || 0) + '</b>';
+      }
+      if (ov) ov.style.display = 'flex';
+    });
+
+    function drawRadarMinimap(me) {
+      if (!rctx) return;
+      rctx.clearRect(0, 0, 92, 92);
+      const scale = 92 / 2800;
+      rctx.fillStyle = '#fde047';
+      pearlList.forEach(p => { rctx.beginPath(); rctx.arc(p.x * scale, p.y * scale, 2.5, 0, Math.PI * 2); rctx.fill(); });
+      entityMap.forEach((s, id) => {
+        rctx.fillStyle = id === myId ? '#ffffff' : (me && s.mass > me.mass * 1.15 ? '#ef4444' : '#38bdf8');
+        rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
+      });
+    }`;
+    // ============================================================================
+    // 🌊 WATER.IO V4 — VERIFIED RENDERER & PRIORITY ROUTE (PIECE 2B)
+    // ============================================================================
+    const WATER_IO_VERIFIED_C = `
+    const CLIENT_HAZARDS = [
+      { type: 'whirlpool', x: 650,  y: 650,  r: 58 }, { type: 'whirlpool', x: 2150, y: 650,  r: 58 },
+      { type: 'jelly',     x: 1400, y: 800,  r: 42 }, { type: 'jelly',     x: 1400, y: 2000, r: 42 },
+      { type: 'jelly',     x: 800,  y: 1400, r: 42 }, { type: 'jelly',     x: 2000, y: 1400, r: 42 }
+    ];
+
+    let lastFrame = performance.now();
+    function renderLoop(now) {
+      const dt = Math.min(0.05, (now - lastFrame) / 1000);
+      lastFrame = now;
+
+      entityMap.forEach((s, id) => {
+        if (id === myId) {
+          if (!s.stun) {
+            const baseSpd = (SPECIES_SPEED[selectedSpecies] || 6.4) * 17.5;
+            const sizePenalty = Math.max(0.58, 1 - (s.mass / 2200));
+            const mult = (boostActive && s.mass > 22) ? 2.1 : 1.0;
+            s.x = Math.max(25, Math.min(2775, s.x + localDirX * localThrottle * baseSpd * sizePenalty * mult * dt));
+            s.y = Math.max(25, Math.min(2775, s.y + localDirY * localThrottle * baseSpd * sizePenalty * mult * dt));
+          }
+          s.x += (s.tx - s.x) * 0.2; s.y += (s.ty - s.y) * 0.2;
+          if (localDirX !== 0) s.dirX = localDirX;
+        } else {
+          s.x += (s.tx - s.x) * 0.28; s.y += (s.ty - s.y) * 0.28;
+        }
+      });
+
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const me = entityMap.get(myId);
+        const camX = me ? me.x : 1400, camY = me ? me.y : 1400;
+
+        ctx.fillStyle = (me && boostActive) ? '#082f49' : '#031527';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width / 2 - camX, canvas.height / 2 - camY);
+
+        const startX = Math.max(0, Math.floor((camX - canvas.width / 2) / 140) * 140);
+        const endX   = Math.min(2800, camX + canvas.width / 2 + 140);
+        const startY = Math.max(0, Math.floor((camY - canvas.height / 2) / 140) * 140);
+        const endY   = Math.min(2800, camY + canvas.height / 2 + 140);
+
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = startX; x <= endX; x += 140) { ctx.moveTo(x, startY); ctx.lineTo(x, endY); }
+        for (let y = startY; y <= endY; y += 140) { ctx.moveTo(startX, y); ctx.lineTo(endX, y); }
+        ctx.stroke();
+
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 10; ctx.strokeRect(0, 0, 2800, 2800);
+
+        CLIENT_HAZARDS.forEach(hz => {
+          ctx.font = hz.type === 'whirlpool' ? '32px serif' : '34px serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          if (hz.type === 'whirlpool') {
+            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(hz.x, hz.y, hz.r * (0.85 + Math.sin(now * 0.006) * 0.15), 0, Math.PI * 2); ctx.stroke();
+            ctx.fillText('🌀', hz.x, hz.y);
+          } else {
+            ctx.fillText('🪼', hz.x, hz.y + Math.sin(now * 0.005) * 6);
+          }
+        });
+
+        const halfW = canvas.width / 2 + 50, halfH = canvas.height / 2 + 50;
+        for (let i = 0; i < foodList.length; i++) {
+          const f = foodList[i];
+          if (Math.abs(f.x - camX) > halfW || Math.abs(f.y - camY) > halfH) continue;
+          ctx.fillStyle = f.color; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
+        }
+
+        pearlList.forEach(pr => {
+          ctx.fillStyle = 'rgba(250, 204, 21, 0.25)'; ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.r + 8, 0, Math.PI * 2); ctx.fill();
+          ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔮', pr.x, pr.y);
+        });
+
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+          const sw = shockwaves[i]; sw.r += 7; sw.alpha -= 0.035;
+          if (sw.alpha  a.r - b.r).forEach(s => {
+          const isBoostingNow = (s.id === myId) ? boostActive : s.boost;
+          if (isBoostingNow && bubbles.length < 40) {
+            bubbles.push({ x: s.x + (Math.random() - 0.5) * s.r, y: s.y + (Math.random() - 0.5) * s.r, r: Math.random() * 4 + 2, alpha: 0.85 });
+          }
+          ctx.fillStyle = s.shield ? 'rgba(56, 189, 248, 0.35)' : (isBoostingNow ? 'rgba(250, 204, 21, 0.25)' : (s.color + '33'));
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r + (s.shield ? 11 : 6), 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = s.shield ? '#7dd3fc' : (isBoostingNow ? '#fde047' : (s.id === myId ? '#facc15' : s.color));
+          ctx.lineWidth = s.shield || isBoostingNow ? 4 : 2; ctx.stroke();
+
+          ctx.save(); ctx.translate(s.x, s.y);
+          if (s.dirX > 0) ctx.scale(-1, 1);
+          ctx.font = Math.round(s.r * 1.45) + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(s.icon, 0, 2); ctx.restore();
+
+          ctx.fillStyle = '#ffffff'; ctx.font = 'bold ' + Math.max(11, Math.round(s.r * 0.32)) + 'px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(s.name + ' (' + s.mass + ')' + (s.stun ? ' ⚡STUN' : ''), s.x, s.y - s.r - 9);
+        });
+
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+          const b = bubbles[i]; b.y -= 1.5; b.alpha -= 0.04;
+          if (b.alpha <= 0) { bubbles.splice(i, 1); continue; }
+          ctx.strokeStyle = 'rgba(186, 230, 253, ' + b.alpha + ')'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
+        }
+
+        ctx.restore();
+        drawRadarMinimap(me);
+      }
+      requestAnimationFrame(renderLoop);
+    }
+    requestAnimationFrame(renderLoop);
+  })();
+  </script>
+</body>
+</html>`;
+
+    const verifiedWaterRoute = (req, res, next) => {
+        const cleanUrl = (req.originalUrl || req.url || '').split('?').toLowerCase();
+        if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.status(200).send(
+                WATER_IO_PAGE_HTML + '\n' +
+                WATER_IO_VERIFIED_A + '\n' +
+                WATER_IO_VERIFIED_B + '\n' +
+                WATER_IO_VERIFIED_C
+            );
+        }
+        return next();
+    };
+
+    app.use(verifiedWaterRoute);
+    const verifiedStack = (app._router && app._router.stack) || (app.router && app.router.stack);
+    if (Array.isArray(verifiedStack)) {
+        const idx = verifiedStack.findIndex(layer => layer && layer.handle === verifiedWaterRoute);
+        if (idx > 0) {
+            const [moved] = verifiedStack.splice(idx, 1);
+            verifiedStack.unshift(moved);
+        }
+    }
 
  return OG_HOSTS;
 };

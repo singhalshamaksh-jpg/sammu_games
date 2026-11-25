@@ -11030,6 +11030,37 @@ div>') +
             upstashCmd(['SET', 'sammu_economy', JSON.stringify(playerWallet)]);
         }
     }, 15000);
-        
+      // ============================================================================
+    // 📺 /VERMAAD ON|OFF CREATOR COMMAND
+    // ============================================================================
+    let vermaAdEnabled = true;
+
+    io.on('connection', (socket) => {
+        socket.emit('vermaAdState', vermaAdEnabled);
+
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw !== 'string') return;
+            const clean = raw.trim().toLowerCase();
+            if (!clean.startsWith('/vermaad')) return;
+
+            const u = (socket.username || '').toLowerCase();
+            const isCreator = u.includes('samaksh') || u.includes('sammu') || (typeof verifiedCreators !== 'undefined' && verifiedCreators.has(u));
+            if (!isCreator) return;
+
+            const arg = clean.split(/\s+/)[1];
+            if (arg === 'on') vermaAdEnabled = true;
+            else if (arg === 'off') vermaAdEnabled = false;
+            else vermaAdEnabled = !vermaAdEnabled;
+
+            io.emit('vermaAdState', vermaAdEnabled);
+            socket.emit('message', {
+                username: "Sammu's Bot",
+                text: `📺 **Verma Diary 18 Ad** is now **${vermaAdEnabled ? 'ON ✅' : 'OFF ❌'}** across all servers!`,
+                _serverId: socket.activeServerId
+            });
+        });
+    });
+      
  return OG_HOSTS;
 };

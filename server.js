@@ -824,7 +824,7 @@ const PROMAX_VOICE_WIDGET = `
       const el = document.getElementById('proMaxAudioEl');
       if (el && !el.src) {
         el.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-        el.play().then(() => { el.pause(); el.currentTime = 0; }).catch(() => {});
+        el.play().then(function() { el.pause(); el.currentTime = 0; }).catch(function() {});
       }
       if ('speechSynthesis' in window) {
         window.speechSynthesis.getVoices();
@@ -839,7 +839,7 @@ const PROMAX_VOICE_WIDGET = `
 
   window.resumeProMaxSong = function() {
     const el = document.getElementById('proMaxAudioEl');
-    if (el && el.src) el.play().catch(() => {});
+    if (el && el.src) el.play().catch(function() {});
   };
 
   window.stopProMaxSong = function() {
@@ -853,23 +853,21 @@ const PROMAX_VOICE_WIDGET = `
     try {
       if (!window._proMaxVoiceOn || !('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
-      const clean = String(text || '')
-        .replace(/^\\*\\*@[^:]+:\\*\\*/g, '')
-        .replace(/[*_#~\`]|https?:\\/\\/\\S+/g, '')
-        .replace(/\\n🎵[\\s\\S]*/g, '')
-        .replace(/[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/gu, '')
-        .replace(/!+/g, '.')
-        .replace(/\\s+/g, ' ')
-        .trim();
+      let clean = String(text || '');
+      const colonIdx = clean.indexOf(':**');
+      if (clean.startsWith('**@') && colonIdx !== -1) clean = clean.slice(colonIdx + 3);
+      const musicIdx = clean.indexOf('🎵');
+      if (musicIdx !== -1) clean = clean.slice(0, musicIdx);
+      clean = clean.split('*').join('').split('_').join('').split('#').join('').split('!').join('.').trim();
       if (!clean) return;
 
       const utter = new SpeechSynthesisUtterance(clean.slice(0, 220));
       const voices = window.speechSynthesis.getVoices() || [];
       const bestVoice =
-        voices.find(v => /Natural|Neural|Online/i.test(v.name) && /en-IN|hi-IN|en-GB|en-US/i.test(v.lang)) ||
-        voices.find(v => /Google हिन्दी|Google UK English Female|Google US English|Neerja|Heera/i.test(v.name)) ||
-        voices.find(v => /en-IN|hi-IN/i.test(v.lang)) ||
-        voices.find(v => /en/i.test(v.lang));
+        voices.find(function(v) { return /Natural|Neural|Online/i.test(v.name) && /en-IN|hi-IN|en-GB|en-US/i.test(v.lang); }) ||
+        voices.find(function(v) { return /Google हिन्दी|Google UK English Female|Google US English|Neerja|Heera/i.test(v.name); }) ||
+        voices.find(function(v) { return /en-IN|hi-IN/i.test(v.lang); }) ||
+        voices.find(function(v) { return /en/i.test(v.lang); });
       if (bestVoice) utter.voice = bestVoice;
 
       utter.rate = 0.96;
@@ -895,16 +893,16 @@ const PROMAX_VOICE_WIDGET = `
       const el = document.getElementById('proMaxAudioEl');
       const bar = document.getElementById('proMaxMiniPlayer');
       const titleEl = document.getElementById('proMaxSongTitle');
-      const audios = Array.from(document.querySelectorAll('audio, video')).filter(a => a !== el);
+      const audios = Array.from(document.querySelectorAll('audio, video')).filter(function(a) { return a !== el; });
       const btns = Array.from(document.querySelectorAll('button'));
 
-            if (act === 'PLAY_SONG') {
-        audios.forEach(a => { if (!a.paused) a.pause(); });
+      if (act === 'PLAY_SONG') {
+        audios.forEach(function(a) { if (!a.paused) a.pause(); });
         const songLabel = String(data.songTitle || data.songQuery || 'Playing Track').trim();
         if (bar) bar.style.display = 'block';
         if (titleEl) titleEl.textContent = '🔎 Searching: ' + songLabel;
 
-        const playStream = (url, label) => {
+        function playStream(url, label) {
           if (!el) return;
           if (titleEl) titleEl.textContent = '🎵 ' + label;
           el.pause();
@@ -913,70 +911,69 @@ const PROMAX_VOICE_WIDGET = `
           el.play().catch(function() {
             if (titleEl) titleEl.textContent = '▶ Tap Play: ' + label;
           });
-        };
+        }
 
         if (data.streamUrl) {
           playStream(data.streamUrl, songLabel);
           return;
         }
 
-        const cleanQ = songLabel.replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-        const shortQ = cleanQ.split(' ').slice(0, 3).join(' ');
+        const cleanQ = songLabel.replace(/[^a-zA-Z0-9 -]/g, ' ').trim();
+        const shortQ = cleanQ.split(' ').filter(Boolean).slice(0, 3).join(' ');
 
-        const tryDeezerAndAudius = () => {
+        function tryDeezerAndAudius() {
           const cbName = '_dzCb_' + Date.now();
           window[cbName] = function(res) {
             try { delete window[cbName]; } catch (e) {}
             const track = res && Array.isArray(res.data) ? res.data.at(0) : null;
             if (track && track.preview) {
-              playStream(track.preview, track.title + ' — ' + (track.artist?.name || ''));
+              playStream(track.preview, track.title + ' — ' + ((track.artist && track.artist.name) || ''));
             } else {
               fetch('https://audius.co' + encodeURIComponent(shortQ) + '&limit=1')
-                .then(r => r.json())
-                .then(a => {
+                .then(function(r) { return r.json(); })
+                .then(function(a) {
                   const t = a && Array.isArray(a.data) ? a.data.at(0) : null;
                   if (t && t.id) {
-                    playStream('https://audius.co' + t.id + '/stream', t.title + ' — ' + (t.user?.name || ''));
+                    playStream('https://audius.co' + t.id + '/stream', t.title + ' — ' + ((t.user && t.user.name) || ''));
                   } else if (titleEl) {
                     titleEl.textContent = '⚠️ Not found: ' + songLabel;
                   }
                 })
-                .catch(() => { if (titleEl) titleEl.textContent = '⚠️ Not found: ' + songLabel; });
+                .catch(function() { if (titleEl) titleEl.textContent = '⚠️ Not found: ' + songLabel; });
             }
           };
           const sc = document.createElement('script');
           sc.src = 'https://deezer.com' + encodeURIComponent(shortQ) + '&limit=1&output=jsonp&callback=' + cbName;
           document.body.appendChild(sc);
-        };
+        }
 
-        // 1. Try JioSaavn directly from your Indian browser IP first (full songs!)
         fetch('https://saavn.dev' + encodeURIComponent(cleanQ) + '&limit=1')
-          .then(r => r.json())
-          .then(sJson => {
-            const song = sJson?.data?.results?.at(0);
-            const dlList = Array.isArray(song?.downloadUrl) ? song.downloadUrl : [];
-            const best = dlList.find(d => d.quality === '160kbps') || dlList.at(-1);
+          .then(function(r) { return r.json(); })
+          .then(function(sJson) {
+            const results = sJson && sJson.data && sJson.data.results;
+            const song = Array.isArray(results) ? results.at(0) : null;
+            const dlList = Array.isArray(song && song.downloadUrl) ? song.downloadUrl : [];
+            const best = dlList.find(function(d) { return d.quality === '160kbps'; }) || dlList.at(-1);
             if (best && best.url) {
-              const artist = song?.artists?.primary?.at(0)?.name || '';
+              const pList = song && song.artists && song.artists.primary;
+              const artist = (Array.isArray(pList) && pList.at(0) && pList.at(0).name) || '';
               playStream(best.url, artist ? (song.name + ' — ' + artist) : song.name);
             } else {
               tryDeezerAndAudius();
             }
           })
-          .catch(() => tryDeezerAndAudius());
-      }
-
+          .catch(function() { tryDeezerAndAudius(); });
       } else if (act === 'STOP_DJ') {
         window.stopProMaxSong();
-        audios.forEach(a => { if (!a.paused) a.pause(); });
+        audios.forEach(function(a) { if (!a.paused) a.pause(); });
       } else if (act === 'SOFT_VOL') {
         if (el) el.volume = 0.25;
-        audios.forEach(a => { a.volume = 0.25; });
+        audios.forEach(function(a) { a.volume = 0.25; });
       } else if (act === 'LOUD_VOL') {
         if (el) el.volume = 1.0;
-        audios.forEach(a => { a.volume = 1.0; });
+        audios.forEach(function(a) { a.volume = 1.0; });
       } else if (act === 'DISCO_TOGGLE') {
-        const discoBtn = btns.find(b => /disco/i.test(b.textContent || ''));
+        const discoBtn = btns.find(function(b) { return /disco/i.test(b.textContent || ''); });
         if (discoBtn) discoBtn.click();
       }
     });
@@ -987,7 +984,7 @@ const PROMAX_VOICE_WIDGET = `
     if (window.socket) attachProMaxHandlers(window.socket);
   }
 
-  window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('DOMContentLoaded', function() {
     if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
     bindProMaxSocket();
     setTimeout(bindProMaxSocket, 1000);
@@ -995,6 +992,7 @@ const PROMAX_VOICE_WIDGET = `
 })();
 </script>
 `;
+
 
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');

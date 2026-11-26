@@ -898,22 +898,74 @@ const PROMAX_VOICE_WIDGET = `
       const audios = Array.from(document.querySelectorAll('audio, video')).filter(a => a !== el);
       const btns = Array.from(document.querySelectorAll('button'));
 
-      if (act === 'PLAY_SONG') {
+            if (act === 'PLAY_SONG') {
         audios.forEach(a => { if (!a.paused) a.pause(); });
-        const songLabel = data.songTitle || data.songQuery || 'Playing Track';
+        const songLabel = String(data.songTitle || data.songQuery || 'Playing Track').trim();
         if (bar) bar.style.display = 'block';
-        if (titleEl) titleEl.textContent = '🎵 ' + songLabel;
+        if (titleEl) titleEl.textContent = '🔎 Searching: ' + songLabel;
 
-        if (data.streamUrl && el) {
+        const playStream = (url, label) => {
+          if (!el) return;
+          if (titleEl) titleEl.textContent = '🎵 ' + label;
           el.pause();
-          el.src = data.streamUrl;
+          el.src = url;
           el.volume = 0.85;
           el.play().catch(function() {
-            if (titleEl) titleEl.textContent = '▶ Tap Play: ' + songLabel;
+            if (titleEl) titleEl.textContent = '▶ Tap Play: ' + label;
           });
-        } else if (titleEl) {
-          titleEl.textContent = '⚠️ Track not found: ' + songLabel;
+        };
+
+        if (data.streamUrl) {
+          playStream(data.streamUrl, songLabel);
+          return;
         }
+
+        const cleanQ = songLabel.replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+        const shortQ = cleanQ.split(' ').slice(0, 3).join(' ');
+
+        const tryDeezerAndAudius = () => {
+          const cbName = '_dzCb_' + Date.now();
+          window[cbName] = function(res) {
+            try { delete window[cbName]; } catch (e) {}
+            const track = res && Array.isArray(res.data) ? res.data.at(0) : null;
+            if (track && track.preview) {
+              playStream(track.preview, track.title + ' — ' + (track.artist?.name || ''));
+            } else {
+              fetch('https://audius.co' + encodeURIComponent(shortQ) + '&limit=1')
+                .then(r => r.json())
+                .then(a => {
+                  const t = a && Array.isArray(a.data) ? a.data.at(0) : null;
+                  if (t && t.id) {
+                    playStream('https://audius.co' + t.id + '/stream', t.title + ' — ' + (t.user?.name || ''));
+                  } else if (titleEl) {
+                    titleEl.textContent = '⚠️ Not found: ' + songLabel;
+                  }
+                })
+                .catch(() => { if (titleEl) titleEl.textContent = '⚠️ Not found: ' + songLabel; });
+            }
+          };
+          const sc = document.createElement('script');
+          sc.src = 'https://deezer.com' + encodeURIComponent(shortQ) + '&limit=1&output=jsonp&callback=' + cbName;
+          document.body.appendChild(sc);
+        };
+
+        // 1. Try JioSaavn directly from your Indian browser IP first (full songs!)
+        fetch('https://saavn.dev' + encodeURIComponent(cleanQ) + '&limit=1')
+          .then(r => r.json())
+          .then(sJson => {
+            const song = sJson?.data?.results?.at(0);
+            const dlList = Array.isArray(song?.downloadUrl) ? song.downloadUrl : [];
+            const best = dlList.find(d => d.quality === '160kbps') || dlList.at(-1);
+            if (best && best.url) {
+              const artist = song?.artists?.primary?.at(0)?.name || '';
+              playStream(best.url, artist ? (song.name + ' — ' + artist) : song.name);
+            } else {
+              tryDeezerAndAudius();
+            }
+          })
+          .catch(() => tryDeezerAndAudius());
+      }
+
       } else if (act === 'STOP_DJ') {
         window.stopProMaxSong();
         audios.forEach(a => { if (!a.paused) a.pause(); });

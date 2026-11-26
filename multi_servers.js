@@ -11304,10 +11304,11 @@ div>') +
         }
         io.to('waterio_ocean').emit('waterState', packet);
     }, 85);
+        
+       // ============================================================================
+    // 🌊 WATER.IO V4 — PIECE 1/4: FULL-PAGE HTML & CSS
     // ============================================================================
-    // 🌊 WATER.IO V4 — PIECE 3/6: FULL-PAGE HTML & HUD LAYOUT
-    // ============================================================================
-    const WATER_IO_PAGE_HTML = `<!DOCTYPE html>
+    const WATER_IO_HTML_P1 = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11353,8 +11354,8 @@ div>') +
       <div class="rblx-line"><b>[SYSTEM]:</b> Eat plankton & smaller fish to evolve into a Cosmic Leviathan! 🐉🌊</div>
     </div>
     <div id="rblxInputRow">
-      <input id="rblxInput" placeholder="Tap to chat..." maxlength="90" onkeydown="if(event.key==='Enter')sendOceanChat()">
-      <button id="rblxSendBtn" onclick="sendOceanChat()">Send</button>
+      <input id="rblxInput" placeholder="Tap to chat..." maxlength="90">
+      <button id="rblxSendBtn">Send</button>
     </div>
   </div>
   <div id="evoBanner">🐠 Tier 1 Hatchling • Mass: 25</div>
@@ -11365,7 +11366,7 @@ div>') +
   <div id="leftTouchArea"></div>
   <div id="joyBase"><div id="joyKnob"></div></div>
   <div id="rightActions">
-    <button id="skillBtn" onclick="triggerOceanSkill()">🔥<br>SKILL</button>
+    <button id="skillBtn">🔥<br>SKILL</button>
     <button id="boostBtn">⚡<br>BOOST</button>
   </div>
   <div id="startOverlay">
@@ -11374,22 +11375,24 @@ div>') +
       <div id="deathBanner" style="display:none;background:rgba(239,68,68,0.22);border:1px solid #f87171;border-radius:10px;padding:6px;margin-top:6px;font-size:12px;color:#fecaca;"></div>
       <input id="oceanNameInput" placeholder="Your Ocean Name..." maxlength="16" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:14px;text-align:center;user-select:text;-webkit-user-select:text;">
       <div class="fish-grid" id="fishGrid">
-        <div class="fish-card selected" data-sp="clownfish" onclick="pickFish(this)"><div style="font-size:28px;">🐠</div><div style="font-size:11px;font-weight:bold;">Clownfish</div><div style="font-size:9px;color:#38bdf8;">🛡️ Shield</div></div>
-        <div class="fish-card" data-sp="shark" onclick="pickFish(this)"><div style="font-size:28px;">🦈</div><div style="font-size:11px;font-weight:bold;">Great White</div><div style="font-size:9px;color:#facc15;">⚡ Lunge</div></div>
-        <div class="fish-card" data-sp="orca" onclick="pickFish(this)"><div style="font-size:28px;">🐋</div><div style="font-size:11px;font-weight:bold;">Shadow Orca</div><div style="font-size:9px;color:#c084fc;">🌊 Sonic</div></div>
-        <div class="fish-card" data-sp="puffer" onclick="pickFish(this)"><div style="font-size:28px;">🐡</div><div style="font-size:11px;font-weight:bold;">Spike Puffer</div><div style="font-size:9px;color:#f87171;">💥 Nova</div></div>
-        <div class="fish-card" data-sp="octopus" onclick="pickFish(this)"><div style="font-size:28px;">🐙</div><div style="font-size:11px;font-weight:bold;">Kraken Octo</div><div style="font-size:9px;color:#f472b6;">🖤 Ink</div></div>
-        <div class="fish-card" data-sp="dolphin" onclick="pickFish(this)"><div style="font-size:28px;">🐬</div><div style="font-size:11px;font-weight:bold;">Cyber Dolphin</div><div style="font-size:9px;color:#2dd4bf;">🚀 Jet</div></div>
+        <div class="fish-card selected" data-sp="clownfish"><div style="font-size:28px;">🐠</div><div style="font-size:11px;font-weight:bold;">Clownfish</div><div style="font-size:9px;color:#38bdf8;">🛡️ Shield</div></div>
+        <div class="fish-card" data-sp="shark"><div style="font-size:28px;">🦈</div><div style="font-size:11px;font-weight:bold;">Great White</div><div style="font-size:9px;color:#facc15;">⚡ Lunge</div></div>
+        <div class="fish-card" data-sp="orca"><div style="font-size:28px;">🐋</div><div style="font-size:11px;font-weight:bold;">Shadow Orca</div><div style="font-size:9px;color:#c084fc;">🌊 Sonic</div></div>
+        <div class="fish-card" data-sp="puffer"><div style="font-size:28px;">🐡</div><div style="font-size:11px;font-weight:bold;">Spike Puffer</div><div style="font-size:9px;color:#f87171;">💥 Nova</div></div>
+        <div class="fish-card" data-sp="octopus"><div style="font-size:28px;">🐙</div><div style="font-size:11px;font-weight:bold;">Kraken Octo</div><div style="font-size:9px;color:#f472b6;">🖤 Ink</div></div>
+        <div class="fish-card" data-sp="dolphin"><div style="font-size:28px;">🐬</div><div style="font-size:11px;font-weight:bold;">Cyber Dolphin</div><div style="font-size:9px;color:#2dd4bf;">🚀 Jet</div></div>
       </div>
-      <button id="playOceanBtn" onclick="startPlayingOcean()">🌊 DIVE INTO OCEAN</button>
+      <button id="playOceanBtn">🌊 DIVE INTO OCEAN</button>
       <div style="margin-top:8px;"><a href="/" style="color:#94a3b8;font-size:12px;text-decoration:none;">⬅️ Back to SammuGames Chat Arena</a></div>
     </div>
   </div>`;
+
+      // ============================================================================
+    // 🌊 WATER.IO V4 — PIECE 2A/4: SETUP, AUDIO, SPAWN & TOUCH JOYSTICK
     // ============================================================================
-    // 🌊 WATER.IO V4 — PIECE 4/6: FLOATING JOYSTICK, SKILL & AUDIO CONTROLS
-    // ============================================================================
-    const WATER_IO_CLIENT_JS_A = `
+    const WATER_IO_JS_P2 = `
   <script>
+  (function() {
     const socket = io({ transports: ['websocket', 'polling'] });
     const canvas = document.getElementById('oceanCanvas');
     const ctx = canvas.getContext('2d');
@@ -11406,8 +11409,9 @@ div>') +
     const SPECIES_ICON  = { clownfish: '🐠', shark: '🦈', orca: '🐋', puffer: '🐡', octopus: '🐙', dolphin: '🐬' };
     const TIER_NAMES    = ['', 'Hatchling', 'Reef Hunter', 'Apex Predator', 'Abyssal Kraken', 'Cosmic Leviathan'];
 
+    const nameInp = document.getElementById('oceanNameInput');
     const savedUname = localStorage.getItem('sammu_username') || localStorage.getItem('username') || '';
-    if (savedUname) document.getElementById('oceanNameInput').value = savedUname;
+    if (savedUname) nameInp.value = savedUname;
 
     function playOceanSfx(kind) {
       try {
@@ -11443,23 +11447,27 @@ div>') +
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    window.pickFish = function(el) {
-      document.querySelectorAll('.fish-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-      selectedSpecies = el.dataset.sp;
-    };
+    document.querySelectorAll('.fish-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.fish-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedSpecies = card.dataset.sp || 'clownfish';
+      });
+    });
 
-    window.startPlayingOcean = function() {
-      const uname = (document.getElementById('oceanNameInput').value || '').trim() || ('Fish_' + Math.floor(Math.random() * 900 + 100));
+    function startPlayingOcean() {
+      const uname = (nameInp.value || '').trim() || ('Fish_' + Math.floor(Math.random() * 900 + 100));
       localStorage.setItem('sammu_username', uname);
       document.getElementById('startOverlay').style.display = 'none';
+      if (socket.id) myId = socket.id;
       entityMap.set(myId, {
         id: myId, name: uname, icon: SPECIES_ICON[selectedSpecies] || '🐠',
         color: '#38bdf8', x: 1400, y: 1400, tx: 1400, ty: 1400, r: 22, mass: 25, tier: 1, dirX: 1, boost: false
       });
       socket.emit('waterSpawn', { username: uname, species: selectedSpecies });
       playOceanSfx('evolve');
-    };
+    }
+    document.getElementById('playOceanBtn').addEventListener('click', startPlayingOcean);
 
     function syncSteerToServer(force) {
       const now = performance.now();
@@ -11508,11 +11516,16 @@ div>') +
       syncSteerToServer(true);
     }
     leftTouch.addEventListener('pointerup', resetFloatingJoy);
-    leftTouch.addEventListener('pointercancel', resetFloatingJoy);
-
+    leftTouch.addEventListener('pointercancel', resetFloatingJoy);`;
+      // ============================================================================
+    // 🌊 WATER.IO V4 — PIECE 2B/4: BOOST, SKILL, PC KEYBOARD & CHAT
+    // ============================================================================
+    const WATER_IO_JS_P2B = `
     const boostBtn = document.getElementById('boostBtn');
     function triggerBoost(state) {
-      boostActive = Boolean(state);
+      const next = Boolean(state);
+      if (boostActive === next) return;
+      boostActive = next;
       boostBtn.classList.toggle('active', boostActive);
       socket.emit('waterBoost', boostActive);
     }
@@ -11521,27 +11534,111 @@ div>') +
     boostBtn.addEventListener('pointercancel', () => triggerBoost(false));
     boostBtn.addEventListener('pointerleave', () => triggerBoost(false));
 
-    window.triggerOceanSkill = function() {
+    const skillBtn = document.getElementById('skillBtn');
+    function triggerOceanSkill() {
       const now = Date.now();
-      if (now  {
+      if (now < skillCooldownUntil) return;
+      skillCooldownUntil = now + 6000;
+      socket.emit('waterUseSkill');
+      playOceanSfx('evolve');
+      skillBtn.disabled = true;
+      let left = 6;
+      skillBtn.innerHTML = '⏳<br>' + left + 's';
+      const cdTimer = setInterval(() => {
         left--;
-        if (left <= 0) { clearInterval(cdTimer); sBtn.disabled = false; sBtn.innerHTML = '🔥<br>SKILL'; }
-        else { sBtn.innerHTML = '⏳<br>' + left + 's'; }
+        if (left <= 0) {
+          clearInterval(cdTimer);
+          skillBtn.disabled = false;
+          skillBtn.innerHTML = '🔥<br>SKILL';
+        } else {
+          skillBtn.innerHTML = '⏳<br>' + left + 's';
+        }
       }, 1000);
-    };`;
-    // ============================================================================
-    // 🌊 WATER.IO V4 — PIECE 5/6: 60FPS OCEAN RENDERER & SONAR RADAR
-    // ============================================================================
-    const WATER_IO_CLIENT_JS_B = `
-    window.sendOceanChat = function() {
+    }
+    skillBtn.addEventListener('click', triggerOceanSkill);
+
+    // PC Keyboard Controls (WASD / Arrow Keys + Space/Shift Boost + E/Q Skill)
+    const keysDown = new Set();
+    function updateKeyboardSteer() {
+      if (joyPointerId !== null) return;
+      let kx = 0, ky = 0;
+      if (keysDown.has('ArrowLeft')  || keysDown.has('KeyA')) kx -= 1;
+      if (keysDown.has('ArrowRight') || keysDown.has('KeyD')) kx += 1;
+      if (keysDown.has('ArrowUp')    || keysDown.has('KeyW')) ky -= 1;
+      if (keysDown.has('ArrowDown')  || keysDown.has('KeyS')) ky += 1;
+
+      if (kx !== 0 || ky !== 0) {
+        const len = Math.hypot(kx, ky);
+        localDirX = kx / len;
+        localDirY = ky / len;
+        localThrottle = 1;
+        joyKnob.style.transform = 'translate3d(' + (localDirX * 32) + 'px, ' + (localDirY * 32) + 'px, 0)';
+      } else {
+        localDirX = 0;
+        localDirY = 0;
+        localThrottle = 0;
+        joyKnob.style.transform = 'translate3d(0px, 0px, 0)';
+      }
+      syncSteerToServer(true);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      const code = e.code;
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(code)) e.preventDefault();
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(code)) {
+        if (!keysDown.has(code)) {
+          keysDown.add(code);
+          updateKeyboardSteer();
+        }
+      } else if (code === 'Space' || code === 'ShiftLeft' || code === 'ShiftRight') {
+        triggerBoost(true);
+      } else if (code === 'KeyE' || code === 'KeyQ') {
+        triggerOceanSkill();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const code = e.code;
+      if (keysDown.has(code)) {
+        keysDown.delete(code);
+        updateKeyboardSteer();
+      } else if (code === 'Space' || code === 'ShiftLeft' || code === 'ShiftRight') {
+        triggerBoost(false);
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      if (keysDown.size > 0) {
+        keysDown.clear();
+        updateKeyboardSteer();
+      }
+      triggerBoost(false);
+    });
+
+    function sendOceanChat() {
       const inp = document.getElementById('rblxInput');
       const txt = (inp.value || '').trim();
       if (!txt) return;
-      const uname = (document.getElementById('oceanNameInput').value || 'Fish').trim();
+      const uname = (nameInp.value || 'Fish').trim();
       socket.emit('waterChatSend', { user: uname, text: txt });
       inp.value = '';
-    };
+    }
+    document.getElementById('rblxSendBtn').addEventListener('click', sendOceanChat);
+    document.getElementById('rblxInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendOceanChat();
+    });`;
 
+        
+    
+
+    
+    
+
+    // ============================================================================
+    // 🌊 WATER.IO V4 — PIECE 3/4: 60FPS OCEAN RENDERER & MINIMAP
+    // ============================================================================
+    const WATER_IO_JS_P3 = `
     socket.on('connect', () => { myId = socket.id; socket.emit('waterJoinSpectate'); });
 
     socket.on('waterFxEvent', (ev) => {
@@ -11556,8 +11653,7 @@ div>') +
       if (Array.isArray(state.pearls)) pearlList = state.pearls;
 
       if (Array.isArray(state.leaderboard)) {
-        const lbBox = document.getElementById('top5List');
-        lbBox.innerHTML = state.leaderboard.map((p, i) =>
+        document.getElementById('top5List').innerHTML = state.leaderboard.map((p, i) =>
           '<div class="lb-row"><span>' + (i === 0 ? '👑' : '#' + (i + 1)) + ' ' + p.icon + ' ' + p.name.slice(0, 9) + '</span><b>' + p.score + '</b></div>'
         ).join('');
       }
@@ -11589,7 +11685,7 @@ div>') +
       const box = document.getElementById('rblxMessages');
       const div = document.createElement('div');
       div.className = 'rblx-line';
-      div.innerHTML = '<b>' + msg.user + ':</b> ' + msg.text.replace(/</g, '&lt;');
+      div.innerHTML = '<b>' + msg.user + ':</b> ' + String(msg.text || '').replace(/</g, '&lt;');
       box.appendChild(div);
       while (box.children.length > 30) box.removeChild(box.firstElementChild);
       box.scrollTop = box.scrollHeight;
@@ -11723,33 +11819,32 @@ div>') +
       requestAnimationFrame(renderLoop);
     }
     requestAnimationFrame(renderLoop);
+  })();
   </script>
 </body>
 </html>`;
-    // ============================================================================
-    // 🌊 WATER.IO V4 — PIECE 6/6: ROUTE, LOBBY BUTTON & SOCKET HANDLERS
-    // ============================================================================
-        // ============================================================================
-    // 🌊 WATER.IO V4 — PRIORITY ROUTE FIX (BYPASSES SERVER.JS CATCH-ALL)
-    // ============================================================================
-    const serveWaterIoPage = (req, res) => {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.send(WATER_IO_PAGE_HTML + '\n' + WATER_IO_CLIENT_JS_A + '\n' + WATER_IO_CLIENT_JS_B);
-    };
 
-    app.get('/waterio', serveWaterIoPage);
-    app.get('/waterio/', serveWaterIoPage);
+      // ============================================================================
+    // 🌊 WATER.IO V4 — PIECE 4/4: ROUTES, SOCKETS & UNO STOP FIX
+    // ============================================================================
+    const waterIoPriorityMiddleware = (req, res, next) => {
+        const cleanUrl = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
+        if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.status(200).send(WATER_IO_HTML_P1 + '\n' + WATER_IO_JS_P2 + '\n' + WATER_IO_JS_P2B + '\n' + WATER_IO_JS_P3);
 
-    // Move /waterio routes to the very top of Express stack before any '*' wildcard
-    if (app._router && Array.isArray(app._router.stack)) {
-        const stack = app._router.stack;
-        const waterLayers = [];
-        for (let i = stack.length - 1; i >= 0; i--) {
-            if (stack[i].route && (stack[i].route.path === '/waterio' || stack[i].route.path === '/waterio/')) {
-                waterLayers.unshift(stack.splice(i, 1));
-            }
         }
-        stack.unshift(...waterLayers);
+        return next();
+    };
+    app.use(waterIoPriorityMiddleware);
+
+    const expressStack = (app._router && app._router.stack) || (app.router && app.router.stack);
+    if (Array.isArray(expressStack)) {
+        const idx = expressStack.findIndex(l => l && l.handle === waterIoPriorityMiddleware);
+        if (idx > 0) {
+            const [layer] = expressStack.splice(idx, 1);
+            expressStack.unshift(layer);
+        }
     }
 
     const WATER_IO_LOBBY_BTN = `
@@ -11775,7 +11870,8 @@ div>') +
     </script>`;
 
     app.use((req, res, next) => {
-        if (req.path === '/waterio' || req.path === '/waterio/') return next();
+        const cleanUrl = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
+        if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') return next();
         const origSend = res.send;
         res.send = function(body) {
             if (typeof body === 'string' && body.includes('</body>') && !body.includes('waterIoLobbyInjector')) {
@@ -11785,7 +11881,6 @@ div>') +
         };
         next();
     });
-
 
     io.on('connection', (socket) => {
         socket.on('waterJoinSpectate', () => {
@@ -11868,7 +11963,7 @@ div>') +
     });
 
     // ============================================================================
-    // 🃏 UNO RE-LAUNCH & STUCK-LOBBY FIX (PASTE BEFORE return OG_HOSTS;)
+    // 🃏 UNO RE-LAUNCH & STUCK-LOBBY FIX (!stopuno / /stopuno)
     // ============================================================================
     io.on('connection', (socket) => {
         socket.prependListener('chatMessage', (payload) => {
@@ -11877,7 +11972,6 @@ div>') +
             if (!srvId || typeof raw !== 'string') return;
             const cmd = raw.trim().toLowerCase();
 
-            // Allow stopping/resetting a stuck UNO game anytime
             if (cmd === '!stopuno' || cmd === '/stopuno') {
                 const old = unoByServer.get(srvId);
                 if (old && old.interval) clearInterval(old.interval);
@@ -11894,13 +11988,11 @@ div>') +
             if (cmd === '!uno') {
                 const existing = unoByServer.get(srvId);
                 if (existing) {
-                    // Check if any human player in the UNO game is still connected
                     const anyHumanOnline = existing.players.some(p => !p.isBot && io.sockets.sockets.has(p.id));
                     if (!anyHumanOnline) {
                         if (existing.interval) clearInterval(existing.interval);
                         unoByServer.delete(srvId);
                     } else {
-                        // Re-link current socket if player reconnected with same username
                         const uname = (socket.username || '').toLowerCase();
                         const match = existing.players.find(p => !p.isBot && p.username.toLowerCase() === uname);
                         if (match) match.id = socket.id;
@@ -11922,6 +12014,7 @@ div>') +
             io.to(srvId).emit('unoEnd', { _serverId: srvId });
         });
     });
+                      
     // ============================================================================
     // 🌊 WATER.IO V4 — BULLETPROOF ROUTE & POPUP OVERRIDE (FIXED .split('?')[0])
     // ============================================================================

@@ -1,4 +1,5 @@
- const fs = require('fs');
+
+const fs = require('fs');
 const path = require('path')
 require('events').EventEmitter.defaultMaxListeners = 100;
 
@@ -10887,7 +10888,7 @@ div>') +
             }
             if (dice !== 6) st.turnIdx = (st.turnIdx + 1) % st.players.length;
             io.to(srvId).emit('snakesSync', st);
-        });
+        
     });
         // ============================================================================
     // ☁️ NATIVE HTTPS UPSTASH FIX (WORKS ON ALL NODE VERSIONS)

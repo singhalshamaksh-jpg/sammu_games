@@ -801,25 +801,49 @@ const NEW_ARENAS_WIDGET = `
 </script>
 `;
 const PROMAX_VOICE_WIDGET = `
+<audio id="proMaxAudioEl" playsinline preload="auto" style="display:none;"></audio>
+<div id="proMaxMiniPlayer" style="display:none;position:fixed;bottom:74px;right:12px;z-index:99995;background:rgba(15,23,42,0.95);border:1.5px solid #38bdf8;border-radius:14px;padding:8px 12px;color:#fff;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,0.6);max-width:270px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+    <span id="proMaxSongTitle" style="font-weight:bold;color:#7dd3fc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🎵 Playing...</span>
+    <button onclick="stopProMaxSong()" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-weight:bold;cursor:pointer;">⏹</button>
+  </div>
+  <div id="proMaxYtBox" style="margin-top:6px;border-radius:8px;overflow:hidden;display:none;"></div>
+</div>
 <script id="proMaxVoiceController">
 (function() {
-  let proMaxAudio = new Audio();
-  proMaxAudio.crossOrigin = 'anonymous';
   window._proMaxVoiceOn = true;
+  let audioUnlocked = false;
 
-  function unlockAudio() {
+  function unlockMobileMedia() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
     try {
+      const el = document.getElementById('proMaxAudioEl');
+      if (el) {
+        el.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        el.play().then(() => { el.pause(); el.currentTime = 0; }).catch(() => {});
+      }
       if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
         const u = new SpeechSynthesisUtterance(' ');
         u.volume = 0;
         window.speechSynthesis.speak(u);
       }
     } catch (e) {}
   }
-  window.addEventListener('pointerdown', unlockAudio, { once: true });
-  window.addEventListener('click', unlockAudio, { once: true });
-  window.addEventListener('keydown', unlockAudio, { once: true });
+  window.addEventListener('pointerdown', unlockMobileMedia, { once: true });
+  window.addEventListener('click', unlockMobileMedia, { once: true });
 
+  window.stopProMaxSong = function() {
+    const el = document.getElementById('proMaxAudioEl');
+    if (el) { el.pause(); el.src = ''; }
+    const yt = document.getElementById('proMaxYtBox');
+    if (yt) { yt.innerHTML = ''; yt.style.display = 'none'; }
+    const bar = document.getElementById('proMaxMiniPlayer');
+    if (bar) bar.style.display = 'none';
+  };
+
+  // Human-sounding natural voice selector & phrasing
   window.speakProMax = function(text) {
     try {
       if (!window._proMaxVoiceOn || !('speechSynthesis' in window)) return;
@@ -829,14 +853,23 @@ const PROMAX_VOICE_WIDGET = `
         .replace(/[*_#~\`]|https?:\\/\\/\\S+/g, '')
         .replace(/\\n🎵[\\s\\S]*/g, '')
         .replace(/[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/gu, '')
+        .replace(/!+/g, '.')
+        .replace(/\\s+/g, ' ')
         .trim();
       if (!clean) return;
-      const utter = new SpeechSynthesisUtterance(clean.slice(0, 240));
+
+      const utter = new SpeechSynthesisUtterance(clean.slice(0, 220));
       const voices = window.speechSynthesis.getVoices() || [];
-      const pick = voices.find(v => /hi-IN|en-IN|Google UK|English/i.test(v.lang + ' ' + v.name));
-      if (pick) utter.voice = pick;
-      utter.rate = 1.03;
-      utter.pitch = 1.05;
+      // Prefer neural / natural Indian or UK/US voices over robotic default
+      const bestVoice =
+        voices.find(v => /Natural|Neural|Online/i.test(v.name) && /en-IN|hi-IN|en-GB|en-US/i.test(v.lang)) ||
+        voices.find(v => /Google हिन्दी|Google UK English Female|Google US English|Neerja|Heera/i.test(v.name)) ||
+        voices.find(v => /en-IN|hi-IN/i.test(v.lang)) ||
+        voices.find(v => /en/i.test(v.lang));
+      if (bestVoice) utter.voice = bestVoice;
+
+      utter.rate = 0.96;   // Natural conversational speed (not rushed)
+      utter.pitch = 0.97;  // Warm human tone (not high-pitched robot)
       utter.volume = 1.0;
       window.speechSynthesis.speak(utter);
     } catch (e) {}
@@ -846,36 +879,48 @@ const PROMAX_VOICE_WIDGET = `
     if (typeof socket === 'undefined' || window._proMaxBound) return;
     window._proMaxBound = true;
 
-    // Speak every SammuVerse AI ProMax message automatically
     socket.on('message', function(msg) {
       if (msg && typeof msg.username === 'string' && msg.username.includes('ProMax') && msg.text) {
         window.speakProMax(msg.text);
       }
     });
 
-    // Handle live DJ & song stream actions
     socket.on('proMaxAction', function(data) {
       if (!data) return;
       const act = data.action;
-      const audios = Array.from(document.querySelectorAll('audio, video'));
+      const el = document.getElementById('proMaxAudioEl');
+      const bar = document.getElementById('proMaxMiniPlayer');
+      const titleEl = document.getElementById('proMaxSongTitle');
+      const ytBox = document.getElementById('proMaxYtBox');
+      const audios = Array.from(document.querySelectorAll('audio, video')).filter(a => a !== el);
       const btns = Array.from(document.querySelectorAll('button'));
 
-      if (act === 'PLAY_SONG' && data.streamUrl) {
+      if (act === 'PLAY_SONG') {
         audios.forEach(a => { if (!a.paused) a.pause(); });
-        proMaxAudio.pause();
-        proMaxAudio.src = data.streamUrl;
-        proMaxAudio.volume = 0.85;
-        proMaxAudio.play().catch(function(){});
+        window.stopProMaxSong();
+        if (bar) bar.style.display = 'block';
+        if (titleEl) titleEl.textContent = '🎵 ' + (data.songTitle || data.songQuery || 'Playing Song');
+
+        if (data.youtubeId && ytBox) {
+          ytBox.style.display = 'block';
+          ytBox.innerHTML = '<iframe width="246" height="56" src="https://youtube.com' + data.youtubeId + '?autoplay=1&playsinline=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+        } else if (data.streamUrl && el) {
+          el.src = data.streamUrl;
+          el.volume = 0.85;
+          el.play().catch(function() {
+            if (titleEl) titleEl.innerHTML = '▶ <a href="' + data.streamUrl + '" target="_blank" style="color:#fde047;">Tap to Play ' + (data.songTitle || 'Song') + '</a>';
+          });
+        }
       } else if (act === 'STOP_DJ') {
-        proMaxAudio.pause();
+        window.stopProMaxSong();
         audios.forEach(a => { if (!a.paused) a.pause(); });
         const stopBtn = btns.find(b => /stop|pause|mute/i.test(b.textContent || ''));
         if (stopBtn) stopBtn.click();
       } else if (act === 'SOFT_VOL') {
-        proMaxAudio.volume = 0.25;
+        if (el) el.volume = 0.25;
         audios.forEach(a => { a.volume = 0.25; });
       } else if (act === 'LOUD_VOL') {
-        proMaxAudio.volume = 1.0;
+        if (el) el.volume = 1.0;
         audios.forEach(a => { a.volume = 1.0; });
       } else if (act === 'DISCO_TOGGLE') {
         const discoBtn = btns.find(b => /disco/i.test(b.textContent || ''));
@@ -892,7 +937,6 @@ const PROMAX_VOICE_WIDGET = `
 })();
 </script>
 `;
-
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');
     fs.readFile(indexPath, 'utf8', (err, html) => {
@@ -902,7 +946,6 @@ app.get(['/', '/index.html'], (req, res, next) => {
         res.send(html.replace('</body>', allWidgets + '\n<script src="/phonk-player.js"></script>\n</body>'));
     });
 });
-
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 io.engine.pingTimeout = 60000;

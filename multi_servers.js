@@ -12375,9 +12375,10 @@ div>') +
             ];
 
             const payload = JSON.stringify({
-                model: 'openai/gpt-4o-mini',
+                model: 'google/gemini-2.5-flash',
+     
                 messages,
-                max_tokens: 450,
+                max_tokens: 4500,
                 temperature: 0.7
             });
 

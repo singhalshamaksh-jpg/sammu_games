@@ -12337,7 +12337,7 @@ div>') +
       });
     }`;
     
-           // ============================================================================
+    // ============================================================================
     // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — ENCYCLOPEDIA BRAIN + CHAT MEMORY
     // ============================================================================
     const hcHttps = require('https');
@@ -12345,19 +12345,19 @@ div>') +
     const aiMemoryByServer = new Map();
 
     function askSammuVerseProMax(userPrompt, senderName, serverName, srvId) {
-        return new Promise((resolve) => {
-            const apiKey = (process.env.HACKCLUB_AI_KEY || process.env.OPENAI_API_KEY || '')
-                .replace(/^HACKCLUB_AI_KEY=/i, '')
-                .replace(/^["']|["']$/g, '')
-                .trim();
+        const apiKey = (process.env.HACKCLUB_AI_KEY || process.env.OPENAI_API_KEY || '')
+            .replace(/^HACKCLUB_AI_KEY=/i, '')
+            .replace(/^["']|["']$/g, '')
+            .trim();
 
-            if (!apiKey) {
-                return resolve('⚠️ AI Key missing! Add HACKCLUB_AI_KEY in Railway Variables.');
-            }
+        if (!apiKey) {
+            return Promise.resolve('⚠️ AI Key missing! Add HACKCLUB_AI_KEY in Railway Variables.');
+        }
 
-            if (!aiMemoryByServer.has(srvId)) aiMemoryByServer.set(srvId, []);
-            const history = aiMemoryByServer.get(srvId);
+        if (!aiMemoryByServer.has(srvId)) aiMemoryByServer.set(srvId, []);
+        const history = aiMemoryByServer.get(srvId);
 
+        const tryModel = (modelId) => new Promise((resolve) => {
             const messages = [
                 {
                     role: 'system',
@@ -12365,7 +12365,7 @@ div>') +
                         `You are SammuVerse AI ProMax, an omniscient, brilliant, and witty AI assistant inside SammuGames (Server: "${serverName}"). ` +
                         "You have deep encyclopedic knowledge of science, physics, astrophysics (like the Big Bang), history, math, coding, Hinglish, pop culture, and real-world places. " +
                         "Answer any question accurately, clearly, and enthusiastically—or deliver a hilarious roast if asked. " +
-                        "Keep answers punchy, engaging, and under 600 characters for multiplayer game chat."
+                        "Keep answers punchy, engaging, and under 550 characters so they fit cleanly in multiplayer game chat."
                 },
                 ...history.slice(-6),
                 {
@@ -12375,10 +12375,9 @@ div>') +
             ];
 
             const payload = JSON.stringify({
-                model: 'google/gemini-2.5-flash',
-     
+                model: modelId,
                 messages,
-                max_tokens: 4500,
+                max_tokens: 420,
                 temperature: 0.7
             });
 
@@ -12390,7 +12389,6 @@ div>') +
                     'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'User-Agent': 'SammuGamesBot/1.0',
                     'Content-Length': Buffer.byteLength(payload)
                 }
             }, (res) => {
@@ -12398,39 +12396,50 @@ div>') +
                 res.on('data', chunk => raw += chunk);
                 res.on('end', () => {
                     if (res.statusCode !== 200) {
-                        console.error('HackClub AI HTTP Error:', res.statusCode, raw);
-                        return resolve(`🌌 AI Error (${res.statusCode}): ${raw.slice(0, 100)}`);
+                        return resolve({ ok: false, status: res.statusCode, raw });
                     }
                     try {
                         const data = JSON.parse(raw);
-                        const firstChoice = Array.isArray(data?.choices) ? data.choices.at(0) : null;
-                        let reply = (firstChoice && firstChoice.message && firstChoice.message.content) || '';
+                        const first = Array.isArray(data?.choices) ? data.choices.at(0) : null;
+                        let reply = (first && first.message && first.message.content) || '';
                         reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-
-                        if (reply) {
-                            history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
-                            history.push({ role: 'assistant', content: reply });
-                            if (history.length > 8) history.splice(0, history.length - 8);
-                        }
-
-                        resolve(reply || '🌌 My quantum circuits glitched—try asking again!');
+                        resolve({ ok: true, reply });
                     } catch (e) {
-                        resolve('🌌 Could not parse AI response.');
+                        resolve({ ok: false, status: 500, raw: 'Parse error' });
                     }
                 });
             });
 
-            req.on('error', (err) => {
-                console.error('HackClub AI Net Error:', err);
-                resolve(`🌌 Net Error: ${err.message}`);
-            });
+            req.on('error', (err) => resolve({ ok: false, status: 0, raw: err.message }));
             req.setTimeout(15000, () => {
                 req.destroy();
-                resolve('⏳ ProMax took too long to think!');
+                resolve({ ok: false, status: 408, raw: 'Timeout' });
             });
             req.write(payload);
             req.end();
         });
+
+        return (async () => {
+            const models = [
+                'upstage/solar-mini-4-5',
+                'upstage/solar-pro-4-contributor',
+                'xiaomi/mimo-v2-6-flash-mopd'
+            ];
+            let lastErr = { status: 0, raw: 'No response' };
+
+            for (const m of models) {
+                const res = await tryModel(m);
+                if (res.ok && res.reply) {
+                    history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
+                    history.push({ role: 'assistant', content: res.reply });
+                    if (history.length > 8) history.splice(0, history.length - 8);
+                    return res.reply;
+                }
+                lastErr = res;
+            }
+
+            return `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`;
+        })();
     }
 
     io.on('connection', (socket) => {
@@ -12480,7 +12489,7 @@ div>') +
             });
         });
     });
- 
+
 
  return OG_HOSTS;
 };

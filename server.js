@@ -801,8 +801,7 @@ const NEW_ARENAS_WIDGET = `
 </script>
 `;
 
-
-  const PROMAX_VOICE_WIDGET = `
+const PROMAX_VOICE_WIDGET = `
 <audio id="proMaxAudioEl" playsinline preload="auto" style="display:none;"></audio>
 <div id="proMaxMiniPlayer" style="display:none;position:fixed;bottom:74px;right:12px;z-index:99995;background:rgba(15,23,42,0.96);border:1.5px solid #38bdf8;border-radius:14px;padding:8px 12px;color:#fff;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,0.65);max-width:270px;">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
@@ -840,9 +839,7 @@ const NEW_ARENAS_WIDGET = `
 
   window.resumeProMaxSong = function() {
     const el = document.getElementById('proMaxAudioEl');
-    if (el && el.src) {
-      el.play().catch(() => {});
-    }
+    if (el && el.src) el.play().catch(() => {});
   };
 
   window.stopProMaxSong = function() {
@@ -882,17 +879,17 @@ const NEW_ARENAS_WIDGET = `
     } catch (e) {}
   };
 
-  function bindProMaxSocket() {
-    if (typeof socket === 'undefined' || window._proMaxBound) return;
-    window._proMaxBound = true;
+  function attachProMaxHandlers(s) {
+    if (!s || typeof s.on !== 'function' || s._proMaxBound) return;
+    s._proMaxBound = true;
 
-    socket.on('message', function(msg) {
+    s.on('message', function(msg) {
       if (msg && typeof msg.username === 'string' && msg.username.includes('ProMax') && msg.text) {
         window.speakProMax(msg.text);
       }
     });
 
-    socket.on('proMaxAction', function(data) {
+    s.on('proMaxAction', function(data) {
       if (!data) return;
       const act = data.action;
       const el = document.getElementById('proMaxAudioEl');
@@ -933,6 +930,11 @@ const NEW_ARENAS_WIDGET = `
     });
   }
 
+  function bindProMaxSocket() {
+    if (typeof socket !== 'undefined') attachProMaxHandlers(socket);
+    if (window.socket) attachProMaxHandlers(window.socket);
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
     if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
     bindProMaxSocket();
@@ -941,17 +943,18 @@ const NEW_ARENAS_WIDGET = `
 })();
 </script>
 `;
-    
 
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');
     fs.readFile(indexPath, 'utf8', (err, html) => {
         if (err) return next();
         const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET, PROMAX_VOICE_WIDGET, app.locals.AVATAR_RPG_UI || '').join('\n');
-
         res.send(html.replace('</body>', allWidgets + '\n</body>'));
     });
 });
+
+
+
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 io.engine.pingTimeout = 60000;

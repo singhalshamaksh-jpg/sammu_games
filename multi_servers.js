@@ -12337,12 +12337,47 @@ div>') +
       });
     }`;
     
-    // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — ENCYCLOPEDIA BRAIN + CHAT MEMORY
+        // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — AUTO-FREE MODEL + CHAT MEMORY
     // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
     const aiMemoryByServer = new Map();
+    let cachedFreeModel = null;
+
+    function getBestFreeHackClubModel(apiKey) {
+        if (cachedFreeModel) return Promise.resolve(cachedFreeModel);
+        return new Promise((resolve) => {
+            const req = hcHttps.request({
+                hostname: ['ai', 'hackclub', 'com'].join('.'),
+                path: '/proxy/v1/models',
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Accept': 'application/json' }
+            }, (res) => {
+                let raw = '';
+                res.on('data', chunk => raw += chunk);
+                res.on('end', () => {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        const list = Array.isArray(parsed.data) ? parsed.data : [];
+                        const freeOnes = list.filter(m =>
+                            m && m.id && (
+                                String(m.id).includes(':free') ||
+                                (m.pricing && Number(m.pricing.prompt) === 0 && Number(m.pricing.completion) === 0)
+                            )
+                        );
+                        const preferred = freeOnes.find(m => /qwen|llama|gemini|deepseek|gemma|mistral|gpt/i.test(m.id)) || freeOnes.at(0) || list.at(0);
+                        cachedFreeModel = preferred ? preferred.id : 'qwen/qwen3-32b';
+                        resolve(cachedFreeModel);
+                    } catch (e) {
+                        resolve('qwen/qwen3-32b');
+                    }
+                });
+            });
+            req.on('error', () => resolve('qwen/qwen3-32b'));
+            req.end();
+        });
+    }
 
     function askSammuVerseProMax(userPrompt, senderName, serverName, srvId) {
         const apiKey = (process.env.HACKCLUB_AI_KEY || process.env.OPENAI_API_KEY || '')
@@ -12368,10 +12403,7 @@ div>') +
                         "Keep answers punchy, engaging, and under 550 characters so they fit cleanly in multiplayer game chat."
                 },
                 ...history.slice(-6),
-                {
-                    role: 'user',
-                    content: `${senderName}: ${userPrompt}`
-                }
+                { role: 'user', content: `${senderName}: ${userPrompt}` }
             ];
 
             const payload = JSON.stringify({
@@ -12411,25 +12443,20 @@ div>') +
             });
 
             req.on('error', (err) => resolve({ ok: false, status: 0, raw: err.message }));
-            req.setTimeout(15000, () => {
-                req.destroy();
-                resolve({ ok: false, status: 408, raw: 'Timeout' });
-            });
+            req.setTimeout(15000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
             req.write(payload);
             req.end();
         });
 
         return (async () => {
-            const models = [
-                'upstage/solar-mini-4-5',
-                'upstage/solar-pro-4-contributor',
-                'xiaomi/mimo-v2-6-flash-mopd'
-            ];
+            const autoFree = await getBestFreeHackClubModel(apiKey);
+            const models = [...new Set([autoFree, 'qwen/qwen3-32b', 'google/gemma-3-27b-it:free', 'meta-llama/llama-3.3-70b-instruct:free'])];
             let lastErr = { status: 0, raw: 'No response' };
 
             for (const m of models) {
                 const res = await tryModel(m);
                 if (res.ok && res.reply) {
+                    cachedFreeModel = m;
                     history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
                     history.push({ role: 'assistant', content: res.reply });
                     if (history.length > 8) history.splice(0, history.length - 8);
@@ -12438,6 +12465,7 @@ div>') +
                 lastErr = res;
             }
 
+            cachedFreeModel = null;
             return `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`;
         })();
     }
@@ -12490,6 +12518,6 @@ div>') +
         });
     });
 
-
+            
  return OG_HOSTS;
 };

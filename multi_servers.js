@@ -10861,7 +10861,7 @@ div>') +
     });
       
         
-
+           io.on('connection', (socket) => {
         // --- 6-PLAYER SNAKES & LADDERS ---
         socket.on('loungeStartSnakes', () => {
             const srvId = socket.activeServerId, players = getFullRoomPlayers(srvId);

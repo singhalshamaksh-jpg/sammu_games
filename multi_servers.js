@@ -12550,27 +12550,22 @@ div>') +
                 });
             }
             aiCooldownByUser.set(socket.id, now);
-
             const srvName = (serversDB[srvId] && serversDB[srvId].name) || 'SammuGames Arena';
             const result = await askSammuVerseProMax(question, sender, srvName, srvId);
-
-            let streamInfo = null;
-            if (result.action === 'PLAY_SONG' && result.songQuery) {
-                streamInfo = await findOnlineSongStream(result.songQuery);
-            }
 
             if (result.action) {
                 io.to(srvId).emit('proMaxAction', {
                     action: result.action,
-                    songQuery: result.songQuery,
-                    youtubeId: streamInfo ? streamInfo.youtubeId : null,
-                    streamUrl: streamInfo ? streamInfo.url : null,
-                    songTitle: streamInfo ? streamInfo.title : result.songQuery,
-                    by: sender
+                    songQuery: result.songQuery || null,
+                    songTitle: result.songQuery || null,
+                    by: sender,
+                    _serverId: srvId
                 });
             }
 
-            const nowPlayingTag = (streamInfo && streamInfo.title) ? `\n🎵 **Now Playing:** ${streamInfo.title}` : '';
+            const nowPlayingTag = (result.action === 'PLAY_SONG' && result.songQuery)
+                ? `\n🎵 **Now Playing:** ${result.songQuery}`
+                : '';
             io.to(srvId).emit('message', {
                 username: "🌌 SammuVerse AI ProMax",
                 text: `**@${sender}:** ${result.text}${nowPlayingTag}`,
@@ -12578,6 +12573,7 @@ div>') +
             });
         });
     });
-             
+
+                
  return OG_HOSTS;
 };

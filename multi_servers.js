@@ -12374,25 +12374,25 @@ div>') +
             req.end();
         });
     }
-
-    async function findOnlineSongStream(songQuery) {
-        try {
-            const q = encodeURIComponent(songQuery);
-            const res = await fetch(`https://apple.com{q}&media=music&entity=song&limit=1`);
-            if (res.ok) {
-                const json = await res.json();
-                const track = Array.isArray(json.results) ? json.results.at(0) : null;
-                if (track && track.previewUrl) {
-                    return {
-                        title: `${track.trackName} — ${track.artistName}`,
-                        url: track.previewUrl,
-                        cover: track.artworkUrl100 || ''
-                    };
-                }
+async function findOnlineSongStream(songQuery) {
+    try {
+        const q = encodeURIComponent(songQuery);
+        const res = await fetch(`https://audius.co{q}&limit=1&app_name=SammuGames`);
+        if (res.ok) {
+            const json = await res.json();
+            const track = Array.isArray(json.data) ? json.data.at(0) : null;
+            if (track && track.id) {
+                return {
+                    title: `${track.title} — ${track.user?.name || 'Artist'}`,
+                    url: `https://audius.co{track.id}/stream?app_name=SammuGames`
+                };
             }
-        } catch (e) {}
-        return null;
-    }
+        }
+    } catch (e) {}
+    return null;
+}
+
+    
 
     function askSammuVerseProMax(userPrompt, senderName, serverName, srvId) {
         const apiKey = (process.env.HACKCLUB_AI_KEY || process.env.OPENAI_API_KEY || '')

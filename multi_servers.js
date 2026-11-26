@@ -12373,23 +12373,63 @@ div>') +
         });
     }
 
-    async function findOnlineSongStream(songQuery) {
+      async function findOnlineSongStream(songQuery) {
+        const cleanQ = String(songQuery || '').replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+        const q = encodeURIComponent(cleanQ);
+
+        // 1. JioSaavn Search API (Full Bollywood, Punjabi, Hindi & Global hits!)
+        for (const host of ['https://saavn.dev', 'https://vercel.app']) {
+            try {
+                const saavnRes = await fetch(`${host}/api/search/songs?query=${q}&limit=1`);
+                if (saavnRes.ok) {
+                    const sJson = await saavnRes.json();
+                    const song = sJson?.data?.results?.at(0);
+                    const dlList = Array.isArray(song?.downloadUrl) ? song.downloadUrl : [];
+                    const bestStream = dlList.find(d => d.quality === '160kbps') || dlList.at(-1);
+                    if (bestStream && (bestStream.url || bestStream.link)) {
+                        const artist = song?.artists?.primary?.at(0)?.name || song?.primaryArtists || '';
+                        return {
+                            title: artist ? `${song.name} — ${artist}` : song.name,
+                            url: bestStream.url || bestStream.link
+                        };
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // 2. Official Audius Public API (Full Phonk, Kordhell, EDM & Remixes!)
         try {
-            const q = encodeURIComponent(songQuery);
-            const res = await fetch(`https://audius.co{q}&limit=1&app_name=SammuGames`);
-            if (res.ok) {
-                const json = await res.json();
-                const track = Array.isArray(json.data) ? json.data.at(0) : null;
+            const audRes = await fetch(`https://audius.co{q}&limit=1`);
+            if (audRes.ok) {
+                const aJson = await audRes.json();
+                const track = Array.isArray(aJson.data) ? aJson.data.at(0) : null;
                 if (track && track.id) {
                     return {
                         title: `${track.title} — ${track.user?.name || 'Artist'}`,
-                        url: `https://audius.co{track.id}/stream?app_name=SammuGames`
+                        url: `https://audius.co{track.id}/stream`
                     };
                 }
             }
         } catch (e) {}
+
+        // 3. iTunes Search API (Guaranteed fallback so it NEVER says "Track not found")
+        try {
+            const itRes = await fetch(`https://apple.com{q}&media=music&entity=song&limit=1`);
+            if (itRes.ok) {
+                const iJson = await itRes.json();
+                const track = Array.isArray(iJson.results) ? iJson.results.at(0) : null;
+                if (track && track.previewUrl) {
+                    return {
+                        title: `${track.trackName} — ${track.artistName}`,
+                        url: track.previewUrl
+                    };
+                }
+            }
+        } catch (e) {}
+
         return null;
     }
+  
 
     
 

@@ -12336,9 +12336,8 @@ div>') +
         rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
       });
     }`;
-        
-        // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX++ — PIECE 1/3: SETUP & SAFE VISION PROMPT
+      // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX++ — CHUNK 1/2: SETUP, DIRECT ART & SAFE PROMPT
     // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
@@ -12357,15 +12356,35 @@ div>') +
             .replace(/^HACKCLUB_AI_KEY=/i, '')
             .replace(/^["']|["']$/g, '')
             .trim();
+        const groqKey = (process.env.GROQ_API_KEY || '').trim();
 
-        if (!apiKey) {
-            return Promise.resolve({ text: '⚠️ AI Key missing! Add HACKCLUB_AI_KEY in Railway Variables.', imageOut: null });
+        const directDrawMatch = !imageUrl && userPrompt.match(/^(?:draw|generate|create|imagine|animate|art|pic\s+of|image\s+of)\s+(.+)/i);
+        if (directDrawMatch && directDrawMatch.at(1)) {
+            const artPrompt = directDrawMatch.at(1).trim();
+            const seed = Math.floor(Math.random() * 999999);
+            const imageOut = `https://pollinations.ai{encodeURIComponent(artPrompt)}?width=768&height=768&seed=${seed}&nologo=true&model=flux`;
+            return Promise.resolve({
+                text: `🎨 Here is your custom artwork for "${artPrompt}"!`,
+                imageOut
+            });
         }
 
         if (!aiMemoryByServer.has(srvId)) aiMemoryByServer.set(srvId, []);
         const history = aiMemoryByServer.get(srvId);
 
-        const tryModel = (modelId) => new Promise((resolve) => {
+        const systemPrompt =
+            `You are SammuVerse AI ProMax++, a brilliant, witty, and safety-conscious AI companion inside SammuGames (Server: "${serverName}"). ` +
+            "You have complete knowledge of science, physics, the Big Bang, history, coding, anime, Bollywood, Hinglish, and pop culture. " +
+            "You also have a built-in AI Photo Studio with strict safety rules:\n" +
+            "1. If the user asks to generate/draw/create/animate an image or anime art, reply enthusiastically and append [GEN_IMG: detailed safe English visual prompt] at the end.\n" +
+            "2. PHOTO EDITING & CLOTHING SAFETY RULE (STRICT): Never generate NSFW, revealing, suggestive, or undressed imagery of anyone. " +
+            "If an uploaded photo depicts a woman or girl, DO NOT allow arbitrary clothing changes—ONLY allow modest, respectful transformations from this whitelist: " +
+            "(a) traditional/modest attire (royal silk saree, traditional lehenga, kurti, formal blazer, oversized hoodie, winter coat, or astronaut spacesuit), OR " +
+            "(b) stylized 3D Pixar / anime / watercolor art portrait. If the user asks for any other clothing change on a woman's photo, politely refuse and list those allowed options.\n" +
+            "3. For safe, approved photo edits, describe the subject + approved style in vivid English and append [GEN_IMG: safe detailed English prompt] at the end.\n" +
+            "Keep replies warm, natural, and under 450 characters.";
+
+        const callEndpoint = (hostname, pathUrl, authKey, modelId) => new Promise((resolve) => {
             const isVisionModel = modelId.includes('super-vl');
             const userContent = (imageUrl && isVisionModel)
                 ? [
@@ -12375,21 +12394,7 @@ div>') +
                 : `${senderName}: ${userPrompt}`;
 
             const messages = [
-                {
-                    role: 'system',
-                    content:
-                        `You are SammuVerse AI ProMax++, a brilliant, witty, and safety-conscious AI companion inside SammuGames (Server: "${serverName}"). ` +
-                        "You have complete knowledge of science, physics, the Big Bang, history, coding, anime, Bollywood, Hinglish, and pop culture. " +
-                        "You also have a built-in AI Photo Studio with strict safety rules:\n" +
-                        "1. If the user asks to generate/draw/create/animate an image or anime art (e.g. '!ai draw a cyberpunk samurai', '!ai anime boy in rain'), " +
-                        "reply enthusiastically and append [GEN_IMG: detailed safe English visual prompt] at the end.\n" +
-                        "2. PHOTO EDITING & CLOTHING SAFETY RULE (STRICT): Never generate NSFW, revealing, suggestive, or undressed imagery of anyone. " +
-                        "If an uploaded photo depicts a woman or girl, DO NOT allow arbitrary clothing changes—ONLY allow modest, respectful transformations from this whitelist: " +
-                        "(a) traditional/modest attire (royal silk saree, traditional lehenga, kurti, formal blazer, oversized hoodie, winter coat, or astronaut spacesuit), OR " +
-                        "(b) stylized 3D Pixar / anime / watercolor art portrait. If the user asks for any other clothing change on a woman's photo, politely refuse and list those allowed options.\n" +
-                        "3. For safe, approved photo edits, describe the subject + approved style in vivid English and append [GEN_IMG: safe detailed English prompt] at the end.\n" +
-                        "Keep replies warm, natural, and under 450 characters."
-                },
+                { role: 'system', content: systemPrompt },
                 ...history.slice(-6),
                 { role: 'user', content: userContent }
             ];
@@ -12400,19 +12405,19 @@ div>') +
                 max_tokens: 450,
                 temperature: 0.72
             });
-    // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX++ — PIECE 2/3: API REQUEST & 4-MODEL RETRY LOOP
-    // ============================================================================
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            };
+            if (authKey) headers['Authorization'] = `Bearer ${authKey}`;
+
             const req = hcHttps.request({
-                hostname: ['ai', 'hackclub', 'com'].join('.'),
-                path: '/proxy/v1/chat/completions',
+                hostname,
+                path: pathUrl,
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Content-Length': Buffer.byteLength(payload)
-                }
+                headers
             }, (res) => {
                 let raw = '';
                 res.on('data', chunk => raw += chunk);
@@ -12439,54 +12444,51 @@ div>') +
             req.write(payload);
             req.end();
         });
-
+      // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX++ — CHUNK 2/2: FALLBACK CHAIN & SOCKET HANDLER
+    // ============================================================================
         return (async () => {
-            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-            const orderedModels = imageUrl
-                ? PROMAX_FREE_MODELS
-                : [
-                    'baidu/ernie-5.5-flash-preview:free',
-                    'particle-ai/particle-1:free',
-                    'nvidia/nemotron-3.5-super-vl:free',
-                    'liquid/lfm-3-1.7b:free'
-                  ];
+            const routes = [];
+            const hcHost = ['ai', 'hackclub', 'com'].join('.');
+            if (apiKey) {
+                const hcModels = imageUrl
+                    ? PROMAX_FREE_MODELS
+                    : ['baidu/ernie-5.5-flash-preview:free', 'particle-ai/particle-1:free', 'nvidia/nemotron-3.5-super-vl:free', 'liquid/lfm-3-1.7b:free'];
+                for (const m of hcModels) routes.push({ host: hcHost, path: '/proxy/v1/chat/completions', key: apiKey, model: m });
+            }
+            if (groqKey) {
+                routes.push({ host: '://groq.com', path: '/openai/v1/chat/completions', key: groqKey, model: 'llama-3.3-70b-versatile' });
+            }
+            routes.push({ host: 'text.pollinations.ai', path: '/openai', key: '', model: 'openai' });
 
             let lastErr = { status: 0, raw: 'No response' };
 
-            for (const m of orderedModels) {
-                for (let attempt = 1; attempt <= 2; attempt++) {
-                    const res = await tryModel(m);
-                    if (res.ok && res.reply) {
-                        let cleanReply = res.reply;
-                        let imageOut = null;
+            for (const r of routes) {
+                const res = await callEndpoint(r.host, r.path, r.key, r.model);
+                if (res.ok && res.reply) {
+                    let cleanReply = res.reply;
+                    let imageOut = null;
 
-                        const imgMatch = cleanReply.match(/\[GEN_IMG:([^\]]+)\]/i);
-                        if (imgMatch && imgMatch.at(1)) {
-                            const artPrompt = imgMatch.at(1).trim();
-                            cleanReply = cleanReply.replace(/\[GEN_IMG:[^\]]+\]/gi, '').trim();
-                            const seed = Math.floor(Math.random() * 999999);
-                            imageOut = `https://pollinations.ai{encodeURIComponent(artPrompt)}?width=768&height=768&seed=${seed}&nologo=true&model=flux`;
-                        }
-
-                        history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
-                        history.push({ role: 'assistant', content: cleanReply });
-                        if (history.length > 8) history.splice(0, history.length - 8);
-                        return { text: cleanReply, imageOut };
+                    const imgMatch = cleanReply.match(/\[GEN_IMG:([^\]]+)\]/i);
+                    if (imgMatch && imgMatch.at(1)) {
+                        const artPrompt = imgMatch.at(1).trim();
+                        cleanReply = cleanReply.replace(/\[GEN_IMG:[^\]]+\]/gi, '').trim();
+                        const seed = Math.floor(Math.random() * 999999);
+                        imageOut = `https://pollinations.ai{encodeURIComponent(artPrompt)}?width=768&height=768&seed=${seed}&nologo=true&model=flux`;
                     }
-                    lastErr = res;
-                    if (res.status === 401) break;
-                    if (res.status === 429 && attempt < 2) await sleep(1200);
-                    else break;
+
+                    history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
+                    history.push({ role: 'assistant', content: cleanReply });
+                    if (history.length > 8) history.splice(0, history.length - 8);
+                    return { text: cleanReply, imageOut };
                 }
-                if (lastErr.status === 401) break;
+                lastErr = res;
             }
 
             return { text: `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`, imageOut: null };
         })();
     }
-    // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX++ — PIECE 3/3: SOCKET HANDLER & SAFETY GUARD
-    // ============================================================================
+
     io.on('connection', (socket) => {
         socket.on('chatMessage', async (payload) => {
             const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
@@ -12532,7 +12534,6 @@ div>') +
             }
             aiCooldownByUser.set(socket.id, now);
 
-            // Hard server-side safety filter against NSFW or unauthorized clothing edits
             const unsafeClothingRegex = /\b(nude|naked|nsfw|bikini|swimsuit|lingerie|bra|panty|undress|strip|cleavage|revealing|sexy|hot|transparent|see-through|boob|breast|ass|thigh|topless|bottomless|remove\s+cloth|take\s+off)\b/i;
             if (unsafeClothingRegex.test(question)) {
                 return io.to(srvId).emit('message', {
@@ -12560,6 +12561,7 @@ div>') +
             });
         });
     });
+    
 
                 
  return OG_HOSTS;

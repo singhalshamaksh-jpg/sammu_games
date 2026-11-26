@@ -12571,17 +12571,8 @@ div>') +
                 username: "🌌 SammuVerse AI ProMax",
                 text: `**@${sender}:** ${result.text}${nowPlayingTag}`,
                 _serverId: srvId
-            });
-
-
-            const nowPlayingTag = (result.action === 'PLAY_SONG' && result.songQuery)
-                ? `\n🎵 **Now Playing:** ${result.songQuery}`
-                : '';
-            io.to(srvId).emit('message', {
-                username: "🌌 SammuVerse AI ProMax",
-                text: `**@${sender}:** ${result.text}${nowPlayingTag}`,
-                _serverId: srvId
-            });
+            });         
+            
         });
     });
 

@@ -12336,17 +12336,17 @@ div>') +
         rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
       });
     }`;
-    
         // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — AUTO-FREE MODEL + CHAT MEMORY
+    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — AUTO-MODEL + CHAT MEMORY
     // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
     const aiMemoryByServer = new Map();
-    let cachedFreeModel = null;
+    let cachedWorkingModel = null;
+    let cachedModelPool = null;
 
-    function getBestFreeHackClubModel(apiKey) {
-        if (cachedFreeModel) return Promise.resolve(cachedFreeModel);
+    function getHackClubModelPool(apiKey) {
+        if (cachedModelPool) return Promise.resolve(cachedModelPool);
         return new Promise((resolve) => {
             const req = hcHttps.request({
                 hostname: ['ai', 'hackclub', 'com'].join('.'),
@@ -12360,21 +12360,18 @@ div>') +
                     try {
                         const parsed = JSON.parse(raw);
                         const list = Array.isArray(parsed.data) ? parsed.data : [];
-                        const freeOnes = list.filter(m =>
-                            m && m.id && (
-                                String(m.id).includes(':free') ||
-                                (m.pricing && Number(m.pricing.prompt) === 0 && Number(m.pricing.completion) === 0)
-                            )
-                        );
-                        const preferred = freeOnes.find(m => /qwen|llama|gemini|deepseek|gemma|mistral|gpt/i.test(m.id)) || freeOnes.at(0) || list.at(0);
-                        cachedFreeModel = preferred ? preferred.id : 'qwen/qwen3-32b';
-                        resolve(cachedFreeModel);
+                        const nonFree = list
+                            .map(m => m && m.id)
+                            .filter(id => id && !String(id).includes(':free') && !/embed|whisper|tts|dall-e|image|vision-only/i.test(id));
+                        const priority = nonFree.filter(id => /flash|mini|qwen|llama|deepseek|gemini|gpt|mistral/i.test(id));
+                        cachedModelPool = [...new Set([...priority, ...nonFree])].slice(0, 25);
+                        resolve(cachedModelPool);
                     } catch (e) {
-                        resolve('qwen/qwen3-32b');
+                        resolve([]);
                     }
                 });
             });
-            req.on('error', () => resolve('qwen/qwen3-32b'));
+            req.on('error', () => resolve([]));
             req.end();
         });
     }
@@ -12443,20 +12440,20 @@ div>') +
             });
 
             req.on('error', (err) => resolve({ ok: false, status: 0, raw: err.message }));
-            req.setTimeout(15000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
+            req.setTimeout(12000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
             req.write(payload);
             req.end();
         });
 
         return (async () => {
-            const autoFree = await getBestFreeHackClubModel(apiKey);
-            const models = [...new Set([autoFree, 'qwen/qwen3-32b', 'google/gemma-3-27b-it:free', 'meta-llama/llama-3.3-70b-instruct:free'])];
-            let lastErr = { status: 0, raw: 'No response' };
+            const pool = await getHackClubModelPool(apiKey);
+            const candidates = cachedWorkingModel ? [cachedWorkingModel, ...pool] : pool;
+            let lastErr = { status: 0, raw: 'No models found' };
 
-            for (const m of models) {
+            for (const m of [...new Set(candidates)]) {
                 const res = await tryModel(m);
                 if (res.ok && res.reply) {
-                    cachedFreeModel = m;
+                    cachedWorkingModel = m;
                     history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
                     history.push({ role: 'assistant', content: res.reply });
                     if (history.length > 8) history.splice(0, history.length - 8);
@@ -12465,7 +12462,7 @@ div>') +
                 lastErr = res;
             }
 
-            cachedFreeModel = null;
+            cachedWorkingModel = null;
             return `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`;
         })();
     }
@@ -12518,6 +12515,5 @@ div>') +
         });
     });
 
-            
  return OG_HOSTS;
 };

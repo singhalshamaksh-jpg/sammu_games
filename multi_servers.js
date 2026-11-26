@@ -12336,8 +12336,8 @@ div>') +
         rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
       });
     }`;
-      // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX++ — CHUNK 1/2: SETUP, DIRECT ART & SAFE PROMPT
+        // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX++ — PIECE 1/2: HINGLISH BRAIN, DIRECT ART & ENDPOINT
     // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
@@ -12356,15 +12356,14 @@ div>') +
             .replace(/^HACKCLUB_AI_KEY=/i, '')
             .replace(/^["']|["']$/g, '')
             .trim();
-        const groqKey = (process.env.GROQ_API_KEY || '').trim();
 
-        const directDrawMatch = !imageUrl && userPrompt.match(/^(?:draw|generate|create|imagine|animate|art|pic\s+of|image\s+of)\s+(.+)/i);
+        const directDrawMatch = !imageUrl && userPrompt.match(/^(?:draw|make|generate|create|imagine|animate|art|pic\s+of|image\s+of)\s+(.+)/i);
         if (directDrawMatch && directDrawMatch.at(1)) {
             const artPrompt = directDrawMatch.at(1).trim();
             const seed = Math.floor(Math.random() * 999999);
-            const imageOut = `https://pollinations.ai{encodeURIComponent(artPrompt)}?width=768&height=768&seed=${seed}&nologo=true&model=flux`;
+            const imageOut = `/ai-img?p=${encodeURIComponent(artPrompt)}&seed=${seed}`;
             return Promise.resolve({
-                text: `🎨 Here is your custom artwork for "${artPrompt}"!`,
+                text: `🎨 Lo bhai, "${artPrompt}" ka mast artwork ready kar diya! 🔥`,
                 imageOut
             });
         }
@@ -12373,16 +12372,17 @@ div>') +
         const history = aiMemoryByServer.get(srvId);
 
         const systemPrompt =
-            `You are SammuVerse AI ProMax++, a brilliant, witty, and safety-conscious AI companion inside SammuGames (Server: "${serverName}"). ` +
-            "You have complete knowledge of science, physics, the Big Bang, history, coding, anime, Bollywood, Hinglish, and pop culture. " +
+            `You are SammuVerse AI ProMax++, the funniest, sharpest, most savage-yet-friendly desi AI buddy inside SammuGames (Server: "${serverName}"). ` +
+            "LANGUAGE & VIBE RULE (CRITICAL): ALWAYS write in casual, fun Hinglish using ONLY Roman English letters (e.g., 'Arre bhai, toothpaste mein namak nahi, full masala hai! 😂' — NEVER use Hindi Devanagari script like 'मैं बढ़िया हूँ' and NEVER sound like a boring formal customer-support bot). " +
+            "Match the player's energy—be witty, crack desi jokes/memes, roast playfully when teased, and give super clear, enthusiastic explanations when asked serious questions (science, Big Bang, coding, anime, Bollywood, places). " +
             "You also have a built-in AI Photo Studio with strict safety rules:\n" +
-            "1. If the user asks to generate/draw/create/animate an image or anime art, reply enthusiastically and append [GEN_IMG: detailed safe English visual prompt] at the end.\n" +
+            "1. If the user asks to generate/draw/make/create/animate an image or anime art, reply enthusiastically in Hinglish and append [GEN_IMG: detailed safe English visual prompt] at the end.\n" +
             "2. PHOTO EDITING & CLOTHING SAFETY RULE (STRICT): Never generate NSFW, revealing, suggestive, or undressed imagery of anyone. " +
             "If an uploaded photo depicts a woman or girl, DO NOT allow arbitrary clothing changes—ONLY allow modest, respectful transformations from this whitelist: " +
             "(a) traditional/modest attire (royal silk saree, traditional lehenga, kurti, formal blazer, oversized hoodie, winter coat, or astronaut spacesuit), OR " +
-            "(b) stylized 3D Pixar / anime / watercolor art portrait. If the user asks for any other clothing change on a woman's photo, politely refuse and list those allowed options.\n" +
+            "(b) stylized 3D Pixar / anime / watercolor art portrait. If the user asks for any other clothing change on a woman's photo, politely refuse in Hinglish and list those allowed options.\n" +
             "3. For safe, approved photo edits, describe the subject + approved style in vivid English and append [GEN_IMG: safe detailed English prompt] at the end.\n" +
-            "Keep replies warm, natural, and under 450 characters.";
+            "Keep replies punchy, hilarious, and under 420 characters.";
 
         const callEndpoint = (hostname, pathUrl, authKey, modelId) => new Promise((resolve) => {
             const isVisionModel = modelId.includes('super-vl');
@@ -12403,7 +12403,7 @@ div>') +
                 model: modelId,
                 messages,
                 max_tokens: 450,
-                temperature: 0.72
+                temperature: 0.75
             });
 
             const headers = {
@@ -12445,7 +12445,7 @@ div>') +
             req.end();
         });
       // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX++ — CHUNK 2/2: FALLBACK CHAIN & SOCKET HANDLER
+    // 🌌 SAMMUVERSE AI PROMAX++ — PIECE 2/2: FALLBACK CHAIN, /ai-img & CHAT SOCKET
     // ============================================================================
         return (async () => {
             const routes = [];
@@ -12456,12 +12456,8 @@ div>') +
                     : ['baidu/ernie-5.5-flash-preview:free', 'particle-ai/particle-1:free', 'nvidia/nemotron-3.5-super-vl:free', 'liquid/lfm-3-1.7b:free'];
                 for (const m of hcModels) routes.push({ host: hcHost, path: '/proxy/v1/chat/completions', key: apiKey, model: m });
             }
-            if (groqKey) {
-                routes.push({ host: '://groq.com', path: '/openai/v1/chat/completions', key: groqKey, model: 'llama-3.3-70b-versatile' });
-            }
             routes.push({ host: 'text.pollinations.ai', path: '/openai', key: '', model: 'openai' });
-
-            let lastErr = { status: 0, raw: 'No response' };
+            routes.push({ host: 'text.pollinations.ai', path: '/openai', key: '', model: 'mistral' });
 
             for (const r of routes) {
                 const res = await callEndpoint(r.host, r.path, r.key, r.model);
@@ -12474,7 +12470,7 @@ div>') +
                         const artPrompt = imgMatch.at(1).trim();
                         cleanReply = cleanReply.replace(/\[GEN_IMG:[^\]]+\]/gi, '').trim();
                         const seed = Math.floor(Math.random() * 999999);
-                        imageOut = `https://pollinations.ai{encodeURIComponent(artPrompt)}?width=768&height=768&seed=${seed}&nologo=true&model=flux`;
+                        imageOut = `/ai-img?p=${encodeURIComponent(artPrompt)}&seed=${seed}`;
                     }
 
                     history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
@@ -12482,12 +12478,37 @@ div>') +
                     if (history.length > 8) history.splice(0, history.length - 8);
                     return { text: cleanReply, imageOut };
                 }
-                lastErr = res;
             }
 
-            return { text: `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`, imageOut: null };
+            return {
+                text: "Arre bhai, AI ka dimaag abhi thoda garam ho gaya hai (server cooldown)! 30 second baad phir try kar ya `!ai draw ...` se image banwa le 😎🔥",
+                imageOut: null
+            };
         })();
     }
+
+    app.get('/ai-img', async (req, res) => {
+        const prompt = String(req.query.p || 'cyberpunk city').slice(0, 400);
+        const seed = Number(req.query.seed) || Math.floor(Math.random() * 999999);
+        const urls = [
+            `https://pollinations.ai{encodeURIComponent(prompt)}?width=768&height=768&seed=${seed}&nologo=true&model=turbo`,
+            `https://pollinations.ai{encodeURIComponent(prompt)}?width=512&height=512&seed=${seed}&nologo=true`
+        ];
+        for (const u of urls) {
+            try {
+                const imgRes = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+                if (imgRes.ok) {
+                    const buf = Buffer.from(await imgRes.arrayBuffer());
+                    if (buf.length > 2000) {
+                        res.setHeader('Content-Type', imgRes.headers.get('content-type') || 'image/jpeg');
+                        res.setHeader('Cache-Control', 'public, max-age=86400');
+                        return res.send(buf);
+                    }
+                }
+            } catch (e) {}
+        }
+        res.status(502).send('Image generation busy');
+    });
 
     io.on('connection', (socket) => {
         socket.on('chatMessage', async (payload) => {
@@ -12509,7 +12530,7 @@ div>') +
                 lastImageByServer.delete(srvId);
                 return io.to(srvId).emit('message', {
                     username: "🌌 SammuVerse AI ProMax++",
-                    text: '🧹 Memory & photo buffer cleared! Ready for a fresh start!',
+                    text: '🧹 Memory aur photo buffer saaf kar diya! Chal ab naya scene shuru karte hain! 🔥',
                     _serverId: srvId
                 });
             }
@@ -12528,7 +12549,7 @@ div>') +
             if (now - lastUsed < 3500) {
                 return socket.emit('message', {
                     username: "🌌 SammuVerse AI ProMax++",
-                    text: '⏳ Cooling down quantum cores—wait 3 seconds!',
+                    text: '⏳ Arre ruk ja bhai, quantum cores thande ho rahe hain—3 second wait kar!',
                     _serverId: srvId
                 });
             }
@@ -12538,7 +12559,7 @@ div>') +
             if (unsafeClothingRegex.test(question)) {
                 return io.to(srvId).emit('message', {
                     username: "🌌 SammuVerse AI ProMax++",
-                    text: `**@${sender}:** 🛡️ Sorry! I only support safe, respectful edits—like **3D Anime / Pixar style**, **Royal Saree**, **Formal Blazer**, **Hoodie**, or **Astronaut Suit**.`,
+                    text: `**@${sender}:** 🛡️ Arre bhai, sirf safe aur respectful edits allowed hain—jaise **3D Anime / Pixar style**, **Royal Saree**, **Formal Blazer**, **Hoodie**, ya **Astronaut Suit**!`,
                     _serverId: srvId
                 });
             }
@@ -12561,8 +12582,5 @@ div>') +
             });
         });
     });
-    
-
-                
- return OG_HOSTS;
+   return OG_HOSTS;     
 };

@@ -11068,7 +11068,8 @@ Rules:
                         try {
                             const ctrl = new AbortController();
                             const timeout = setTimeout(() => ctrl.abort(), 8000);
-                            const aiRes = await fetch('https://hackclub.com', {
+                            const aiRes = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+
                                 method: 'POST',
                                 signal: ctrl.signal,
                                 headers: {
@@ -11078,7 +11079,7 @@ Rules:
                                 body: JSON.stringify({
                                     model: mdl,
                                     messages: [{ role: 'system', content: systemPrompt }, ...history],
-                                    max_tokens: 130,
+                                    max_tokens: 3000,
                                     temperature: 0.85
                                 })
                             });

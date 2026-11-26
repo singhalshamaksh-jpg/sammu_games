@@ -39,7 +39,6 @@ jobs:
             if (!apiKey) throw new Error("Missing HACKCLUB_AI_KEY secret");
             const base = ["https://ai", "hackclub", "com/proxy/v1"].join(".");
 
-            // Primary coding model: baidu/ernie-5.5-flash-preview:free (1M context, 921k max output)
             let codingModels = ["baidu/ernie-5.5-flash-preview:free"];
             try {
               const mRes = await fetch(`${base}/models`, { headers: { "Authorization": `Bearer ${apiKey}` } });
@@ -54,47 +53,80 @@ jobs:
 
             const files = fs.readdirSync(".").filter(f => /\.(js|html|css|json)$/i.test(f) && f !== "package-lock.json" && f !== "ai_banks_cache.json");
             let bundle = "";
-            for (const f of files) bundle += `\n=== FILE: ${f} ===\n${fs.readFileSync(f, "utf8")}\n`;
-            const prompt = `You are an expert full-stack Node.js & Socket.IO engineer. Fix this GitHub Issue cleanly without breaking any existing features.\nTITLE: ${process.env.ISSUE_TITLE}\nBODY: ${process.env.ISSUE_BODY}\n\nCODEBASE:\n${bundle}\n\nReturn ONLY valid JSON: {"summary":"short fix summary","files":[{"path":"filename.js","content":"COMPLETE updated file content"}]}`;
+            for (const f of files) bundle += "\n=== FILE: " + f + " ===\n" + fs.readFileSync(f, "utf8") + "\n";
 
-            let data = null;
+            const prompt = [
+              "You are an expert full-stack Node.js & Socket.IO engineer. Fix this GitHub Issue cleanly without breaking any existing features.",
+              "TITLE: " + (process.env.ISSUE_TITLE || ""),
+              "BODY: " + (process.env.ISSUE_BODY || ""),
+              "",
+              "CODEBASE:",
+              bundle,
+              "",
+              "IMPORTANT OUTPUT FORMAT (DO NOT USE JSON):",
+              "Start with:",
+              "===SUMMARY===",
+              "(1-2 sentence explanation of fixes)",
+              "===END_SUMMARY===",
+              "",
+              "Then for EACH modified file, output its COMPLETE updated code wrapped in exact markers (no markdown fences):",
+              "===FILE_START: exact_filename.js===",
+              "(complete updated file content)",
+              "===FILE_END==="
+            ].join("\n");
+
+            let rawReply = "";
             let usedModel = "";
             let lastErr = "";
 
             for (const model of codingModels) {
               for (let attempt = 1; attempt <= 2; attempt++) {
-                console.log(`Trying ${model} (attempt ${attempt})...`);
+                console.log("Trying " + model + " (attempt " + attempt + ")...");
                 const res = await fetch(`${base}/chat/completions`, {
                   method: "POST",
                   headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                   body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 120000, temperature: 0.15 })
                 });
                 if (res.ok) {
-                  data = await res.json();
+                  const data = await res.json();
+                  const first = Array.isArray(data.choices) ? data.choices.at(0) : null;
+                  rawReply = ((first && first.message && first.message.content) || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
                   usedModel = model;
                   break;
                 }
-                lastErr = `HTTP ${res.status} (${model}): ${await res.text()}`;
+                lastErr = "HTTP " + res.status + " (" + model + "): " + (await res.text());
                 if (res.status === 429) await sleep(3000);
                 else break;
               }
-              if (data) break;
+              if (rawReply) break;
             }
 
-            if (!data) throw new Error(lastErr || "All free coding models busy");
-            const firstChoice = Array.isArray(data.choices) ? data.choices.at(0) : null;
-            let raw = (firstChoice && firstChoice.message && firstChoice.message.content || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-            const match = raw.match(/\{[\s\S]*\}/);
-            if (!match) throw new Error("No JSON in AI reply");
-            const parsed = JSON.parse(match.at(0));
-            for (const f of (parsed.files || [])) {
-              if (f.path && typeof f.content === "string") fs.writeFileSync(path.basename(f.path), f.content, "utf8");
+            if (!rawReply) throw new Error(lastErr || "All free coding models busy");
+
+            const sumMatch = rawReply.match(/===SUMMARY===([\s\S]*?)===END_SUMMARY===/);
+            const summary = sumMatch ? sumMatch.at(1).trim() : "Applied requested code fixes.";
+
+            const fileRegex = /===FILE_START:\s*([^\n=]+?)\s*===\r?\n([\s\S]*?)\r?\n===FILE_END===/g;
+            let match;
+            let updatedCount = 0;
+            while ((match = fileRegex.exec(rawReply)) !== null) {
+              const fileName = path.basename(match.at(1).trim());
+              let content = match.at(2);
+              content = content.replace(/^```[a-z]*\(\r\)?\n/i, "").replace\((/\r\)?\n```$/i, "");
+              if (fileName && content.trim().length > 0) {
+                fs.writeFileSync(fileName, content, "utf8");
+                console.log("Wrote updated file: " + fileName);
+                updatedCount++;
+              }
             }
+
+            if (updatedCount === 0) throw new Error("No ===FILE_START=== blocks found in AI reply");
+
             if (process.env.ISSUE_NUMBER) {
               await fetch(`https://github.com{process.env.REPO_FULL}/issues/${process.env.ISSUE_NUMBER}/comments`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`, "Content-Type": "application/json", "User-Agent": "ERNIE-Coding-Bot" },
-                body: JSON.stringify({ body: `🤖 **Fixed by \`${usedModel}\`!**\n\n${parsed.summary}\n\n✅ Syntax checked & pushed directly to \`main\`!` })
+                body: JSON.stringify({ body: "🤖 **Fixed by `" + usedModel + "` (" + updatedCount + " file(s) updated)!**\n\n" + summary + "\n\n✅ Syntax checked & pushed directly to `main`!" })
               });
             }
           })().catch(err => { console.error(err); process.exit(1); });

@@ -12373,62 +12373,85 @@ div>') +
         });
     }
 
-      async function findOnlineSongStream(songQuery) {
-        const cleanQ = String(songQuery || '').replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-        const q = encodeURIComponent(cleanQ);
-
-        // 1. JioSaavn Search API (Full Bollywood, Punjabi, Hindi & Global hits!)
-        for (const host of ['https://saavn.dev', 'https://vercel.app']) {
+          function httpGetJson(targetUrl) {
+        return new Promise((resolve) => {
             try {
-                const saavnRes = await fetch(`${host}/api/search/songs?query=${q}&limit=1`);
-                if (saavnRes.ok) {
-                    const sJson = await saavnRes.json();
-                    const song = sJson?.data?.results?.at(0);
-                    const dlList = Array.isArray(song?.downloadUrl) ? song.downloadUrl : [];
-                    const bestStream = dlList.find(d => d.quality === '160kbps') || dlList.at(-1);
-                    if (bestStream && (bestStream.url || bestStream.link)) {
-                        const artist = song?.artists?.primary?.at(0)?.name || song?.primaryArtists || '';
-                        return {
-                            title: artist ? `${song.name} — ${artist}` : song.name,
-                            url: bestStream.url || bestStream.link
-                        };
+                const u = new URL(targetUrl);
+                const req = hcHttps.get({
+                    hostname: u.hostname,
+                    path: u.pathname + u.search,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Accept': 'application/json'
                     }
-                }
-            } catch (e) {}
+                }, (res) => {
+                    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                        return resolve(httpGetJson(res.headers.location));
+                    }
+                    let raw = '';
+                    res.on('data', c => raw += c);
+                    res.on('end', () => {
+                        try { resolve(JSON.parse(raw)); } catch (e) { resolve(null); }
+                    });
+                });
+                req.on('error', () => resolve(null));
+                req.setTimeout(6000, () => { req.destroy(); resolve(null); });
+            } catch (e) { resolve(null); }
+        });
+    }
+
+    async function findOnlineSongStream(songQuery) {
+        const cleanQ = String(songQuery || '').replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+        const shortQ = cleanQ.split(' ').slice(0, 3).join(' ');
+        const q = encodeURIComponent(cleanQ);
+        const sq = encodeURIComponent(shortQ);
+
+        // 1. JioSaavn Mirrors (Full Bollywood, Punjabi & English tracks)
+        for (const host of ['https://saavn.dev', 'https://vercel.app']) {
+            const sJson = await httpGetJson(`${host}/api/search/songs?query=${q}&limit=1`);
+            const song = sJson?.data?.results?.at(0);
+            const dlList = Array.isArray(song?.downloadUrl) ? song.downloadUrl : [];
+            const bestStream = dlList.find(d => d.quality === '160kbps') || dlList.at(-1);
+            if (bestStream && (bestStream.url || bestStream.link)) {
+                const artist = song?.artists?.primary?.at(0)?.name || song?.primaryArtists || '';
+                return { title: artist ? `${song.name} — ${artist}` : song.name, url: bestStream.url || bestStream.link };
+            }
         }
 
-        // 2. Official Audius Public API (Full Phonk, Kordhell, EDM & Remixes!)
-        try {
-            const audRes = await fetch(`https://audius.co{q}&limit=1`);
-            if (audRes.ok) {
-                const aJson = await audRes.json();
-                const track = Array.isArray(aJson.data) ? aJson.data.at(0) : null;
-                if (track && track.id) {
-                    return {
-                        title: `${track.title} — ${track.user?.name || 'Artist'}`,
-                        url: `https://audius.co{track.id}/stream`
-                    };
-                }
-            }
-        } catch (e) {}
+        // 2. Audius Official API (Full Phonk, Kordhell & EDM tracks)
+        const aJson = await httpGetJson(`https://audius.co{sq}&limit=1`);
+        const aTrack = Array.isArray(aJson?.data) ? aJson.data.at(0) : null;
+        if (aTrack && aTrack.id) {
+            return {
+                title: `${aTrack.title} — ${aTrack.user?.name || 'Artist'}`,
+                url: `https://audius.co{aTrack.id}/stream`
+            };
+        }
 
-        // 3. iTunes Search API (Guaranteed fallback so it NEVER says "Track not found")
-        try {
-            const itRes = await fetch(`https://apple.com{q}&media=music&entity=song&limit=1`);
-            if (itRes.ok) {
-                const iJson = await itRes.json();
-                const track = Array.isArray(iJson.results) ? iJson.results.at(0) : null;
-                if (track && track.previewUrl) {
-                    return {
-                        title: `${track.trackName} — ${track.artistName}`,
-                        url: track.previewUrl
-                    };
-                }
-            }
-        } catch (e) {}
+        // 3. Deezer Public Search API (Super fast, reliable CDN audio streams!)
+        const dJson = await httpGetJson(`https://deezer.com{sq}&limit=1`);
+        const dTrack = Array.isArray(dJson?.data) ? dJson.data.at(0) : null;
+        if (dTrack && dTrack.preview) {
+            return {
+                title: `${dTrack.title} — ${dTrack.artist?.name || 'Artist'}`,
+                url: dTrack.preview
+            };
+        }
+
+        // 4. iTunes Search API (Guaranteed global fallback)
+        const iJson = await httpGetJson(`https://apple.com{sq}&media=music&entity=song&limit=1`);
+        const iTrack = Array.isArray(iJson?.results) ? iJson.results.at(0) : null;
+        if (iTrack && iTrack.previewUrl) {
+            return {
+                title: `${iTrack.trackName} — ${iTrack.artistName}`,
+                url: iTrack.previewUrl
+            };
+        }
 
         return null;
     }
+
+      
   
 
     

@@ -12337,12 +12337,12 @@ div>') +
       });
     }`;
     
-        // ============================================================================
+           // ============================================================================
     // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — ENCYCLOPEDIA BRAIN + CHAT MEMORY
     // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
-    const aiMemoryByServer = new Map(); // Remembers last 6 turns per server!
+    const aiMemoryByServer = new Map();
 
     function askSammuVerseProMax(userPrompt, senderName, serverName, srvId) {
         return new Promise((resolve) => {
@@ -12363,9 +12363,9 @@ div>') +
                     role: 'system',
                     content:
                         `You are SammuVerse AI ProMax, an omniscient, brilliant, and witty AI assistant inside SammuGames (Server: "${serverName}"). ` +
-                        "You have deep encyclopedic knowledge of science, physics, astrophysics (like the Big Bang), history, math, coding, pop culture, and real-world places. " +
+                        "You have deep encyclopedic knowledge of science, physics, astrophysics (like the Big Bang), history, math, coding, Hinglish, pop culture, and real-world places. " +
                         "Answer any question accurately, clearly, and enthusiastically—or deliver a hilarious roast if asked. " +
-                        "Format cleanly for multiplayer game chat (keep answers concise, engaging, and under 600 characters unless explaining something deep)."
+                        "Keep answers punchy, engaging, and under 600 characters for multiplayer game chat."
                 },
                 ...history.slice(-6),
                 {
@@ -12382,7 +12382,7 @@ div>') +
             });
 
             const req = hcHttps.request({
-                hostname: '://hackclub.com',
+                hostname: ['ai', 'hackclub', 'com'].join('.'),
                 path: '/proxy/v1/chat/completions',
                 method: 'POST',
                 headers: {
@@ -12402,7 +12402,8 @@ div>') +
                     }
                     try {
                         const data = JSON.parse(raw);
-                        let reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+                        const firstChoice = Array.isArray(data?.choices) ? data.choices.at(0) : null;
+                        let reply = (firstChoice && firstChoice.message && firstChoice.message.content) || '';
                         reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
                         if (reply) {
@@ -12478,8 +12479,7 @@ div>') +
             });
         });
     });
-
-
+ 
 
  return OG_HOSTS;
 };

@@ -12337,37 +12337,48 @@ div>') +
       });
     }`;
     
-    // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — REAL AI + ROASTS + LOCAL ANSWERS
+        // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — ENCYCLOPEDIA BRAIN + CHAT MEMORY
     // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
+    const aiMemoryByServer = new Map(); // Remembers last 6 turns per server!
 
-    function askSammuVerseProMax(userPrompt, senderName, serverName) {
+    function askSammuVerseProMax(userPrompt, senderName, serverName, srvId) {
         return new Promise((resolve) => {
             const apiKey = (process.env.HACKCLUB_AI_KEY || process.env.OPENAI_API_KEY || '')
-    .replace(/^HACKCLUB_AI_KEY=/i, '')
-    .replace(/^["']|["']$/g, '')
-    .trim();
+                .replace(/^HACKCLUB_AI_KEY=/i, '')
+                .replace(/^["']|["']$/g, '')
+                .trim();
 
+            if (!apiKey) {
+                return resolve('⚠️ AI Key missing! Add HACKCLUB_AI_KEY in Railway Variables.');
+            }
+
+            if (!aiMemoryByServer.has(srvId)) aiMemoryByServer.set(srvId, []);
+            const history = aiMemoryByServer.get(srvId);
+
+            const messages = [
+                {
+                    role: 'system',
+                    content:
+                        `You are SammuVerse AI ProMax, an omniscient, brilliant, and witty AI assistant inside SammuGames (Server: "${serverName}"). ` +
+                        "You have deep encyclopedic knowledge of science, physics, astrophysics (like the Big Bang), history, math, coding, pop culture, and real-world places. " +
+                        "Answer any question accurately, clearly, and enthusiastically—or deliver a hilarious roast if asked. " +
+                        "Format cleanly for multiplayer game chat (keep answers concise, engaging, and under 600 characters unless explaining something deep)."
+                },
+                ...history.slice(-6),
+                {
+                    role: 'user',
+                    content: `${senderName}: ${userPrompt}`
+                }
+            ];
 
             const payload = JSON.stringify({
-                model: 'qwen/qwen3-32b',
-                messages: [
-                    {
-                        role: 'system',
-                        content:
-                            `You are SammuVerse AI ProMax, an ultra-smart, witty AI inside the SammuGames universe (Server: "${serverName}"). ` +
-                            "Answer any real-world question helpfully (restaurants, places, facts, advice, coding) OR deliver a savage, funny roast if asked. " +
-                            "Keep every reply under 350 characters so it fits cleanly in chat."
-                    },
-                    {
-                        role: 'user',
-                        content: `Player "${senderName}" asks: ${userPrompt}`
-                    }
-                ],
-                max_tokens: 180,
-                temperature: 0.75
+                model: 'openai/gpt-4o-mini',
+                messages,
+                max_tokens: 450,
+                temperature: 0.7
             });
 
             const req = hcHttps.request({
@@ -12375,27 +12386,46 @@ div>') +
                 path: '/proxy/v1/chat/completions',
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${apiKey}`,
+                    'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'User-Agent': 'SammuGamesBot/1.0',
                     'Content-Length': Buffer.byteLength(payload)
                 }
             }, (res) => {
                 let raw = '';
                 res.on('data', chunk => raw += chunk);
                 res.on('end', () => {
+                    if (res.statusCode !== 200) {
+                        console.error('HackClub AI HTTP Error:', res.statusCode, raw);
+                        return resolve(`🌌 AI Error (${res.statusCode}): ${raw.slice(0, 100)}`);
+                    }
                     try {
                         const data = JSON.parse(raw);
                         let reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
                         reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+                        if (reply) {
+                            history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
+                            history.push({ role: 'assistant', content: reply });
+                            if (history.length > 8) history.splice(0, history.length - 8);
+                        }
+
                         resolve(reply || '🌌 My quantum circuits glitched—try asking again!');
                     } catch (e) {
-                        resolve('🌌 Could not read AI response right now.');
+                        resolve('🌌 Could not parse AI response.');
                     }
                 });
             });
 
-            req.on('error', () => resolve('🌌 AI network error—try again in a moment!'));
-            req.setTimeout(12000, () => { req.destroy(); resolve('⏳ ProMax took too long to think!'); });
+            req.on('error', (err) => {
+                console.error('HackClub AI Net Error:', err);
+                resolve(`🌌 Net Error: ${err.message}`);
+            });
+            req.setTimeout(15000, () => {
+                req.destroy();
+                resolve('⏳ ProMax took too long to think!');
+            });
             req.write(payload);
             req.end();
         });
@@ -12410,6 +12440,15 @@ div>') +
             const clean = raw.trim();
             const low = clean.toLowerCase();
 
+            if (low === '!clearai' || low === '!resetai') {
+                aiMemoryByServer.delete(srvId);
+                return io.to(srvId).emit('message', {
+                    username: "🌌 SammuVerse AI ProMax",
+                    text: '🧹 Conversation memory wiped! Ready for a fresh topic!',
+                    _serverId: srvId
+                });
+            }
+
             let question = '';
             if (low.startsWith('!promax ')) question = clean.slice(8).trim();
             else if (low.startsWith('!ai ')) question = clean.slice(4).trim();
@@ -12421,17 +12460,17 @@ div>') +
             const sender = socket.username || (payload && payload.username) || 'Player';
             const now = Date.now();
             const lastUsed = aiCooldownByUser.get(socket.id) || 0;
-            if (now - lastUsed < 4000) {
+            if (now - lastUsed < 3500) {
                 return socket.emit('message', {
                     username: "🌌 SammuVerse AI ProMax",
-                    text: '⏳ Cooling down quantum cores—wait 4 seconds!',
+                    text: '⏳ Cooling down quantum cores—wait 3 seconds!',
                     _serverId: srvId
                 });
             }
             aiCooldownByUser.set(socket.id, now);
 
             const srvName = (serversDB[srvId] && serversDB[srvId].name) || 'SammuGames Arena';
-            const reply = await askSammuVerseProMax(question, sender, srvName);
+            const reply = await askSammuVerseProMax(question, sender, srvName, srvId);
             io.to(srvId).emit('message', {
                 username: "🌌 SammuVerse AI ProMax",
                 text: `**@${sender}:** ${reply}`,

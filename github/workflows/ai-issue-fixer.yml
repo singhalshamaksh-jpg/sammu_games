@@ -2,7 +2,7 @@ name: Particle-1 AI Direct Auto-Fixer
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened, edited, labeled]
 
 permissions:
   contents: write
@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   autofix:
-    if: github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

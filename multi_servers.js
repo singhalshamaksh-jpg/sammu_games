@@ -11815,9 +11815,7 @@ div>') +
       }
 
       ctx.restore();
-      drawRadarMinimap(me);
-      requestAnimationFrame(renderLoop);
-    }
+      drawRadarMinimap(me)
     requestAnimationFrame(renderLoop);
   })();
   </script>

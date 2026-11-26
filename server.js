@@ -3113,91 +3113,6 @@ initServerAds(app, io);
 
 app.get('/avatar_widget', (req, res) => res.send(app.locals.AVATAR_RPG_UI || ''));
 
-async function getAIReply(promptText) {
-    const groqKey = process.env.GROQ_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
-    const sysPrompt = "You are 🤖 Sammu AI, a witty gaming chatbot in a multiplayer lobby. Give a very short (1-2 sentences), funny Hinglish reply with emojis.";
-    const userPrompt = promptText || "hello";
-
-    try {
-        if (groqKey) {
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${groqKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: [
-                        { role: 'system', content: sysPrompt },
-                        { role: 'user', content: userPrompt }
-                    ],
-                    max_tokens: 100
-                })
-            });
-            if (res.ok) {
-                const json = await res.json();
-                const text = json.choices?.[0]?.message?.content;
-                if (text) return text.trim();
-            }
-        }
-        if (geminiKey) {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: `${sysPrompt}\nUser prompt: ${userPrompt}` }]
-                    }]
-                })
-            });
-            if (res.ok) {
-                const json = await res.json();
-                const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) return text.trim();
-            }
-        }
-    } catch (err) {
-        console.error("AI Fetch Error:", err);
-    }
-    const funReplies = [
-        "Arre bro! AI server thoda rest le raha hai, par tumhara Sammu AI hamesha OP hai! 😎⚡",
-        "Savage response loading... 99%! Agle round mein match jeet ke dikhao! 🏆🔥",
-        "Dimaag garam ho gaya bro, thoda paani pio aur arena mein aao! 🌊🤖"
-    ];
-    return funReplies[Math.floor(Math.random() * funReplies.length)];
-}
-
-io.use((socket, next) => {
-    socket.use(async (packet, pktNext) => {
-        try {
-            const ev = packet && packet[0];
-            const payload = packet && packet[1];
-            if (ev === 'chatMessage') {
-                const raw = (typeof payload === 'object' && payload !== null) ? payload.text : payload;
-                if (typeof raw === 'string') {
-                    const trimmed = raw.trim();
-                    if (trimmed.toLowerCase().startsWith('!ai') || trimmed.toLowerCase().startsWith('@gemini')) {
-                        const prompt = trimmed.replace(/^(!ai|@gemini)/i, '').trim();
-                        const srvId = socket.activeServerId || 'global';
-                        getAIReply(prompt).then(reply => {
-                            io.emit('message', {
-                                username: "🤖 Sammu AI",
-                                text: reply,
-                                _serverId: srvId
-                            });
-                        });
-                    }
-                }
-            }
-        } catch (err) {
-            console.error("AI Socket Middleware Error:", err);
-        }
-        pktNext();
-    });
-    next();
-});
 // === 🧠 PERSISTENT AI BANK UPGRADER (GROWS MAIN BANKS & SAVES TO DISK) ===
 const AI_CACHE_FILE = path.join(__dirname, 'ai_banks_cache.json');
 
@@ -3269,9 +3184,8 @@ let aiUpgradeRunning = false;
 
 async function upgradeMainGameBanks() {
     if (aiUpgradeRunning) return;
-    const groqKey = process.env.GROQ_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!groqKey && !geminiKey) return;
+        const hcKey = (process.env.HACKCLUB_AI_KEY || '').replace(/^HACKCLUB_AI_KEY=/i, '').replace(/^["']|["']$/g, '').trim();
+    if (!hcKey) return;
 
     // Stop calling API if banks already have 250+ items saved
     if (quizBank.length >= 250 && animeQuizBank.length >= 250 && hindiMovieBank.length >= 250 && roastBank.length >= 250 && shayariBank.length >= 250 && truthBank.length >= 250 && dareBank.length >= 250 && riddleBank.length >= 250 && global.EXTRA_SCRAMBLE_WORDS.length >= 250 && global.AI_BLUFF_BANK.length >= 250 && global.AI_IMPOSTER_BANK.length >= 250 && global.AI_MULTI_ANIME_BANK.length >= 250) return;
@@ -3296,32 +3210,25 @@ async function upgradeMainGameBanks() {
 
     try {
         let rawText = null;
-        if (groqKey) {
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.92,
-                    max_tokens: 2000
-                })
-            });
-            if (res.ok) {
-                const j = await res.json();
-                rawText = j.choices?.[0]?.message?.content;
-            }
-        } else if (geminiKey) {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            if (res.ok) {
-                const j = await res.json();
-                rawText = j.candidates?.[0]?.content?.parts?.[0]?.text;
-            }
+        const aiUrl = ['https://ai', 'hackclub', 'com/proxy/v1/chat/completions'].join('.');
+        const res = await fetch(aiUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${hcKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'openai/gpt-4o-mini',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.92,
+                max_tokens: 2000
+            })
+        });
+        if (res.ok) {
+            const j = await res.json();
+            rawText = j.choices?.at(0)?.message?.content;
         }
+
 
         if (rawText) {
             const match = rawText.match(/\{[\s\S]*\}/);

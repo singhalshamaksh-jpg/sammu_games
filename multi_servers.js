@@ -12510,128 +12510,9 @@ div>') +
             return { text: `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`, action: null, songQuery: null };
         })();
     }
-                        // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX — PIECE 2/2: FIXED SOCKET HOOK + MOBILE VOICE UNLOCK
+               // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX — PART 2: SOCKET CHAT & DJ BROADCASTER
     // ============================================================================
-    const PROMAX_DJ_CLIENT_SCRIPT = `
-    <script id="proMaxDjController">
-    (function() {
-      let proMaxAudio = new Audio();
-      proMaxAudio.crossOrigin = 'anonymous';
-      window._proMaxVoiceOn = true;
-
-      // Unlock Android Chrome speechSynthesis & Audio on first user touch/click
-      function unlockMobileAudio() {
-        try {
-          if ('speechSynthesis' in window) {
-            const warm = new SpeechSynthesisUtterance('');
-            warm.volume = 0;
-            window.speechSynthesis.speak(warm);
-          }
-          if (proMaxAudio.paused && !proMaxAudio.src) {
-            proMaxAudio.play().catch(function(){});
-          }
-        } catch (e) {}
-      }
-      window.addEventListener('pointerdown', unlockMobileAudio, { once: true });
-      window.addEventListener('keydown', unlockMobileAudio, { once: true });
-
-      function speakProMax(text) {
-        try {
-          if (!window._proMaxVoiceOn || !('speechSynthesis' in window)) return;
-          window.speechSynthesis.cancel();
-          const clean = String(text || '')
-            .replace(/[*_#~\`]|https?:\\/\\/\\S+/g, '')
-            .replace(/[\\u{1F300}-\\u{1FAFF}]/gu, '')
-            .trim();
-          if (!clean) return;
-          const utter = new SpeechSynthesisUtterance(clean.slice(0, 220));
-          const voices = window.speechSynthesis.getVoices() || [];
-          const indianOrEn = voices.find(v => /hi-IN|en-IN|Google UK|English/i.test(v.lang + ' ' + v.name));
-          if (indianOrEn) utter.voice = indianOrEn;
-          utter.rate = 1.04;
-          utter.pitch = 1.06;
-          utter.volume = 1.0;
-          window.speechSynthesis.speak(utter);
-        } catch (e) {}
-      }
-
-      function handleProMaxAction(data) {
-        if (!data) return;
-        if (data.speakText) speakProMax(data.speakText);
-        const act = data.action;
-        const audios = Array.from(document.querySelectorAll('audio, video'));
-        const btns = Array.from(document.querySelectorAll('button'));
-
-        if (act === 'PLAY_SONG') {
-          const q = String(data.songQuery || '').toLowerCase();
-          const localOpt = Array.from(document.querySelectorAll('option, button, [data-track]')).find(el => {
-            const label = (el.textContent || el.value || el.dataset.track || '').toLowerCase();
-            return q && label.includes(q.split(' ').at(0)) && /\\.mp3|phonk|track|song/i.test(label + (el.value || ''));
-          });
-          if (localOpt) {
-            if (localOpt.tagName === 'OPTION' && localOpt.parentElement) {
-              localOpt.parentElement.value = localOpt.value;
-              localOpt.parentElement.dispatchEvent(new Event('change'));
-            } else {
-              localOpt.click();
-            }
-            return;
-          }
-          if (data.streamUrl) {
-            audios.forEach(a => { if (!a.paused) a.pause(); });
-            proMaxAudio.pause();
-            proMaxAudio.src = data.streamUrl;
-            proMaxAudio.volume = 0.85;
-            proMaxAudio.play().catch(function(){});
-          }
-        } else if (act === 'STOP_DJ') {
-          proMaxAudio.pause();
-          audios.forEach(a => { if (!a.paused) a.pause(); });
-          const stopBtn = btns.find(b => /stop|pause|mute/i.test(b.textContent || ''));
-          if (stopBtn) stopBtn.click();
-        } else if (act === 'SOFT_VOL') {
-          proMaxAudio.volume = 0.25;
-          audios.forEach(a => { a.volume = 0.25; });
-        } else if (act === 'LOUD_VOL') {
-          proMaxAudio.volume = 1.0;
-          audios.forEach(a => { a.volume = 1.0; });
-        } else if (act === 'DISCO_TOGGLE') {
-          const discoBtn = btns.find(b => /disco/i.test(b.textContent || ''));
-          if (discoBtn) discoBtn.click();
-        }
-      }
-
-      // Hook directly into Socket.IO prototype so it catches ANY socket instance!
-      const hookProto = setInterval(function() {
-        if (typeof io !== 'undefined' && io.Socket && io.Socket.prototype && !io.Socket.prototype._proMaxPatched) {
-          io.Socket.prototype._proMaxPatched = true;
-          const origEmitEvent = io.Socket.prototype.emitEvent;
-          io.Socket.prototype.emitEvent = function(args) {
-            if (Array.isArray(args) && args.at(0) === 'proMaxAction') {
-              handleProMaxAction(args.at(1));
-            }
-            return origEmitEvent.apply(this, arguments);
-          };
-          clearInterval(hookProto);
-        }
-      }, 200);
-    })();
-    </script>`;
-
-    app.use((req, res, next) => {
-        const cleanUrl = String(req.originalUrl || req.url || '').split('?').at(0).toLowerCase();
-        if (cleanUrl === '/waterio' || cleanUrl === '/waterio/') return next();
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('proMaxDjController')) {
-                body = body.replace('</body>', PROMAX_DJ_CLIENT_SCRIPT + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
-
     io.on('connection', (socket) => {
         socket.on('chatMessage', async (payload) => {
             const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
@@ -12678,18 +12559,18 @@ div>') +
                 streamInfo = await findOnlineSongStream(result.songQuery);
             }
 
-            if (result.action || result.text) {
+            if (result.action) {
                 io.to(srvId).emit('proMaxAction', {
                     action: result.action,
                     songQuery: result.songQuery,
+                    youtubeId: streamInfo ? streamInfo.youtubeId : null,
                     streamUrl: streamInfo ? streamInfo.url : null,
                     songTitle: streamInfo ? streamInfo.title : result.songQuery,
-                    speakText: result.text,
                     by: sender
                 });
             }
 
-            const nowPlayingTag = (streamInfo && streamInfo.title) ? `\n🎵 **Now Streaming:** ${streamInfo.title}` : '';
+            const nowPlayingTag = (streamInfo && streamInfo.title) ? `\n🎵 **Now Playing:** ${streamInfo.title}` : '';
             io.to(srvId).emit('message', {
                 username: "🌌 SammuVerse AI ProMax",
                 text: `**@${sender}:** ${result.text}${nowPlayingTag}`,
@@ -12697,7 +12578,6 @@ div>') +
             });
         });
     });
-
-
+             
  return OG_HOSTS;
 };

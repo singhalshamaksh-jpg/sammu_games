@@ -800,13 +800,18 @@ const NEW_ARENAS_WIDGET = `
 })();
 </script>
 `;
-const PROMAX_VOICE_WIDGET = `
+
+
+  const PROMAX_VOICE_WIDGET = `
+<audio id="proMaxAudioEl" playsinline preload="auto" style="display:none;"></audio>
 <div id="proMaxMiniPlayer" style="display:none;position:fixed;bottom:74px;right:12px;z-index:99995;background:rgba(15,23,42,0.96);border:1.5px solid #38bdf8;border-radius:14px;padding:8px 12px;color:#fff;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,0.65);max-width:270px;">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-    <span id="proMaxSongTitle" style="font-weight:bold;color:#7dd3fc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🎵 Playing...</span>
-    <button onclick="stopProMaxSong()" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-weight:bold;cursor:pointer;">⏹</button>
+    <span id="proMaxSongTitle" style="font-weight:bold;color:#7dd3fc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🎵 Ready</span>
+    <div style="display:flex;gap:5px;flex-shrink:0;">
+      <button id="proMaxPlayBtn" onclick="resumeProMaxSong()" style="background:#10b981;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-weight:bold;cursor:pointer;">▶</button>
+      <button onclick="stopProMaxSong()" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 7px;font-weight:bold;cursor:pointer;">⏹</button>
+    </div>
   </div>
-  <div id="proMaxYtBox" style="margin-top:6px;border-radius:8px;overflow:hidden;display:none;"></div>
 </div>
 <script id="proMaxVoiceController">
 (function() {
@@ -817,6 +822,11 @@ const PROMAX_VOICE_WIDGET = `
     if (audioUnlocked) return;
     audioUnlocked = true;
     try {
+      const el = document.getElementById('proMaxAudioEl');
+      if (el && !el.src) {
+        el.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        el.play().then(() => { el.pause(); el.currentTime = 0; }).catch(() => {});
+      }
       if ('speechSynthesis' in window) {
         window.speechSynthesis.getVoices();
         const u = new SpeechSynthesisUtterance(' ');
@@ -828,9 +838,16 @@ const PROMAX_VOICE_WIDGET = `
   window.addEventListener('pointerdown', unlockMobileMedia, { once: true });
   window.addEventListener('click', unlockMobileMedia, { once: true });
 
+  window.resumeProMaxSong = function() {
+    const el = document.getElementById('proMaxAudioEl');
+    if (el && el.src) {
+      el.play().catch(() => {});
+    }
+  };
+
   window.stopProMaxSong = function() {
-    const yt = document.getElementById('proMaxYtBox');
-    if (yt) { yt.innerHTML = ''; yt.style.display = 'none'; }
+    const el = document.getElementById('proMaxAudioEl');
+    if (el) { el.pause(); el.removeAttribute('src'); el.load(); }
     const bar = document.getElementById('proMaxMiniPlayer');
     if (bar) bar.style.display = 'none';
   };
@@ -878,37 +895,37 @@ const PROMAX_VOICE_WIDGET = `
     socket.on('proMaxAction', function(data) {
       if (!data) return;
       const act = data.action;
+      const el = document.getElementById('proMaxAudioEl');
       const bar = document.getElementById('proMaxMiniPlayer');
       const titleEl = document.getElementById('proMaxSongTitle');
-      const ytBox = document.getElementById('proMaxYtBox');
+      const audios = Array.from(document.querySelectorAll('audio, video')).filter(a => a !== el);
       const btns = Array.from(document.querySelectorAll('button'));
 
       if (act === 'PLAY_SONG') {
-        window.stopProMaxSong();
-        const query = String(data.songQuery || data.songTitle || 'Trending Phonk').trim();
-        const myName = (localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').toLowerCase().trim();
-        const djName = String(data.by || '').toLowerCase().trim();
-        const isRequester = (myName && myName === djName) || ['sammu', 'samaksh'].includes(myName);
-
+        audios.forEach(a => { if (!a.paused) a.pause(); });
+        const songLabel = data.songTitle || data.songQuery || 'Playing Track';
         if (bar) bar.style.display = 'block';
-        if (titleEl) {
-          titleEl.textContent = isRequester
-            ? ('🎬 ' + query)
-            : ('🎵 ' + query + (data.by ? ' (DJ: ' + data.by + ')' : ''));
-        }
+        if (titleEl) titleEl.textContent = '🎵 ' + songLabel;
 
-        if (ytBox) {
-          const ytUrl = 'https://youtube.com' + encodeURIComponent(query + ' official audio') + '&autoplay=1&playsinline=1';
-          if (isRequester) {
-            ytBox.style.cssText = 'margin-top:6px;border-radius:8px;overflow:hidden;display:block;';
-            ytBox.innerHTML = '<iframe width="246" height="75" src="' + ytUrl + '" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
-          } else {
-            ytBox.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0.01;pointer-events:none;display:block;';
-            ytBox.innerHTML = '<iframe width="1" height="1" src="' + ytUrl + '" frameborder="0" allow="autoplay; encrypted-media"></iframe>';
-          }
+        if (data.streamUrl && el) {
+          el.pause();
+          el.src = data.streamUrl;
+          el.volume = 0.85;
+          el.play().catch(function() {
+            if (titleEl) titleEl.textContent = '▶ Tap Play: ' + songLabel;
+          });
+        } else if (titleEl) {
+          titleEl.textContent = '⚠️ Track not found: ' + songLabel;
         }
       } else if (act === 'STOP_DJ') {
         window.stopProMaxSong();
+        audios.forEach(a => { if (!a.paused) a.pause(); });
+      } else if (act === 'SOFT_VOL') {
+        if (el) el.volume = 0.25;
+        audios.forEach(a => { a.volume = 0.25; });
+      } else if (act === 'LOUD_VOL') {
+        if (el) el.volume = 1.0;
+        audios.forEach(a => { a.volume = 1.0; });
       } else if (act === 'DISCO_TOGGLE') {
         const discoBtn = btns.find(b => /disco/i.test(b.textContent || ''));
         if (discoBtn) discoBtn.click();
@@ -924,6 +941,7 @@ const PROMAX_VOICE_WIDGET = `
 })();
 </script>
 `;
+    
 
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');

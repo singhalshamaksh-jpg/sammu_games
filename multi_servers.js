@@ -11084,7 +11084,8 @@ Rules:
     // ==================== END PIECE 1 ====================
     // ==================== PIECE 2: AI SONG RESOLVER + VISUAL SPECTACLES & CURSOR AURA ====================
     const aiSongMiddleware = async (req, res, next) => {
-        const cleanPath = (req.originalUrl || req.url || '').split('?').toLowerCase();
+        const cleanPath = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
+
         if (cleanPath !== '/ai-song') return next();
 
         const q = String(req.query.q || '').trim();
@@ -11758,8 +11759,8 @@ Rules:
 </html>`;
 
     const waterIoMiddleware = (req, res, next) => {
-        const cleanPath = (req.originalUrl || req.url || '').split('?').replace(/\/+$/, '').toLowerCase();
-        if (cleanPath === '/waterio' || cleanPath === '/water.io') {
+        const cleanPath = (req.originalUrl || req.url || '').split('?')[0].replace(/\/+$/, '').toLowerCase();
+    if (cleanPath === '/waterio' || cleanPath === '/water.io') {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             res.setHeader('Cache-Control', 'no-store');
             return res.status(200).send(WATERIO_HTML);
@@ -11862,116 +11863,6 @@ Rules:
     }
     // ==================== END PIECE 6 ====================
                     
-         // === EMERGENCY HOTFIX: OVERRIDE BROKEN MIDDLEWARES & CRASHES ===
-    const emergencyPatchMiddleware = async (req, res, next) => {
-        const cleanPath = (req.originalUrl || req.url || '').split('?').replace(/\/+$/, '').toLowerCase();
-
-        // 1. Intercept /waterio before the broken middleware runs
-        if (cleanPath === '/waterio' || cleanPath === '/water.io') {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.setHeader('Cache-Control', 'no-store');
-            return res.status(200).send(WATERIO_HTML);
-        }
-
-        // 2. Intercept /ai-song before the broken middleware runs
-        if (cleanPath === '/ai-song') {
-            const q = String(req.query.q || '').trim();
-            if (!q) return res.json({ url: null });
-            const mirrors = [
-                `https://saavn.dev{encodeURIComponent(q)}&limit=1`,
-                `https://vercel.app{encodeURIComponent(q)}&limit=1`
-            ];
-            for (const apiUrl of mirrors) {
-                try {
-                    const ctrl = new AbortController();
-                    const timer = setTimeout(() => ctrl.abort(), 5000);
-                    const apiRes = await fetch(apiUrl, { signal: ctrl.signal });
-                    clearTimeout(timer);
-                    if (!apiRes.ok) continue;
-                    const json = await apiRes.json();
-                    const song = json?.data?.results?.at(0) || json?.results?.at(0);
-                    const urls = song?.downloadUrl || [];
-                    const best = urls.at(-1) || urls.at(0);
-                    const streamUrl = best?.url || best?.link || null;
-                    if (streamUrl) {
-                        const artistNames = Array.isArray(song?.artists?.primary)
-                            ? song.artists.primary.map(a => a.name).join(', ')
-                            : (song?.primaryArtists || '');
-                        return res.json({ url: streamUrl, title: song?.name || q, artist: artistNames });
-                    }
-                } catch (e) {}
-            }
-            return res.json({ url: null });
-        }
-
-        return next();
-    };
-
-    app.use(emergencyPatchMiddleware);
-
-    // Move this emergency handler to the very front of Express so it runs FIRST
-    const fixStack = (app._router && app._router.stack) || (app.router && app.router.stack);
-    if (Array.isArray(fixStack)) {
-        const idx = fixStack.findIndex(l => l && l.handle === emergencyPatchMiddleware);
-        if (idx > 0) {
-            const [layer] = fixStack.splice(idx, 1);
-            fixStack.unshift(layer);
-        }
-    }
-           // === EMERGENCY HOTFIX: DELETE BROKEN MIDDLEWARES FROM EXPRESS ===
-    const fixStack = (app._router && app._router.stack) || (app.router && app.router.stack);
-    if (Array.isArray(fixStack)) {
-        for (let i = fixStack.length - 1; i >= 0; i--) {
-            const h = fixStack[i] && fixStack[i].handle;
-            if (h === aiSongMiddleware || h === waterIoMiddleware) {
-                fixStack.splice(i, 1);
-            }
-        }
-    }
-
-    const cleanRoutesMiddleware = async (req, res, next) => {
-        const cleanPath = (req.originalUrl || req.url || '').split('?').replace(/\/+$/, '').toLowerCase();
-
-        if (cleanPath === '/waterio' || cleanPath === '/water.io') {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.setHeader('Cache-Control', 'no-store');
-            return res.status(200).send(WATERIO_HTML);
-        }
-
-        if (cleanPath === '/ai-song') {
-            const q = String(req.query.q || '').trim();
-            if (!q) return res.json({ url: null });
-            const mirrors = [
-                `https://saavn.dev{encodeURIComponent(q)}&limit=1`,
-                `https://vercel.app{encodeURIComponent(q)}&limit=1`
-            ];
-            for (const apiUrl of mirrors) {
-                try {
-                    const ctrl = new AbortController();
-                    const timer = setTimeout(() => ctrl.abort(), 5000);
-                    const apiRes = await fetch(apiUrl, { signal: ctrl.signal });
-                    clearTimeout(timer);
-                    if (!apiRes.ok) continue;
-                    const json = await apiRes.json();
-                    const song = json?.data?.results?.at(0) || json?.results?.at(0);
-                    const urls = song?.downloadUrl || [];
-                    const best = urls.at(-1) || urls.at(0);
-                    const streamUrl = best?.url || best?.link || null;
-                    if (streamUrl) {
-                        const artistNames = Array.isArray(song?.artists?.primary)
-                            ? song.artists.primary.map(a => a.name).join(', ')
-                            : (song?.primaryArtists || '');
-                        return res.json({ url: streamUrl, title: song?.name || q, artist: artistNames });
-                    }
-                } catch (e) {}
-            }
-            return res.json({ url: null });
-        }
-
-        return next();
-    };
-
-    app.use(cleanRoutesMiddleware);
 
    return OG_HOSTS;     
 };

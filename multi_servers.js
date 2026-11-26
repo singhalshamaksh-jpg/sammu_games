@@ -12336,9 +12336,7 @@ div>') +
         rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
       });
     }`;
-        // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX — PIECE 1/2: AI BRAIN & SONG STREAMER
-    // ============================================================================
+        
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
     const aiMemoryByServer = new Map();
@@ -12511,9 +12509,7 @@ div>') +
             return { text: `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`, action: null, songQuery: null };
         })();
     }
-               // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX — PART 2: SOCKET CHAT & DJ BROADCASTER
-    // ============================================================================
+               
     io.on('connection', (socket) => {
         socket.on('chatMessage', async (payload) => {
             const raw = (typeof payload === 'object' && payload) ? payload.text : payload;

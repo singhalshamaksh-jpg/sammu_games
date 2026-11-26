@@ -10987,20 +10987,66 @@ div>') +
         });
     });
                    
-    // ==================== PIECE 1: FAST ROASTY GENIUS AI + AI DJ & VISUAL DIRECTOR ====================
+       // ==================== PIECE 1 & 2: WORKING AI + DJ + VISUAL FX ====================
     const aiRoomMemory = new Map();
 
     io.on('connection', (socket) => {
+        socket.on('cursorAura', (data) => {
+            if (!data || typeof data.nx !== 'number' || typeof data.ny !== 'number') return;
+            const srvId = data.serverId || socket.activeServerId || 'global';
+            socket.to(srvId).emit('cursorAura', {
+                id: socket.id,
+                name: String(data.name || socket.username || 'Player').slice(0, 14),
+                nx: Math.max(0, Math.min(1, data.nx)),
+                ny: Math.max(0, Math.min(1, data.ny)),
+                color: String(data.color || '#38bdf8').slice(0, 20),
+                _serverId: srvId
+            });
+        });
+
         socket.on('chatMessage', async (payload) => {
             const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
             if (typeof raw !== 'string') return;
             const trimmed = raw.trim();
             const srvId = (typeof payload === 'object' && payload?.serverId) || socket.activeServerId || 'global';
             const sender = (typeof payload === 'object' && payload?.username) || socket.username || 'Player';
+            const colors = ['#ff007f', '#00f5d4', '#fee440', '#9b5de5', '#ff5400', '#00bbf9'];
 
+            // 1. Visual Spectacles (!holi, !barish, !diwali, !aurora, !meteor, !tsunami, !bijli)
+            const holiMatch = trimmed.match(/^!(?:holi|rang|pichkari)(?:\s+(.*))?$/i);
+            if (holiMatch) {
+                const target = (holiMatch.at(1) || 'poore room').trim();
+                io.to(srvId).emit('chaosEvent', { type: 'holi', from: sender, target, colors, _serverId: srvId });
+                return io.to(srvId).emit('message', {
+                    username: '🎨 Holi Rang Bot',
+                    text: `💦🌈 **${sender}** ne **${target}** par neon gulal aur pichkari maar di! *Bura na mano Holi hai!*`,
+                    _serverId: srvId
+                });
+            }
+
+            const fxMatch = trimmed.match(/^!(barish|monsoon|diwali|patakha|aurora|meteor|tsunami|bijli|powercut)$/i);
+            if (fxMatch) {
+                const cmd = fxMatch.at(1).toLowerCase();
+                const map = {
+                    barish: ['barish', '🌧️ Mausam Bot', `⛈️☕ **${sender}** ne room mein **Monsoon Barish + Bijli** chalu kar di!`],
+                    monsoon: ['barish', '🌧️ Mausam Bot', `⛈️☕ **${sender}** ne room mein **Monsoon Barish + Bijli** chalu kar di!`],
+                    diwali: ['diwali', '🪔 Diwali Bot', `🎆💥 **${sender}** ne **Skyrocket Fireworks** chalu kar diye! Screen par tap karo rockets udane ke liye!`],
+                    patakha: ['diwali', '🪔 Diwali Bot', `🎆💥 **${sender}** ne **Skyrocket Fireworks** chalu kar diye! Screen par tap karo rockets udane ke liye!`],
+                    aurora: ['aurora', '🌌 Sky Bot', `✨🌌 **${sender}** ne aasman mein **Northern Lights (Aurora)** jala di!`],
+                    meteor: ['meteor', '☄️ Space Bot', `🌠🔥 **${sender}** ne room mein **Meteor Shower** bula liya!`],
+                    tsunami: ['tsunami', '🌊 Aqua Alert', `🌊📱 **${sender}** ne phone hila kar **5-Second Tsunami** laa di!`],
+                    bijli: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`],
+                    powercut: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`]
+                };
+                const [fxType, botName, msgText] = map[cmd];
+                io.to(srvId).emit('chaosEvent', { type: fxType, from: sender, colors, _serverId: srvId });
+                return io.to(srvId).emit('message', { username: botName, text: msgText, _serverId: srvId });
+            }
+
+            // 2. SammuVerse Pro Max AI (!ai <question>)
             const aiMatch = trimmed.match(/^!ai\s+(.+)/i);
             if (!aiMatch) return;
-            const question = aiMatch.trim();
+            const question = aiMatch.at(1).trim();
 
             if (!aiRoomMemory.has(srvId)) aiRoomMemory.set(srvId, []);
             const history = aiRoomMemory.get(srvId);
@@ -11012,12 +11058,12 @@ Rules:
 1. Reply in 1-2 punchy sentences STRICTLY under 250 characters total.
 2. Playful, funny roasts + 100% accurate facts (science, math, coding, gaming, Bollywood).
 3. Remember the last 10 room messages. Never output <think> tags.
-4. MUSIC DJ POWER: If the user asks to play a song or music (e.g. "play softly", "gaana bajao", "vibe song"), append [PLAY:exact song name] at the very end of your reply.
+4. MUSIC DJ POWER: If the user asks to play a song or music (e.g. "play softly", "gaana bajao"), append [PLAY:exact song name] at the very end.
 5. VISUAL POWER: If the user asks for an effect or mentions rain, holi, fireworks, aurora, meteor, tsunami, or power cut, append ONE of [FX:holi], [FX:barish], [FX:diwali], [FX:aurora], [FX:meteor], [FX:tsunami], or [FX:bijli] at the end.`;
 
             try {
                 const ctrl = new AbortController();
-                const timeout = setTimeout(() => ctrl.abort(), 7000);
+                const timeout = setTimeout(() => ctrl.abort(), 8000);
 
                 const aiRes = await fetch('https://hackclub.com', {
                     method: 'POST',
@@ -11029,41 +11075,35 @@ Rules:
                     body: JSON.stringify({
                         model: 'qwen/qwen3-32b',
                         reasoning_effort: 'none',
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            ...history
-                        ],
-                        max_tokens: 120,
+                        messages: [{ role: 'system', content: systemPrompt }, ...history],
+                        max_tokens: 130,
                         temperature: 0.85
                     })
                 });
                 clearTimeout(timeout);
 
                 const aiData = await aiRes.json();
-                let reply = (aiData?.choices?.message?.content || 'Brain lag ho gaya bro, phir pooch! 🤯')
+                const firstChoice = Array.isArray(aiData?.choices) ? aiData.choices.at(0) : null;
+                let reply = (firstChoice?.message?.content || 'Brain lag ho gaya bro, phir pooch! 🤯')
                     .replace(/<think>[\s\S]*?<\/think>/gi, '')
                     .replace(/\s+/g, ' ')
                     .trim();
 
-                // Extract & trigger [PLAY:song] if AI decided to play music
                 const playTag = reply.match(/\[PLAY:([^\]]+)\]/i);
-                if (playTag && playTag) {
-                    const songQuery = playTag.trim();
+                if (playTag && playTag.at(1)) {
+                    const songQuery = playTag.at(1).trim();
                     reply = reply.replace(/\[PLAY:[^\]]+\]/gi, '').trim();
                     io.to(srvId).emit('aiPlaySong', { query: songQuery, requestedBy: sender, _serverId: srvId });
                 }
 
-                // Extract & trigger [FX:effect] if AI decided to launch a visual spectacle
                 const fxTag = reply.match(/\[FX:(holi|barish|diwali|aurora|meteor|tsunami|bijli)\]/i);
-                if (fxTag && fxTag) {
-                    const fxType = fxTag.toLowerCase();
+                if (fxTag && fxTag.at(1)) {
+                    const fxType = fxTag.at(1).toLowerCase();
                     reply = reply.replace(/\[FX:[^\]]+\]/gi, '').trim();
-                    const colors = ['#ff007f', '#00f5d4', '#fee440', '#9b5de5', '#ff5400', '#00bbf9'];
                     io.to(srvId).emit('chaosEvent', { type: fxType, from: 'SammuVerse AI', target: sender, colors, _serverId: srvId });
                 }
 
                 if (reply.length > 300) reply = reply.slice(0, 297).trimEnd() + '...';
-
                 history.push({ role: 'assistant', content: reply });
                 while (history.length > 10) history.shift();
 
@@ -11081,11 +11121,10 @@ Rules:
             }
         });
     });
-    // ==================== END PIECE 1 ====================
-    // ==================== PIECE 2: AI SONG RESOLVER + VISUAL SPECTACLES & CURSOR AURA ====================
-    const aiSongMiddleware = async (req, res, next) => {
-        const cleanPath = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
 
+    // 3. AI Song Stream Resolver (Safe .at(0) syntax)
+    const aiSongMiddleware = async (req, res, next) => {
+        const cleanPath = (req.originalUrl || req.url || '').split('?').at(0).toLowerCase();
         if (cleanPath !== '/ai-song') return next();
 
         const q = String(req.query.q || '').trim();
@@ -11114,11 +11153,7 @@ Rules:
                     const artistNames = Array.isArray(song?.artists?.primary)
                         ? song.artists.primary.map(a => a.name).join(', ')
                         : (song?.primaryArtists || '');
-                    return res.json({
-                        url: streamUrl,
-                        title: song?.name || q,
-                        artist: artistNames
-                    });
+                    return res.json({ url: streamUrl, title: song?.name || q, artist: artistNames });
                 }
             } catch (e) {}
         }
@@ -11131,66 +11166,9 @@ Rules:
         const idx = songStack.findIndex(l => l && l.handle === aiSongMiddleware);
         if (idx > 0) { const [layer] = songStack.splice(idx, 1); songStack.unshift(layer); }
     }
-
-    io.on('connection', (socket) => {
-        // Live multiplayer glowing finger/cursor ribbons
-        socket.on('cursorAura', (data) => {
-            if (!data || typeof data.nx !== 'number' || typeof data.ny !== 'number') return;
-            const srvId = data.serverId || socket.activeServerId || 'global';
-            socket.to(srvId).emit('cursorAura', {
-                id: socket.id,
-                name: String(data.name || socket.username || 'Player').slice(0, 14),
-                nx: Math.max(0, Math.min(1, data.nx)),
-                ny: Math.max(0, Math.min(1, data.ny)),
-                color: String(data.color || '#38bdf8').slice(0, 20),
-                _serverId: srvId
-            });
-        });
-
-        // Direct chat commands for visual spectacles (!holi, !barish, !diwali, !aurora, !meteor, !tsunami, !bijli)
-        socket.on('chatMessage', (payload) => {
-            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
-            if (typeof raw !== 'string') return;
-            const trimmed = raw.trim();
-            const srvId = (typeof payload === 'object' && payload?.serverId) || socket.activeServerId || 'global';
-            const sender = (typeof payload === 'object' && payload?.username) || socket.username || 'Player';
-            const colors = ['#ff007f', '#00f5d4', '#fee440', '#9b5de5', '#ff5400', '#00bbf9'];
-
-            const holiMatch = trimmed.match(/^!(?:holi|rang|pichkari)(?:\s+(.*))?$/i);
-            if (holiMatch) {
-                const target = (holiMatch || 'poore room').trim();
-                io.to(srvId).emit('chaosEvent', { type: 'holi', from: sender, target, colors, _serverId: srvId });
-                return io.to(srvId).emit('message', {
-                    username: '🎨 Holi Rang Bot',
-                    text: `💦🌈 **${sender}** ne **${target}** par neon gulal aur pichkari maar di! *Bura na mano Holi hai!*`,
-                    _serverId: srvId
-                });
-            }
-
-            const fxMatch = trimmed.match(/^!(barish|monsoon|diwali|patakha|aurora|meteor|tsunami|bijli|powercut)$/i);
-            if (fxMatch) {
-                const cmd = fxMatch.toLowerCase();
-                const map = {
-                    barish: ['barish', '🌧️ Mausam Bot', `⛈️☕ **${sender}** ne room mein **Monsoon Barish + Bijli** chalu kar di!`],
-                    monsoon: ['barish', '🌧️ Mausam Bot', `⛈️☕ **${sender}** ne room mein **Monsoon Barish + Bijli** chalu kar di!`],
-                    diwali: ['diwali', '🪔 Diwali Bot', `🎆💥 **${sender}** ne **Skyrocket Fireworks** chalu kar diye! Screen par tap karo rockets udane ke liye!`],
-                    patakha: ['diwali', '🪔 Diwali Bot', `🎆💥 **${sender}** ne **Skyrocket Fireworks** chalu kar diye! Screen par tap karo rockets udane ke liye!`],
-                    aurora: ['aurora', '🌌 Sky Bot', `✨🌌 **${sender}** ne aasman mein **Northern Lights (Aurora)** jala di!`],
-                    meteor: ['meteor', '☄️ Space Bot', `🌠🔥 **${sender}** ne room mein **Meteor Shower** bula liya!`],
-                    tsunami: ['tsunami', '🌊 Aqua Alert', `🌊📱 **${sender}** ne phone hila kar **5-Second Tsunami** laa di!`],
-                    bijli: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`],
-                    powercut: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`]
-                };
-                const [fxType, botName, msgText] = map[cmd];
-                io.to(srvId).emit('chaosEvent', { type: fxType, from: sender, colors, _serverId: srvId });
-                return io.to(srvId).emit('message', { username: botName, text: msgText, _serverId: srvId });
-            }
-        });
-    });
-    // ==================== END PIECE 2 ====================
-
-    // ==================== PIECE 3: AI DJ AUDIO BAR + MULTIPLAYER GLOWING CURSOR RIBBONS ====================
-    const PIECE3_UI_HTML = `
+             
+     // ==================== PIECE 3 & 4: AI DJ BAR + GLOW TRAILS + PURE PHONE SHAKE ====================
+    const PIECE3_AND_4_HTML = `
     <div id="aiDjBox" style="display:none;position:fixed;bottom:76px;left:12px;z-index:999990;background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(49,16,66,0.95));backdrop-filter:blur(10px);border:2px solid #38bdf8;border-radius:16px;padding:8px 11px;width:270px;color:#fff;box-shadow:0 8px 28px rgba(56,189,248,0.45);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px;font-weight:900;">
         <span id="aiDjTitle" style="color:#fde047;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:195px;">🎧 AI DJ Ready</span>
@@ -11204,9 +11182,8 @@ Rules:
 
     <canvas id="sammuAuraCanvas" style="pointer-events:none;position:fixed;inset:0;width:100vw;height:100vh;z-index:999985;"></canvas>
 
-    <script id="piece3ClientBoot">
+    <script id="piece3And4Boot">
     (function() {
-      // 1. Setup Multiplayer Glowing Cursor/Touch Ribbon Canvas
       const auraCanvas = document.getElementById('sammuAuraCanvas');
       const actx = auraCanvas ? auraCanvas.getContext('2d') : null;
       function resizeAura() {
@@ -11218,30 +11195,27 @@ Rules:
       resizeAura();
 
       const myColors = ['#38bdf8', '#f472b6', '#a78bfa', '#34d399', '#facc15', '#fb923c'];
-      const myAuraColor = myColors[Math.floor(Math.random() * myColors.length)];
-      const trails = {}; // id -> { name, color, points: [{x, y, life}] }
+      const myAuraColor = myColors.at(Math.floor(Math.random() * myColors.length));
+      const trails = {};
       let lastEmit = 0;
 
       function addTrailPoint(id, name, color, x, y) {
         if (!trails[id]) trails[id] = { name, color, points: [] };
-        trails[id].name = name;
-        trails[id].color = color;
+        trails[id].name = name; trails[id].color = color;
         trails[id].points.push({ x, y, life: 1.0 });
         if (trails[id].points.length > 22) trails[id].points.shift();
       }
 
-      function handleLocalMove(clientX, clientY) {
+      function handleLocalMove(x, y) {
         const myName = (window.currentUsername || localStorage.getItem('username') || 'You').slice(0, 14);
-        addTrailPoint('me', myName, myAuraColor, clientX, clientY);
-
+        addTrailPoint('me', myName, myAuraColor, x, y);
         const now = Date.now();
         if (typeof socket !== 'undefined' && socket.connected && now - lastEmit > 45) {
           lastEmit = now;
           socket.emit('cursorAura', {
-            nx: clientX / Math.max(1, window.innerWidth),
-            ny: clientY / Math.max(1, window.innerHeight),
-            color: myAuraColor,
-            name: myName,
+            nx: x / Math.max(1, window.innerWidth),
+            ny: y / Math.max(1, window.innerHeight),
+            color: myAuraColor, name: myName,
             serverId: window.selectedServerId || 'global'
           });
         }
@@ -11249,7 +11223,8 @@ Rules:
 
       window.addEventListener('mousemove', e => handleLocalMove(e.clientX, e.clientY), { passive: true });
       window.addEventListener('touchmove', e => {
-        if (e.touches && e.touches) handleLocalMove(e.touches.clientX, e.touches.clientY);
+        const t = e.touches && e.touches.item(0);
+        if (t) handleLocalMove(t.clientX, t.clientY);
       }, { passive: true });
 
       function drawAuras() {
@@ -11258,46 +11233,70 @@ Rules:
           for (const id of Object.keys(trails)) {
             const t = trails[id];
             if (!t.points.length) { delete trails[id]; continue; }
-
             for (let i = 1; i < t.points.length; i++) {
-              const p0 = t.points[i - 1], p1 = t.points[i];
-              actx.beginPath();
-              actx.moveTo(p0.x, p0.y);
-              actx.lineTo(p1.x, p1.y);
-              actx.strokeStyle = t.color;
-              actx.globalAlpha = Math.max(0, p1.life * 0.75);
-              actx.lineWidth = Math.max(1.5, p1.life * 6);
-              actx.lineCap = 'round';
-              actx.shadowBlur = 12;
-              actx.shadowColor = t.color;
-              actx.stroke();
+              const p0 = t.points.at(i - 1), p1 = t.points.at(i);
+              actx.beginPath(); actx.moveTo(p0.x, p0.y); actx.lineTo(p1.x, p1.y);
+              actx.strokeStyle = t.color; actx.globalAlpha = Math.max(0, p1.life * 0.75);
+              actx.lineWidth = Math.max(1.5, p1.life * 6); actx.lineCap = 'round';
+              actx.shadowBlur = 12; actx.shadowColor = t.color; actx.stroke();
             }
-
-            const head = t.points[t.points.length - 1];
+            const head = t.points.at(-1);
             if (id !== 'me' && head && head.life > 0.25) {
-              actx.globalAlpha = head.life;
-              actx.fillStyle = '#ffffff';
-              actx.font = 'bold 11px sans-serif';
+              actx.globalAlpha = head.life; actx.fillStyle = '#ffffff'; actx.font = 'bold 11px sans-serif';
               actx.fillText('✨ ' + t.name, head.x + 10, head.y - 8);
             }
-
             for (let i = t.points.length - 1; i >= 0; i--) {
-              t.points[i].life -= 0.045;
-              if (t.points[i].life <= 0) t.points.splice(i, 1);
+              t.points.at(i).life -= 0.045;
+              if (t.points.at(i).life <= 0) t.points.splice(i, 1);
             }
           }
-          actx.globalAlpha = 1;
-          actx.shadowBlur = 0;
+          actx.globalAlpha = 1; actx.shadowBlur = 0;
         }
         requestAnimationFrame(drawAuras);
       }
       requestAnimationFrame(drawAuras);
 
-      // 2. Bind Socket Events for AI DJ & Remote Cursor Auras
-      const waitP3 = setInterval(function() {
-        if (typeof socket === 'undefined' || window._piece3Bound) return;
-        window._piece3Bound = true;
-        clearInterval(waitP3);
+      // Pure Phone Shake Listener (Zero extra buttons on screen!)
+      const RANDOM_CMDS = ['!holi', '!barish', '!diwali', '!aurora', '!meteor', '!tsunami', '!bijli'];
+      let lastShakeAt = 0, lastX = null, lastY = null, lastZ = null;
+
+      window.triggerRandomSpectacle = function() {
+        const now = Date.now();
+        if (now - lastShakeAt < 5200) return;
+        lastShakeAt = now;
+        const pick = RANDOM_CMDS.at(Math.floor(Math.random() * RANDOM_CMDS.length));
+        if (typeof window.runLocalSpectacle === 'function') {
+          window.runLocalSpectacle(pick.replace('!', ''));
+        }
+        if (typeof socket !== 'undefined' && socket.connected) {
+          socket.emit('chatMessage', { text: pick, serverId: window.selectedServerId || 'global' });
+        }
+      };
+
+      function onMotion(e) {
+        const acc = e.accelerationIncludingGravity || e.acceleration;
+        if (!acc || acc.x === null) return;
+        if (lastX !== null) {
+          const delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY) + Math.abs(acc.z - lastZ);
+          if (delta > 19) window.triggerRandomSpectacle();
+        }
+        lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+      }
+
+      window.addEventListener('devicemotion', onMotion, { passive: true });
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        window.addEventListener('touchstart', function askIOS() {
+          DeviceMotionEvent.requestPermission().then(state => {
+            if (state === 'granted') window.addEventListener('devicemotion', onMotion, { passive: true });
+          }).catch(() => {});
+        }, { once: true });
+      }
+
+      // Bind AI DJ & Cursor Aura Socket Listeners
+      const waitP34 = setInterval(function() {
+        if (typeof socket === 'undefined' || window._piece34Bound) return;
+        window._piece34Bound = true;
+        clearInterval(waitP34);
 
         socket.on('cursorAura', function(d) {
           if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
@@ -11306,28 +11305,18 @@ Rules:
 
         socket.on('aiPlaySong', async function(d) {
           if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
-          const box = document.getElementById('aiDjBox');
-          const title = document.getElementById('aiDjTitle');
-          const audio = document.getElementById('aiDjAudio');
+          const box = document.getElementById('aiDjBox'), title = document.getElementById('aiDjTitle'), audio = document.getElementById('aiDjAudio');
           if (!box || !audio) return;
-
-          box.style.display = 'block';
-          title.textContent = '⏳ Loading: ' + d.query;
+          box.style.display = 'block'; title.textContent = '⏳ Loading: ' + d.query;
           try {
             const res = await fetch('/ai-song?q=' + encodeURIComponent(d.query));
             const data = await res.json();
             if (data && data.url) {
               title.textContent = '🎵 ' + data.title + (data.artist ? ' - ' + data.artist : '');
               audio.src = data.url;
-              audio.play().catch(function() {
-                title.textContent = '▶️ Tap Play: ' + data.title;
-              });
-            } else {
-              title.textContent = '❌ Song not found';
-            }
-          } catch (e) {
-            title.textContent = '⚠️ Audio stream busy';
-          }
+              audio.play().catch(function() { title.textContent = '▶️ Tap Play: ' + data.title; });
+            } else { title.textContent = '❌ Song not found'; }
+          } catch (e) { title.textContent = '⚠️ Audio stream busy'; }
         });
       }, 500);
     })();
@@ -11336,84 +11325,16 @@ Rules:
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece3ClientBoot')) {
-                body = body.replace('</body>', PIECE3_UI_HTML + '\n</body>');
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece3And4Boot')) {
+                body = body.replace('</body>', PIECE3_AND_4_HTML + '\n</body>');
             }
             return origSend.call(this, body);
         };
         next();
     });
-    // ==================== END PIECE 3 ====================
-    // ==================== PIECE 4: RANDOM 5-SEC PHONE SHAKE + FLOATING MAGIC TRIGGER ====================
-    const PIECE4_SHAKE_HTML = `
-    <button id="sammuChaosPill" title="Trigger Random 5s Room Spectacle (or Shake Phone!)" style="position:fixed;bottom:76px;right:14px;z-index:999991;background:linear-gradient(135deg,#ec4899,#8b5cf6,#06b6d4);color:#fff;font-weight:900;border:2px solid rgba(255,255,255,0.85);border-radius:999px;padding:8px 14px;font-size:12px;box-shadow:0 6px 20px rgba(139,92,246,0.55);cursor:pointer;display:flex;align-items:center;gap:5px;">
-      <span>✨ Shake / FX</span>
-    </button>
-
-    <script id="piece4ShakeBoot">
-    (function() {
-      const RANDOM_CMDS = ['!holi', '!barish', '!diwali', '!aurora', '!meteor', '!tsunami', '!bijli'];
-      let lastShakeAt = 0;
-
-      window.triggerRandomSpectacle = function() {
-        const now = Date.now();
-        if (now - lastShakeAt < 5200) return; // 5-second cooldown so effects don't overlap
-        lastShakeAt = now;
-
-        const pick = RANDOM_CMDS[Math.floor(Math.random() * RANDOM_CMDS.length)];
-        if (typeof socket !== 'undefined' && socket.connected) {
-          socket.emit('chatMessage', {
-            text: pick,
-            serverId: window.selectedServerId || 'global'
-          });
-        } else if (typeof window.runLocalSpectacle === 'function') {
-          window.runLocalSpectacle(pick.replace('!', ''));
-        }
-      };
-
-      const pill = document.getElementById('sammuChaosPill');
-      if (pill) pill.onclick = window.triggerRandomSpectacle;
-
-      // Phone Shake Accelerometer Listener
-      let lastX = null, lastY = null, lastZ = null;
-      function onMotion(e) {
-        const acc = e.accelerationIncludingGravity || e.acceleration;
-        if (!acc || acc.x === null) return;
-        if (lastX !== null) {
-          const delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY) + Math.abs(acc.z - lastZ);
-          if (delta > 28) {
-            window.triggerRandomSpectacle();
-          }
-        }
-        lastX = acc.x; lastY = acc.y; lastZ = acc.z;
-      }
-
-      if (typeof DeviceMotionEvent !== 'undefined') {
-        if (typeof DeviceMotionEvent.requestPermission === 'function') {
-          window.addEventListener('click', function askMotionOnce() {
-            DeviceMotionEvent.requestPermission().then(state => {
-              if (state === 'granted') window.addEventListener('devicemotion', onMotion);
-            }).catch(() => {});
-            window.removeEventListener('click', askMotionOnce);
-          });
-        } else {
-          window.addEventListener('devicemotion', onMotion);
-        }
-      }
-    })();
-    </script>`;
-
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece4ShakeBoot')) {
-                body = body.replace('</body>', PIECE4_SHAKE_HTML + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
-    // ==================== END PIECE 4 ====================
+    // ==================== END PIECE 3 & 4 ====================
+           
+    
 
     // ==================== PIECE 5A: SPECTACLE CANVAS & CORE SETUP ====================
     const PIECE5_PART1 = `

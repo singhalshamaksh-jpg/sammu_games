@@ -12336,8 +12336,9 @@ div>') +
         rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
       });
     }`;
-        // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — AUTO-MODEL + CHAT MEMORY
+                        
+    // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — SMART SCANNER + CHAT MEMORY
     // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
@@ -12346,7 +12347,7 @@ div>') +
     let cachedModelPool = null;
 
     function getHackClubModelPool(apiKey) {
-        if (cachedModelPool) return Promise.resolve(cachedModelPool);
+        if (cachedModelPool && cachedModelPool.length > 0) return Promise.resolve(cachedModelPool);
         return new Promise((resolve) => {
             const req = hcHttps.request({
                 hostname: ['ai', 'hackclub', 'com'].join('.'),
@@ -12360,11 +12361,18 @@ div>') +
                     try {
                         const parsed = JSON.parse(raw);
                         const list = Array.isArray(parsed.data) ? parsed.data : [];
-                        const nonFree = list
+                        const cleanIds = list
                             .map(m => m && m.id)
-                            .filter(id => id && !String(id).includes(':free') && !/embed|whisper|tts|dall-e|image|vision-only/i.test(id));
-                        const priority = nonFree.filter(id => /flash|mini|qwen|llama|deepseek|gemini|gpt|mistral/i.test(id));
-                        cachedModelPool = [...new Set([...priority, ...nonFree])].slice(0, 25);
+                            .filter(id =>
+                                id &&
+                                !String(id).includes(':') &&
+                                !/embed|whisper|tts|dall-e|image|audio|moderation|guard|rerank|realtime|codex/i.test(id)
+                            );
+                        // Prioritize fast, lightweight chat models that Hack Club subsidizes
+                        const fastChat = cleanIds.filter(id =>
+                            /mini|flash|nano|lite|8b|7b|9b|12b|14b|24b|27b|32b|70b|qwen|llama|gemma|mistral|deepseek|glm|kimi/i.test(id)
+                        );
+                        cachedModelPool = [...new Set([...fastChat, ...cleanIds])];
                         resolve(cachedModelPool);
                     } catch (e) {
                         resolve([]);
@@ -12406,7 +12414,7 @@ div>') +
             const payload = JSON.stringify({
                 model: modelId,
                 messages,
-                max_tokens: 420,
+                max_tokens: 400,
                 temperature: 0.7
             });
 
@@ -12440,7 +12448,7 @@ div>') +
             });
 
             req.on('error', (err) => resolve({ ok: false, status: 0, raw: err.message }));
-            req.setTimeout(12000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
+            req.setTimeout(8000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
             req.write(payload);
             req.end();
         });
@@ -12460,6 +12468,8 @@ div>') +
                     return res.reply;
                 }
                 lastErr = res;
+                // If key itself is invalid (401), stop immediately
+                if (res.status === 401) break;
             }
 
             cachedWorkingModel = null;
@@ -12481,6 +12491,16 @@ div>') +
                 return io.to(srvId).emit('message', {
                     username: "🌌 SammuVerse AI ProMax",
                     text: '🧹 Conversation memory wiped! Ready for a fresh topic!',
+                    _serverId: srvId
+                });
+            }
+
+            if (low === '!aimodels') {
+                const apiKey = (process.env.HACKCLUB_AI_KEY || '').trim();
+                const pool = await getHackClubModelPool(apiKey);
+                return io.to(srvId).emit('message', {
+                    username: "🌌 SammuVerse AI ProMax",
+                    text: `🤖 Active model: **${cachedWorkingModel || 'Scanning...'}** | Pool (${pool.length}): ${pool.slice(0, 8).join(', ')}`,
                     _serverId: srvId
                 });
             }

@@ -11037,13 +11037,8 @@ div>') +
                     tsunami: ['tsunami', '🌊 Aqua Alert', `🌊📱 **${sender}** ne phone hila kar **5-Second Tsunami** laa di!`],
                     bijli: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`],
                     powercut: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`]
-                };
-                const [fxType, botName, msgText] = map[cmd];
-                io.to(srvId).emit('chaosEvent', { type: fxType, from: sender, colors, _serverId: srvId });
-                return io.to(srvId).emit('message', { username: botName, text: msgText, _serverId: srvId });
-            }
-
-            // 2. SammuVerse Pro Max AI (!ai <question>)
+            
+            // 2. SammuVerse AI (!ai <question>) — Dual Key + Free Models
             const aiMatch = trimmed.match(/^!ai\s+(.+)/i);
             if (!aiMatch) return;
             const question = aiMatch.at(1).trim();
@@ -11056,38 +11051,59 @@ div>') +
             const systemPrompt = `You are SammuVerse AI, a super fast, witty, slightly roasty Hinglish genius DJ & visual director on SammuGames.
 Rules:
 1. Reply in 5-12 punchy sentences STRICTLY under 2500 characters total.
-2. Playful, funny roasts + 100% accurate facts (science, math, coding, gaming, Bollywood, astrology,fun).
+2. Playful, funny roasts + 100% accurate facts.(science,history,trivia, general knowledge,coding astrology even etc)
 3. Remember the last 10 room messages. Never output <think> tags.
-4. MUSIC DJ POWER: If the user asks to play a song or music (e.g. "play softly", "gaana bajao"), append [PLAY:exact song name] at the very end.
-5. VISUAL POWER: If the user asks for an effect or mentions rain, holi, fireworks, aurora, meteor, tsunami, or power cut, append ONE of [FX:holi], [FX:barish], [FX:diwali], [FX:aurora], [FX:meteor], [FX:tsunami], or [FX:bijli] at the end.`;
+4. MUSIC DJ: If user asks to play a song, append [PLAY:exact song name] at the end.
+5. VISUAL FX: If user asks for rain, holi, fireworks, aurora, meteor, tsunami, or power cut, append ONE of [FX:holi], [FX:barish], [FX:diwali], [FX:aurora], [FX:meteor], [FX:tsunami], or [FX:bijli] at the end.`;
 
             try {
-                const ctrl = new AbortController();
-                const timeout = setTimeout(() => ctrl.abort(), 8000);
+                const apiKeys = [process.env.HACKCLUB_AI_KEY, process.env.HACKCLUB_AI_KEY_2].filter(Boolean);
+                const models = ['particle-ai/particle-1:free', 'nvidia/nemotron-3.5-super-vl:free'];
+                let reply = '';
+                let lastErr = '';
 
-                const aiRes = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+                outerLoop:
+                for (const key of apiKeys) {
+                    for (const mdl of models) {
+                        try {
+                            const ctrl = new AbortController();
+                            const timeout = setTimeout(() => ctrl.abort(), 8000);
+                            const aiRes = await fetch('https://hackclub.com', {
+                                method: 'POST',
+                                signal: ctrl.signal,
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${key}`
+                                },
+                                body: JSON.stringify({
+                                    model: mdl,
+                                    messages: [{ role: 'system', content: systemPrompt }, ...history],
+                                    max_tokens: 130,
+                                    temperature: 0.85
+                                })
+                            });
+                            clearTimeout(timeout);
 
-                    method: 'POST',
-                    signal: ctrl.signal,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(process.env.HACKCLUB_AI_KEY ? { 'Authorization': `Bearer ${process.env.HACKCLUB_AI_KEY}` } : {})
-                    },
-                    body: JSON.stringify({
-                       model: 'particle-ai/particle-1:free',
-                        messages: [{ role: 'system', content: systemPrompt }, ...history],
-                        max_tokens: 130,
-                        temperature: 0.85
-                    })
-                });
-                clearTimeout(timeout);
+                            const aiData = await aiRes.json();
+                            const firstChoice = Array.isArray(aiData?.choices) ? aiData.choices.at(0) : null;
+                            if (firstChoice?.message?.content) {
+                                reply = firstChoice.message.content;
+                                break outerLoop;
+                            }
+                            lastErr = aiData?.error?.message || `HTTP ${aiRes.status}`;
+                        } catch (e) {
+                            lastErr = e.message || 'Timeout';
+                        }
+                    }
+                }
 
-                const aiData = await aiRes.json();
-                const firstChoice = Array.isArray(aiData?.choices) ? aiData.choices.at(0) : null;
-                let reply = (firstChoice?.message?.content || 'Brain lag ho gaya bro, phir pooch! 🤯')
-                    .replace(/<think>[\s\S]*?<\/think>/gi, '')
-                    .replace(/\s+/g, ' ')
-                    .trim();
+                if (!reply) {
+                    reply = apiKeys.length === 0
+                        ? '⚠️ Add HACKCLUB_AI_KEY in Railway Variables!'
+                        : `⚠️ AI Busy (${lastErr})`;
+                }
+
+                reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/\s+/g, ' ').trim();
 
                 const playTag = reply.match(/\[PLAY:([^\]]+)\]/i);
                 if (playTag && playTag.at(1)) {
@@ -11107,17 +11123,9 @@ Rules:
                 history.push({ role: 'assistant', content: reply });
                 while (history.length > 10) history.shift();
 
-                io.to(srvId).emit('message', {
-                    username: '🌌 SammuVerse AI',
-                    text: `**@${sender}:** ${reply}`,
-                    _serverId: srvId
-                });
+                io.to(srvId).emit('message', { username: '🌌 SammuVerse AI', text: `**@${sender}:** ${reply}`, _serverId: srvId });
             } catch (err) {
-                io.to(srvId).emit('message', {
-                    username: '🌌 SammuVerse AI',
-                    text: `⚡ **@${sender}:** Server thoda tez bhaag gaya, 2 sec baad try kar!`,
-                    _serverId: srvId
-                });
+                io.to(srvId).emit('message', { username: '🌌 SammuVerse AI', text: `⚡ **@${sender}:** Server thoda tez bhaag gaya, 2 sec baad try kar!`, _serverId: srvId });
             }
         });
     });

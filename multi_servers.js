@@ -12374,23 +12374,24 @@ div>') +
             req.end();
         });
     }
-async function findOnlineSongStream(songQuery) {
-    try {
-        const q = encodeURIComponent(songQuery);
-        const res = await fetch(`https://audius.co{q}&limit=1&app_name=SammuGames`);
-        if (res.ok) {
-            const json = await res.json();
-            const track = Array.isArray(json.data) ? json.data.at(0) : null;
-            if (track && track.id) {
-                return {
-                    title: `${track.title} — ${track.user?.name || 'Artist'}`,
-                    url: `https://audius.co{track.id}/stream?app_name=SammuGames`
-                };
+
+    async function findOnlineSongStream(songQuery) {
+        try {
+            const q = encodeURIComponent(songQuery);
+            const res = await fetch(`https://audius.co{q}&limit=1&app_name=SammuGames`);
+            if (res.ok) {
+                const json = await res.json();
+                const track = Array.isArray(json.data) ? json.data.at(0) : null;
+                if (track && track.id) {
+                    return {
+                        title: `${track.title} — ${track.user?.name || 'Artist'}`,
+                        url: `https://audius.co{track.id}/stream?app_name=SammuGames`
+                    };
+                }
             }
-        }
-    } catch (e) {}
-    return null;
-}
+        } catch (e) {}
+        return null;
+    }
 
     
 
@@ -12550,18 +12551,32 @@ async function findOnlineSongStream(songQuery) {
                 });
             }
             aiCooldownByUser.set(socket.id, now);
-            const srvName = (serversDB[srvId] && serversDB[srvId].name) || 'SammuGames Arena';
+                        const srvName = (serversDB[srvId] && serversDB[srvId].name) || 'SammuGames Arena';
             const result = await askSammuVerseProMax(question, sender, srvName, srvId);
+
+            let streamInfo = null;
+            if (result.action === 'PLAY_SONG' && result.songQuery) {
+                streamInfo = await findOnlineSongStream(result.songQuery);
+            }
 
             if (result.action) {
                 io.to(srvId).emit('proMaxAction', {
                     action: result.action,
-                    songQuery: result.songQuery || null,
-                    songTitle: result.songQuery || null,
+                    songQuery: result.songQuery,
+                    streamUrl: streamInfo ? streamInfo.url : null,
+                    songTitle: streamInfo ? streamInfo.title : result.songQuery,
                     by: sender,
                     _serverId: srvId
                 });
             }
+
+            const nowPlayingTag = (streamInfo && streamInfo.title) ? `\n🎵 **Now Playing:** ${streamInfo.title}` : '';
+            io.to(srvId).emit('message', {
+                username: "🌌 SammuVerse AI ProMax",
+                text: `**@${sender}:** ${result.text}${nowPlayingTag}`,
+                _serverId: srvId
+            });
+
 
             const nowPlayingTag = (result.action === 'PLAY_SONG' && result.songQuery)
                 ? `\n🎵 **Now Playing:** ${result.songQuery}`

@@ -12336,9 +12336,8 @@ div>') +
         rctx.beginPath(); rctx.arc(s.x * scale, s.y * scale, id === myId ? 3.5 : 2.2, 0, Math.PI * 2); rctx.fill();
       });
     }`;
-                        
     // ============================================================================
-    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — SMART SCANNER + CHAT MEMORY
+    // 🌌 SAMMUVERSE AI PROMAX (!promax / !ai) — PARTICLE-1 FREE + CHAT MEMORY
     // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
@@ -12361,25 +12360,17 @@ div>') +
                     try {
                         const parsed = JSON.parse(raw);
                         const list = Array.isArray(parsed.data) ? parsed.data : [];
-                        const cleanIds = list
-                            .map(m => m && m.id)
-                            .filter(id =>
-                                id &&
-                                !String(id).includes(':') &&
-                                !/embed|whisper|tts|dall-e|image|audio|moderation|guard|rerank|realtime|codex/i.test(id)
-                            );
-                        // Prioritize fast, lightweight chat models that Hack Club subsidizes
-                        const fastChat = cleanIds.filter(id =>
-                            /mini|flash|nano|lite|8b|7b|9b|12b|14b|24b|27b|32b|70b|qwen|llama|gemma|mistral|deepseek|glm|kimi/i.test(id)
-                        );
-                        cachedModelPool = [...new Set([...fastChat, ...cleanIds])];
+                        const freeIds = list
+                            .filter(m => m && m.id && (String(m.id).includes(':free') || (m.pricing && Number(m.pricing.prompt) === 0)))
+                            .map(m => m.id);
+                        cachedModelPool = [...new Set(['particle-ai/particle-1:free', ...freeIds])];
                         resolve(cachedModelPool);
                     } catch (e) {
-                        resolve([]);
+                        resolve(['particle-ai/particle-1:free']);
                     }
                 });
             });
-            req.on('error', () => resolve([]));
+            req.on('error', () => resolve(['particle-ai/particle-1:free']));
             req.end();
         });
     }
@@ -12414,7 +12405,7 @@ div>') +
             const payload = JSON.stringify({
                 model: modelId,
                 messages,
-                max_tokens: 400,
+                max_tokens: 420,
                 temperature: 0.7
             });
 
@@ -12448,14 +12439,16 @@ div>') +
             });
 
             req.on('error', (err) => resolve({ ok: false, status: 0, raw: err.message }));
-            req.setTimeout(8000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
+            req.setTimeout(12000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
             req.write(payload);
             req.end();
         });
 
         return (async () => {
             const pool = await getHackClubModelPool(apiKey);
-            const candidates = cachedWorkingModel ? [cachedWorkingModel, ...pool] : pool;
+            const candidates = cachedWorkingModel
+                ? [cachedWorkingModel, 'particle-ai/particle-1:free', ...pool]
+                : ['particle-ai/particle-1:free', ...pool];
             let lastErr = { status: 0, raw: 'No models found' };
 
             for (const m of [...new Set(candidates)]) {
@@ -12468,7 +12461,6 @@ div>') +
                     return res.reply;
                 }
                 lastErr = res;
-                // If key itself is invalid (401), stop immediately
                 if (res.status === 401) break;
             }
 
@@ -12500,7 +12492,7 @@ div>') +
                 const pool = await getHackClubModelPool(apiKey);
                 return io.to(srvId).emit('message', {
                     username: "🌌 SammuVerse AI ProMax",
-                    text: `🤖 Active model: **${cachedWorkingModel || 'Scanning...'}** | Pool (${pool.length}): ${pool.slice(0, 8).join(', ')}`,
+                    text: `🤖 Active model: **${cachedWorkingModel || 'particle-ai/particle-1:free'}** | Free Pool (${pool.length}): ${pool.slice(0, 6).join(', ')}`,
                     _serverId: srvId
                 });
             }

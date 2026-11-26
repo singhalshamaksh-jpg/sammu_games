@@ -800,12 +800,105 @@ const NEW_ARENAS_WIDGET = `
 })();
 </script>
 `;
+const PROMAX_VOICE_WIDGET = `
+<script id="proMaxVoiceController">
+(function() {
+  let proMaxAudio = new Audio();
+  proMaxAudio.crossOrigin = 'anonymous';
+  window._proMaxVoiceOn = true;
+
+  function unlockAudio() {
+    try {
+      if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(' ');
+        u.volume = 0;
+        window.speechSynthesis.speak(u);
+      }
+    } catch (e) {}
+  }
+  window.addEventListener('pointerdown', unlockAudio, { once: true });
+  window.addEventListener('click', unlockAudio, { once: true });
+  window.addEventListener('keydown', unlockAudio, { once: true });
+
+  window.speakProMax = function(text) {
+    try {
+      if (!window._proMaxVoiceOn || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const clean = String(text || '')
+        .replace(/^\\*\\*@[^:]+:\\*\\*/g, '')
+        .replace(/[*_#~\`]|https?:\\/\\/\\S+/g, '')
+        .replace(/\\n🎵[\\s\\S]*/g, '')
+        .replace(/[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/gu, '')
+        .trim();
+      if (!clean) return;
+      const utter = new SpeechSynthesisUtterance(clean.slice(0, 240));
+      const voices = window.speechSynthesis.getVoices() || [];
+      const pick = voices.find(v => /hi-IN|en-IN|Google UK|English/i.test(v.lang + ' ' + v.name));
+      if (pick) utter.voice = pick;
+      utter.rate = 1.03;
+      utter.pitch = 1.05;
+      utter.volume = 1.0;
+      window.speechSynthesis.speak(utter);
+    } catch (e) {}
+  };
+
+  function bindProMaxSocket() {
+    if (typeof socket === 'undefined' || window._proMaxBound) return;
+    window._proMaxBound = true;
+
+    // Speak every SammuVerse AI ProMax message automatically
+    socket.on('message', function(msg) {
+      if (msg && typeof msg.username === 'string' && msg.username.includes('ProMax') && msg.text) {
+        window.speakProMax(msg.text);
+      }
+    });
+
+    // Handle live DJ & song stream actions
+    socket.on('proMaxAction', function(data) {
+      if (!data) return;
+      const act = data.action;
+      const audios = Array.from(document.querySelectorAll('audio, video'));
+      const btns = Array.from(document.querySelectorAll('button'));
+
+      if (act === 'PLAY_SONG' && data.streamUrl) {
+        audios.forEach(a => { if (!a.paused) a.pause(); });
+        proMaxAudio.pause();
+        proMaxAudio.src = data.streamUrl;
+        proMaxAudio.volume = 0.85;
+        proMaxAudio.play().catch(function(){});
+      } else if (act === 'STOP_DJ') {
+        proMaxAudio.pause();
+        audios.forEach(a => { if (!a.paused) a.pause(); });
+        const stopBtn = btns.find(b => /stop|pause|mute/i.test(b.textContent || ''));
+        if (stopBtn) stopBtn.click();
+      } else if (act === 'SOFT_VOL') {
+        proMaxAudio.volume = 0.25;
+        audios.forEach(a => { a.volume = 0.25; });
+      } else if (act === 'LOUD_VOL') {
+        proMaxAudio.volume = 1.0;
+        audios.forEach(a => { a.volume = 1.0; });
+      } else if (act === 'DISCO_TOGGLE') {
+        const discoBtn = btns.find(b => /disco/i.test(b.textContent || ''));
+        if (discoBtn) discoBtn.click();
+      }
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
+    bindProMaxSocket();
+    setTimeout(bindProMaxSocket, 1000);
+  });
+})();
+</script>
+`;
 
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');
     fs.readFile(indexPath, 'utf8', (err, html) => {
         if (err) return next();
-        const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET, app.locals.AVATAR_RPG_UI || '').join('\n');
+        const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET, PROMAX_VOICE_WIDGET, app.locals.AVATAR_RPG_UI || '').join('\n');
+
         res.send(html.replace('</body>', allWidgets + '\n<script src="/phonk-player.js"></script>\n</body>'));
     });
 });

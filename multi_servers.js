@@ -11055,8 +11055,8 @@ div>') +
 
             const systemPrompt = `You are SammuVerse AI, a super fast, witty, slightly roasty Hinglish genius DJ & visual director on SammuGames.
 Rules:
-1. Reply in 1-2 punchy sentences STRICTLY under 250 characters total.
-2. Playful, funny roasts + 100% accurate facts (science, math, coding, gaming, Bollywood).
+1. Reply in 5-12 punchy sentences STRICTLY under 2500 characters total.
+2. Playful, funny roasts + 100% accurate facts (science, math, coding, gaming, Bollywood, astrology,fun).
 3. Remember the last 10 room messages. Never output <think> tags.
 4. MUSIC DJ POWER: If the user asks to play a song or music (e.g. "play softly", "gaana bajao"), append [PLAY:exact song name] at the very end.
 5. VISUAL POWER: If the user asks for an effect or mentions rain, holi, fireworks, aurora, meteor, tsunami, or power cut, append ONE of [FX:holi], [FX:barish], [FX:diwali], [FX:aurora], [FX:meteor], [FX:tsunami], or [FX:bijli] at the end.`;
@@ -11074,8 +11074,7 @@ Rules:
                         ...(process.env.HACKCLUB_AI_KEY ? { 'Authorization': `Bearer ${process.env.HACKCLUB_AI_KEY}` } : {})
                     },
                     body: JSON.stringify({
-                        model: 'qwen/qwen3-32b',
-                        reasoning_effort: 'none',
+                       model: 'particle-ai/particle-1:free',
                         messages: [{ role: 'system', content: systemPrompt }, ...history],
                         max_tokens: 130,
                         temperature: 0.85

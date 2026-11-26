@@ -37,7 +37,7 @@ jobs:
           (async () => {
             const apiKey = (process.env.HACKCLUB_AI_KEY || "").trim();
             if (!apiKey) throw new Error("Missing HACKCLUB_AI_KEY secret");
-            const base = ["https://ai", "hackclub", "com/proxy/v1"].join(".");
+            const base = ["https://ai", "hackclub", "com"].join(".") + "/proxy/v1";
 
             let codingModels = ["baidu/ernie-5.5-flash-preview:free"];
             try {
@@ -63,15 +63,18 @@ jobs:
               "CODEBASE:",
               bundle,
               "",
-              "IMPORTANT OUTPUT FORMAT (DO NOT USE JSON):",
-              "Start with:",
+              "CRITICAL RULES:",
+              "1. In ===FILE_START: filename=== put ONLY the exact filename (e.g. server.js or multi_servers.js), NO extra text or parentheses.",
+              "2. Output the ENTIRE, COMPLETE file from line 1 to the last line—NEVER output partial snippets or omit existing functions.",
+              "3. Output each modified file ONCE.",
+              "",
+              "OUTPUT FORMAT:",
               "===SUMMARY===",
               "(1-2 sentence explanation of fixes)",
               "===END_SUMMARY===",
               "",
-              "Then for EACH modified file, output its COMPLETE updated code wrapped in exact markers (no markdown code fences):",
               "===FILE_START: exact_filename.js===",
-              "(complete updated file content)",
+              "(COMPLETE updated file from top to bottom)",
               "===FILE_END==="
             ].join("\n");
 
@@ -117,22 +120,24 @@ jobs:
               const headerEnd = chunk.indexOf("===");
               const fileEnd = chunk.indexOf("===FILE_END===");
               if (headerEnd === -1 || fileEnd === -1) continue;
-              const fileName = path.basename(chunk.slice(0, headerEnd).trim());
+              const rawHeader = chunk.slice(0, headerEnd).split("(").at(0).trim();
+              const fileName = path.basename(rawHeader);
               let lines = chunk.slice(headerEnd + 3, fileEnd).replace(/^\r?\n/, "").split(/\r?\n/);
               if (lines.length && lines.at(0).trim().startsWith("```")) lines.shift();
               if (lines.length && lines.at(-1).trim().startsWith("```")) lines.pop();
               const content = lines.join("\n");
-              if (fileName && content.trim().length > 0) {
+              if (fileName && fs.existsSync(fileName) && content.trim().length > 200) {
                 fs.writeFileSync(fileName, content, "utf8");
                 console.log("Wrote updated file: " + fileName);
                 updatedCount++;
               }
             }
 
-            if (updatedCount === 0) throw new Error("No ===FILE_START=== blocks found in AI reply");
+            if (updatedCount === 0) throw new Error("No valid ===FILE_START=== blocks found in AI reply");
 
             if (process.env.ISSUE_NUMBER) {
-              await fetch("https://github.com" + process.env.REPO_FULL + "/issues/" + process.env.ISSUE_NUMBER + "/comments", {
+              const ghApi = ["https://api", "github", "com"].join(".") + "/repos/" + process.env.REPO_FULL + "/issues/" + process.env.ISSUE_NUMBER + "/comments";
+              await fetch(ghApi, {
                 method: "POST",
                 headers: { "Authorization": "Bearer " + process.env.GITHUB_TOKEN, "Content-Type": "application/json", "User-Agent": "ERNIE-Coding-Bot" },
                 body: JSON.stringify({ body: "🤖 **Fixed by " + usedModel + " (" + updatedCount + " file(s) updated)!**\n\n" + summary + "\n\n✅ Syntax checked & pushed directly to main!" })

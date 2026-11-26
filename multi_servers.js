@@ -12487,30 +12487,83 @@ div>') +
         })();
     }
 
-    app.get('/ai-img', async (req, res) => {
-        const prompt = String(req.query.p || 'cyberpunk city').slice(0, 400);
+        const aiImgMiddleware = async (req, res, next) => {
+        const cleanPath = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
+        if (cleanPath !== '/ai-img') return next();
+
+        const prompt = String(req.query.p || 'cyberpunk city').slice(0, 350);
         const seed = Number(req.query.seed) || Math.floor(Math.random() * 999999);
+        const encoded = encodeURIComponent(prompt);
+
         const urls = [
-            `https://pollinations.ai{encodeURIComponent(prompt)}?width=768&height=768&seed=${seed}&nologo=true&model=turbo`,
-            `https://pollinations.ai{encodeURIComponent(prompt)}?width=512&height=512&seed=${seed}&nologo=true`
+            `https://pollinations.ai{encoded}?width=768&height=768&seed=${seed}&nologo=true&model=flux`,
+            `https://pollinations.ai{encoded}?width=512&height=512&seed=${seed}&nologo=true`
         ];
+
         for (const u of urls) {
             try {
-                const imgRes = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-                if (imgRes.ok) {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 9000);
+                const imgRes = await fetch(u, {
+                    signal: ctrl.signal,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8'
+                    }
+                });
+                clearTimeout(timer);
+                const contentType = imgRes.headers.get('content-type') || '';
+                if (imgRes.ok && contentType.startsWith('image/')) {
                     const buf = Buffer.from(await imgRes.arrayBuffer());
-                    if (buf.length > 2000) {
-                        res.setHeader('Content-Type', imgRes.headers.get('content-type') || 'image/jpeg');
+                    if (buf.length > 2500) {
+                        res.setHeader('Content-Type', contentType);
                         res.setHeader('Cache-Control', 'public, max-age=86400');
-                        return res.send(buf);
+                        return res.status(200).send(buf);
                     }
                 }
             } catch (e) {}
         }
-        res.status(502).send('Image generation busy');
-    });
+
+        const safeText = prompt.replace(/[<>&"']/g, '').slice(0, 40);
+        const svg = `<svg xmlns="http://w3.org" width="512" height="340">
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#311042"/>
+              <stop offset="50%" stop-color="#1e1b4b"/>
+              <stop offset="100%" stop-color="#0284c7"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="340" rx="22" fill="url(#bg)"/>
+          <rect x="10" y="10" width="492" height="320" rx="18" fill="none" stroke="#facc15" stroke-width="4"/>
+          <text x="256" y="120" font-size="60" text-anchor="middle">🎨✨</text>
+          <text x="256" y="185" fill="#fde047" font-family="sans-serif" font-size="22" font-weight="bold" text-anchor="middle">${safeText}</text>
+          <text x="256" y="230" fill="#bae6fd" font-family="sans-serif" font-size="14" text-anchor="middle">SammuVerse AI Studio</text>
+        </svg>`;
+        res.setHeader('Content-Type', 'image/svg+xml');
+        return res.status(200).send(svg);
+    };
+
+    app.use(aiImgMiddleware);
+    const aiStack = (app._router && app._router.stack) || (app.router && app.router.stack);
+    if (Array.isArray(aiStack)) {
+        const idx = aiStack.findIndex(l => l && l.handle === aiImgMiddleware);
+        if (idx > 0) {
+            const [layer] = aiStack.splice(idx, 1);
+            aiStack.unshift(layer);
+        }
+    }
+
+
+      
 
     io.on('connection', (socket) => {
+     socket.on('chatImage', (data) => {
+    const img = data && (data.image || data.imageUrl);
+    if (socket.activeServerId && typeof img === 'string') {
+        lastImageByServer.set(socket.activeServerId, img);
+    }
+
+     });     
         socket.on('chatMessage', async (payload) => {
             const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
             const attachedImg = (typeof payload === 'object' && payload) ? (payload.imageUrl || payload.image || null) : null;

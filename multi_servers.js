@@ -12337,165 +12337,72 @@ div>') +
       });
     }`;
         
+        // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX++ — PIECE 1/3: SETUP & SAFE VISION PROMPT
+    // ============================================================================
     const hcHttps = require('https');
     const aiCooldownByUser = new Map();
     const aiMemoryByServer = new Map();
-    let cachedWorkingModel = null;
-    let cachedModelPool = null;
+    const lastImageByServer = new Map();
 
-    function getHackClubModelPool(apiKey) {
-        if (cachedModelPool && cachedModelPool.length > 0) return Promise.resolve(cachedModelPool);
-        return new Promise((resolve) => {
-            const req = hcHttps.request({
-                hostname: ['ai', 'hackclub', 'com'].join('.'),
-                path: '/proxy/v1/models',
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Accept': 'application/json' }
-            }, (res) => {
-                let raw = '';
-                res.on('data', chunk => raw += chunk);
-                res.on('end', () => {
-                    try {
-                        const parsed = JSON.parse(raw);
-                        const list = Array.isArray(parsed.data) ? parsed.data : [];
-                        const freeIds = list
-                            .filter(m => m && m.id && (String(m.id).includes(':free') || (m.pricing && Number(m.pricing.prompt) === 0)))
-                            .map(m => m.id);
-                        cachedModelPool = [...new Set(['particle-ai/particle-1:free', ...freeIds])];
-                        resolve(cachedModelPool);
-                    } catch (e) {
-                        resolve(['particle-ai/particle-1:free']);
-                    }
-                });
-            });
-            req.on('error', () => resolve(['particle-ai/particle-1:free']));
-            req.end();
-        });
-    }
+    const PROMAX_FREE_MODELS = [
+        'nvidia/nemotron-3.5-super-vl:free',
+        'baidu/ernie-5.5-flash-preview:free',
+        'particle-ai/particle-1:free',
+        'liquid/lfm-3-1.7b:free'
+    ];
 
-          function httpGetJson(targetUrl) {
-        return new Promise((resolve) => {
-            try {
-                const u = new URL(targetUrl);
-                const req = hcHttps.get({
-                    hostname: u.hostname,
-                    path: u.pathname + u.search,
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Accept': 'application/json'
-                    }
-                }, (res) => {
-                    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-                        return resolve(httpGetJson(res.headers.location));
-                    }
-                    let raw = '';
-                    res.on('data', c => raw += c);
-                    res.on('end', () => {
-                        try { resolve(JSON.parse(raw)); } catch (e) { resolve(null); }
-                    });
-                });
-                req.on('error', () => resolve(null));
-                req.setTimeout(6000, () => { req.destroy(); resolve(null); });
-            } catch (e) { resolve(null); }
-        });
-    }
-
-    async function findOnlineSongStream(songQuery) {
-        const cleanQ = String(songQuery || '').replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-        const shortQ = cleanQ.split(' ').slice(0, 3).join(' ');
-        const q = encodeURIComponent(cleanQ);
-        const sq = encodeURIComponent(shortQ);
-
-        // 1. JioSaavn Mirrors (Full Bollywood, Punjabi & English tracks)
-        for (const host of ['https://saavn.dev', 'https://vercel.app']) {
-            const sJson = await httpGetJson(`${host}/api/search/songs?query=${q}&limit=1`);
-            const song = sJson?.data?.results?.at(0);
-            const dlList = Array.isArray(song?.downloadUrl) ? song.downloadUrl : [];
-            const bestStream = dlList.find(d => d.quality === '160kbps') || dlList.at(-1);
-            if (bestStream && (bestStream.url || bestStream.link)) {
-                const artist = song?.artists?.primary?.at(0)?.name || song?.primaryArtists || '';
-                return { title: artist ? `${song.name} — ${artist}` : song.name, url: bestStream.url || bestStream.link };
-            }
-        }
-
-        // 2. Audius Official API (Full Phonk, Kordhell & EDM tracks)
-        const aJson = await httpGetJson(`https://audius.co{sq}&limit=1`);
-        const aTrack = Array.isArray(aJson?.data) ? aJson.data.at(0) : null;
-        if (aTrack && aTrack.id) {
-            return {
-                title: `${aTrack.title} — ${aTrack.user?.name || 'Artist'}`,
-                url: `https://audius.co{aTrack.id}/stream`
-            };
-        }
-
-        // 3. Deezer Public Search API (Super fast, reliable CDN audio streams!)
-        const dJson = await httpGetJson(`https://deezer.com{sq}&limit=1`);
-        const dTrack = Array.isArray(dJson?.data) ? dJson.data.at(0) : null;
-        if (dTrack && dTrack.preview) {
-            return {
-                title: `${dTrack.title} — ${dTrack.artist?.name || 'Artist'}`,
-                url: dTrack.preview
-            };
-        }
-
-        // 4. iTunes Search API (Guaranteed global fallback)
-        const iJson = await httpGetJson(`https://apple.com{sq}&media=music&entity=song&limit=1`);
-        const iTrack = Array.isArray(iJson?.results) ? iJson.results.at(0) : null;
-        if (iTrack && iTrack.previewUrl) {
-            return {
-                title: `${iTrack.trackName} — ${iTrack.artistName}`,
-                url: iTrack.previewUrl
-            };
-        }
-
-        return null;
-    }
-
-      
-  
-
-    
-
-    function askSammuVerseProMax(userPrompt, senderName, serverName, srvId) {
+    function askSammuVerseProMax(userPrompt, senderName, serverName, srvId, imageUrl) {
         const apiKey = (process.env.HACKCLUB_AI_KEY || process.env.OPENAI_API_KEY || '')
             .replace(/^HACKCLUB_AI_KEY=/i, '')
             .replace(/^["']|["']$/g, '')
             .trim();
 
         if (!apiKey) {
-            return Promise.resolve({ text: '⚠️ AI Key missing! Add HACKCLUB_AI_KEY in Railway Variables.', action: null, songQuery: null });
+            return Promise.resolve({ text: '⚠️ AI Key missing! Add HACKCLUB_AI_KEY in Railway Variables.', imageOut: null });
         }
 
         if (!aiMemoryByServer.has(srvId)) aiMemoryByServer.set(srvId, []);
         const history = aiMemoryByServer.get(srvId);
 
         const tryModel = (modelId) => new Promise((resolve) => {
+            const isVisionModel = modelId.includes('super-vl');
+            const userContent = (imageUrl && isVisionModel)
+                ? [
+                    { type: 'text', text: `${senderName}: ${userPrompt}` },
+                    { type: 'image_url', image_url: { url: imageUrl } }
+                  ]
+                : `${senderName}: ${userPrompt}`;
+
             const messages = [
                 {
                     role: 'system',
                     content:
-                        `You are SammuVerse AI ProMax inside SammuGames (Server: "${serverName}"). ` +
-                        "You have encyclopedic knowledge (science, Big Bang, physics, places, roasts) AND you are the room's live DJ! " +
-                        "If the user asks to play a song in English or Hinglish (e.g. 'softly chalao', 'play softly by karan aujla', 'kesariya bajao', 'play phonk'), " +
-                        "append [ACTION:PLAY_SONG:Exact Song Name Artist] at the very end of your reply. " +
-                        "For other room controls, append one of:\n" +
-                        "- Stop / pause / gaana band karo -> [ACTION:STOP_DJ]\n" +
-                        "- Low volume / awaaz kam karo -> [ACTION:SOFT_VOL]\n" +
-                        "- Full volume / awaaz tez karo -> [ACTION:LOUD_VOL]\n" +
-                        "- Disco lights on/off -> [ACTION:DISCO_TOGGLE]\n" +
-                        "Keep replies hype, witty, and under 450 characters."
+                        `You are SammuVerse AI ProMax++, a brilliant, witty, and safety-conscious AI companion inside SammuGames (Server: "${serverName}"). ` +
+                        "You have complete knowledge of science, physics, the Big Bang, history, coding, anime, Bollywood, Hinglish, and pop culture. " +
+                        "You also have a built-in AI Photo Studio with strict safety rules:\n" +
+                        "1. If the user asks to generate/draw/create/animate an image or anime art (e.g. '!ai draw a cyberpunk samurai', '!ai anime boy in rain'), " +
+                        "reply enthusiastically and append [GEN_IMG: detailed safe English visual prompt] at the end.\n" +
+                        "2. PHOTO EDITING & CLOTHING SAFETY RULE (STRICT): Never generate NSFW, revealing, suggestive, or undressed imagery of anyone. " +
+                        "If an uploaded photo depicts a woman or girl, DO NOT allow arbitrary clothing changes—ONLY allow modest, respectful transformations from this whitelist: " +
+                        "(a) traditional/modest attire (royal silk saree, traditional lehenga, kurti, formal blazer, oversized hoodie, winter coat, or astronaut spacesuit), OR " +
+                        "(b) stylized 3D Pixar / anime / watercolor art portrait. If the user asks for any other clothing change on a woman's photo, politely refuse and list those allowed options.\n" +
+                        "3. For safe, approved photo edits, describe the subject + approved style in vivid English and append [GEN_IMG: safe detailed English prompt] at the end.\n" +
+                        "Keep replies warm, natural, and under 450 characters."
                 },
                 ...history.slice(-6),
-                { role: 'user', content: `${senderName}: ${userPrompt}` }
+                { role: 'user', content: userContent }
             ];
 
             const payload = JSON.stringify({
                 model: modelId,
                 messages,
-                max_tokens: 400,
-                temperature: 0.7
+                max_tokens: 450,
+                temperature: 0.72
             });
-
+    // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX++ — PIECE 2/3: API REQUEST & 4-MODEL RETRY LOOP
+    // ============================================================================
             const req = hcHttps.request({
                 hostname: ['ai', 'hackclub', 'com'].join('.'),
                 path: '/proxy/v1/chat/completions',
@@ -12517,7 +12424,9 @@ div>') +
                         const data = JSON.parse(raw);
                         const first = Array.isArray(data?.choices) ? data.choices.at(0) : null;
                         let reply = (first && first.message && first.message.content) || '';
-                        reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                        const thinkEnd = reply.indexOf('</think>');
+                        if (thinkEnd !== -1) reply = reply.slice(thinkEnd + 8);
+                        reply = reply.trim();
                         resolve({ ok: true, reply });
                     } catch (e) {
                         resolve({ ok: false, status: 500, raw: 'Parse error' });
@@ -12526,67 +12435,79 @@ div>') +
             });
 
             req.on('error', (err) => resolve({ ok: false, status: 0, raw: err.message }));
-            req.setTimeout(12000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
+            req.setTimeout(14000, () => { req.destroy(); resolve({ ok: false, status: 408, raw: 'Timeout' }); });
             req.write(payload);
             req.end();
         });
 
         return (async () => {
-            const pool = await getHackClubModelPool(apiKey);
-            const candidates = cachedWorkingModel
-                ? [cachedWorkingModel, 'particle-ai/particle-1:free', ...pool]
-                : ['particle-ai/particle-1:free', ...pool];
-            let lastErr = { status: 0, raw: 'No models found' };
+            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+            const orderedModels = imageUrl
+                ? PROMAX_FREE_MODELS
+                : [
+                    'baidu/ernie-5.5-flash-preview:free',
+                    'particle-ai/particle-1:free',
+                    'nvidia/nemotron-3.5-super-vl:free',
+                    'liquid/lfm-3-1.7b:free'
+                  ];
 
-            for (const m of [...new Set(candidates)]) {
-                const res = await tryModel(m);
-                if (res.ok && res.reply) {
-                    cachedWorkingModel = m;
-                    let cleanReply = res.reply;
-                    let action = null;
-                    let songQuery = null;
+            let lastErr = { status: 0, raw: 'No response' };
 
-                    const songMatch = cleanReply.match(/\[ACTION:PLAY_SONG:([^\]]+)\]/i);
-                    if (songMatch) {
-                        action = 'PLAY_SONG';
-                        songQuery = songMatch.at(1).trim();
-                        cleanReply = cleanReply.replace(/\[ACTION:PLAY_SONG:[^\]]+\]/gi, '').trim();
-                    } else {
-                        const actMatch = cleanReply.match(/\[ACTION:([A-Z_]+)\]/);
-                        if (actMatch) {
-                            action = actMatch.at(1);
-                            cleanReply = cleanReply.replace(/\[ACTION:[A-Z_]+\]/g, '').trim();
+            for (const m of orderedModels) {
+                for (let attempt = 1; attempt <= 2; attempt++) {
+                    const res = await tryModel(m);
+                    if (res.ok && res.reply) {
+                        let cleanReply = res.reply;
+                        let imageOut = null;
+
+                        const imgMatch = cleanReply.match(/\[GEN_IMG:([^\]]+)\]/i);
+                        if (imgMatch && imgMatch.at(1)) {
+                            const artPrompt = imgMatch.at(1).trim();
+                            cleanReply = cleanReply.replace(/\[GEN_IMG:[^\]]+\]/gi, '').trim();
+                            const seed = Math.floor(Math.random() * 999999);
+                            imageOut = `https://pollinations.ai{encodeURIComponent(artPrompt)}?width=768&height=768&seed=${seed}&nologo=true&model=flux`;
                         }
-                    }
 
-                    history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
-                    history.push({ role: 'assistant', content: cleanReply });
-                    if (history.length > 8) history.splice(0, history.length - 8);
-                    return { text: cleanReply, action, songQuery };
+                        history.push({ role: 'user', content: `${senderName}: ${userPrompt}` });
+                        history.push({ role: 'assistant', content: cleanReply });
+                        if (history.length > 8) history.splice(0, history.length - 8);
+                        return { text: cleanReply, imageOut };
+                    }
+                    lastErr = res;
+                    if (res.status === 401) break;
+                    if (res.status === 429 && attempt < 2) await sleep(1200);
+                    else break;
                 }
-                lastErr = res;
-                if (res.status === 401) break;
+                if (lastErr.status === 401) break;
             }
 
-            cachedWorkingModel = null;
-            return { text: `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`, action: null, songQuery: null };
+            return { text: `🌌 AI Error (${lastErr.status}): ${String(lastErr.raw || '').slice(0, 110)}`, imageOut: null };
         })();
     }
-               
+    // ============================================================================
+    // 🌌 SAMMUVERSE AI PROMAX++ — PIECE 3/3: SOCKET HANDLER & SAFETY GUARD
+    // ============================================================================
     io.on('connection', (socket) => {
         socket.on('chatMessage', async (payload) => {
             const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            const attachedImg = (typeof payload === 'object' && payload) ? (payload.imageUrl || payload.image || null) : null;
             const srvId = socket.activeServerId;
-            if (!srvId || typeof raw !== 'string') return;
+            if (!srvId) return;
 
+            if (attachedImg && typeof attachedImg === 'string' && (attachedImg.startsWith('data:image') || attachedImg.startsWith('http'))) {
+                lastImageByServer.set(srvId, attachedImg);
+            }
+
+            if (typeof raw !== 'string') return;
             const clean = raw.trim();
             const low = clean.toLowerCase();
 
             if (low === '!clearai' || low === '!resetai') {
                 aiMemoryByServer.delete(srvId);
+                lastImageByServer.delete(srvId);
                 return io.to(srvId).emit('message', {
-                    username: "🌌 SammuVerse AI ProMax",
-                    text: '🧹 Conversation memory wiped! Ready for a fresh topic!',
+                    username: "🌌 SammuVerse AI ProMax++",
+                    text: '🧹 Memory & photo buffer cleared! Ready for a fresh start!',
                     _serverId: srvId
                 });
             }
@@ -12604,38 +12525,39 @@ div>') +
             const lastUsed = aiCooldownByUser.get(socket.id) || 0;
             if (now - lastUsed < 3500) {
                 return socket.emit('message', {
-                    username: "🌌 SammuVerse AI ProMax",
+                    username: "🌌 SammuVerse AI ProMax++",
                     text: '⏳ Cooling down quantum cores—wait 3 seconds!',
                     _serverId: srvId
                 });
             }
             aiCooldownByUser.set(socket.id, now);
-                        const srvName = (serversDB[srvId] && serversDB[srvId].name) || 'SammuGames Arena';
-            const result = await askSammuVerseProMax(question, sender, srvName, srvId);
 
-            let streamInfo = null;
-            if (result.action === 'PLAY_SONG' && result.songQuery) {
-                streamInfo = await findOnlineSongStream(result.songQuery);
-            }
-
-            if (result.action) {
-                io.to(srvId).emit('proMaxAction', {
-                    action: result.action,
-                    songQuery: result.songQuery,
-                    streamUrl: streamInfo ? streamInfo.url : null,
-                    songTitle: streamInfo ? streamInfo.title : result.songQuery,
-                    by: sender,
+            // Hard server-side safety filter against NSFW or unauthorized clothing edits
+            const unsafeClothingRegex = /\b(nude|naked|nsfw|bikini|swimsuit|lingerie|bra|panty|undress|strip|cleavage|revealing|sexy|hot|transparent|see-through|boob|breast|ass|thigh|topless|bottomless|remove\s+cloth|take\s+off)\b/i;
+            if (unsafeClothingRegex.test(question)) {
+                return io.to(srvId).emit('message', {
+                    username: "🌌 SammuVerse AI ProMax++",
+                    text: `**@${sender}:** 🛡️ Sorry! I only support safe, respectful edits—like **3D Anime / Pixar style**, **Royal Saree**, **Formal Blazer**, **Hoodie**, or **Astronaut Suit**.`,
                     _serverId: srvId
                 });
             }
 
-            const nowPlayingTag = (streamInfo && streamInfo.title) ? `\n🎵 **Now Playing:** ${streamInfo.title}` : '';
+            const isPhotoRef = /photo|pic|image|cloth|outfit|shirt|jacket|dress|anime|cartoon|style|edit|background|face|look/i.test(question);
+            const activeImg = attachedImg || (isPhotoRef ? lastImageByServer.get(srvId) : null);
+
+            const srvName = (serversDB[srvId] && serversDB[srvId].name) || 'SammuGames Arena';
+            const result = await askSammuVerseProMax(question, sender, srvName, srvId, activeImg);
+
+            if (result.imageOut) {
+                lastImageByServer.set(srvId, result.imageOut);
+            }
+
             io.to(srvId).emit('message', {
-                username: "🌌 SammuVerse AI ProMax",
-                text: `**@${sender}:** ${result.text}${nowPlayingTag}`,
+                username: "🌌 SammuVerse AI ProMax++",
+                text: `**@${sender}:** ${result.text}`,
+                imageUrl: result.imageOut || undefined,
                 _serverId: srvId
-            });         
-            
+            });
         });
     });
 

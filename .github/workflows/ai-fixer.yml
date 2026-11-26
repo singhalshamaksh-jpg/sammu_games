@@ -1,4 +1,4 @@
-name: Particle-1 AI Auto-Fixer
+name: ERNIE-5.5 Coding Auto-Fixer
 
 on:
   issues:
@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run Particle-1 AI Fixer
+      - name: Run ERNIE-5.5 Coding Fixer
         env:
           HACKCLUB_AI_KEY: ${{ secrets.HACKCLUB_AI_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,21 +33,55 @@ jobs:
           node -e '
           const fs = require("fs");
           const path = require("path");
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
           (async () => {
             const apiKey = (process.env.HACKCLUB_AI_KEY || "").trim();
             if (!apiKey) throw new Error("Missing HACKCLUB_AI_KEY secret");
+            const base = ["https://ai", "hackclub", "com/proxy/v1"].join(".");
+
+            // Primary coding model: baidu/ernie-5.5-flash-preview:free (1M context, 921k max output)
+            let codingModels = ["baidu/ernie-5.5-flash-preview:free"];
+            try {
+              const mRes = await fetch(`${base}/models`, { headers: { "Authorization": `Bearer ${apiKey}` } });
+              if (mRes.ok) {
+                const mData = await mRes.json();
+                const otherFree = (mData.data || [])
+                  .filter(m => m && m.id && !m.id.includes("particle-1") && (String(m.id).includes(":free") || (m.pricing && Number(m.pricing.prompt) === 0)))
+                  .map(m => m.id);
+                codingModels = [...new Set(["baidu/ernie-5.5-flash-preview:free", ...otherFree])];
+              }
+            } catch (e) {}
+
             const files = fs.readdirSync(".").filter(f => /\.(js|html|css|json)$/i.test(f) && f !== "package-lock.json" && f !== "ai_banks_cache.json");
             let bundle = "";
             for (const f of files) bundle += `\n=== FILE: ${f} ===\n${fs.readFileSync(f, "utf8")}\n`;
-            const prompt = `Fix this GitHub Issue cleanly without breaking existing features.\nTITLE: ${process.env.ISSUE_TITLE}\nBODY: ${process.env.ISSUE_BODY}\n\nCODEBASE:\n${bundle}\n\nReturn ONLY valid JSON: {"summary":"short fix summary","files":[{"path":"filename.js","content":"FULL updated file content"}]}`;
-            const endpoint = ["https://ai", "hackclub", "com/proxy/v1/chat/completions"].join(".");
-            const res = await fetch(endpoint, {
-              method: "POST",
-              headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ model: "particle-ai/particle-1:free", messages: [{ role: "user", content: prompt }], max_tokens: 32000, temperature: 0.2 })
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-            const data = await res.json();
+            const prompt = `You are an expert full-stack Node.js & Socket.IO engineer. Fix this GitHub Issue cleanly without breaking any existing features.\nTITLE: ${process.env.ISSUE_TITLE}\nBODY: ${process.env.ISSUE_BODY}\n\nCODEBASE:\n${bundle}\n\nReturn ONLY valid JSON: {"summary":"short fix summary","files":[{"path":"filename.js","content":"COMPLETE updated file content"}]}`;
+
+            let data = null;
+            let usedModel = "";
+            let lastErr = "";
+
+            for (const model of codingModels) {
+              for (let attempt = 1; attempt <= 2; attempt++) {
+                console.log(`Trying ${model} (attempt ${attempt})...`);
+                const res = await fetch(`${base}/chat/completions`, {
+                  method: "POST",
+                  headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+                  body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 120000, temperature: 0.15 })
+                });
+                if (res.ok) {
+                  data = await res.json();
+                  usedModel = model;
+                  break;
+                }
+                lastErr = `HTTP ${res.status} (${model}): ${await res.text()}`;
+                if (res.status === 429) await sleep(3000);
+                else break;
+              }
+              if (data) break;
+            }
+
+            if (!data) throw new Error(lastErr || "All free coding models busy");
             const firstChoice = Array.isArray(data.choices) ? data.choices.at(0) : null;
             let raw = (firstChoice && firstChoice.message && firstChoice.message.content || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
             const match = raw.match(/\{[\s\S]*\}/);
@@ -59,8 +93,8 @@ jobs:
             if (process.env.ISSUE_NUMBER) {
               await fetch(`https://github.com{process.env.REPO_FULL}/issues/${process.env.ISSUE_NUMBER}/comments`, {
                 method: "POST",
-                headers: { "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`, "Content-Type": "application/json", "User-Agent": "Particle1-Bot" },
-                body: JSON.stringify({ body: `🤖 **Particle-1 Fixed It!**\n\n${parsed.summary}\n\n✅ Pushed directly to \`main\`!` })
+                headers: { "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`, "Content-Type": "application/json", "User-Agent": "ERNIE-Coding-Bot" },
+                body: JSON.stringify({ body: `🤖 **Fixed by \`${usedModel}\`!**\n\n${parsed.summary}\n\n✅ Syntax checked & pushed directly to \`main\`!` })
               });
             }
           })().catch(err => { console.error(err); process.exit(1); });
@@ -74,9 +108,9 @@ jobs:
 
       - name: Commit & Push Directly to Main
         run: |
-          git config user.name "Particle-1 AI Bot"
+          git config user.name "ERNIE 5.5 Coding Bot"
           git config user.email "actions@github.com"
           git add -A
           git diff --cached --quiet && echo "No changes" && exit 0
-          git commit -m "fix: AI auto-patch for issue #${{ github.event.issue.number }}"
+          git commit -m "fix: ERNIE-5.5 auto-patch for issue #${{ github.event.issue.number }}"
           git push

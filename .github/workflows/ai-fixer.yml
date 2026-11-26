@@ -1,0 +1,82 @@
+name: Particle-1 AI Auto-Fixer
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Particle-1 AI Fixer
+        env:
+          HACKCLUB_AI_KEY: ${{ secrets.HACKCLUB_AI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          REPO_FULL: ${{ github.repository }}
+        run: |
+          node -e '
+          const fs = require("fs");
+          const path = require("path");
+          (async () => {
+            const apiKey = (process.env.HACKCLUB_AI_KEY || "").trim();
+            if (!apiKey) throw new Error("Missing HACKCLUB_AI_KEY secret");
+            const files = fs.readdirSync(".").filter(f => /\.(js|html|css|json)$/i.test(f) && f !== "package-lock.json" && f !== "ai_banks_cache.json");
+            let bundle = "";
+            for (const f of files) bundle += `\n=== FILE: ${f} ===\n${fs.readFileSync(f, "utf8")}\n`;
+            const prompt = `Fix this GitHub Issue cleanly without breaking existing features.\nTITLE: ${process.env.ISSUE_TITLE}\nBODY: ${process.env.ISSUE_BODY}\n\nCODEBASE:\n${bundle}\n\nReturn ONLY valid JSON: {"summary":"short fix summary","files":[{"path":"filename.js","content":"FULL updated file content"}]}`;
+            const endpoint = ["https://ai", "hackclub", "com/proxy/v1/chat/completions"].join(".");
+            const res = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ model: "particle-ai/particle-1:free", messages: [{ role: "user", content: prompt }], max_tokens: 32000, temperature: 0.2 })
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+            const data = await res.json();
+            const firstChoice = Array.isArray(data.choices) ? data.choices.at(0) : null;
+            let raw = (firstChoice && firstChoice.message && firstChoice.message.content || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+            const match = raw.match(/\{[\s\S]*\}/);
+            if (!match) throw new Error("No JSON in AI reply");
+            const parsed = JSON.parse(match.at(0));
+            for (const f of (parsed.files || [])) {
+              if (f.path && typeof f.content === "string") fs.writeFileSync(path.basename(f.path), f.content, "utf8");
+            }
+            if (process.env.ISSUE_NUMBER) {
+              await fetch(`https://github.com{process.env.REPO_FULL}/issues/${process.env.ISSUE_NUMBER}/comments`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`, "Content-Type": "application/json", "User-Agent": "Particle1-Bot" },
+                body: JSON.stringify({ body: `🤖 **Particle-1 Fixed It!**\n\n${parsed.summary}\n\n✅ Pushed directly to \`main\`!` })
+              });
+            }
+          })().catch(err => { console.error(err); process.exit(1); });
+          '
+
+      - name: Syntax Check Before Pushing
+        run: |
+          for f in *.js; do
+            [ -f "$f" ] && node --check "$f"
+          done
+
+      - name: Commit & Push Directly to Main
+        run: |
+          git config user.name "Particle-1 AI Bot"
+          git config user.email "actions@github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "fix: AI auto-patch for issue #${{ github.event.issue.number }}"
+          git push

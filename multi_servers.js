@@ -12345,10 +12345,11 @@ div>') +
 
     function askSammuVerseProMax(userPrompt, senderName, serverName) {
         return new Promise((resolve) => {
-            const apiKey = (process.env.HACKCLUB_AI_KEY || '').trim();
-            if (!apiKey) {
-                return resolve('⚠️ AI Key missing! Add HACKCLUB_AI_KEY in Railway Variables.');
-            }
+            const apiKey = (process.env.HACKCLUB_AI_KEY || process.env.OPENAI_API_KEY || '')
+    .replace(/^HACKCLUB_AI_KEY=/i, '')
+    .replace(/^["']|["']$/g, '')
+    .trim();
+
 
             const payload = JSON.stringify({
                 model: 'qwen/qwen3-32b',

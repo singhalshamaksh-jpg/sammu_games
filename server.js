@@ -843,7 +843,6 @@ const PROMAX_VOICE_WIDGET = `
     if (bar) bar.style.display = 'none';
   };
 
-  // Human-sounding natural voice selector & phrasing
   window.speakProMax = function(text) {
     try {
       if (!window._proMaxVoiceOn || !('speechSynthesis' in window)) return;
@@ -860,7 +859,6 @@ const PROMAX_VOICE_WIDGET = `
 
       const utter = new SpeechSynthesisUtterance(clean.slice(0, 220));
       const voices = window.speechSynthesis.getVoices() || [];
-      // Prefer neural / natural Indian or UK/US voices over robotic default
       const bestVoice =
         voices.find(v => /Natural|Neural|Online/i.test(v.name) && /en-IN|hi-IN|en-GB|en-US/i.test(v.lang)) ||
         voices.find(v => /Google हिन्दी|Google UK English Female|Google US English|Neerja|Heera/i.test(v.name)) ||
@@ -868,8 +866,8 @@ const PROMAX_VOICE_WIDGET = `
         voices.find(v => /en/i.test(v.lang));
       if (bestVoice) utter.voice = bestVoice;
 
-      utter.rate = 0.96;   // Natural conversational speed (not rushed)
-      utter.pitch = 0.97;  // Warm human tone (not high-pitched robot)
+      utter.rate = 0.96;
+      utter.pitch = 0.97;
       utter.volume = 1.0;
       window.speechSynthesis.speak(utter);
     } catch (e) {}
@@ -898,18 +896,33 @@ const PROMAX_VOICE_WIDGET = `
       if (act === 'PLAY_SONG') {
         audios.forEach(a => { if (!a.paused) a.pause(); });
         window.stopProMaxSong();
+
+        const myName = (localStorage.getItem('sammu_username') || localStorage.getItem('username') || '').toLowerCase().trim();
+        const djName = String(data.by || '').toLowerCase().trim();
+        const isRequester = (myName && myName === djName) || ['sammu', 'samaksh'].includes(myName);
+
         if (bar) bar.style.display = 'block';
-        if (titleEl) titleEl.textContent = '🎵 ' + (data.songTitle || data.songQuery || 'Playing Song');
+        if (titleEl) {
+          titleEl.textContent = isRequester
+            ? ('🎬 ' + (data.songTitle || data.songQuery || 'Playing'))
+            : ('🎵 ' + (data.songTitle || data.songQuery || 'Song') + (data.by ? ' (DJ: ' + data.by + ')' : ''));
+        }
 
         if (data.youtubeId && ytBox) {
           ytBox.style.display = 'block';
-          ytBox.innerHTML = '<iframe width="246" height="56" src="https://youtube.com' + data.youtubeId + '?autoplay=1&playsinline=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+          if (isRequester) {
+            // Visible mini-player for you / the DJ requester
+            ytBox.style.cssText = 'margin-top:6px;border-radius:8px;overflow:hidden;display:block;';
+            ytBox.innerHTML = '<iframe width="246" height="56" src="https://youtube.com' + data.youtubeId + '?autoplay=1&playsinline=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+          } else {
+            // Audio-only hidden iframe for all other players in the room
+            ytBox.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0.01;pointer-events:none;';
+            ytBox.innerHTML = '<iframe width="1" height="1" src="https://youtube.com' + data.youtubeId + '?autoplay=1&playsinline=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>';
+          }
         } else if (data.streamUrl && el) {
           el.src = data.streamUrl;
           el.volume = 0.85;
-          el.play().catch(function() {
-            if (titleEl) titleEl.innerHTML = '▶ <a href="' + data.streamUrl + '" target="_blank" style="color:#fde047;">Tap to Play ' + (data.songTitle || 'Song') + '</a>';
-          });
+          el.play().catch(function() {});
         }
       } else if (act === 'STOP_DJ') {
         window.stopProMaxSong();
@@ -937,6 +950,7 @@ const PROMAX_VOICE_WIDGET = `
 })();
 </script>
 `;
+
 app.get(['/', '/index.html'], (req, res, next) => {
     const indexPath = path.join(__dirname, 'index.html');
     fs.readFile(indexPath, 'utf8', (err, html) => {

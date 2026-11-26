@@ -11037,12 +11037,12 @@ div>') +
                     tsunami: ['tsunami', '🌊 Aqua Alert', `🌊📱 **${sender}** ne phone hila kar **5-Second Tsunami** laa di!`],
                     bijli: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`],
                     powercut: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`]
-            }
+            };
             // 2. SammuVerse AI (!ai <question>) — Dual Key + Free Models
             const aiMatch = trimmed.match(/^!ai\s+(.+)/i);
             if (!aiMatch) return;
             const question = aiMatch.at(1).trim();
-
+            }
             if (!aiRoomMemory.has(srvId)) aiRoomMemory.set(srvId, []);
             const history = aiRoomMemory.get(srvId);
             history.push({ role: 'user', content: `[${sender}]: ${question}` });

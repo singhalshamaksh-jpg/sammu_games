@@ -3435,4 +3435,3 @@ setInterval(upgradeMainGameBanks, 8 * 60 * 1000); // Auto-expand banks every 8 m
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));
-

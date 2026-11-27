@@ -2442,16 +2442,7 @@ module.exports = function initMultiServers(app, io) {
     </script>
     `;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('proFilterBar')) {
-                body = body.replace('</body>', PHONK_PRO_UPGRADE + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // === 🔪 MAFIA PARTY ARENA (ALL-PLAYERS CHAT GAME) ===
     const mafiaByServer = new Map();
           const MAFIA_UI = `
@@ -2526,16 +2517,7 @@ module.exports = function initMultiServers(app, io) {
    
 
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('mafiaModal')) {
-                body = body.replace('</body>', MAFIA_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
 
     io.on('connection', (socket) => {
         socket.on('chatMessage', (payload) => {
@@ -2639,16 +2621,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('royaleBar')) {
-                body = body.replace('</body>', ROYALE_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
 
     function runRoyaleRound(srvId) {
         const st = royaleByServer.get(srvId);
@@ -2871,16 +2844,7 @@ module.exports = function initMultiServers(app, io) {
       setInterval(bindZombie, 1200);
     })();
     </script>`;
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('zombieBar')) {
-                body = body.replace('</body>', ZOMBIE_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
 
     function broadcastZombieState(srvId) {
         const st = zombieByServer.get(srvId);
@@ -3179,16 +3143,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('raidBar')) {
-                body = body.replace('</body>', COOP_PARTY_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // === PIECE 3/4: DRAGON RAID & BANK HEIST ENGINES ===
     function broadcastRaid(srvId) {
         const st = raidByServer.get(srvId);
@@ -3451,16 +3406,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('bluffBar')) {
-                body = body.replace('</body>', BLUFF_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // === PIECE 2/3: BLUFF MASTER ENGINE & SECRET CHAT CAPTURE ===
     function broadcastBluff(srvId) {
         const st = bluffByServer.get(srvId);
@@ -3649,16 +3595,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('islandBar')) {
-                body = body.replace('</body>', ISLAND_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
 
     function broadcastIsland(srvId) {
         const st = islandByServer.get(srvId);
@@ -3971,16 +3908,7 @@ module.exports = function initMultiServers(app, io) {
     </script>
     `;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('cleanRaidBar')) {
-                body = body.replace('</body>', PARTY_ALL_IN_ONE_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // === GUARANTEED SOCKET-DELIVERED UI FOR #30, #31, #32, #33 (PIECE 1/2) ===
     const LIVE_PARTY_BUNDLE = `
     <div id="cleanRaidBar" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
@@ -4177,16 +4105,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('bootSocketPartyUI')) {
-                body = body.replace('</body>', SOCKET_UI_BOOT + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
           if (global.OG_HOSTS) global.OG_HOSTS.add("antim");
     if (Array.isArray(global.AI_BLUFF_BANK)) {
         const p = global.AI_BLUFF_BANK.push.bind(global.AI_BLUFF_BANK);
@@ -4263,16 +4182,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('wpFloatingBadge')) {
-                body = body.replace('</body>', SERVER_WP_PACK + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // === 🃏 PIECE 1/2: TRADING CARD GACHA & BOUNTY HUNT CORE ===
     const CARD_POOL = [
         { name: "⚡ Pikachu Spark", tier: "COMMON", power: 72, c1: "#854d0e", c2: "#facc15", emoji: "⚡🐭" },
@@ -4337,16 +4247,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('renderFlexCard')) {
-                body = body.replace('</body>', GACHA_FLEX_SCRIPT + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // === 🚨 PIECE 2/2: BOUNTY PAYOUTS & CHAT COMMANDS ===
     const _prevIoEmit = io.emit.bind(io);
     io.emit = function(event, ...args) {
@@ -4731,16 +4632,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('courtBar')) {
-                body = body.replace('</body>', COURT_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // === ⚖️ #35 COURTROOM CHAOS — PART 2/2 (ENGINE & SOCKET EVENTS) ===
     function broadcastCourt(srvId) {
         const st = courtByServer.get(srvId);
@@ -7527,16 +7419,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svBootLoaded')) {
-                body = body.replace('</body>', SV_PAGE_BOOT_TAG + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
 
     io.on('connection', (socket) => {
         const deliverV4 = () => {
@@ -8077,16 +7960,7 @@ module.exports = function initMultiServers(app, io) {
     // ============================================================================
     // 🐉 WORLD RAID LIVE HUD BAR + 🗺️ STORY MODE FIX — PART 2/2
     // ============================================================================
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svWorldRaidHud')) {
-                body = body.replace('</body>', WORLD_RAID_HUD_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
 
     function emitWorldRaidHud(srvId) {
         const raid = worldRaidsV4.get(srvId);
@@ -8223,16 +8097,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svGlobalLbHooked')) {
-                body = body.replace('</body>', GLOBAL_LB_CLIENT_SCRIPT + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ============================================================================
     // 👑 SECRET ADMIN COMMANDS (#hazmolerangola UNLOCK -> /settrain, /givecoins, /setfloor)
     // ============================================================================
@@ -8425,16 +8290,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_globalAudioEngineInstalled')) {
-                body = body.replace('</body>', GLOBAL_CHAT_AND_GAME_AUDIO + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ============================================================================
     // 👑 EXPANDED #hazmolerangola ADMIN COMMANDS (POWERS, V3, PETS, GEARS & RESET)
     // ============================================================================
@@ -8951,16 +8807,7 @@ module.exports = function initMultiServers(app, io) {
 
     const HK_CREATOR_PANEL_UI = HK_CREATOR_PANEL_HTML + '\n' + HK_CREATOR_PANEL_SCRIPT;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('hkCreatorModal')) {
-                body = body.replace('</body>', HK_CREATOR_PANEL_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ============================================================================
     // ??? ALL-IN-ONE IN-APP BROWSER & MULTI-DEVICE PATCH (PASTE BEFORE return OG_HOSTS;)
     // ============================================================================
@@ -9083,16 +8930,7 @@ module.exports = function initMultiServers(app, io) {
     })();
     </script>`;
  
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_inAppPatchApplied')) {
-                body = body.replace('</body>', IN_APP_BROWSER_PATCH_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ============================================================================
     // ?? SAMMUVERSE V5 EXPANSION - PIECE 1/3 (DATA, GEAR, EMOJI CAP & REBIRTH)
     // ============================================================================
@@ -9618,16 +9456,7 @@ div>') +
  
     const V5_EXPANSION_UI = V5_UI_C1 + '\n' + V5_UI_C2;
  
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svV5Installed')) {
-                body = body.replace('</body>', V5_EXPANSION_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
      // ============================================================================
     // ?? ADMIN /UNLOCKUSER COMMAND (UNLOCKS DEVICE LOCK WITHOUT WIPING STATS)
     // ============================================================================
@@ -10297,16 +10126,7 @@ div>') +
 
     const V6_COMPLETE_CLIENT_BUNDLE = V6_CLEAN_UI_PART1 + '\n' + V6_CLEAN_UI_PART2;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuverseV6CleanUI')) {
-                body = body.replace('</body>', V6_COMPLETE_CLIENT_BUNDLE + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ============================================================================
     // 🌌 SAMMUVERSE V6 SOCKET LOADER & INSTANT FIGHT FIX
     // ============================================================================
@@ -10446,16 +10266,7 @@ div>') +
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svV6SocketReceiver')) {
-                body = body.replace('</body>', V6_SOCKET_RECEIVER + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ============================================================================
     // ⚡ ANTI-LAG PERFORMANCE BOOSTER + 30-MIN AUTO-PROMO BOT
     // ============================================================================
@@ -10507,16 +10318,7 @@ div>') +
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuAntiLagBooster')) {
-                body = body.replace('</body>', ANTI_LAG_BOOSTER_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ============================================================================
     // 🌌 V6 STAT & 30K+ HP RESTORE PATCH (PASTE RIGHT BEFORE return OG_HOSTS;)
     // ============================================================================
@@ -11293,16 +11095,7 @@ Rules:
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece3And4Boot')) {
-                body = body.replace('</body>', PIECE3_AND_4_HTML + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ==================== END PIECE 3 & 4 ====================
            
     
@@ -11487,16 +11280,7 @@ Rules:
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece5FxBoot')) {
-                body = body.replace('</body>', PIECE5_PART1 + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     // ==================== END PIECE 5 ====================
 
          // ==================== PIECE 6: WATER.IO (SMOOTH EAT, GROW, PVP + 6 SMART BOTS) ====================
@@ -11791,16 +11575,7 @@ Rules:
     })();
     </script>`;
 
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('waterIoLauncherUI')) {
-                body = body.replace('</body>', WATERIO_LAUNCHER_UI + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
 
     io.on('connection', (socket) => {
         socket.on('chatMessage', (payload) => {
@@ -11813,16 +11588,6 @@ Rules:
 
    
     // === ⚡ SINGLE FAST HTML WIDGET INJECTOR (REPLACES 5 NESTED WRAPPERS) ===
-    app.use((req, res, next) => {
-        const origSend = res.send;
-        res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_sammuAllWidgetsInjected')) {
-                const bundle = ['<!-- _sammuAllWidgetsInjected -->', MULTI_SERVER_UI, WORD_IMPOSTER_WIDGET, ZORO_ISOLATION_SCRIPT, PHONK_DJ_WIDGET, AI_CONSOLE_WIDGET].join('\n');
-                body = body.replace('</body>', bundle + '\n</body>');
-            }
-            return origSend.call(this, body);
-        };
-        next();
-    });
+    // [Static UI moved to public/sammu_widgets.*]
     return OG_HOSTS;     
 };

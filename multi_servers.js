@@ -1,6 +1,15 @@
 
 const fs = require('fs');
-const path = require('path')
+const path = require('path');
+try {
+    const envPath = path.join(__dirname, '.env');
+    if (fs.existsSync(envPath)) {
+        fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
+            const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)\s*$/);
+            if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+        });
+    }
+} catch (e) {}
 require('events').EventEmitter.defaultMaxListeners = 100;
 
 
@@ -11037,12 +11046,19 @@ div>') +
                     tsunami: ['tsunami', '🌊 Aqua Alert', `🌊📱 **${sender}** ne phone hila kar **5-Second Tsunami** laa di!`],
                     bijli: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`],
                     powercut: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`]
-            };
-            // 2. SammuVerse AI (!ai <question>) — Dual Key + Free Models
+                };
+                const entry = map[cmd];
+                if (entry) {
+                    const [fxType, botName, botMsg] = entry;
+                    io.to(srvId).emit('chaosEvent', { type: fxType, from: sender, target: 'all', colors, _serverId: srvId });
+                    return io.to(srvId).emit('message', { username: botName, text: botMsg, _serverId: srvId });
+                }
+            }
+
+            // 2. SammuVerse AI (!ai <question>) — Dual Key + Working Models
             const aiMatch = trimmed.match(/^!ai\s+(.+)/i);
             if (!aiMatch) return;
             const question = aiMatch.at(1).trim();
-            }
             if (!aiRoomMemory.has(srvId)) aiRoomMemory.set(srvId, []);
             const history = aiRoomMemory.get(srvId);
             history.push({ role: 'user', content: `[${sender}]: ${question}` });
@@ -11057,51 +11073,42 @@ Rules:
 5. VISUAL FX: If user asks for rain, holi, fireworks, aurora, meteor, tsunami, or power cut, append ONE of [FX:holi], [FX:barish], [FX:diwali], [FX:aurora], [FX:meteor], [FX:tsunami], or [FX:bijli] at the end.`;
 
             try {
-                const apiKeys = [process.env.HACKCLUB_AI_KEY, process.env.HACKCLUB_AI_KEY_2].filter(Boolean);
-                const models = ['particle-ai/particle-1:free', 'nvidia/nemotron-3.5-super-vl:free'];
+                const gemKey = process.env.GEMINI_API_KEY;
                 let reply = '';
                 let lastErr = '';
 
-                outerLoop:
-                for (const key of apiKeys) {
-                    for (const mdl of models) {
-                        try {
-                            const ctrl = new AbortController();
-                            const timeout = setTimeout(() => ctrl.abort(), 8000);
-                            const aiRes = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
-
-                                method: 'POST',
-                                signal: ctrl.signal,
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${key}`
-                                },
-                                body: JSON.stringify({
-                                    model: mdl,
-                                    messages: [{ role: 'system', content: systemPrompt }, ...history],
-                                    max_tokens: 3000,
-                                    temperature: 0.85
-                                })
-                            });
-                            clearTimeout(timeout);
-
-                            const aiData = await aiRes.json();
-                            const firstChoice = Array.isArray(aiData?.choices) ? aiData.choices.at(0) : null;
-                            if (firstChoice?.message?.content) {
-                                reply = firstChoice.message.content;
-                                break outerLoop;
-                            }
-                            lastErr = aiData?.error?.message || `HTTP ${aiRes.status}`;
-                        } catch (e) {
-                            lastErr = e.message || 'Timeout';
-                        }
+                if (gemKey) {
+                    try {
+                        const ctrl = new AbortController();
+                        const timeout = setTimeout(() => ctrl.abort(), 9000);
+                        const contents = history.map(m => ({
+                            role: m.role === 'assistant' ? 'model' : 'user',
+                            parts: [{ text: m.content }]
+                        }));
+                        const base = ['https:/', '://googleapis.com', 'v1beta', 'models', ''].join('/');
+                        const url = base + 'gemini-2.5-flash:generateContent?key=' + gemKey;
+                        const aiRes = await fetch(url, {
+                            method: 'POST',
+                            signal: ctrl.signal,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                systemInstruction: { parts: [{ text: systemPrompt }] },
+                                contents,
+                                generationConfig: { maxOutputTokens: 1200, temperature: 0.85 }
+                            })
+                        });
+                        clearTimeout(timeout);
+                        const aiData = await aiRes.json();
+                        const cand = aiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (cand) reply = cand;
+                        else lastErr = aiData?.error?.message || ('HTTP ' + aiRes.status);
+                    } catch (e) {
+                        lastErr = e.message || 'Timeout';
                     }
                 }
 
                 if (!reply) {
-                    reply = apiKeys.length === 0
-                        ? '⚠️ Add HACKCLUB_AI_KEY in Railway Variables!'
-                        : `⚠️ AI Busy (${lastErr})`;
+                    reply = !gemKey ? '⚠️ Add GEMINI_API_KEY in .env!' : ('⚠️ AI Busy (' + lastErr + ')');
                 }
 
                 reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/\s+/g, ' ').trim();
@@ -11120,7 +11127,7 @@ Rules:
                     io.to(srvId).emit('chaosEvent', { type: fxType, from: 'SammuVerse AI', target: sender, colors, _serverId: srvId });
                 }
 
-                if (reply.length > 300) reply = reply.slice(0, 297).trimEnd() + '...';
+                if (reply.length > 2400) reply = reply.slice(0, 2397).trimEnd() + '...';
                 history.push({ role: 'assistant', content: reply });
                 while (history.length > 10) history.shift();
 
@@ -11793,6 +11800,61 @@ Rules:
     }
     // ==================== END PIECE 6 ====================
                     
+
+    // === 💧 WATER.IO LOBBY BUTTON & !WATERIO CHAT LAUNCHER ===
+    const WATERIO_LAUNCHER_UI = `
+    <script id="waterIoLauncherUI">
+    (function() {
+      if (window._waterIoLauncherBound) return;
+      window._waterIoLauncherBound = true;
+
+      function injectWaterBtn() {
+        if (document.getElementById('btnLaunchWaterIo')) return;
+        const anchor = Array.from(document.querySelectorAll('button')).find(b => /sammuverse|phonk dj|castaway island|hoop shootout/i.test(b.textContent || ''));
+        if (anchor && anchor.parentElement) {
+          const btn = anchor.cloneNode(true);
+          btn.id = 'btnLaunchWaterIo';
+          btn.removeAttribute('onclick');
+          btn.textContent = '💧 Water.io';
+          btn.style.background = 'linear-gradient(90deg, #0284c7, #06b6d4)';
+          btn.onclick = function(e) {
+            e.preventDefault();
+            window.location.href = '/waterio';
+          };
+          anchor.parentElement.appendChild(btn);
+        }
+      }
+      setInterval(injectWaterBtn, 2500);
+
+      const waitWaterSock = setInterval(function() {
+        if (typeof socket === 'undefined') return;
+        clearInterval(waitWaterSock);
+        socket.on('openWaterIo', function() {
+          window.location.href = '/waterio';
+        });
+      }, 600);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('waterIoLauncherUI')) {
+                body = body.replace('</body>', WATERIO_LAUNCHER_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw === 'string' && /^!(waterio|water\.io)$/i.test(raw.trim())) {
+                socket.emit('openWaterIo');
+            }
+        });
+    });
 
    return OG_HOSTS;     
 };

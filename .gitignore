@@ -1,7 +1,8 @@
-*.json
-!package.json
-!package-lock.json
-*.json
-!package.json
-!package-lock.json
+node_modules/
 .env
+*.backup.js
+servers_db.json
+sammuverse_logs.json
+sammuverse_stats.json
+sammu_economy.json
+ai_banks_cache.json

@@ -3486,4 +3486,40 @@ setInterval(upgradeMainGameBanks, 8 * 60 * 1000); // Auto-expand banks every 8 m
 
 
 const PORT = process.env.PORT || 3000;
+
+// === 🧠 TERMUX RAM GUARDIAN & LIVE HEALTH MONITOR ===
+const os = require('os');
+setInterval(() => {
+    // 1. Prune expired mutes & old session memory for offline sockets
+    const now = Date.now();
+    for (const [u, exp] of mutedUsers.entries()) {
+        if (now > exp) mutedUsers.delete(u);
+    }
+    for (const sid of Object.keys(sessionMemory)) {
+        if (!io.sockets.sockets.has(sid)) delete sessionMemory[sid];
+    }
+    // 2. Cap legendary gallery & trigger V8 garbage collection if exposed
+    if (botMemory.legendaryGallery.length > 8) botMemory.legendaryGallery.length = 8;
+    if (global.gc && process.memoryUsage().rss > 180 * 1024 * 1024) {
+        global.gc();
+    }
+}, 5 * 60 * 1000);
+
+io.on('connection', (socket) => {
+    socket.on('chatMessage', (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        if (typeof raw === 'string' && (raw.trim().toLowerCase() === '!ram' || raw.trim().toLowerCase() === '/ram')) {
+            const nodeMb = Math.round(process.memoryUsage().rss / 1024 / 1024);
+            const freeMb = Math.round(os.freemem() / 1024 / 1024);
+            const totalMb = Math.round(os.totalmem() / 1024 / 1024);
+            const upMins = Math.floor(process.uptime() / 60);
+            socket.emit('message', {
+                username: '🖥️ Termux Monitor',
+                text: `🧠 **Node RAM:** ${nodeMb} MB | 📱 **Phone Free RAM:** ${freeMb} MB / ${totalMb} MB | ⏱️ **Uptime:** ${upMins}m`,
+                _serverId: socket.activeServerId
+            });
+        }
+    });
+});
+
 http.listen(PORT, () => console.log('Sammu Games Running on Port ' + PORT));

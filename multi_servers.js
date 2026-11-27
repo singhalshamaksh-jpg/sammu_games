@@ -657,10 +657,10 @@ module.exports = function initMultiServers(app, io) {
 
       setInterval(() => {
         if (window.selectedServerId === 'srv_topsecret') {
-          let fab = document.getElementById('aiConsoleFab');
+          const exists = document.getElementById('aiConsoleFab');
           if (window.selectedServerId === 'srv_topsecret') {
-            if (!fab) {
-              fab = document.createElement('button');
+            if (!exists) {
+              const fab = document.createElement('button');
               fab.id = 'aiConsoleFab';
               fab.innerText = '🤖 AI Console';
               fab.style.cssText = 'position:fixed;bottom:18px;left:18px;z-index:99999999;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:2px solid #c4b5fd;border-radius:999px;padding:12px 18px;font-size:14px;font-weight:900;cursor:pointer';
@@ -669,7 +669,7 @@ module.exports = function initMultiServers(app, io) {
             }
             fab.style.display = 'block';
           } else {
-            if (fab) fab.style.display = 'none';
+            if (exists) exists.style.display = 'none';
           }
         }
       }, 800);
@@ -971,7 +971,16 @@ module.exports = function initMultiServers(app, io) {
         }, 4000);
     }
 
-    // [Batched into SINGLE_HTML_INJECTOR: MULTI_SERVER_UI]
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function (body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', MULTI_SERVER_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
     app.get('/api/topsecret-commands', (req, res) => {
         if (req.query.key === 'topsecretvault') {
             return res.json(aiCommandQueue);
@@ -1504,7 +1513,16 @@ module.exports = function initMultiServers(app, io) {
     </script>
     `;
 
-    // [Batched into SINGLE_HTML_INJECTOR: WORD_IMPOSTER_WIDGET]
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function (body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', WORD_IMPOSTER_WIDGET + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
     function launchServerWordImposter(serverId) {
         syncArenaPlayers(serverId);
@@ -1722,7 +1740,16 @@ module.exports = function initMultiServers(app, io) {
     </script>
     `;
 
-    // [Batched into SINGLE_HTML_INJECTOR: ZORO_ISOLATION_SCRIPT]
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (typeof body === 'string' && body.includes('</body>')) {
+                body = body.replace('</body>', ZORO_ISOLATION_SCRIPT + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
 
     io.on('connection', (socket) => {
         socket.on('verifyServerAccess', (data) => {
@@ -1778,5 +1805,5 @@ module.exports = function initMultiServers(app, io) {
     require('./modules/chaos_ai_fx')(sharedCtx);
     require('./modules/water_io')(sharedCtx);
 
-    return OG_HOSTS;     
+   return OG_HOSTS;     
 };

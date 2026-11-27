@@ -2,6 +2,13 @@ process.on('uncaughtException', (err) => console.error('Prevented Crash:', err))
 process.on('unhandledRejection', (err) => console.error('Prevented Rejection:', err));
 const express = require('express');
 const app = express();
+
+// === 📉 BANDWIDTH SAVER (GZIP + BROWSER CACHE + IMAGE CAP) ===
+const compression = require('compression');
+app.use(compression({ level: 6, threshold: 512 }));
+app.use('/sammu_widgets.js', express.static(path.join(__dirname, 'public/sammu_widgets.js'), { maxAge: '7d' }));
+app.use('/sammu_widgets.css', express.static(path.join(__dirname, 'public/sammu_widgets.css'), { maxAge: '7d' }));
+
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 5e6 });
 const path = require('path');
@@ -46,7 +53,7 @@ io.on('connection', (socket) => {
         }
         // Block oversized payloads (> 350 KB) that try to crash RAM
         const rawSize = JSON.stringify(packet || '').length;
-        if (rawSize > 350000) {
+        if (rawSize > 140000) {
             return;
         }
         next();

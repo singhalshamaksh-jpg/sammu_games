@@ -525,501 +525,6 @@
       </div>
     </div>
 
-<!-- === SV_CLIENT_JS_PART3A === -->
-const ADV_CHAPTERS_UI = [
-        { ch: 1, title: '🌲 Ch.1: Whispering Dojo',   stages: ['🥷 Rogue Disciple', '🐺 Shadow Wolf', '👹 Dojo Sensei Boss'],     reward: '350🪙 • 200⚡ • 15🔮' },
-        { ch: 2, title: '🌋 Ch.2: Crimson Volcano',   stages: ['🦎 Magma Salamander', '🔥 Flame Knight', '🐉 Magma Wyrm Boss'],     reward: '700🪙 • 450⚡ • 30🔮' },
-        { ch: 3, title: '🌊 Ch.3: Abyssal Trench',    stages: ['🦈 Depth Stalker', '🐙 Kraken Tentacle', '🌊 Leviathan Boss'],      reward: '1.2k🪙 • 800⚡ • 50🔮' },
-        { ch: 4, title: '⚡ Ch.4: Celestial Citadel', stages: ['🦅 Sky Valkyrie', '⚡ Thunder Golem', '👑 Raijin Sovereign Boss'],  reward: '2.2k🪙 • 1.4k⚡ • 80🔮' },
-        { ch: 5, title: '🌌 Ch.5: Void Throne',       stages: ['🌑 Void Phantom', '🕳️ Singularity Knight', '🔱 Abyssal God Boss'],  reward: '5.0k🪙 • 3.0k⚡ • 150🔮' }
-      ];
-
-      window.openSammuVerseModal = function() {
-        const mod = document.getElementById('svModal');
-        if (!mod) return;
-        mod.style.display = 'flex';
-        renderSvPowers();
-        renderAdventureMap();
-        renderTrainingPanel();
-        renderDojoShop();
-        refreshOpponentDropdown();
-        if (typeof socket !== 'undefined') {
-          socket.emit('svGetStats');
-          socket.emit('svRequestLogs');
-        }
-      };
-
-      window.switchSvTab = function(tab) {
-        ['fight', 'adv', 'train', 'dojo', 'logs'].forEach(t => {
-          const tabBtn = document.getElementById('svTab' + t.charAt(0).toUpperCase() + t.slice(1));
-          const panel = document.getElementById('sv' + t.charAt(0).toUpperCase() + t.slice(1) + 'Panel');
-          if (tabBtn) tabBtn.classList.toggle('active', tab === t);
-          if (panel) panel.style.display = tab === t ? 'block' : 'none';
-        });
-        if (tab === 'logs' && typeof socket !== 'undefined') socket.emit('svRequestLogs');
-        if (tab === 'adv') renderAdventureMap();
-        if (tab === 'train') renderTrainingPanel();
-        if (tab === 'dojo') renderDojoShop();
-      };
-
-      function renderAdventureMap() {
-        const box = document.getElementById('svAdventureChaptersList');
-        const sum = document.getElementById('svAdvSummary');
-        if (!box) return;
-        const adv = myProfile.adventure || { chapter: 1, stage: 1, cleared: false };
-        if (sum) {
-          sum.textContent = (adv.cleared ? '👑 ALL 5 CHAPTERS CLEARED!' : ('Progress: Chapter ' + adv.chapter + ' — Stage ' + adv.stage + '/3')) + ' | Pet Essence: ' + (myProfile.petEssence || 0) + ' 🔮';
-        }
-        box.innerHTML = ADV_CHAPTERS_UI.map(c => {
-          const unlocked = adv.cleared || adv.chapter >= c.ch;
-          const isCur = !adv.cleared && adv.chapter === c.ch;
-          const curStg = isCur ? adv.stage : (adv.chapter > c.ch || adv.cleared ? 3 : 1);
-          const foeName = c.stages.at(curStg - 1) || c.stages.at(0);
-          return '<div class="sv-shop-card" style="border-color:' + (isCur ? '#4ade80' : (unlocked ? '#38bdf8' : '#334155')) + ';">' +
-            '<div><b style="color:' + (unlocked ? '#fde047' : '#94a3b8') + ';">' + c.title + '</b><br>' +
-            '<span style="color:#cbd5e1;">' + (unlocked ? ('Stage ' + curStg + '/3: ' + foeName + ' • ' + c.reward) : '🔒 Clear Chapter ' + (c.ch - 1) + ' first') + '</span></div>' +
-            '<button ' + (unlocked ? '' : 'disabled') + ' onclick="socket.emit(\\'svStartAdventure\\',{ch:' + c.ch + ',stg:' + curStg + ',power:selectedPower})" style="background:' + (isCur ? '#16a34a' : (unlocked ? '#0284c7' : '#334155')) + ';border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">' + (unlocked ? '⚔️ Play' : '🔒') + '</button></div>';
-        }).join('');
-      }
-
-      function renderSvPowers() {
-        const grid = document.getElementById('svPowerGrid');
-        if (!grid) return;
-        grid.innerHTML = '';
-
-        const unlocked = myProfile.unlockedPowers || [];
-        const pWins = myProfile.powerWins || {};
-
-        if (Array.isArray(myProfile.customPowers)) {
-          myProfile.customPowers.forEach(cp => {
-            if (cp && cp.id && cp.def && !SV_POWERS[cp.id]) {
-              SV_POWERS[cp.id] = {
-                fused: true, icon: cp.def.icon, name: cp.def.name,
-                skills: (cp.def.moves || []).map(m => m.label)
-              };
-            }
-          });
-        }
-
-        Object.entries(SV_POWERS).forEach(([key, p]) => {
-          if (p.secret && !unlocked.includes(key)) return;
-          const isCoinLocked = p.cost && !unlocked.includes(key);
-          const wins = pWins[key] || 0;
-          const isV3 = wins >= 100;
-          const isV2 = wins >= 5 && !isV3;
-
-          const b = document.createElement('button');
-          b.className = 'sv-pwr-btn' + (selectedPower === key ? ' selected' : '') + (isCoinLocked ? ' locked-coin' : '');
-          if (p.secret || isV2 || isV3) b.style.borderColor = '#facc15';
-          if (isV3) b.style.boxShadow = '0 0 10px rgba(250,204,21,0.55)';
-
-          const verBadge = isV3 ? ' [V3 👑]' : (isV2 ? ' [V2]' : '');
-          b.textContent = isCoinLocked ? ('🔒 ' + p.icon + ' ' + p.name + ' (' + p.cost + '🪙)') : (p.icon + ' ' + p.name + verBadge);
-
-          b.onclick = () => {
-            if (isCoinLocked) {
-              if (confirm('Unlock ' + p.icon + ' ' + p.name + ' for ' + p.cost + ' Coins?')) socket.emit('svBuyPower', key);
-              return;
-            }
-            selectedPower = key; window._curSvPow = key; renderSvPowers();
-          };
-          grid.appendChild(b);
-        });
-
-        const cur = SV_POWERS[selectedPower] || SV_POWERS.fire;
-        const curWins = pWins[selectedPower] || 0;
-        const verDesc = curWins >= 100 ? ' 👑 [V3 ASCENDED]' : (curWins >= 5 ? (' 🔥 [V2] (' + curWins + '/100 to V3)') : (' (' + curWins + '/5 wins to V2)'));
-        const prev = document.getElementById('svPowerPreview');
-        if (prev) prev.innerHTML = '<b>' + cur.icon + ' ' + cur.name + verDesc + ':</b><br>' + cur.skills.join(' • ');
-      }
-
-<!-- === SV_CLIENT_JS_PART3B === -->
-function renderTrainingPanel() {
-        const tr = myProfile.training || { fistLv: 0, bodyLv: 0, chiLv: 0, xp: 0 };
-        const fLv = Number(tr.fistLv) || 0, bLv = Number(tr.bodyLv) || 0, cLv = Number(tr.chiLv) || 0;
-        const sum = document.getElementById('svTrainSummary');
-        if (sum) sum.textContent = 'Total Mastery: ' + (fLv + bLv + cLv).toLocaleString() + ' | Available XP: ' + (tr.xp || 0).toLocaleString() + ' ⚡';
-
-        const bonusDmg = fLv >= 100000 ? Math.round(150 + Math.log10(fLv) * 45) : Math.min(350, fLv * 3);
-        const bonusHp  = bLv >= 100000 ? Math.round(900 + Math.log10(bLv) * 250) : Math.min(2000, bLv * 20);
-        const ultPct   = cLv >= 100000 ? 85 : Math.min(80, cLv * 4);
-        const critPct  = cLv >= 100000 ? 50 : Math.min(45, cLv);
-
-        const fd = document.getElementById('svFistDesc'); if (fd) fd.textContent = 'Lv.' + fLv.toLocaleString() + ' (+' + bonusDmg + ' Permanent DMG)';
-        const bd = document.getElementById('svBodyDesc'); if (bd) bd.textContent = 'Lv.' + bLv.toLocaleString() + ' (+' + bonusHp + ' Permanent HP)';
-        const cd = document.getElementById('svChiDesc');  if (cd) cd.textContent = 'Lv.' + cLv.toLocaleString() + ' (+' + ultPct + '% ULT & ' + critPct + '% Crit)';
-        const fBtn = document.getElementById('svUpFistBtn'); if (fBtn) fBtn.textContent = (100 + Math.floor(fLv * 25)).toLocaleString() + ' XP';
-        const bBtn = document.getElementById('svUpBodyBtn'); if (bBtn) bBtn.textContent = (100 + Math.floor(bLv * 25)).toLocaleString() + ' XP';
-        const cBtn = document.getElementById('svUpChiBtn');  if (cBtn) cBtn.textContent = (100 + Math.floor(cLv * 25)).toLocaleString() + ' XP';
-      }
-
-      function renderDojoShop() {
-        const hc = document.getElementById('svHeaderCoins');
-        if (hc) hc.textContent = '🪙 ' + (myProfile.coins || 0).toLocaleString();
-        const rb = document.getElementById('svRankBanner');
-        if (rb) rb.textContent = 'Wins: ' + (myProfile.wins || 0) + ' | Pet Essence: ' + (myProfile.petEssence || 0) + '🔮 | Tower Best: F' + (myProfile.maxTowerFloor || 1);
-
-        const omBtn = document.getElementById('svGearOmegaBtn');
-        if (omBtn) { omBtn.textContent = myProfile.gears?.omegaCore ? 'FORGED ✅' : '10,000🪙'; omBtn.disabled = Boolean(myProfile.gears?.omegaCore); }
-        const tiBtn = document.getElementById('svGearTitanBtn');
-        if (tiBtn) { tiBtn.textContent = myProfile.gears?.titanCrown ? 'FORGED ✅' : '25,000🪙'; tiBtn.disabled = Boolean(myProfile.gears?.titanCrown); }
-
-        document.getElementById('svAtkDesc').textContent = 'Lv.' + (myProfile.atkLv || 0) + '/15 (+' + ((myProfile.atkLv || 0) * 5) + ' Bonus DMG)';
-        document.getElementById('svBuyAtkBtn').textContent = (myProfile.atkLv || 0) >= 15 ? 'MAX' : '150🪙';
-        document.getElementById('svHpDesc').textContent = 'Lv.' + (myProfile.hpLv || 0) + '/15 (+' + ((myProfile.hpLv || 0) * 25) + ' Bonus HP)';
-        document.getElementById('svBuyHpBtn').textContent = (myProfile.hpLv || 0) >= 15 ? 'MAX' : '150🪙';
-        document.getElementById('svBuyStoneBtn').textContent = myProfile.hasStone ? 'OWNED ✅' : '1000🪙';
-        document.getElementById('svBuyStoneBtn').disabled = Boolean(myProfile.hasStone);
-
-        const list = Array.isArray(myProfile.customPowers) ? myProfile.customPowers : [];
-        const tiers = new Array(50000, 250000, 750000, 1500000);
-        const nextCost = list.length < tiers.length ? tiers.at(list.length) : (tiers.at(-1) + ((list.length - tiers.length + 1) * 1000000));
-        const fBtn = document.getElementById('svForgeBtn');
-        if (fBtn) {
-          fBtn.textContent = (myProfile.freeFusionPasses || 0) > 0
-            ? ('⚗️ Forge Fusion #' + (list.length + 1) + ' (FREE PASS ✅)')
-            : ('⚗️ Forge Fusion #' + (list.length + 1) + ' (' + nextCost.toLocaleString() + '🪙)');
-        }
-
-        const s1 = document.getElementById('svFuseP1'), s2 = document.getElementById('svFuseP2');
-        if (s1 && s2 && s1.options.length === 0) {
-          const owned = new Set(['fire', 'water', 'lightning', 'ice', ...(myProfile.unlockedPowers || [])]);
-          Object.entries(SV_POWERS).forEach(([k, v]) => {
-            if (owned.has(k)) { s1.add(new Option(v.icon + ' ' + v.name, k)); s2.add(new Option(v.icon + ' ' + v.name, k)); }
-          });
-          if (s2.options.length > 1) s2.selectedIndex = 1;
-        }
-
-        const cBtn = document.getElementById('svMergeChimeraBtn');
-        if (cBtn && (myProfile.ownedPets || []).includes('chimera')) { cBtn.textContent = 'EVOLVED ✅'; cBtn.disabled = true; }
-        const oBtn = document.getElementById('svMergeOuroBtn');
-        if (oBtn && (myProfile.ownedPets || []).includes('ouroboros')) { oBtn.textContent = 'EVOLVED ✅'; oBtn.disabled = true; }
-
-        const petBox = document.getElementById('svPetShopList');
-        if (!petBox) return;
-        petBox.innerHTML = '';
-        SV_PETS.forEach(pet => {
-          const owned = (myProfile.ownedPets || []).includes(pet.id);
-          if (pet.evolved && !owned) return;
-          const active = myProfile.activePet === pet.id;
-          const row = document.createElement('div');
-          row.className = 'sv-shop-card';
-          row.innerHTML = '<div><b>' + pet.name + '</b><br><span style="color:#cbd5e1;">' + pet.desc + '</span></div>';
-          const btn = document.createElement('button');
-          btn.style.cssText = 'background:' + (active ? '#16a34a' : (owned ? '#0284c7' : '#7c3aed')) + ';border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;';
-          btn.textContent = active ? 'EQUIPPED ✅' : (owned ? 'EQUIP' : pet.cost + '🪙');
-          btn.onclick = () => socket.emit('svPetAction', pet.id);
-          row.appendChild(btn);
-          petBox.appendChild(row);
-        });
-      }
-
-<!-- === SV_CLIENT_JS_PART4A === -->
-const LINEAGE_UI_INFO = {
-        human:     { icon: '🧑', name: 'Mortal Explorer',       stage3: '👑 Ascendant Hero',       perk: 'Balanced Starter' },
-        slime:     { icon: '🟢', name: 'Primordial Void Slime', stage3: '🟢 Void Sovereign Slime', perk: '+14 HP/Turn Regen & 12% DMG Absorb' },
-        ape:       { icon: '🐵', name: 'Astral Ape Warrior',    stage3: '⚡ Super Astral God',     perk: '+22% Surge Strike DMG' },
-        reaper:    { icon: '👻', name: 'Phantom Soul Reaper',   stage3: '⚔️ Eclipse Bankai',       perk: '+18% Slash DMG & 5% Soul Drain' },
-        demon:     { icon: '😈', name: 'Infernal Demonkin',     stage3: '🔥 Abyssal Overlord',     perk: '+10% DMG & 16% Lifesteal' },
-        dragonkin: { icon: '🐉', name: 'Ancient Dragonkin',     stage3: '🐲 Cosmic Wyrm King',     perk: '+8 HP/Turn, +15% DMG & 8% Absorb' },
-        celestial: { icon: '🔱', name: 'Celestial Avatar',      stage3: '🔱 Supreme Cosmic Deity', perk: '+25% DMG, +12 HP/Turn, Stun Immune' }
-      };
-
-      const TITLE_UI_LIST = [
-        { id: 'rookie',     tag: '🌱 Rookie',           color: '#94a3b8', req: 'Default Starter' },
-        { id: 'hunter',     tag: '⚔️ Bounty Hunter',    color: '#38bdf8', req: '1.0M Bounty' },
-        { id: 'warlord',    tag: '🏴‍☠️ Warlord',          color: '#a855f7', req: '2.5M Bounty' },
-        { id: 'emperor',    tag: '💀 Abyss Emperor',    color: '#f43f5e', req: '10.0M Bounty' },
-        { id: 'sovereign',  tag: '👑 Sammu Sovereign',  color: '#facc15', req: '30.0M Bounty' },
-        { id: 'v3god',      tag: '🔥 V3 Ascended',      color: '#fb923c', req: '100 Wins (V3)' },
-        { id: 'omegagod',   tag: '⚡ Omega Awakened',   color: '#38bdf8', req: 'Omega Core Gear' },
-        { id: 'titanlord',  tag: '🌌 Colossal Titan',   color: '#f43f5e', req: 'Titan Crown Gear' },
-        { id: 'adventurer', tag: '🗺️ Realm Conqueror',  color: '#4ade80', req: 'Clear Story Ch.5' },
-        { id: 'petmaster',  tag: '🐉 Ouroboros Tamer',  color: '#e879f9', req: 'Merge Evolved Pet' },
-        { id: 'voidslime',  tag: '🟢 Void Slime King',  color: '#4ade80', req: 'Void Slime Stage 3' },
-        { id: 'gymgod',     tag: '🏋️ Gym Sovereign',    color: '#fb923c', req: 'Training Level 50' },
-        { id: 'godly',      tag: '✨ Godly Enchanted',  color: '#67e8f9', req: 'Godly Enchant' },
-        { id: 'forger',     tag: '⚗️ Soul Forger',      color: '#e879f9', req: 'Custom Fusion' },
-        { id: 'vishnu',     tag: '🔱 MahaVishnu',       color: '#fde047', req: 'MahaVishnu Power' },
-        { id: 'lunaremp',   tag: '🌙 Lunar Empress',    color: '#fda4af', req: 'Dr. Moon Power' },
-        { id: 'tower25',    tag: '🗼 Tower Climber',    color: '#38bdf8', req: 'Tower Floor 25' },
-        { id: 'tower50',    tag: '♾️ Infinite Sovereign',color: '#e879f9', req: 'Tower Floor 50' },
-        { id: 'tower100',   tag: '🌌 Floor 100 God',    color: '#facc15', req: 'Tower Floor 100' },
-        { id: 'rich',       tag: '💎 Millionaire',      color: '#4ade80', req: '100,000+ Coins' }
-      ];
-
-      window._svLatestStock = { items: [], minsLeft: 60 };
-      window._svTowerTop = [];
-
-      window.openDailyWheelModal = function() {
-        const modal = document.getElementById('svSubModal');
-        const title = document.getElementById('svSubTitle');
-        const body = document.getElementById('svSubBody');
-        if (!modal) return;
-        modal.style.display = 'flex';
-        title.textContent = '🎡 COSMIC DAILY LUCKY WHEEL';
-        const freeReady = (Date.now() - (myProfile.lastDailySpin || 0)) >= 86400000;
-        body.innerHTML =
-          '<div id="svWheelDisc" style="width:170px;height:170px;margin:6px auto 12px;border-radius:50%;border:5px solid #facc15;background:conic-gradient(#dc2626 0deg 60deg,#0284c7 60deg 120deg,#16a34a 120deg 180deg,#7c3aed 180deg 240deg,#d97706 240deg 300deg,#ec4899 300deg 360deg);display:flex;align-items:center;justify-content:center;font-size:38px;box-shadow:0 0 28px rgba(250,204,21,0.6);transition:transform 2.2s cubic-bezier(0.15,0.85,0.25,1);">🎡</div>' +
-          '<div id="svWheelResultText" style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:10px;">Win Coins, Training XP, Pet Essence, or 15,000🪙 Jackpot!</div>' +
-          '<div style="display:flex;gap:6px;">' +
-            '<button onclick="socket.emit(\\'svDailyWheelSpin\\',{paid:false})" style="flex:1;padding:10px;border:none;border-radius:10px;background:' + (freeReady ? '#16a34a' : '#334155') + ';color:#fff;font-weight:900;font-size:11px;cursor:pointer;">🎁 Free Daily Spin</button>' +
-            '<button onclick="socket.emit(\\'svDailyWheelSpin\\',{paid:true})" style="flex:1;padding:10px;border:none;border-radius:10px;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:#fff;font-weight:900;font-size:11px;cursor:pointer;">💎 Cosmic Spin (500🪙)</button>' +
-          '</div>';
-      };
-
-<!-- === SV_CLIENT_JS_PART4B === -->
-window.openSvSub = function(mode) {
-        const modal = document.getElementById('svSubModal');
-        const title = document.getElementById('svSubTitle');
-        const body = document.getElementById('svSubBody');
-        if (!modal) return;
-        modal.style.display = 'flex';
-
-        if (mode === 'lineage') {
-          const lin = LINEAGE_UI_INFO[myProfile.lineage || 'human'] || LINEAGE_UI_INFO.human;
-          const stg = myProfile.lineageStage || 1;
-          const evoCost = stg === 1 ? '2,500🪙' : (stg === 2 ? '6,000🪙' : 'MAXED ✅');
-          title.textContent = '🧬 GENETIC LINEAGE AWAKENING';
-          body.innerHTML =
-            '<div style="background:#1e293b;border:1.5px solid #4ade80;border-radius:12px;padding:10px;margin-bottom:8px;">' +
-              '<div style="font-size:15px;font-weight:900;color:#4ade80;">' + (stg === 3 ? lin.stage3 : (lin.icon + ' ' + lin.name)) + ' (Stage ' + stg + '/3)</div>' +
-              '<div style="font-size:11px;color:#fde047;margin-top:4px;">Passive: ' + lin.perk + '</div>' +
-            '</div>' +
-            '<div style="display:flex;gap:6px;">' +
-              '<button onclick="socket.emit(\\'svSpinLineage\\')" style="flex:1;padding:9px;border:none;border-radius:10px;background:#7c3aed;color:#fff;font-weight:900;font-size:11px;cursor:pointer;">🎲 Reroll (1,000🪙)</button>' +
-              '<button ' + (stg >= 3 ? 'disabled' : '') + ' onclick="socket.emit(\\'svEvolveLineage\\')" style="flex:1;padding:9px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-weight:900;font-size:11px;cursor:pointer;">⚡ Evolve (' + evoCost + ')</button>' +
-            '</div>';
-        } else if (mode === 'titles') {
-          const bFmt = (myProfile.bounty || 10000) >= 1000000 ? ((myProfile.bounty / 1000000).toFixed(2) + 'M') : (Math.round((myProfile.bounty || 10000) / 1000) + 'K');
-          title.textContent = '🏷️ TITLES & BOUNTY: ' + bFmt;
-          body.innerHTML = TITLE_UI_LIST.map(t => {
-            const unlocked = (myProfile.unlockedTitles || ['rookie']).includes(t.id);
-            const equipped = myProfile.activeTitle === t.id;
-            return '<div style="display:flex;justify-content:space-between;align-items:center;background:#1e293b;border:1.5px solid ' + (equipped ? '#facc15' : '#334155') + ';border-radius:10px;padding:7px 9px;margin-bottom:6px;font-size:11px;">' +
-              '<div style="text-align:left;"><b style="color:' + t.color + ';">[' + t.tag + ']</b><br><span style="color:#94a3b8;">' + t.req + '</span></div>' +
-              '<button ' + (unlocked ? '' : 'disabled') + ' onclick="socket.emit(\\'svEquipTitle\\',\\'' + t.id + '\\');document.getElementById(\\'svSubModal\\').style.display=\\'none\\';" style="background:' + (equipped ? '#16a34a' : (unlocked ? '#0284c7' : '#334155')) + ';border:none;color:#fff;padding:5px 10px;border-radius:8px;font-weight:bold;cursor:pointer;">' + (equipped ? 'EQUIPPED' : (unlocked ? 'Equip' : '🔒')) + '</button></div>';
-          }).join('');
-        } else if (mode === 'stock') {
-          const st = window._svLatestStock;
-          title.textContent = '🎰 HOURLY STOCK (' + st.minsLeft + 'm left)';
-          socket.emit('svGetStock');
-          body.innerHTML = (st.items || []).map(it =>
-            '<div style="display:flex;justify-content:space-between;align-items:center;background:#1e293b;border:1px solid #38bdf8;border-radius:10px;padding:8px;margin-bottom:6px;font-size:12px;">' +
-            '<span><b>' + it.icon + ' ' + it.name + '</b></span>' +
-            '<button onclick="socket.emit(\\'svBuyStockItem\\',\\'' + it.key + '\\')" style="background:#16a34a;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">' + it.price.toLocaleString() + '🪙</button></div>'
-          ).join('') || '<div style="font-size:12px;color:#94a3b8;">Loading stock...</div>';
-        }
-      };
-
-      window.openEndlessTowerModal = function() {
-        const modal = document.getElementById('svSubModal');
-        const title = document.getElementById('svSubTitle');
-        const body = document.getElementById('svSubBody');
-        if (!modal) return;
-        modal.style.display = 'flex';
-        if (typeof socket !== 'undefined') socket.emit('svGetTowerLeaderboard');
-
-        const best = myProfile.maxTowerFloor || 1;
-        const chk = Math.max(1, myProfile.towerCheckpoint || 1);
-        title.textContent = '♾️ ENDLESS ASCENSION TOWER';
-
-        const boardHtml = (window._svTowerTop || []).map((r, i) =>
-          '<div style="display:flex;justify-content:space-between;padding:4px 6px;border-bottom:1px solid #334155;">' +
-            '<span>' + (i === 0 ? '👑 ' : '#' + (i + 1) + ' ') + r.name + '</span>' +
-            '<b style="color:#38bdf8;">Floor ' + r.floor + '</b>' +
-          '</div>'
-        ).join('') || '<div style="color:#94a3b8;">Be the first to climb!</div>';
-
-        body.innerHTML =
-          '<div style="background:#1e293b;border:1.5px solid #38bdf8;border-radius:12px;padding:10px;margin-bottom:8px;">' +
-            '<div style="font-size:14px;font-weight:900;color:#fde047;">🏆 Your Best: Floor ' + best + ' | 📍 Checkpoint: Floor ' + chk + '</div>' +
-            '<div style="font-size:11px;color:#cbd5e1;margin-top:4px;">F25: +10k🪙 | F50: ⚡ Omega & Titan Gear Forge Unlocked! | F100: +50k🪙</div>' +
-          '</div>' +
-          '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
-            '<button onclick="document.getElementById(\\'svSubModal\\').style.display=\\'none\\';socket.emit(\\'svTowerEnter\\',{startFromCheckpoint:true});" style="flex:2;padding:10px;border:none;border-radius:10px;background:linear-gradient(90deg,#0284c7,#7c3aed);color:#fff;font-weight:900;font-size:12px;cursor:pointer;">🚀 Resume Floor ' + chk + '</button>' +
-            '<button onclick="document.getElementById(\\'svSubModal\\').style.display=\\'none\\';socket.emit(\\'svTowerEnter\\',{startFromCheckpoint:false});" style="flex:1;padding:10px;border:1px solid #64748b;border-radius:10px;background:#0f172a;color:#fff;font-weight:bold;font-size:11px;cursor:pointer;">🔄 Floor 1</button>' +
-          '</div>' +
-          '<div style="background:#090d16;border:1px solid #475569;border-radius:10px;padding:8px;font-size:11px;text-align:left;">' +
-            '<div style="font-weight:900;color:#facc15;margin-bottom:4px;">🏅 SERVER TOWER LEADERBOARD:</div>' + boardHtml +
-          '</div>';
-      };
-
-      function refreshOpponentDropdown() {
-        const sel = document.getElementById('svOpponentSelect');
-        if (!sel) return;
-        const prev = sel.value;
-        sel.innerHTML = '<option value="BOT_DUMMY">🥊 Wooden Dummy (+35🪙)</option><option value="BOT_SENSEI">🤖 Bot Sensei (+65🪙)</option><option value="BOT_DEMON">👹 Demon Overlord (+140🪙)</option>';
-        latestPlayers.forEach(p => {
-          if (typeof socket !== 'undefined' && p.id !== socket.id) {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = '🥷 ' + p.username + ' (PvP +150🪙)';
-            sel.appendChild(opt);
-          }
-        });
-        if (Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
-      }
-
-      window.buySvItem = (item) => { if (typeof socket !== 'undefined') socket.emit('svUpgradeStat', item); };
-      window.sendSvChallenge = () => { if (typeof socket !== 'undefined') socket.emit('svChallenge', { targetId: document.getElementById('svOpponentSelect').value, power: selectedPower }); };
-      window.redeemSvSecretCode = () => {
-        const inp = document.getElementById('svSecretCodeInput');
-        if (inp && inp.value.trim() && typeof socket !== 'undefined') {
-          socket.emit('svUnlockCode', inp.value.trim());
-          inp.value = '';
-        }
-      };
-
-<!-- === SV_CLIENT_JS_PART5 === -->
-socket.on('svCutscene', (d) => {
-        if (!d._serverId || !window.selectedServerId || d._serverId === window.selectedServerId) {
-          playBloxFruitCutscene(d);
-        }
-      });
-
-      socket.on('svStatsSync', (st) => {
-        if (st) {
-          myProfile = st;
-          window._latestSvProf = st;
-          renderSvPowers();
-          renderAdventureMap();
-          renderTrainingPanel();
-          renderDojoShop();
-        }
-      });
-
-      socket.on('svWheelResult', ({ prize, profile }) => {
-        if (profile) { myProfile = profile; window._latestSvProf = profile; renderDojoShop(); }
-        const disc = document.getElementById('svWheelDisc');
-        const txt = document.getElementById('svWheelResultText');
-        if (disc) disc.style.transform = 'rotate(' + (1440 + ((prize?.idx || 0) * 60)) + 'deg)';
-        playSvSfx('win');
-        setTimeout(() => {
-          if (txt && prize) txt.textContent = '🎉 WON: ' + prize.label;
-        }, 2200);
-      });
-
-      socket.on('svNotice', (msg) => { playSvSfx('win'); alert(msg); });
-      socket.on('svStockSync', (st) => { if (st) window._svLatestStock = st; });
-      socket.on('svTowerLeaderboardSync', (list) => { window._svTowerTop = list || []; });
-      socket.on('updatePlayers', (list) => { if (Array.isArray(list)) { latestPlayers = list; refreshOpponentDropdown(); } });
-
-      socket.on('svDomainClashStart', (d) => {
-        const sub = document.getElementById('svClashSub');
-        const mod = document.getElementById('svDomainClashModal');
-        if (sub) sub.textContent = 'Clashing Ultimates against ' + (d.oppName || 'Rival') + '!';
-        if (mod) mod.style.display = 'flex';
-      });
-
-      socket.on('svDomainClashEnd', () => {
-        const mod = document.getElementById('svDomainClashModal');
-        if (mod) mod.style.display = 'none';
-      });
-
-      socket.on('svIncomingChallenge', (d) => {
-        if (d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
-        document.getElementById('svModal').style.display = 'flex';
-        switchSvTab('fight');
-        const box = document.getElementById('svIncomingBox');
-        box.style.display = 'block';
-        box.innerHTML = '<div style="font-size:12px;font-weight:900;color:#fde047;margin-bottom:6px;">⚔️ ' + d.fromName + ' (' + d.fromPowerLabel + ') challenged you!</div>' +
-          '<button id="svAcceptBtnNow" style="background:#16a34a;border:none;color:#fff;padding:7px 14px;border-radius:9px;font-weight:900;font-size:12px;cursor:pointer;">🔥 Accept with Selected Power!</button>';
-        document.getElementById('svAcceptBtnNow').onclick = () => {
-          box.style.display = 'none';
-          socket.emit('svAccept', { challengerId: d.fromId, power: selectedPower });
-        };
-      });
-
-      socket.on('svBattleSync', (b) => {
-        if (b._serverId && window.selectedServerId && b._serverId !== window.selectedServerId) return;
-        if (b.sfx) playSvSfx(b.sfx);
-        document.getElementById('svModal').style.display = 'flex';
-        document.getElementById('svLobbyView').style.display = 'none';
-        document.getElementById('svBattleView').style.display = 'block';
-
-        document.getElementById('svTurnBadge').textContent = 'Turn ' + b.turn + ' • Energy: ' + (b.me.energy || 0) + '%⚡';
-        document.getElementById('svBattleTimer').textContent = '⏳ ' + b.timeLeft + 's';
-        document.getElementById('svMeLabel').textContent = b.me.icon + ' ' + b.me.name + ' (' + b.me.powerName + ')';
-        document.getElementById('svMeHpText').textContent = b.me.hp + ' / ' + b.me.maxHp + ' HP';
-        const meBar = document.getElementById('svMeHpBar');
-        meBar.style.width = Math.max(0, Math.round((b.me.hp / b.me.maxHp) * 100)) + '%';
-        meBar.classList.toggle('awakened', Boolean(b.me.awakened || b.me.omegaTurns > 0 || b.me.titanTurns > 0));
-
-        document.getElementById('svOppLabel').textContent = b.opp.icon + ' ' + b.opp.name + ' (' + b.opp.powerName + ')';
-        document.getElementById('svOppHpText').textContent = b.opp.hp + ' / ' + b.opp.maxHp + ' HP';
-        const oppBar = document.getElementById('svOppHpBar');
-        oppBar.style.width = Math.max(0, Math.round((b.opp.hp / b.opp.maxHp) * 100)) + '%';
-        oppBar.classList.toggle('awakened', Boolean(b.opp.awakened));
-
-        const tBar = document.getElementById('svTransformBar');
-        if (tBar) {
-          tBar.innerHTML = '';
-          if (b.me.hasOmegaGear && !b.me.omegaUsed) {
-            const oBtn = document.createElement('button');
-            oBtn.disabled = (b.me.energy || 0) < 50;
-            oBtn.style.cssText = 'flex:1;padding:6px;border:1.5px solid #38bdf8;border-radius:9px;background:linear-gradient(90deg,#0284c7,#6366f1);color:#fff;font-weight:900;font-size:10px;cursor:pointer;opacity:' + ((b.me.energy || 0) >= 50 ? '1' : '0.45') + ';';
-            oBtn.textContent = '⚡ OMEGA EVOLVE (50%⚡)';
-            oBtn.onclick = () => socket.emit('svTransform', 'omega');
-            tBar.appendChild(oBtn);
-          }
-          if (b.me.hasTitanGear && !b.me.titanUsed) {
-            const tiBtn = document.createElement('button');
-            tiBtn.disabled = (b.me.energy || 0) < 75;
-            tiBtn.style.cssText = 'flex:1;padding:6px;border:1.5px solid #facc15;border-radius:9px;background:linear-gradient(90deg,#dc2626,#9333ea);color:#fff;font-weight:900;font-size:10px;cursor:pointer;opacity:' + ((b.me.energy || 0) >= 75 ? '1' : '0.45') + ';';
-            tiBtn.textContent = '🌌 TITAN FORM (75%⚡)';
-            tiBtn.onclick = () => socket.emit('svTransform', 'titan');
-            tBar.appendChild(tiBtn);
-          }
-        }
-
-        document.getElementById('svCombatFeed').innerHTML = b.logText;
-        const skBox = document.getElementById('svSkillButtons');
-        skBox.innerHTML = '';
-
-        b.me.skills.forEach((sk, idx) => {
-          const btn = document.createElement('button');
-          btn.className = 'sv-skill-btn' + (idx === 3 ? ' ult' : '');
-          const onCd = (idx === 3 && b.me.ultCd > 0);
-          btn.disabled = b.me.locked || b.me.stunned || onCd;
-          btn.textContent = onCd ? (sk + ' [CD: ' + b.me.ultCd + 't]') : (b.me.stunned ? '❄️ STUNNED!' : sk);
-          btn.onclick = () => {
-            playSvSfx(idx === 3 ? 'ult' : (idx === 2 ? 'shield' : (b.me.powerKey === 'mahavishnu' && idx === 0 ? 'flute' : 'atk')));
-            socket.emit('svUseSkill', idx);
-          };
-          skBox.appendChild(btn);
-        });
-
-        const isVishnu = b.me.powerKey === 'mahavishnu' || String(b.me.icon || '').includes('🔱');
-        if (isVishnu && !b.me.isBotOpp) {
-          const loveBtn = document.createElement('button');
-          loveBtn.className = 'sv-skill-btn';
-          loveBtn.style.cssText = 'grid-column:span 2;background:linear-gradient(90deg,#be185d,#9333ea);border:1.5px solid #f9a8d4;text-align:center;';
-          loveBtn.textContent = '💖🪈 Prem Samarpan (Surrender to Love — Gift Sibling Win + 250🪙)';
-          loveBtn.onclick = () => socket.emit('svSurrenderToLove');
-          skBox.appendChild(loveBtn);
-        }
-      });
-
-      socket.on('svBattleEnd', (res) => {
-        if (res._serverId && window.selectedServerId && res._serverId !== window.selectedServerId) return;
-        if (res.won) playSvSfx('win');
-        document.getElementById('svBattleView').style.display = 'none';
-        document.getElementById('svLobbyView').style.display = 'block';
-        socket.emit('svGetStats');
-        switchSvTab('logs');
-      });
-
-      socket.on('svLogsUpdate', (logs) => {
-        const box = document.getElementById('svLogList');
-        if (!box) return;
-        if (!Array.isArray(logs) || logs.length === 0) {
-          box.innerHTML = '<div style="padding:12px;color:#94a3b8;">No SammuVerse battles registered yet! ⚔️</div>';
-          return;
-        }
-        box.innerHTML = logs.map(l => '<div class="sv-log-item">🏆 <b>' + l.winner + '</b> (' + l.winPower + ') defeated <b>' + l.loser + '</b> (' + l.losePower + ') <span style="color:#94a3b8;float:right;">' + l.time + '</span></div>').join('');
-      });
-
 <!-- === WORLD_RAID_HUD_UI === -->
 <div id="svWorldRaidHud" style="display:none;position:fixed;top:8px;left:0;right:0;z-index:999999;justify-content:center;padding:0 10px;pointer-events:none;">
       <div style="pointer-events:auto;background:linear-gradient(155deg,rgba(49,16,66,0.97),rgba(15,23,42,0.97));border:2px solid #facc15;border-radius:16px;padding:10px 12px;width:100%;max-width:390px;color:#fff;text-align:center;box-shadow:0 6px 28px rgba(250,204,21,0.55);backdrop-filter:blur(8px);">
@@ -1197,7 +702,7 @@ socket.on('svCutscene', (d) => {
           '</div>' +
           '<div style="display:flex;gap:4px;margin-bottom:5px;">' +
             new Array('normal', 'hard', 'nightmare').map(d =>
-              '<button onclick="window._v5Diff=\\'' + d + '\\';renderV5StoryMode()" style="flex:1;padding:5px;border-radius:8px;border:1px solid #facc15;background:' + (window._v5Diff === d ? '#d97706' : '#1e293b') + ';color:#fff;font-weight:900;font-size:10px;cursor:pointer;">' + d.toUpperCase() + '</button>'
+              '<button onclick="window._v5Diff=\'' + d + '\';renderV5StoryMode()" style="flex:1;padding:5px;border-radius:8px;border:1px solid #facc15;background:' + (window._v5Diff === d ? '#d97706' : '#1e293b') + ';color:#fff;font-weight:900;font-size:10px;cursor:pointer;">' + d.toUpperCase() + '</button>'
             ).join('') +
           '</div>' +
           '<select onchange="window._v5Coop=this.value" style="width:100%;padding:5px;border-radius:8px;border:1px solid #4ade80;background:#1e293b;color:#fff;font-size:10px;">' +
@@ -1214,7 +719,7 @@ socket.on('svCutscene', (d) => {
           const stageBtns = new Array(1, 2, 3).map(stNum => {
             const canPlay = adv.cleared || adv.chapter > c.ch || stNum <= curStg;
             const stStars = stNum === 1 ? s1 : (stNum === 2 ? s2 : s3);
-            return '<button ' + (canPlay ? '' : 'disabled') + ' onclick="socket.emit(\\'svStartStageV5\\',{ch:' + c.ch + ',stg:' + stNum + ',power:window._curSvPow||\\'fire\\',diff:window._v5Diff,coopPartner:window._v5Coop})" style="padding:5px 2px;border:none;border-radius:7px;background:' + (canPlay ? '#16a34a' : '#334155') + ';color:#fff;font-size:10px;font-weight:bold;cursor:pointer;">' +
+            return '<button ' + (canPlay ? '' : 'disabled') + ' onclick="socket.emit(\'svStartStageV5\',{ch:' + c.ch + ',stg:' + stNum + ',power:window._curSvPow||\'fire\',diff:window._v5Diff,coopPartner:window._v5Coop})" style="padding:5px 2px;border:none;border-radius:7px;background:' + (canPlay ? '#16a34a' : '#334155') + ';color:#fff;font-size:10px;font-weight:bold;cursor:pointer;">' +
               (canPlay ? ('S' + stNum + ' ' + '?'.repeat(stStars)) : '?? S' + stNum) + '</button>';
           }).join('');
  
@@ -1257,9 +762,9 @@ const V5_GEAR_UI = {
         v5Box.innerHTML =
           '<div style="background:rgba(56,189,248,0.12);border:1.5px solid #38bdf8;border-radius:11px;padding:8px;margin-bottom:7px;text-align:left;">' +
             '<div style="font-size:11px;font-weight:900;color:#7dd3fc;margin-bottom:5px;">?? 3-SLOT GEAR FORGE (??' + (v5.bossSouls || 0) + ' Souls | ??' + (v5.elemCores || 0) + ' Cores)</div>' +
-            '<div class="sv-shop-card"><div><b>?? Weapon:</b> ' + V5_GEAR_UI.weapon.at(wLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.weapon.at(wLv + 1) || 'MAXED ??') + '</span></div><button ' + (wLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\\'svUpgradeGearV5\\',\\'weapon\\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (wLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
-            '<div class="sv-shop-card"><div><b>??? Armor:</b> ' + V5_GEAR_UI.armor.at(aLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.armor.at(aLv + 1) || 'MAXED ??') + '</span></div><button ' + (aLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\\'svUpgradeGearV5\\',\\'armor\\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (aLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
-            '<div class="sv-shop-card"><div><b>?? Charm:</b> ' + V5_GEAR_UI.charm.at(cLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.charm.at(cLv + 1) || 'MAXED ??') + '</span></div><button ' + (cLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\\'svUpgradeGearV5\\',\\'charm\\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (cLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
+            '<div class="sv-shop-card"><div><b>?? Weapon:</b> ' + V5_GEAR_UI.weapon.at(wLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.weapon.at(wLv + 1) || 'MAXED ??') + '</span></div><button ' + (wLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\'svUpgradeGearV5\',\'weapon\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (wLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
+            '<div class="sv-shop-card"><div><b>??? Armor:</b> ' + V5_GEAR_UI.armor.at(aLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.armor.at(aLv + 1) || 'MAXED ??') + '</span></div><button ' + (aLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\'svUpgradeGearV5\',\'armor\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (aLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
+            '<div class="sv-shop-card"><div><b>?? Charm:</b> ' + V5_GEAR_UI.charm.at(cLv) + '<br><span style="color:#fde047;">Next: ' + (V5_GEAR_UI.charm.at(cLv + 1) || 'MAXED ??') + '</span></div><button ' + (cLv >= 4 ? 'disabled' : '') + ' onclick="socket.emit(\'svUpgradeGearV5\',\'charm\')" style="background:#0284c7;border:none;color:#fff;padding:6px 8px;border-radius:8px;font-weight:900;cursor:pointer;">' + (cLv >= 4 ? 'MAX' : 'Forge') + '</button></div>' +
           '</div>' +
  
           '<div style="background:rgba(250,204,21,0.12);border:1.5px solid #facc15;border-radius:11px;padding:8px;margin-bottom:7px;text-align:left;">' +
@@ -1270,12 +775,12 @@ const V5_GEAR_UI = {
               '• Train 3 Times: <b>' + Math.min(3, q.trains || 0) + '/3</b> ' + ((q.trains || 0) >= 3 ? '?' : '') + '<br>' +
               '• Deal 500 DMG: <b>' + Math.min(500, q.dmg || 0) + '/500</b> ' + ((q.dmg || 0) >= 500 ? '?' : '') +
             '</div>' +
-            '<button ' + (q.claimed ? 'disabled' : '') + ' onclick="socket.emit(\\'svClaimDailyQuestV5\\')" style="width:100%;margin-top:5px;padding:7px;border:none;border-radius:8px;background:' + (q.claimed ? '#334155' : 'linear-gradient(90deg,#f59e0b,#ec4899)') + ';color:#fff;font-weight:900;font-size:11px;cursor:pointer;">' + (q.claimed ? '? Daily Mythic Crate Claimed' : '?? Claim Daily Mythic Crate!') + '</button>' +
+            '<button ' + (q.claimed ? 'disabled' : '') + ' onclick="socket.emit(\'svClaimDailyQuestV5\')" style="width:100%;margin-top:5px;padding:7px;border:none;border-radius:8px;background:' + (q.claimed ? '#334155' : 'linear-gradient(90deg,#f59e0b,#ec4899)') + ';color:#fff;font-weight:900;font-size:11px;cursor:pointer;">' + (q.claimed ? '? Daily Mythic Crate Claimed' : '?? Claim Daily Mythic Crate!') + '</button>' +
           '</div>' +
  
           '<div class="sv-shop-card" style="border-color:#e879f9;">' +
             '<div><b style="color:#f0abfc;">?? Rebirth Ascension (Rebirth ' + (v5.rebirths || 0) + ')</b><br><span style="color:#cbd5e1;">Permanent +' + (((v5.rebirths || 0) + 1) * 25) + '% All-Stats & [??R' + ((v5.rebirths || 0) + 1) + '] Badge</span></div>' +
-            '<button onclick="socket.emit(\\'svRebirthV5\\')" style="background:#9333ea;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">?? Rebirth</button>' +
+            '<button onclick="socket.emit(\'svRebirthV5\')" style="background:#9333ea;border:none;color:#fff;padding:6px 10px;border-radius:8px;font-weight:900;cursor:pointer;">?? Rebirth</button>' +
           '</div>';
       };
  
@@ -1345,9 +850,9 @@ const V5_GEAR_UI = {
         }
 
         nav.innerHTML =
-          '<button onclick="setSvV6Tab(\\'w1\\')" style="background:#0f172a;border:1px solid #38bdf8;color:#fff;padding:8px 4px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🌍 World 1</button>' +
-          '<button onclick="setSvV6Tab(\\'w2\\')" style="background:#581c87;border:1px solid #c084fc;color:#fff;padding:8px 4px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🌌 World 2 ' + (v6.w2Unlocked ? '✅' : '🔒') + '</button>' +
-          '<button onclick="setSvV6Tab(\\'aura\\')" style="background:#78350f;border:1px solid #facc15;color:#fde047;padding:8px 4px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🔮 Aura / V4</button>';
+          '<button onclick="setSvV6Tab(\'w1\')" style="background:#0f172a;border:1px solid #38bdf8;color:#fff;padding:8px 4px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🌍 World 1</button>' +
+          '<button onclick="setSvV6Tab(\'w2\')" style="background:#581c87;border:1px solid #c084fc;color:#fff;padding:8px 4px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🌌 World 2 ' + (v6.w2Unlocked ? '✅' : '🔒') + '</button>' +
+          '<button onclick="setSvV6Tab(\'aura\')" style="background:#78350f;border:1px solid #facc15;color:#fde047;padding:8px 4px;border-radius:10px;font-weight:900;font-size:11px;cursor:pointer;">🔮 Aura / V4</button>';
 
         let w2Box = document.getElementById('svV6W2Box');
         if (!w2Box) {
@@ -1372,13 +877,13 @@ const V5_GEAR_UI = {
             '<div style="background:rgba(88,28,135,0.28);border:1px solid #a855f7;border-radius:12px;padding:12px;text-align:center;margin-top:6px;">' +
               '<div style="font-weight:900;color:#e9d5ff;font-size:13px;">🌌 WORLD 2: ASTRAL REALMS (CH.11–15)</div>' +
               '<div style="font-size:11px;color:#cbd5e1;margin:6px 0;">Clear World 1 (Ch.5 S3) & defeat the Astral Gatekeeper (25,000🪙) to unlock!</div>' +
-              '<button onclick="socket.emit(\\'svStartW2Gatekeeper\\', window.selectedPower || \\'fire\\')" style="background:linear-gradient(90deg,#9333ea,#ec4899);border:none;color:#fff;padding:9px 14px;border-radius:10px;font-weight:900;cursor:pointer;">⚔️ Challenge Astral Gatekeeper (25k🪙)</button>' +
+              '<button onclick="socket.emit(\'svStartW2Gatekeeper\', window.selectedPower || \'fire\')" style="background:linear-gradient(90deg,#9333ea,#ec4899);border:none;color:#fff;padding:9px 14px;border-radius:10px;font-weight:900;cursor:pointer;">⚔️ Challenge Astral Gatekeeper (25k🪙)</button>' +
             '</div>';
         } else {
           const diffBar =
             '<div style="display:flex;gap:6px;margin:6px 0;">' +
               ['normal', 'hard', 'nightmare'].map(d =>
-                '<button onclick="window._svW2Diff=\\'' + d + '\\';renderV6Panels();" style="flex:1;padding:6px;border-radius:8px;border:1px solid ' + (window._svW2Diff === d ? '#facc15' : '#475569') + ';background:' + (window._svW2Diff === d ? '#713f12' : '#0f172a') + ';color:#fff;font-weight:800;font-size:10px;text-transform:uppercase;cursor:pointer;">' + d + '</button>'
+                '<button onclick="window._svW2Diff=\'' + d + '\';renderV6Panels();" style="flex:1;padding:6px;border-radius:8px;border:1px solid ' + (window._svW2Diff === d ? '#facc15' : '#475569') + ';background:' + (window._svW2Diff === d ? '#713f12' : '#0f172a') + ';color:#fff;font-weight:800;font-size:10px;text-transform:uppercase;cursor:pointer;">' + d + '</button>'
               ).join('') +
             '</div>';
 
@@ -1391,7 +896,7 @@ const V5_GEAR_UI = {
               const stCount = stars[c.ch + '_' + stgNum] || 0;
               const starStr = stCount > 0 ? ' ' + '⭐'.repeat(stCount) : '';
               return '<button ' + (prevCleared ? '' : 'disabled') +
-                ' onclick="socket.emit(\\'svStartW2Stage\\',{ch:' + c.ch + ',stg:' + stgNum + ',power:(window.selectedPower||\\'fire\\'),diff:(window._svW2Diff||\\'normal\\')})"' +
+                ' onclick="socket.emit(\'svStartW2Stage\',{ch:' + c.ch + ',stg:' + stgNum + ',power:(window.selectedPower||\'fire\'),diff:(window._svW2Diff||\'normal\')})"' +
                 ' style="padding:7px 4px;border-radius:8px;border:none;font-weight:900;font-size:11px;cursor:' + (prevCleared ? 'pointer' : 'not-allowed') + ';background:' + (prevCleared ? '#7c3aed' : '#1e293b') + ';color:' + (prevCleared ? '#fff' : '#64748b') + ';">' +
                 (prevCleared ? ('⚔️ S' + stgNum + starStr) : ('🔒 S' + stgNum)) + '</button>';
             }).join('');
@@ -1420,7 +925,7 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
             '<div style="font-size:11px;color:#e2e8f0;">1. World 2 Unlocked: ' + (v6.w2Unlocked ? '✅' : '🔒') + '</div>' +
             '<div style="font-size:11px;color:#e2e8f0;">2. Power Mastery (100 V3 Wins): ' + wins + '/100 ' + (wins >= 100 ? '🔥' : '🔒') + '</div>' +
             '<div style="font-size:11px;color:#e2e8f0;margin-bottom:8px;">3. Status: ' + (isV4 ? '👑 V4 AWAKENED!' : 'Beat your V4 Shadow Mirror!') + '</div>' +
-            '<button onclick="socket.emit(\\'svStartV4Trial\\', window.selectedPower || \\'fire\\')" style="width:100%;background:linear-gradient(90deg,#dc2626,#9333ea);border:none;color:#fff;padding:8px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;">🔥 ENTER V4 TEMPLE TRIAL!</button>' +
+            '<button onclick="socket.emit(\'svStartV4Trial\', window.selectedPower || \'fire\')" style="width:100%;background:linear-gradient(90deg,#dc2626,#9333ea);border:none;color:#fff;padding:8px;border-radius:9px;font-weight:900;font-size:11px;cursor:pointer;">🔥 ENTER V4 TEMPLE TRIAL!</button>' +
           '</div>';
 
         const auraHtml =
@@ -1432,7 +937,7 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
             return '<div style="display:flex;justify-content:space-between;align-items:center;background:#0f172a;border:1px solid ' + (active ? '#facc15' : '#334155') + ';border-radius:10px;padding:8px;margin-bottom:6px;">' +
               '<div style="padding-right:6px;"><div style="font-weight:900;color:#fff;font-size:11px;">' + a.icon + ' ' + a.name + (active ? ' (Lv.' + (v6.auraLv || 1) + ')' : '') + '</div>' +
               '<div style="font-size:10px;color:#94a3b8;">' + a.desc + '</div></div>' +
-              '<button onclick="socket.emit(\\'svAuraAction\\',\\'' + a.k + '\\')" style="background:#7c3aed;border:none;color:#fff;padding:7px 10px;border-radius:8px;font-weight:900;font-size:10px;white-space:nowrap;cursor:pointer;">' + btnTxt + '</button>' +
+              '<button onclick="socket.emit(\'svAuraAction\',\'' + a.k + '\')" style="background:#7c3aed;border:none;color:#fff;padding:7px 10px;border-radius:8px;font-weight:900;font-size:10px;white-space:nowrap;cursor:pointer;">' + btnTxt + '</button>' +
             '</div>';
           }).join('');
 
@@ -1445,7 +950,7 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
             return '<div style="display:flex;justify-content:space-between;align-items:center;background:#0f172a;border:1px solid #854d0e;border-radius:10px;padding:8px;margin-bottom:6px;">' +
               '<div style="padding-right:6px;"><div style="font-weight:900;color:#fef08a;font-size:11px;">' + r.icon + ' ' + r.name + ' (Lv.' + lv + '/10)</div>' +
               '<div style="font-size:10px;color:#cbd5e1;">' + r.desc + '</div></div>' +
-              '<button onclick="socket.emit(\\'svForgeRelic\\',\\'' + r.k + '\\')" style="background:#b45309;border:none;color:#fff;padding:7px 10px;border-radius:8px;font-weight:900;font-size:10px;white-space:nowrap;cursor:pointer;">' + costTxt + '</button>' +
+              '<button onclick="socket.emit(\'svForgeRelic\',\'' + r.k + '\')" style="background:#b45309;border:none;color:#fff;padding:7px 10px;border-radius:8px;font-weight:900;font-size:10px;white-space:nowrap;cursor:pointer;">' + costTxt + '</button>' +
             '</div>';
           }).join('');
 

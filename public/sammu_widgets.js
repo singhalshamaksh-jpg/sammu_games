@@ -35,7 +35,7 @@ try {
       window.copyMyRefLink = function(ownerName) {
         const link = window.location.origin + '/?ref=' + encodeURIComponent(ownerName.toLowerCase());
         if (navigator.clipboard) navigator.clipboard.writeText(link);
-        alert('🔗 Referral Link Copied!\\n' + link + '\\n\\nInvite 15 new players using this link for +7 DAYS FREE, or email an Amazon/Google Play Gift Code to singhalshamaksh@gmail.com for a PERMANENT server!');
+        alert('🔗 Referral Link Copied!\n' + link + '\n\nInvite 15 new players using this link for +7 DAYS FREE, or email an Amazon/Google Play Gift Code to singhalshamaksh@gmail.com for a PERMANENT server!');
       };
 
       function renderServerList() {
@@ -72,7 +72,7 @@ try {
           if (s.type === 'custom' && !s.permanent) {
             const refBtn = document.createElement('div');
             refBtn.style.cssText = 'text-align:right;margin:-4px 0 8px 0;';
-            refBtn.innerHTML = '<button onclick="event.stopPropagation();copyMyRefLink(\\'' + s.owner + '\\')" style="background:#059669;border:none;color:#fff;font-size:11px;font-weight:bold;padding:3px 10px;border-radius:8px;cursor:pointer;">🔗 Copy Invite Link (' + s.refCount + '/15 for +7 Days)</button>';
+            refBtn.innerHTML = '<button onclick="event.stopPropagation();copyMyRefLink(\'' + s.owner + '\')" style="background:#059669;border:none;color:#fff;font-size:11px;font-weight:bold;padding:3px 10px;border-radius:8px;cursor:pointer;">🔗 Copy Invite Link (' + s.refCount + '/15 for +7 Days)</button>';
             box.appendChild(refBtn);
           }
         });
@@ -80,12 +80,12 @@ try {
       function selectAndEnterServer(srv) {
         if (srv.expired && !isLockedHostDevice) {
           const link = window.location.origin + '/?ref=' + encodeURIComponent(srv.owner);
-          alert('🔒 Your 7-Day Free Trial has ended!\\n\\nOption 1 (FREE): Share your link with ' + (15 - srv.refCount) + ' more friends to unlock +7 DAYS:\\n' + link + '\\n\\nOption 2 (PERMANENT): Email an Amazon Pay or Google Play Gift Code (with your Server Name) to singhalshamaksh@gmail.com!');
+          alert('🔒 Your 7-Day Free Trial has ended!\n\nOption 1 (FREE): Share your link with ' + (15 - srv.refCount) + ' more friends to unlock +7 DAYS:\n' + link + '\n\nOption 2 (PERMANENT): Email an Amazon Pay or Google Play Gift Code (with your Server Name) to singhalshamaksh@gmail.com!');
           return;
         }
         let pass = '';
         if (srv.locked && !isLockedHostDevice) {
-          pass = prompt('💠 PRIVATE SERVER\\nEnter Secret Password:');
+          pass = prompt('💠 PRIVATE SERVER\nEnter Secret Password:');
           if (!pass) return;
         }
         if (typeof socket !== 'undefined') {
@@ -149,12 +149,12 @@ try {
           modal.id = 'arenaMemeModal';
           modal.style.cssText = 'position:fixed;inset:0;background:rgba(7,11,25,0.94);z-index:999998;display:flex;align-items:center;justify-content:center;padding:10px;backdrop-filter:blur(8px);';
           const opts = MEME_TEMPLATES.map((t, i) => '<option value="' + i + '">' + t.name + '</option>').join('');
-          const stickers = ['😂','💀','🔥','🤡','👑','🧢','😭','🗿'].map(em => '<button onclick="addMemeSticker(\\'' + em + '\\')" style="background:#1e293b;border:1px solid #475569;border-radius:8px;padding:2px 6px;font-size:14px;cursor:pointer;">' + em + '</button>').join('');
+          const stickers = ['😂','💀','🔥','🤡','👑','🧢','😭','🗿'].map(em => '<button onclick="addMemeSticker(\'' + em + '\')" style="background:#1e293b;border:1px solid #475569;border-radius:8px;padding:2px 6px;font-size:14px;cursor:pointer;">' + em + '</button>').join('');
           modal.innerHTML =
             '<div style="background:#0f172a;border:2px solid #f59e0b;border-radius:20px;padding:12px;width:100%;max-width:410px;color:#fff;text-align:center;box-shadow:0 0 30px rgba(245,158,11,0.4);max-height:94vh;overflow-y:auto;">' +
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
                 '<span style="font-weight:900;font-size:15px;color:#fbbf24;">😂 PRO MEME STUDIO</span>' +
-                '<button onclick="document.getElementById(\\'arenaMemeModal\\').style.display=\\'none\\'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕ Close</button>' +
+                '<button onclick="document.getElementById(\'arenaMemeModal\').style.display=\'none\'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 10px;font-weight:bold;cursor:pointer;">✕ Close</button>' +
               '</div>' +
               '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
                 '<select id="memeTemplateSelect" onchange="window._memeCustomImg=null;renderMemeCanvas()" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid #f59e0b;background:#1e293b;color:#fff;font-size:12px;">' + opts + '</select>' +
@@ -169,10 +169,10 @@ try {
               '<div style="display:flex;gap:6px;align-items:center;justify-content:space-between;margin-bottom:6px;background:#1e293b;padding:6px 8px;border-radius:10px;font-size:11px;">' +
                 '<span>Size: <input id="memeFontSize" type="range" min="16" max="34" value="22" oninput="renderMemeCanvas()" style="width:65px;vertical-align:middle;"></span>' +
                 '<span style="display:flex;gap:4px;">' +
-                  '<button onclick="window._memeTextColor=\\'#ffffff\\';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid #38bdf8;cursor:pointer;"></button>' +
-                  '<button onclick="window._memeTextColor=\\'#facc15\\';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#facc15;border:1px solid #fff;cursor:pointer;"></button>' +
-                  '<button onclick="window._memeTextColor=\\'#ef4444\\';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#ef4444;border:1px solid #fff;cursor:pointer;"></button>' +
-                  '<button onclick="window._memeTextColor=\\'#4ade80\\';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#4ade80;border:1px solid #fff;cursor:pointer;"></button>' +
+                  '<button onclick="window._memeTextColor=\'#ffffff\';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid #38bdf8;cursor:pointer;"></button>' +
+                  '<button onclick="window._memeTextColor=\'#facc15\';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#facc15;border:1px solid #fff;cursor:pointer;"></button>' +
+                  '<button onclick="window._memeTextColor=\'#ef4444\';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#ef4444;border:1px solid #fff;cursor:pointer;"></button>' +
+                  '<button onclick="window._memeTextColor=\'#4ade80\';renderMemeCanvas()" style="width:18px;height:18px;border-radius:50%;background:#4ade80;border:1px solid #fff;cursor:pointer;"></button>' +
                 '</span>' +
                 '<select id="memeFilterSelect" onchange="window._memeFilter=this.value;renderMemeCanvas()" style="padding:3px;border-radius:6px;background:#0f172a;color:#fff;border:1px solid #38bdf8;font-size:11px;">' +
                   '<option value="none">🎨 Normal</option>' +
@@ -463,7 +463,7 @@ try {
           zBox.id = 'zoroPromoBox';
           zBox.style.cssText = 'display:none;background:linear-gradient(90deg,#14532d,#166534);border:2px solid #4ade80;border-radius:14px;padding:10px 14px;margin:8px auto;max-width:360px;text-align:center;color:#fff;box-shadow:0 0 20px rgba(74,222,128,0.35);position:relative;z-index:50;';
           zBox.innerHTML =
-            '<div style="font-size:11px;color:#bbf7d0;font-weight:bold;">⚔️ ZORO\\'S DOJO FEATURED CREATOR</div>' +
+            '<div style="font-size:11px;color:#bbf7d0;font-weight:bold;">⚔️ ZORO\'S DOJO FEATURED CREATOR</div>' +
             '<div style="font-size:15px;font-weight:900;margin:2px 0;">✨ Yori Akiyama ✨</div>' +
             '<a href="https://youtube.com" target="_blank" rel="noopener noreferrer" ' +
             'style="display:inline-block;margin-top:4px;background:#ef4444;color:#fff;text-decoration:none;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:bold;">▶️ Subscribe on YouTube</a>';
@@ -909,7 +909,7 @@ try {
       // 1. Stop heavy DOM polling intervals on old phones
       const _origSetInterval = window.setInterval;
       window.setInterval = function(fn, ms, ...args) {
-        if (ms >= 600 && ms <= 1500 && fn && /querySelectorAll\(['"]button['"]\)|aiConsoleFab|injectImposterBtn/.test(fn.toString())) {
+        if (ms >= 600 && ms <= 1500 && fn && /querySelectorAll(['"]button['"])|aiConsoleFab|injectImposterBtn/.test(fn.toString())) {
           return _origSetInterval(fn, 4500, ...args);
         }
         return _origSetInterval(fn, ms, ...args);
@@ -1077,9 +1077,9 @@ try {
           bar.innerHTML =
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
               '<span>🎛️ Filter Sweep</span>' +
-              '<button id="proBoostBtn" onclick="window._phonkBoost=!window._phonkBoost;this.textContent=window._phonkBoost?\'🔊 808 BOOST: ON\':\'🔉 808 BOOST: OFF\'" style="background:#f59e0b;border:none;color:#111;border-radius:8px;padding:3px 8px;font-weight:900;font-size:10px;cursor:pointer;">🔊 808 BOOST: ON</button>' +
+              '<button id="proBoostBtn" onclick="window._phonkBoost=!window._phonkBoost;this.textContent=window._phonkBoost?'🔊 808 BOOST: ON':'🔉 808 BOOST: OFF'" style="background:#f59e0b;border:none;color:#111;border-radius:8px;padding:3px 8px;font-weight:900;font-size:10px;cursor:pointer;">🔊 808 BOOST: ON</button>' +
             '</div>' +
-            '<input type="range" min="350" max="16000" value="16000" oninput="window._phonkFilterFreq=Number(this.value);if(typeof proFilter!==\'undefined\'&&proFilter)proFilter.frequency.value=window._phonkFilterFreq;" style="width:100%;accent-color:#e879f9;">';
+            '<input type="range" min="350" max="16000" value="16000" oninput="window._phonkFilterFreq=Number(this.value);if(typeof proFilter!=='undefined'&&proFilter)proFilter.frequency.value=window._phonkFilterFreq;" style="width:100%;accent-color:#e879f9;">';
           const pads = card.querySelector('.dj-pads');
           if (pads) card.insertBefore(bar, pads);
         }
@@ -1398,7 +1398,7 @@ try {
               ? '<span style="color:#4ade80;font-weight:bold;">✅ Answer locked secretly! Waiting for others...</span>'
               : '✍️ <b>Type your answer in chat!</b> (Hidden from chat so nobody knows it is yours!)';
           } else {
-            sub.innerHTML = '🗳️ <b>Tap the funniest answer!</b> (You can\'t vote for yourself)';
+            sub.innerHTML = '🗳️ <b>Tap the funniest answer!</b> (You can't vote for yourself)';
             d.entries.forEach((ent, idx) => {
               const btn = document.createElement('button');
               const isMine = (ent.authorId === socket.id);
@@ -1776,7 +1776,7 @@ try {
         if (badge) { badge.textContent = cfg.label; badge.style.display = 'block'; }
       }
       setInterval(() => {
-        const btn = Array.from(document.querySelectorAll('button')).find(b => /🌌\s*wp|\bwp\b/i.test(b.textContent || ''));
+        const btn = Array.from(document.querySelectorAll('button')).find(b => /🌌s*wp|wp/i.test(b.textContent || ''));
         if (btn && !btn.dataset.srvWp) {
           btn.dataset.srvWp = '1';
           btn.addEventListener('click', () => setSrvWp(!wpOn));

@@ -7,3 +7,4 @@ sammuverse_stats.json
 sammu_economy.json
 ai_banks_cache.json
 *.log
+.autopilot_safe/

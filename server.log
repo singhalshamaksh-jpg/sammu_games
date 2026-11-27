@@ -1,5 +1,4 @@
+nohup: ignoring input
 Sammu Games Running on Port 3000
-Upstash Error: ERR This database has reached current Fixed plan limits. Please upgrade manually or enable auto upgrade on Upstash Console
-Upstash Error: ERR This database has reached current Fixed plan limits. Please upgrade manually or enable auto upgrade on Upstash Console
-Upstash Error: ERR This database has reached current Fixed plan limits. Please upgrade manually or enable auto upgrade on Upstash Console
-Upstash Error: ERR This database has reached current Fixed plan limits. Please upgrade manually or enable auto upgrade on Upstash Console
+(node:6697) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 31 chatMessage listeners added to [Socket]. MaxListeners is 30. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)

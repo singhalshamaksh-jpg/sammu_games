@@ -2445,7 +2445,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('proFilterBar')) {
+            if (false && typeof body === 'string' && !body.includes('proFilterBar')) {
                 body = body.replace('</body>', PHONK_PRO_UPGRADE + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2529,7 +2529,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('mafiaModal')) {
+            if (false && typeof body === 'string' && !body.includes('mafiaModal')) {
                 body = body.replace('</body>', MAFIA_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2642,7 +2642,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('royaleBar')) {
+            if (false && typeof body === 'string' && !body.includes('royaleBar')) {
                 body = body.replace('</body>', ROYALE_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2874,7 +2874,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('zombieBar')) {
+            if (false && typeof body === 'string' && !body.includes('zombieBar')) {
                 body = body.replace('</body>', ZOMBIE_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -3182,7 +3182,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('raidBar')) {
+            if (false && typeof body === 'string' && !body.includes('raidBar')) {
                 body = body.replace('</body>', COOP_PARTY_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -3454,7 +3454,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('bluffBar')) {
+            if (false && typeof body === 'string' && !body.includes('bluffBar')) {
                 body = body.replace('</body>', BLUFF_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -3652,7 +3652,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('islandBar')) {
+            if (false && typeof body === 'string' && !body.includes('islandBar')) {
                 body = body.replace('</body>', ISLAND_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -3974,7 +3974,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('cleanRaidBar')) {
+            if (false && typeof body === 'string' && !body.includes('cleanRaidBar')) {
                 body = body.replace('</body>', PARTY_ALL_IN_ONE_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -4180,7 +4180,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('bootSocketPartyUI')) {
+            if (false && typeof body === 'string' && !body.includes('bootSocketPartyUI')) {
                 body = body.replace('</body>', SOCKET_UI_BOOT + '\n</body>');
             }
             return origSend.call(this, body);
@@ -4266,7 +4266,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('wpFloatingBadge')) {
+            if (false && typeof body === 'string' && !body.includes('wpFloatingBadge')) {
                 body = body.replace('</body>', SERVER_WP_PACK + '\n</body>');
             }
             return origSend.call(this, body);
@@ -4340,7 +4340,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('renderFlexCard')) {
+            if (false && typeof body === 'string' && !body.includes('renderFlexCard')) {
                 body = body.replace('</body>', GACHA_FLEX_SCRIPT + '\n</body>');
             }
             return origSend.call(this, body);
@@ -4734,7 +4734,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('courtBar')) {
+            if (false && typeof body === 'string' && !body.includes('courtBar')) {
                 body = body.replace('</body>', COURT_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -7530,7 +7530,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svBootLoaded')) {
+            if (false && typeof body === 'string' && !body.includes('_svBootLoaded')) {
                 body = body.replace('</body>', SV_PAGE_BOOT_TAG + '\n</body>');
             }
             return origSend.call(this, body);
@@ -8080,7 +8080,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svWorldRaidHud')) {
+            if (false && typeof body === 'string' && !body.includes('svWorldRaidHud')) {
                 body = body.replace('</body>', WORLD_RAID_HUD_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -8226,7 +8226,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svGlobalLbHooked')) {
+            if (false && typeof body === 'string' && !body.includes('_svGlobalLbHooked')) {
                 body = body.replace('</body>', GLOBAL_LB_CLIENT_SCRIPT + '\n</body>');
             }
             return origSend.call(this, body);
@@ -8428,7 +8428,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_globalAudioEngineInstalled')) {
+            if (false && typeof body === 'string' && !body.includes('_globalAudioEngineInstalled')) {
                 body = body.replace('</body>', GLOBAL_CHAT_AND_GAME_AUDIO + '\n</body>');
             }
             return origSend.call(this, body);
@@ -8954,7 +8954,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('hkCreatorModal')) {
+            if (false && typeof body === 'string' && !body.includes('hkCreatorModal')) {
                 body = body.replace('</body>', HK_CREATOR_PANEL_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -9086,7 +9086,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_inAppPatchApplied')) {
+            if (false && typeof body === 'string' && !body.includes('_inAppPatchApplied')) {
                 body = body.replace('</body>', IN_APP_BROWSER_PATCH_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -9621,7 +9621,7 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svV5Installed')) {
+            if (false && typeof body === 'string' && !body.includes('_svV5Installed')) {
                 body = body.replace('</body>', V5_EXPANSION_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -10300,7 +10300,7 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuverseV6CleanUI')) {
+            if (false && typeof body === 'string' && !body.includes('sammuverseV6CleanUI')) {
                 body = body.replace('</body>', V6_COMPLETE_CLIENT_BUNDLE + '\n</body>');
             }
             return origSend.call(this, body);
@@ -10449,7 +10449,7 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svV6SocketReceiver')) {
+            if (false && typeof body === 'string' && !body.includes('svV6SocketReceiver')) {
                 body = body.replace('</body>', V6_SOCKET_RECEIVER + '\n</body>');
             }
             return origSend.call(this, body);
@@ -10510,7 +10510,7 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuAntiLagBooster')) {
+            if (false && typeof body === 'string' && !body.includes('sammuAntiLagBooster')) {
                 body = body.replace('</body>', ANTI_LAG_BOOSTER_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -11296,7 +11296,7 @@ Rules:
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece3And4Boot')) {
+            if (false && typeof body === 'string' && !body.includes('piece3And4Boot')) {
                 body = body.replace('</body>', PIECE3_AND_4_HTML + '\n</body>');
             }
             return origSend.call(this, body);
@@ -11490,7 +11490,7 @@ Rules:
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece5FxBoot')) {
+            if (false && typeof body === 'string' && !body.includes('piece5FxBoot')) {
                 body = body.replace('</body>', PIECE5_PART1 + '\n</body>');
             }
             return origSend.call(this, body);
@@ -11794,7 +11794,7 @@ Rules:
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('waterIoLauncherUI')) {
+            if (false && typeof body === 'string' && !body.includes('waterIoLauncherUI')) {
                 body = body.replace('</body>', WATERIO_LAUNCHER_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -11816,7 +11816,7 @@ Rules:
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_sammuAllWidgetsInjected')) {
+            if (false && typeof body === 'string' && !body.includes('_sammuAllWidgetsInjected')) {
                 const bundle = ['<!-- _sammuAllWidgetsInjected -->', MULTI_SERVER_UI, WORD_IMPOSTER_WIDGET, ZORO_ISOLATION_SCRIPT, PHONK_DJ_WIDGET, AI_CONSOLE_WIDGET].join('\n');
                 body = body.replace('</body>', bundle + '\n</body>');
             }

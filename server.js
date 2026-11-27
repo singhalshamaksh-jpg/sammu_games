@@ -92,7 +92,7 @@ function roomTimeout(fn, ms) {
 app.use((req, res, next) => {
     const _send = res.send;
     res.send = function(body) {
-        if (typeof body === 'string' && body.includes('</body>')) {
+        if (false && typeof body === 'string') {
             const clientFix = `<script>
             window.loadCustomMemePhoto = function(e) {
                 const input = e && e.target ? e.target : document.getElementById('memeFileInputFixed');

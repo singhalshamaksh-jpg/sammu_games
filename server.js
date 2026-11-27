@@ -89,7 +89,42 @@ function roomTimeout(fn, ms) {
 }
 
 // 1. Auto-fix Meme Studio Photo Upload & Gallery Picker in the browser
-// [Static UI moved to public/sammu_widgets.*]
+app.use((req, res, next) => {
+    const _send = res.send;
+    res.send = function(body) {
+        if (typeof body === 'string' && body.includes('</body>')) {
+            const clientFix = `<script>
+            window.loadCustomMemePhoto = function(e) {
+                const input = e && e.target ? e.target : document.getElementById('memeFileInputFixed');
+                const file = input && input.files && input.files.at(0);
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Resize huge camera photos so 6yr old phone GPU renders them 100% of the time
+                        const off = document.createElement('canvas');
+                        off.width = 340; off.height = 250;
+                        off.getContext('2d').drawImage(img, 0, 0, 340, 250);
+                        const smallImg = new Image();
+                        smallImg.onload = function() {
+                            window._memeCustomImg = smallImg;
+                            if (typeof renderMemeCanvas === 'function') renderMemeCanvas();
+                        };
+                        smallImg.src = off.toDataURL('image/jpeg', 0.85);
+                        if (input) input.value = '';
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+            </script>`;
+            body = body.replace('</body>', clientFix + '\n</body>');
+        }
+        return _send.call(this, body);
+    };
+    next();
+});
 
 
 // 2. Route every bot reply (!dare, !truth, !quiz) & meme image to the exact server
@@ -959,7 +994,13 @@ const PROMAX_VOICE_WIDGET = `
 `;
 
 
-app.get(['/', '/index.html'], (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get(['/', '/index.html'], (req, res, next) => {
+    const indexPath = path.join(__dirname, 'index.html');
+    fs.readFile(indexPath, 'utf8', (err, html) => {
+        if (err) return next();
+        const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET, PROMAX_VOICE_WIDGET, app.locals.AVATAR_RPG_UI || '').join('\n');
+        res.send(html.replace('</body>', allWidgets + '\n</body>'));
+    });
 });
 
 

@@ -1,4 +1,5 @@
 // === MULTI_SERVER_UI ===
+try {
 (function() {
       let currentTab = 'official', allServers = [];
       let isLockedHostDevice = false;
@@ -381,8 +382,10 @@
       }
       window.addEventListener('DOMContentLoaded', () => { hookServerSocket(); setTimeout(hookServerSocket, 600); });
     })();
+} catch (e) { console.error('Widget MULTI_SERVER_UI error:', e); }
 
 // === WORD_IMPOSTER_WIDGET ===
+try {
 (function() {
       function injectImposterBtn() {
         const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /hoop shootout|target sniper/i.test(b.textContent || ''));
@@ -448,8 +451,10 @@
       }
       setInterval(bindImposterSockets, 800);
     })();
+} catch (e) { console.error('Widget WORD_IMPOSTER_WIDGET error:', e); }
 
 // === ZORO_ISOLATION_SCRIPT ===
+try {
 (function() {
       function updateZoroBanner(show) {
         let zBox = document.getElementById('zoroPromoBox');
@@ -575,8 +580,10 @@
         setTimeout(() => { wrapSocketForSlowNet(); startChatAntiFreeze(); }, 800);
       });
     })();
+} catch (e) { console.error('Widget ZORO_ISOLATION_SCRIPT error:', e); }
 
 // === PHONK_DJ_WIDGET ===
+try {
 (function() {
       let audioCtx = null, beatTimer = null, beatStep = 0, activeTrackLabel = null, auraMode = 'bhai';
 
@@ -815,8 +822,10 @@
 
       window.addEventListener('DOMContentLoaded', () => { setupPhonkDjAndAntiDrop(); setTimeout(setupPhonkDjAndAntiDrop, 1200); });
     })();
+} catch (e) { console.error('Widget PHONK_DJ_WIDGET error:', e); }
 
 // === AI_CONSOLE_WIDGET ===
+try {
 (function() {
       function setupAiConsole() {
         if (window.selectedServerId !== 'srv_topsecret') return;
@@ -892,8 +901,10 @@
       window.sendAiCommand = sendAiCommand;
       window.renderAiCommands = renderAiCommands;
     })();
+} catch (e) { console.error('Widget AI_CONSOLE_WIDGET error:', e); }
 
 // === PHONK_PRO_UPGRADE ===
+try {
 (function() {
       // 1. Stop heavy DOM polling intervals on old phones
       const _origSetInterval = window.setInterval;
@@ -1075,8 +1086,10 @@
       }
       window.addEventListener('DOMContentLoaded', () => setTimeout(upgradePhonkModalControls, 1500));
     })();
+} catch (e) { console.error('Widget PHONK_PRO_UPGRADE error:', e); }
 
 // === MAFIA_UI ===
+try {
 (function() {
       window._mafiaActive = false;
       function injectMafiaHostBtn() {
@@ -1128,8 +1141,10 @@
       }
       setInterval(bindMafia, 1200);
     })();
+} catch (e) { console.error('Widget MAFIA_UI error:', e); }
 
 // === ROYALE_UI ===
+try {
 (function() {
       function injectRoyaleHostBtn() {
         const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /mafia party|word imposter|hoop shootout/i.test(b.textContent || ''));
@@ -1164,8 +1179,10 @@
       }
       setInterval(bindRoyale, 1200);
     })();
+} catch (e) { console.error('Widget ROYALE_UI error:', e); }
 
 // === ZOMBIE_UI ===
+try {
 (function() {
       let lastHordeHp = null, lastWallHp = null, maxWaveHp = 1200;
       function spawnBattleFx(icon, shake) {
@@ -1250,8 +1267,10 @@
       }
       setInterval(bindZombie, 1200);
     })();
+} catch (e) { console.error('Widget ZOMBIE_UI error:', e); }
 
 // === COOP_PARTY_UI ===
+try {
 (function() {
       function injectCoopPartyBtns() {
         const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /zombie outbreak|bomb royale|mafia party/i.test(b.textContent || ''));
@@ -1345,8 +1364,10 @@
       }
       setInterval(bindCoopGames, 1200);
     })();
+} catch (e) { console.error('Widget COOP_PARTY_UI error:', e); }
 
 // === BLUFF_UI ===
+try {
 (function() {
       function injectBluffBtn() {
         const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /bank heist|dragon raid|zombie outbreak/i.test(b.textContent || ''));
@@ -1396,8 +1417,10 @@
       }
       setInterval(bindBluff, 1200);
     })();
+} catch (e) { console.error('Widget BLUFF_UI error:', e); }
 
 // === ISLAND_UI ===
+try {
 (function() {
       function injectIslandBtn() {
         const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /bluff master|bank heist|zombie outbreak/i.test(b.textContent || ''));
@@ -1447,8 +1470,10 @@
       }
       setInterval(bindIsland, 1200);
     })();
+} catch (e) { console.error('Widget ISLAND_UI error:', e); }
 
 // === PARTY_ALL_IN_ONE_UI ===
+try {
 (function() {
       function injectAllFourButtons() {
         const anchor = Array.from(document.querySelectorAll('button')).find(b => /hoop shootout|word imposter/i.test(b.textContent || ''));
@@ -1594,8 +1619,10 @@
       }
       setInterval(bindCleanPartySockets, 1200);
     })();
+} catch (e) { console.error('Widget PARTY_ALL_IN_ONE_UI error:', e); }
 
 // === SOCKET_UI_BOOT ===
+try {
 (function() {
       function bootSocketPartyUI() {
         if (typeof socket === 'undefined' || window._partyBooted) return;
@@ -1715,8 +1742,10 @@
       }
       window.addEventListener('DOMContentLoaded', () => { bootSocketPartyUI(); setTimeout(bootSocketPartyUI, 800); });
     })();
+} catch (e) { console.error('Widget SOCKET_UI_BOOT error:', e); }
 
 // === SERVER_WP_PACK ===
+try {
 (function() {
       const WP_CLASSES = ['wp-pokemon','wp-cute-babies','wp-royal-queen','wp-cyber-aurora','wp-golden-empire','wp-emerald-matrix','wp-crimson-dragon','wp-diamond-frost'];
       const MAP = {
@@ -1759,8 +1788,10 @@
         }, 800);
       });
     })();
+} catch (e) { console.error('Widget SERVER_WP_PACK error:', e); }
 
 // === GACHA_FLEX_SCRIPT ===
+try {
 (function() {
       const waitGacha = setInterval(() => {
         if (typeof socket === 'undefined') return;
@@ -1787,8 +1818,10 @@
         });
       }, 600);
     })();
+} catch (e) { console.error('Widget GACHA_FLEX_SCRIPT error:', e); }
 
 // === COURT_UI ===
+try {
 (function() {
       function injectCourtBtn() {
         const anchor = Array.from(document.querySelectorAll('button')).find(b => /castaway island|bluff master|bank heist|hoop shootout/i.test(b.textContent || ''));
@@ -1870,8 +1903,10 @@
       }
       setInterval(bindCourt, 1200);
     })();
+} catch (e) { console.error('Widget COURT_UI error:', e); }
 
 // === SV_PAGE_BOOT_TAG ===
+try {
 (function() {
       if (window._svBootLoaded) return;
       window._svBootLoaded = true;
@@ -1947,8 +1982,10 @@
       window.addEventListener('DOMContentLoaded', initSvBoot);
       setTimeout(initSvBoot, 500);
     })();
+} catch (e) { console.error('Widget SV_PAGE_BOOT_TAG error:', e); }
 
 // === WORLD_RAID_HUD_UI ===
+try {
 (function() {
       const bootWrAndStory = setInterval(() => {
         if (typeof socket === 'undefined' || window._wrAndStoryFixed) return;
@@ -2006,8 +2043,10 @@
         }, 900);
       }, 600);
     })();
+} catch (e) { console.error('Widget WORLD_RAID_HUD_UI error:', e); }
 
 // === GLOBAL_LB_CLIENT_SCRIPT ===
+try {
 (function() {
       const waitLbBoot = setInterval(() => {
         if (typeof socket === 'undefined' || window._svGlobalLbHooked) return;
@@ -2067,8 +2106,10 @@
         }, 1200);
       }, 600);
     })();
+} catch (e) { console.error('Widget GLOBAL_LB_CLIENT_SCRIPT error:', e); }
 
 // === GLOBAL_CHAT_AND_GAME_AUDIO ===
+try {
 (function() {
       if (window._globalAudioEngineInstalled) return;
       window._globalAudioEngineInstalled = true;
@@ -2131,8 +2172,10 @@
         });
       }, 500);
     })();
+} catch (e) { console.error('Widget GLOBAL_CHAT_AND_GAME_AUDIO error:', e); }
 
 // === HK_CREATOR_PANEL_SCRIPT ===
+try {
 (function() {
       let hkLivePlayers = [];
 
@@ -2177,8 +2220,10 @@
         setInterval(() => socket.emit('hkCheckAccess'), 5000);
       }, 600);
     })();
+} catch (e) { console.error('Widget HK_CREATOR_PANEL_SCRIPT error:', e); }
 
 // === IN_APP_BROWSER_PATCH_UI ===
+try {
 (function() {
       if (window._inAppPatchApplied) return;
       window._inAppPatchApplied = true;
@@ -2243,8 +2288,10 @@
         }
       }, 400);
     })();
+} catch (e) { console.error('Widget IN_APP_BROWSER_PATCH_UI error:', e); }
 
 // === V6_SOCKET_RECEIVER ===
+try {
 (function() {
       if (window._svV6ReceiverBound) return;
       window._svV6ReceiverBound = true;
@@ -2307,8 +2354,10 @@
         socket.emit('svRequestCleanV4');
       }, 400);
     })();
+} catch (e) { console.error('Widget V6_SOCKET_RECEIVER error:', e); }
 
 // === ANTI_LAG_BOOSTER_UI ===
+try {
 (function() {
       if (window._antiLagApplied) return;
       window._antiLagApplied = true;
@@ -2331,8 +2380,10 @@
         }
       });
     })();
+} catch (e) { console.error('Widget ANTI_LAG_BOOSTER_UI error:', e); }
 
 // === PIECE3_AND_4_HTML ===
+try {
 (function() {
       const auraCanvas = document.getElementById('sammuAuraCanvas');
       const actx = auraCanvas ? auraCanvas.getContext('2d') : null;
@@ -2470,8 +2521,10 @@
         });
       }, 500);
     })();
+} catch (e) { console.error('Widget PIECE3_AND_4_HTML error:', e); }
 
 // === PIECE5_PART1 ===
+try {
 (function() {
       const fxCanvas = document.getElementById('sammuSpectacleCanvas');
       const fctx = fxCanvas ? fxCanvas.getContext('2d') : null;
@@ -2644,8 +2697,10 @@
         });
       }, 500);
     })();
+} catch (e) { console.error('Widget PIECE5_PART1 error:', e); }
 
 // === WATERIO_LAUNCHER_UI ===
+try {
 (function() {
       if (window._waterIoLauncherBound) return;
       window._waterIoLauncherBound = true;
@@ -2676,8 +2731,10 @@
         });
       }, 600);
     })();
+} catch (e) { console.error('Widget WATERIO_LAUNCHER_UI error:', e); }
 
 // === MAKEUP_STUDIO_WIDGET ===
+try {
 (function() {
   let mkMode = 'doll', activeZone = 'lips', selectedNail = 0;
   const defaultDoll = {
@@ -2941,8 +2998,10 @@
   }
   window.addEventListener('DOMContentLoaded', () => { bindSkincareSocket(); setTimeout(bindSkincareSocket, 1000); });
 })();
+} catch (e) { console.error('Widget MAKEUP_STUDIO_WIDGET error:', e); }
 
 // === DIDI_PROMO_WIDGET ===
+try {
 (function() {
   let inArena = false;
   function bindPromoSocket() {
@@ -2960,8 +3019,10 @@
   }
   window.addEventListener('DOMContentLoaded', () => { bindPromoSocket(); setTimeout(bindPromoSocket, 800); });
 })();
+} catch (e) { console.error('Widget DIDI_PROMO_WIDGET error:', e); }
 
 // === MASTERCHEF_STUDIO_WIDGET ===
+try {
 (function() {
   let cfMode = 'pizza', selectedTopping = '🍄';
   let dishState = { baseColor: '#dc2626', items: new Array() };
@@ -3036,8 +3097,10 @@
   };
   window.addEventListener('DOMContentLoaded', () => { initChefButton(); setTimeout(initChefButton, 1400); });
 })();
+} catch (e) { console.error('Widget MASTERCHEF_STUDIO_WIDGET error:', e); }
 
 // === NEW_ARENAS_WIDGET ===
+try {
 (function() {
   let fruitItems = new Array(), fruitLoop = null, myFruitScore = 0, hoopPos = 0, hoopDir = 1, hoopAnimId = null;
   function playMemeSfx(type) {
@@ -3115,8 +3178,10 @@
   }
   window.addEventListener('DOMContentLoaded', () => { injectHostGamesAndSfx(); bindMegaSockets(); setTimeout(() => { injectHostGamesAndSfx(); bindMegaSockets(); }, 1300); });
 })();
+} catch (e) { console.error('Widget NEW_ARENAS_WIDGET error:', e); }
 
 // === PROMAX_VOICE_WIDGET ===
+try {
 (function() {
   window._proMaxVoiceOn = true;
   let audioUnlocked = false;
@@ -3293,4 +3358,16 @@
     bindProMaxSocket();
     setTimeout(bindProMaxSocket, 1000);
   });
+})();
+} catch (e) { console.error('Widget PROMAX_VOICE_WIDGET error:', e); }
+
+
+// === GUARANTEE SERVER LIST LOADS IMMEDIATELY ===
+(function() {
+  const bootList = setInterval(() => {
+    if (typeof socket === 'undefined') return;
+    clearInterval(bootList);
+    socket.emit('requestServerList');
+    if (typeof window.hookServerSocket === 'function') window.hookServerSocket();
+  }, 250);
 })();

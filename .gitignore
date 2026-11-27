@@ -6,3 +6,4 @@ sammuverse_logs.json
 sammuverse_stats.json
 sammu_economy.json
 ai_banks_cache.json
+*.log

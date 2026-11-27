@@ -3133,3 +3133,24 @@ try {
     if (typeof window.hookServerSocket === 'function') window.hookServerSocket();
   }, 250);
 })();
+
+
+
+// === 🎙️ SAMMUBRAIN VOICE SPEAKER & MULTIMODAL QUICK BAR ===
+(function() {
+  const bindVoice = setInterval(() => {
+    if (typeof socket === 'undefined') return;
+    clearInterval(bindVoice);
+    socket.on('sammuAiSpeak', (data) => {
+      if (!data || !data.text || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(data.text);
+      utter.rate = 1.05;
+      utter.pitch = 1.05;
+      const voices = window.speechSynthesis.getVoices();
+      const hindiOrEn = voices.find(v => /hi-IN|en-IN/i.test(v.lang)) || voices.at(0);
+      if (hindiOrEn) utter.voice = hindiOrEn;
+      window.speechSynthesis.speak(utter);
+    });
+  }, 400);
+})();

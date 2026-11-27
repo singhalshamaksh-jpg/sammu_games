@@ -1,0 +1,198 @@
+=== Verified Edit at 2026-11-28 00:18:25.135769 ===
+Changed: multi_servers.js, public/sammu_widgets.js
+
+diff --git a/multi_servers.js b/multi_servers.js
+index d28bdf0..ddf531b 100644
+--- a/multi_servers.js
++++ b/multi_servers.js
+@@ -11856,5 +11856,160 @@ Rules:
+         });
+     });
+ 
+-   return OG_HOSTS;     
++   
++// === 🧠 MULTIMODAL SAMMUBRAIN AI (LIVE WEB SEARCH + THINKING + TEXT2IMG + IMG2IMG + VOICE) ===
++const lastUserImage = new Map(); // Stores each user's last shared image URL/data for !edit
++
++async function liveWebSearch(query) {
++    let snippets = [];
++    try {
++        const wRes = await fetch(`https://wikipedia.org{encodeURIComponent(query)}&format=json&srlimit=2`);
++        const wData = await wRes.json();
++        for (const h of (wData?.query?.search || [])) {
++            snippets.push(`${h.title}: ${h.snippet.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&#039;/g, "'")}`);
++        }
++    } catch (e) {}
++    try {
++        const dRes = await fetch(`https://duckduckgo.com{encodeURIComponent(query)}&format=json&no_html=1`);
++        const dData = await dRes.json();
++        if (dData.AbstractText) snippets.unshift(dData.AbstractText);
++    } catch (e) {}
++    return snippets.join(" | ").slice(0, 650);
++}
++
++async function runSammuBrain(userPrompt, username) {
++    const webFacts = await liveWebSearch(userPrompt);
++    const sysPrompt = `You are SammuVerse AI, a witty, smart Hinglish & English buddy in SammuGames Universe. Live Web Facts: [${webFacts || 'None'}]. First write a 1-line thought starting with "💭 Thought: ", then on a new line write your crisp reply under 350 chars.`;
++
++    const hcKeys = Object.entries(process.env)
++        .filter(([k, v]) => /HACKCLUB|PARTICLE|HC_AI/i.test(k) && v && v.trim().length > 8)
++        .map(([, v]) => v.trim());
++
++    for (const key of hcKeys) {
++        try {
++            const res = await fetch("https://hackclub.com", {
++                method: "POST",
++                headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
++                body: JSON.stringify({
++                    model: "qwen/qwen3-32b",
++                    messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
++                    max_tokens: 320,
++                    temperature: 0.65
++                })
++            });
++            if (res.ok) {
++                const d = await res.json();
++                const txt = d?.choices?.at(0)?.message?.content;
++                if (txt && txt.trim()) return txt.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
++            }
++        } catch (e) {}
++    }
++
++    try {
++        const pRes = await fetch("https://pollinations.ai", {
++            method: "POST",
++            headers: { "Content-Type": "application/json" },
++            body: JSON.stringify({
++                messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
++                model: "openai"
++            })
++        });
++        if (pRes.ok) {
++            const pText = await pRes.text();
++            if (pText && pText.trim() && !pText.includes("<!DOCTYPE")) return pText.trim().slice(0, 480);
++        }
++    } catch (e) {}
++
++    if (webFacts) return `💭 Thought: Searching live web for "${userPrompt}"...\n🌐 ${webFacts.slice(0, 360)}`;
++    return `💭 Thought: Connecting to SammuGames core...\n🔥 Online hoon ${username} bro! Try !imagine <prompt> ya !edit <change dress>!`;
++}
++
++// Public temporary image bridge so Pollinations Img2Img can fetch user's uploaded photo
++const tempEditImages = new Map();
++app.get('/ai-temp-img/:id', (req, res) => {
++    const dataUrl = tempEditImages.get(req.params.id);
++    if (!dataUrl) return res.status(404).send('Expired');
++    const m = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
++    if (!m) return res.status(400).send('Invalid');
++    res.set('Content-Type', m.at(1));
++    res.send(Buffer.from(m.at(2), 'base64'));
++});
++
++io.on('connection', (socket) => {
++    // Track any image shared by a user so `!edit <prompt>` knows which photo to transform!
++    socket.on('chatImage', (payload) => {
++        const img = typeof payload === 'object' ? (payload.image || payload.img || payload.url) : payload;
++        if (typeof img === 'string' && img.startsWith('data:image')) {
++            const imgId = `${socket.id}_${Date.now()}`;
++            tempEditImages.set(imgId, img);
++            setTimeout(() => tempEditImages.delete(imgId), 10 * 60 * 1000);
++            lastUserImage.set((socket.username || socket.id).toLowerCase(), imgId);
++            lastUserImage.set('__latest_room__', imgId);
++        }
++    });
++
++    socket.on('chatMessage', async (payload) => {
++        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
++        if (typeof raw !== 'string') return;
++        const trimmed = raw.trim();
++        const uname = socket.username || 'Player';
++        const room = socket.activeServerId || 'srv_main';
++
++        // 1. !ai or !aivoice -> Live Web Search + Thinking + Voice Speak
++        if (/^!(ai|aivoice)\s+/i.test(trimmed)) {
++            const isVoice = /^!aivoice/i.test(trimmed);
++            const question = trimmed.replace(/^!(ai|aivoice)\s+/i, '').trim();
++            if (!question) return;
++            const answer = await runSammuBrain(question, uname);
++            io.to(room).emit('message', {
++                username: isVoice ? '🎙️ SammuBrain Voice AI' : '🧠 SammuBrain AI',
++                text: `@${uname}: ${answer}`,
++                _serverId: room
++            });
++            if (isVoice) {
++                const cleanSpeech = answer.replace(/💭 Thought:[^\n]+\n?/, '').replace(/[*#_`~]/g, '');
++                io.to(room).emit('sammuAiSpeak', { text: cleanSpeech, _serverId: room });
++            }
++        }
++
++        // 2. !imagine <prompt> -> Free Keyless Flux Text-to-Image
++        else if (/^!imagine\s+/i.test(trimmed)) {
++            const prompt = trimmed.replace(/^!imagine\s+/i, '').trim();
++            if (!prompt) return;
++            const seed = Math.floor(Math.random() * 999999);
++            const imgUrl = `https://pollinations.ai{encodeURIComponent(prompt)}?width=512&height=512&seed=${seed}&nologo=true`;
++            io.to(room).emit('message', {
++                username: '🎨 SammuArt AI',
++                text: `@${uname} generated: **${prompt}**\n<img src="${imgUrl}" style="max-width:260px;border-radius:12px;margin-top:6px;border:2px solid #a855f7;" loading="lazy"/>`,
++                _serverId: room
++            });
++        }
++
++        // 3. !edit <dress/style prompt> -> Image-to-Image Outfit & Style Transformer
++        else if (/^!edit\s+/i.test(trimmed)) {
++            const editPrompt = trimmed.replace(/^!edit\s+/i, '').trim();
++            const imgId = lastUserImage.get(uname.toLowerCase()) || lastUserImage.get('__latest_room__');
++            if (!imgId || !tempEditImages.has(imgId)) {
++                socket.emit('message', {
++                    username: '👗 SammuStyle AI',
++                    text: `@${uname}: 📸 Pehle chat mein ek **photo upload** karo, phir likho \`!edit ${editPrompt || 'change dress to royal black jacket'}\`!`,
++                    _serverId: room
++                });
++                return;
++            }
++            const host = socket.handshake.headers.host;
++            const proto = host && host.includes('ngrok') ? 'https' : 'http';
++            const srcUrl = `${proto}://${host}/ai-temp-img/${imgId}`;
++            const seed = Math.floor(Math.random() * 999999);
++            const editedUrl = `https://pollinations.ai{encodeURIComponent(editPrompt)}?model=kontext&image=${encodeURIComponent(srcUrl)}&width=512&height=512&seed=${seed}&nologo=true`;
++            io.to(room).emit('message', {
++                username: '👗 SammuStyle AI',
++                text: `@${uname} transformed outfit/style (**${editPrompt}**):\n<img src="${editedUrl}" style="max-width:260px;border-radius:12px;margin-top:6px;border:2px solid #ec4899;" loading="lazy"/>`,
++                _serverId: room
++            });
++        }
++    });
++});
++
++    return OG_HOSTS;     
+ };
+diff --git a/public/sammu_widgets.js b/public/sammu_widgets.js
+index a32f0b3..13e6cf5 100644
+--- a/public/sammu_widgets.js
++++ b/public/sammu_widgets.js
+@@ -3133,3 +3133,24 @@ try {
+     if (typeof window.hookServerSocket === 'function') window.hookServerSocket();
+   }, 250);
+ })();
++
++
++
++// === 🎙️ SAMMUBRAIN VOICE SPEAKER & MULTIMODAL QUICK BAR ===
++(function() {
++  const bindVoice = setInterval(() => {
++    if (typeof socket === 'undefined') return;
++    clearInterval(bindVoice);
++    socket.on('sammuAiSpeak', (data) => {
++      if (!data || !data.text || !('speechSynthesis' in window)) return;
++      window.speechSynthesis.cancel();
++      const utter = new SpeechSynthesisUtterance(data.text);
++      utter.rate = 1.05;
++      utter.pitch = 1.05;
++      const voices = window.speechSynthesis.getVoices();
++      const hindiOrEn = voices.find(v => /hi-IN|en-IN/i.test(v.lang)) || voices.at(0);
++      if (hindiOrEn) utter.voice = hindiOrEn;
++      window.speechSynthesis.speak(utter);
++    });
++  }, 400);
++})();

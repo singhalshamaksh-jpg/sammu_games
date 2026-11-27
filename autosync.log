@@ -583,3 +583,9 @@ fatal: unable to access 'https://://github.com/': URL rejected: No host present
 Setting up watches.  Beware: since -r was given, this may take a while!
 Watches established.
 ./ MODIFY autosync.log
+[main 81c1555] Termux auto-update: 2026-11-27 23:07:06
+ 1 file changed, 6 insertions(+)
+fatal: unable to access 'https://://github.com/': URL rejected: No host present
+Setting up watches.  Beware: since -r was given, this may take a while!
+Watches established.
+./ MODIFY autosync.log

@@ -382,7 +382,7 @@ try {
       }
       window.addEventListener('DOMContentLoaded', () => { hookServerSocket(); setTimeout(hookServerSocket, 600); });
     })();
-} catch (e) { console.error('Widget MULTI_SERVER_UI error:', e); }
+} catch (e) { console.error('Widget MULTI_SERVER_UI:', e); }
 
 // === WORD_IMPOSTER_WIDGET ===
 try {
@@ -451,7 +451,7 @@ try {
       }
       setInterval(bindImposterSockets, 800);
     })();
-} catch (e) { console.error('Widget WORD_IMPOSTER_WIDGET error:', e); }
+} catch (e) { console.error('Widget WORD_IMPOSTER_WIDGET:', e); }
 
 // === ZORO_ISOLATION_SCRIPT ===
 try {
@@ -580,7 +580,7 @@ try {
         setTimeout(() => { wrapSocketForSlowNet(); startChatAntiFreeze(); }, 800);
       });
     })();
-} catch (e) { console.error('Widget ZORO_ISOLATION_SCRIPT error:', e); }
+} catch (e) { console.error('Widget ZORO_ISOLATION_SCRIPT:', e); }
 
 // === PHONK_DJ_WIDGET ===
 try {
@@ -822,7 +822,7 @@ try {
 
       window.addEventListener('DOMContentLoaded', () => { setupPhonkDjAndAntiDrop(); setTimeout(setupPhonkDjAndAntiDrop, 1200); });
     })();
-} catch (e) { console.error('Widget PHONK_DJ_WIDGET error:', e); }
+} catch (e) { console.error('Widget PHONK_DJ_WIDGET:', e); }
 
 // === AI_CONSOLE_WIDGET ===
 try {
@@ -849,7 +849,7 @@ try {
           modal = document.createElement('div');
           modal.id = 'aiConsoleModal';
           modal.style.cssText = 'position:fixed;inset:0;background:rgba(7,11,25,0.95);z-index:99999998;display:none;align-items:center;justify-content:center;padding:12px;';
-          modal.innerHTML = '<div style="background:#0f172a;border:2px solid #38bdf8;border-radius:20px;padding:14px;width:100%;max-width:420px;color:#fff;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:900;font-size:15px;color:#38bdf8;">🤖 AI CONSOLE</span><button onclick="document.getElementById('aiConsoleModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕ Close</button></div><div style="display:flex;gap:6px;margin-bottom:8px;"><input id="aiCmdInput" placeholder="AI Command..." style="flex:1;padding:9px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:12px;box-sizing:border-box;"><textarea id="aiCodeInput" placeholder="Optional Code..." style="width:100%;height:60px;margin-top:6px;padding:8px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;box-sizing:border-box;font-family:monospace;"></textarea></div><button onclick="sendAiCommand()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;font-size:13px;cursor:pointer;">🚀 Send</button><div id="aiCommandList" style="margin-top:10px;max-height:220px;overflow-y:auto;"></div></div>';
+          modal.innerHTML = '<div style="background:#0f172a;border:2px solid #38bdf8;border-radius:20px;padding:14px;width:100%;max-width:420px;color:#fff;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:900;font-size:15px;color:#38bdf8;">🤖 AI CONSOLE</span><button onclick="document.getElementById(\'aiConsoleModal\').style.display=\'none\'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕ Close</button></div><div style="display:flex;gap:6px;margin-bottom:8px;"><input id="aiCmdInput" placeholder="AI Command..." style="flex:1;padding:9px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:12px;box-sizing:border-box;"><textarea id="aiCodeInput" placeholder="Optional Code..." style="width:100%;height:60px;margin-top:6px;padding:8px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;box-sizing:border-box;font-family:monospace;"></textarea></div><button onclick="sendAiCommand()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;font-size:13px;cursor:pointer;">🚀 Send</button><div id="aiCommandList" style="margin-top:10px;max-height:220px;overflow-y:auto;"></div></div>';
           document.body.appendChild(modal);
         }
         modal.style.display = 'flex';
@@ -901,192 +901,7 @@ try {
       window.sendAiCommand = sendAiCommand;
       window.renderAiCommands = renderAiCommands;
     })();
-} catch (e) { console.error('Widget AI_CONSOLE_WIDGET error:', e); }
-
-// === PHONK_PRO_UPGRADE ===
-try {
-(function() {
-      // 1. Stop heavy DOM polling intervals on old phones
-      const _origSetInterval = window.setInterval;
-      window.setInterval = function(fn, ms, ...args) {
-        if (ms >= 600 && ms <= 1500 && fn && /querySelectorAll(['"]button['"])|aiConsoleFab|injectImposterBtn/.test(fn.toString())) {
-          return _origSetInterval(fn, 4500, ...args);
-        }
-        return _origSetInterval(fn, ms, ...args);
-      };
-
-      let proCtx = null, proFilter = null, proDist = null;
-      window._phonkBoost = true;
-      window._phonkFilterFreq = 16000;
-
-      function getProAudio() {
-        if (!proCtx) {
-          const AC = window.AudioContext || window.webkitAudioContext;
-          proCtx = new AC();
-          proFilter = proCtx.createBiquadFilter();
-          proFilter.type = 'lowpass';
-          proFilter.frequency.value = window._phonkFilterFreq;
-          proFilter.Q.value = 2.2;
-          proFilter.connect(proCtx.destination);
-
-          const n = 22050, curve = new Float32Array(n);
-          for (let i = 0; i < n; i++) {
-            const x = (i * 2) / n - 1;
-            curve[i] = ((3 + 26) * x * 20 * (Math.PI / 180)) / (Math.PI + 26 * Math.abs(x));
-          }
-          proDist = curve;
-        }
-        if (proCtx.state === 'suspended') proCtx.resume();
-        return proCtx;
-      }
-
-      // Override classic playPhonkSynth with Studio Brazilian Phonk & Jumpstyle DSP
-      window.playPhonkSynth = function(sound) {
-        try {
-          const ctx = getProAudio(), now = ctx.currentTime;
-          const bars = document.querySelectorAll('#djVisualizer .dj-bar');
-          if (bars.length) {
-            bars.forEach(b => { b.style.height = (Math.floor(Math.random() * 82) + 18) + '%'; });
-            setTimeout(() => bars.forEach(b => { b.style.height = '15%'; }), 130);
-          }
-
-          if (sound === 'bass808' || sound === 'kick' || sound === 'batidao_sub') {
-            const osc = ctx.createOscillator(), gain = ctx.createGain(), shaper = ctx.createWaveShaper();
-            shaper.curve = proDist;
-            osc.type = 'sine';
-            const isSub = (sound === 'bass808' || sound === 'batidao_sub');
-            const dur = isSub ? 0.52 : 0.22;
-            osc.frequency.setValueAtTime(isSub ? 155 : 175, now);
-            osc.frequency.exponentialRampToValueAtTime(window._phonkBoost ? 38 : 48, now + 0.085);
-            osc.frequency.exponentialRampToValueAtTime(32, now + dur);
-            gain.gain.setValueAtTime(window._phonkBoost ? 0.85 : 0.6, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-            osc.connect(shaper); shaper.connect(gain); gain.connect(proFilter);
-            osc.start(now); osc.stop(now + dur + 0.02);
-          } else if (sound === 'revbass') {
-            // Heavenly Jumpstyle Reverse-Bass Stomp
-            const osc = ctx.createOscillator(), gain = ctx.createGain(), shaper = ctx.createWaveShaper();
-            shaper.curve = proDist;
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(44, now);
-            osc.frequency.exponentialRampToValueAtTime(74, now + 0.16);
-            gain.gain.setValueAtTime(0.01, now);
-            gain.gain.linearRampToValueAtTime(0.6, now + 0.14);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
-            osc.connect(shaper); shaper.connect(gain); gain.connect(proFilter);
-            osc.start(now); osc.stop(now + 0.2);
-          }
-          else if (sound.startsWith('cowbell') || sound.startsWith('lead')) {
-            const isSupersaw = sound.startsWith('lead');
-            const noteMap = {
-              cowbell1: 587.33, cowbell2: 440.00, cowbell3: 659.25, cowbell4: 523.25,
-              lead1: 440.00, lead2: 523.25, lead3: 659.25, lead4: 783.99
-            };
-            const freq = noteMap[sound] || 540;
-            if (isSupersaw) {
-              const gain = ctx.createGain();
-              gain.gain.setValueAtTime(0.01, now);
-              gain.gain.linearRampToValueAtTime(0.24, now + 0.025);
-              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
-              gain.connect(proFilter);
-              [-16, -6, 0, 6, 16].forEach(det => {
-                const o = ctx.createOscillator();
-                o.type = 'sawtooth'; o.frequency.setValueAtTime(freq, now); o.detune.value = det;
-                o.connect(gain); o.start(now); o.stop(now + 0.35);
-              });
-            } else {
-              const bp = ctx.createBiquadFilter(), gain = ctx.createGain();
-              bp.type = 'bandpass'; bp.frequency.value = freq * 1.45; bp.Q.value = 3.8;
-              gain.gain.setValueAtTime(0.42, now);
-              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
-              [1, 1.48].forEach(mult => {
-                const o = ctx.createOscillator();
-                o.type = 'square'; o.frequency.setValueAtTime(freq * mult, now);
-                o.connect(bp); o.start(now); o.stop(now + 0.22);
-              });
-              bp.connect(gain); gain.connect(proFilter);
-            }
-          } else if (sound === 'hat' || sound === 'scratch' || sound === 'laser') {
-            const osc = ctx.createOscillator(), gain = ctx.createGain();
-            osc.type = sound === 'laser' ? 'sawtooth' : 'triangle';
-            osc.frequency.setValueAtTime(sound === 'laser' ? 1600 : 1100, now);
-            osc.frequency.exponentialRampToValueAtTime(140, now + 0.14);
-            gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-            osc.connect(gain); gain.connect(proFilter);
-            osc.start(now); osc.stop(now + 0.17);
-          } else if (sound === 'siren' || sound === 'horn') {
-            const osc = ctx.createOscillator(), gain = ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(sound === 'horn' ? 480 : 620, now);
-            osc.frequency.linearRampToValueAtTime(sound === 'horn' ? 520 : 1200, now + 0.35);
-            gain.gain.setValueAtTime(0.18, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-            osc.connect(gain); gain.connect(proFilter);
-            osc.start(now); osc.stop(now + 0.56);
-          }
-        } catch (e) {}
-      };
-      // 2. Upgrade the 8 Track Loops to No Batidao & Heavenly Jumpstyle Beats
-      let proBeatTimer = null, proStep = 0;
-      const origStop = window.stopPhonkLoop;
-      window.stopPhonkLoop = function() {
-        if (proBeatTimer) { clearInterval(proBeatTimer); proBeatTimer = null; }
-        if (typeof origStop === 'function') origStop();
-      };
-
-      window.togglePhonkBeat = function(style, label) {
-        window.stopPhonkLoop();
-        const proTracks = {
-          brazil:  { tempo: 115, label: '🇧🇷 No Batidão (Brazilian Phonk)', seq: ['batidao_sub', 'hat', 'cowbell2', 'kick', 'cowbell1', 'hat', 'batidao_sub', 'cowbell3', 'kick', 'cowbell2', 'hat', 'cowbell4', 'batidao_sub', 'cowbell1', 'scratch', 'hat'] },
-          demon:   { tempo: 96,  label: '🌌 Heavenly Jumpstyle (Euphoric)', seq: ['kick', 'revbass', 'lead1', 'revbass', 'kick', 'revbass', 'lead3', 'revbass', 'kick', 'revbass', 'lead4', 'revbass', 'kick', 'revbass', 'lead2', 'lead3'] },
-          drift:   { tempo: 108, label: '🔥 Automotivo Mandelão', seq: ['batidao_sub', 'cowbell1', 'hat', 'cowbell1', 'kick', 'cowbell2', 'hat', 'batidao_sub', 'cowbell3', 'hat', 'cowbell1', 'kick', 'cowbell4', 'scratch', 'hat', 'cowbell2'] },
-          murder:  { tempo: 105, label: '👻 Kordhell Murder Phonk', seq: ['bass808', 'cowbell3', 'hat', 'cowbell1', 'kick', 'cowbell2', 'hat', 'bass808', 'cowbell3', 'cowbell4', 'hat', 'kick', 'cowbell1', 'cowbell2', 'laser', 'hat'] },
-          sigma:   { tempo: 112, label: '🗿 Sigma GigaChad Phonk', seq: ['bass808', 'hat', 'kick', 'cowbell1', 'bass808', 'cowbell2', 'hat', 'cowbell3', 'kick', 'hat', 'bass808', 'cowbell1', 'kick', 'cowbell2', 'cowbell4', 'hat'] },
-          memphis: { tempo: 110, label: '👹 Montagem Dark Memphis', seq: ['batidao_sub', 'cowbell2', 'scratch', 'hat', 'kick', 'cowbell1', 'cowbell2', 'hat', 'batidao_sub', 'cowbell3', 'hat', 'kick', 'cowbell4', 'cowbell1', 'siren', 'hat'] },
-          cyber:   { tempo: 98,  label: '🚀 Euphoric Hardstyle', seq: ['kick', 'revbass', 'lead2', 'revbass', 'kick', 'revbass', 'lead4', 'revbass', 'kick', 'revbass', 'lead3', 'lead4', 'kick', 'revbass', 'lead1', 'laser'] },
-          tokyo:   { tempo: 104, label: '🏎️ Tokyo Drift Phonk', seq: ['cowbell3', 'hat', 'cowbell3', 'kick', 'cowbell1', 'hat', 'cowbell4', 'bass808', 'cowbell1', 'hat', 'cowbell3', 'kick', 'cowbell2', 'scratch', 'hat', 'cowbell1'] }
-        };
-        const chosen = proTracks[style] || proTracks.brazil;
-        const idMap = { drift: 'loopDrift', brazil: 'loopBrazil', murder: 'loopMurder', sigma: 'loopSigma', memphis: 'loopMemphis', cyber: 'loopCyber', tokyo: 'loopTokyo', demon: 'loopDemon' };
-        const btn = document.getElementById(idMap[style]);
-        if (btn) btn.classList.add('active');
-        const np = document.getElementById('djNowPlaying');
-        if (np) np.textContent = '🔥 LIVE: ' + chosen.label + ' (Hit Minimize to chat!)';
-
-        proStep = 0;
-        proBeatTimer = _origSetInterval(() => {
-          window.triggerDjSound(chosen.seq.at(proStep % chosen.seq.length));
-          proStep++;
-        }, chosen.tempo);
-      };
-     
-      function upgradePhonkModalControls() {
-        const bBrazil = document.getElementById('loopBrazil');
-        const bDemon = document.getElementById('loopDemon');
-        const bDrift = document.getElementById('loopDrift');
-        const bCyber = document.getElementById('loopCyber');
-        if (bBrazil) bBrazil.textContent = '🇧🇷 No Batidão';
-        if (bDemon) bDemon.textContent = '🌌 Heavenly Jumpstyle';
-        if (bDrift) bDrift.textContent = '🔥 Automotivo';
-        if (bCyber) bCyber.textContent = '🚀 Euphoric Hardstyle';
-
-        const card = document.getElementById('phonkDjCard');
-        if (card && !document.getElementById('proFilterBar')) {
-          const bar = document.createElement('div');
-          bar.id = 'proFilterBar';
-          bar.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid #c084fc;border-radius:12px;padding:7px;margin:6px 0;font-size:11px;';
-          bar.innerHTML =
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
-              '<span>🎛️ Filter Sweep</span>' +
-              '<button id="proBoostBtn" onclick="window._phonkBoost=!window._phonkBoost;this.textContent=window._phonkBoost?'🔊 808 BOOST: ON':'🔉 808 BOOST: OFF'" style="background:#f59e0b;border:none;color:#111;border-radius:8px;padding:3px 8px;font-weight:900;font-size:10px;cursor:pointer;">🔊 808 BOOST: ON</button>' +
-            '</div>' +
-            '<input type="range" min="350" max="16000" value="16000" oninput="window._phonkFilterFreq=Number(this.value);if(typeof proFilter!=='undefined'&&proFilter)proFilter.frequency.value=window._phonkFilterFreq;" style="width:100%;accent-color:#e879f9;">';
-          const pads = card.querySelector('.dj-pads');
-          if (pads) card.insertBefore(bar, pads);
-        }
-      }
-      window.addEventListener('DOMContentLoaded', () => setTimeout(upgradePhonkModalControls, 1500));
-    })();
-} catch (e) { console.error('Widget PHONK_PRO_UPGRADE error:', e); }
+} catch (e) { console.error('Widget AI_CONSOLE_WIDGET:', e); }
 
 // === MAFIA_UI ===
 try {
@@ -1141,7 +956,7 @@ try {
       }
       setInterval(bindMafia, 1200);
     })();
-} catch (e) { console.error('Widget MAFIA_UI error:', e); }
+} catch (e) { console.error('Widget MAFIA_UI:', e); }
 
 // === ROYALE_UI ===
 try {
@@ -1179,7 +994,7 @@ try {
       }
       setInterval(bindRoyale, 1200);
     })();
-} catch (e) { console.error('Widget ROYALE_UI error:', e); }
+} catch (e) { console.error('Widget ROYALE_UI:', e); }
 
 // === ZOMBIE_UI ===
 try {
@@ -1267,7 +1082,7 @@ try {
       }
       setInterval(bindZombie, 1200);
     })();
-} catch (e) { console.error('Widget ZOMBIE_UI error:', e); }
+} catch (e) { console.error('Widget ZOMBIE_UI:', e); }
 
 // === COOP_PARTY_UI ===
 try {
@@ -1364,60 +1179,7 @@ try {
       }
       setInterval(bindCoopGames, 1200);
     })();
-} catch (e) { console.error('Widget COOP_PARTY_UI error:', e); }
-
-// === BLUFF_UI ===
-try {
-(function() {
-      function injectBluffBtn() {
-        const targetBtn = Array.from(document.querySelectorAll('button')).find(b => /bank heist|dragon raid|zombie outbreak/i.test(b.textContent || ''));
-        if (targetBtn && targetBtn.parentElement && !document.getElementById('btnLaunchBluff')) {
-          const btn = targetBtn.cloneNode(true);
-          btn.id = 'btnLaunchBluff'; btn.removeAttribute('onclick');
-          btn.textContent = '32. 🎭 Bluff Master';
-          btn.onclick = () => { if (typeof socket !== 'undefined') socket.emit('chatMessage', '!bluff'); };
-          targetBtn.parentElement.appendChild(btn);
-        }
-      }
-      setInterval(injectBluffBtn, 2200);
-
-      function bindBluff() {
-        if (typeof socket === 'undefined' || window._bluffBound) return;
-        window._bluffBound = true;
-        socket.on('bluffSync', (d) => {
-          if (d._serverId && d._serverId !== window.selectedServerId) return;
-          document.getElementById('bluffBar').style.display = 'flex';
-          document.getElementById('bluffTimer').textContent = '⏳ ' + d.timeLeft + 's';
-          document.getElementById('bluffPromptBox').textContent = d.prompt;
-          const sub = document.getElementById('bluffSubBox');
-          const grid = document.getElementById('bluffVoteGrid');
-          grid.innerHTML = '';
-
-          if (d.phase === 'write') {
-            sub.innerHTML = d.submitted
-              ? '<span style="color:#4ade80;font-weight:bold;">✅ Answer locked secretly! Waiting for others...</span>'
-              : '✍️ <b>Type your answer in chat!</b> (Hidden from chat so nobody knows it is yours!)';
-          } else {
-            sub.innerHTML = '🗳️ <b>Tap the funniest answer!</b> (You can't vote for yourself)';
-            d.entries.forEach((ent, idx) => {
-              const btn = document.createElement('button');
-              const isMine = (ent.authorId === socket.id);
-              btn.disabled = isMine || d.voted;
-              btn.style.cssText = 'background:' + (isMine ? '#334155' : '#1e1b4b') + ';border:1.5px solid #f472b6;color:#fff;padding:6px 8px;border-radius:9px;font-size:11px;font-weight:bold;cursor:pointer;text-align:left;';
-              btn.textContent = (idx + 1) + '. "' + ent.text + '"' + (isMine ? ' (Yours)' : '');
-              btn.onclick = () => socket.emit('bluffVote', ent.authorId);
-              grid.appendChild(btn);
-            });
-          }
-        });
-        socket.on('bluffEnd', (d) => {
-          if (d._serverId && d._serverId !== window.selectedServerId) return;
-          document.getElementById('bluffBar').style.display = 'none';
-        });
-      }
-      setInterval(bindBluff, 1200);
-    })();
-} catch (e) { console.error('Widget BLUFF_UI error:', e); }
+} catch (e) { console.error('Widget COOP_PARTY_UI:', e); }
 
 // === ISLAND_UI ===
 try {
@@ -1470,7 +1232,7 @@ try {
       }
       setInterval(bindIsland, 1200);
     })();
-} catch (e) { console.error('Widget ISLAND_UI error:', e); }
+} catch (e) { console.error('Widget ISLAND_UI:', e); }
 
 // === PARTY_ALL_IN_ONE_UI ===
 try {
@@ -1619,7 +1381,7 @@ try {
       }
       setInterval(bindCleanPartySockets, 1200);
     })();
-} catch (e) { console.error('Widget PARTY_ALL_IN_ONE_UI error:', e); }
+} catch (e) { console.error('Widget PARTY_ALL_IN_ONE_UI:', e); }
 
 // === SOCKET_UI_BOOT ===
 try {
@@ -1742,7 +1504,7 @@ try {
       }
       window.addEventListener('DOMContentLoaded', () => { bootSocketPartyUI(); setTimeout(bootSocketPartyUI, 800); });
     })();
-} catch (e) { console.error('Widget SOCKET_UI_BOOT error:', e); }
+} catch (e) { console.error('Widget SOCKET_UI_BOOT:', e); }
 
 // === SERVER_WP_PACK ===
 try {
@@ -1788,7 +1550,7 @@ try {
         }, 800);
       });
     })();
-} catch (e) { console.error('Widget SERVER_WP_PACK error:', e); }
+} catch (e) { console.error('Widget SERVER_WP_PACK:', e); }
 
 // === GACHA_FLEX_SCRIPT ===
 try {
@@ -1818,7 +1580,7 @@ try {
         });
       }, 600);
     })();
-} catch (e) { console.error('Widget GACHA_FLEX_SCRIPT error:', e); }
+} catch (e) { console.error('Widget GACHA_FLEX_SCRIPT:', e); }
 
 // === COURT_UI ===
 try {
@@ -1903,7 +1665,7 @@ try {
       }
       setInterval(bindCourt, 1200);
     })();
-} catch (e) { console.error('Widget COURT_UI error:', e); }
+} catch (e) { console.error('Widget COURT_UI:', e); }
 
 // === SV_PAGE_BOOT_TAG ===
 try {
@@ -1982,7 +1744,7 @@ try {
       window.addEventListener('DOMContentLoaded', initSvBoot);
       setTimeout(initSvBoot, 500);
     })();
-} catch (e) { console.error('Widget SV_PAGE_BOOT_TAG error:', e); }
+} catch (e) { console.error('Widget SV_PAGE_BOOT_TAG:', e); }
 
 // === WORLD_RAID_HUD_UI ===
 try {
@@ -2043,7 +1805,7 @@ try {
         }, 900);
       }, 600);
     })();
-} catch (e) { console.error('Widget WORLD_RAID_HUD_UI error:', e); }
+} catch (e) { console.error('Widget WORLD_RAID_HUD_UI:', e); }
 
 // === GLOBAL_LB_CLIENT_SCRIPT ===
 try {
@@ -2106,7 +1868,7 @@ try {
         }, 1200);
       }, 600);
     })();
-} catch (e) { console.error('Widget GLOBAL_LB_CLIENT_SCRIPT error:', e); }
+} catch (e) { console.error('Widget GLOBAL_LB_CLIENT_SCRIPT:', e); }
 
 // === GLOBAL_CHAT_AND_GAME_AUDIO ===
 try {
@@ -2172,7 +1934,7 @@ try {
         });
       }, 500);
     })();
-} catch (e) { console.error('Widget GLOBAL_CHAT_AND_GAME_AUDIO error:', e); }
+} catch (e) { console.error('Widget GLOBAL_CHAT_AND_GAME_AUDIO:', e); }
 
 // === HK_CREATOR_PANEL_SCRIPT ===
 try {
@@ -2220,7 +1982,7 @@ try {
         setInterval(() => socket.emit('hkCheckAccess'), 5000);
       }, 600);
     })();
-} catch (e) { console.error('Widget HK_CREATOR_PANEL_SCRIPT error:', e); }
+} catch (e) { console.error('Widget HK_CREATOR_PANEL_SCRIPT:', e); }
 
 // === IN_APP_BROWSER_PATCH_UI ===
 try {
@@ -2288,7 +2050,7 @@ try {
         }
       }, 400);
     })();
-} catch (e) { console.error('Widget IN_APP_BROWSER_PATCH_UI error:', e); }
+} catch (e) { console.error('Widget IN_APP_BROWSER_PATCH_UI:', e); }
 
 // === V6_SOCKET_RECEIVER ===
 try {
@@ -2354,7 +2116,7 @@ try {
         socket.emit('svRequestCleanV4');
       }, 400);
     })();
-} catch (e) { console.error('Widget V6_SOCKET_RECEIVER error:', e); }
+} catch (e) { console.error('Widget V6_SOCKET_RECEIVER:', e); }
 
 // === ANTI_LAG_BOOSTER_UI ===
 try {
@@ -2380,7 +2142,7 @@ try {
         }
       });
     })();
-} catch (e) { console.error('Widget ANTI_LAG_BOOSTER_UI error:', e); }
+} catch (e) { console.error('Widget ANTI_LAG_BOOSTER_UI:', e); }
 
 // === PIECE3_AND_4_HTML ===
 try {
@@ -2521,7 +2283,7 @@ try {
         });
       }, 500);
     })();
-} catch (e) { console.error('Widget PIECE3_AND_4_HTML error:', e); }
+} catch (e) { console.error('Widget PIECE3_AND_4_HTML:', e); }
 
 // === PIECE5_PART1 ===
 try {
@@ -2697,7 +2459,7 @@ try {
         });
       }, 500);
     })();
-} catch (e) { console.error('Widget PIECE5_PART1 error:', e); }
+} catch (e) { console.error('Widget PIECE5_PART1:', e); }
 
 // === WATERIO_LAUNCHER_UI ===
 try {
@@ -2731,7 +2493,7 @@ try {
         });
       }, 600);
     })();
-} catch (e) { console.error('Widget WATERIO_LAUNCHER_UI error:', e); }
+} catch (e) { console.error('Widget WATERIO_LAUNCHER_UI:', e); }
 
 // === MAKEUP_STUDIO_WIDGET ===
 try {
@@ -2998,7 +2760,7 @@ try {
   }
   window.addEventListener('DOMContentLoaded', () => { bindSkincareSocket(); setTimeout(bindSkincareSocket, 1000); });
 })();
-} catch (e) { console.error('Widget MAKEUP_STUDIO_WIDGET error:', e); }
+} catch (e) { console.error('Widget MAKEUP_STUDIO_WIDGET:', e); }
 
 // === DIDI_PROMO_WIDGET ===
 try {
@@ -3019,7 +2781,7 @@ try {
   }
   window.addEventListener('DOMContentLoaded', () => { bindPromoSocket(); setTimeout(bindPromoSocket, 800); });
 })();
-} catch (e) { console.error('Widget DIDI_PROMO_WIDGET error:', e); }
+} catch (e) { console.error('Widget DIDI_PROMO_WIDGET:', e); }
 
 // === MASTERCHEF_STUDIO_WIDGET ===
 try {
@@ -3097,7 +2859,7 @@ try {
   };
   window.addEventListener('DOMContentLoaded', () => { initChefButton(); setTimeout(initChefButton, 1400); });
 })();
-} catch (e) { console.error('Widget MASTERCHEF_STUDIO_WIDGET error:', e); }
+} catch (e) { console.error('Widget MASTERCHEF_STUDIO_WIDGET:', e); }
 
 // === NEW_ARENAS_WIDGET ===
 try {
@@ -3178,7 +2940,7 @@ try {
   }
   window.addEventListener('DOMContentLoaded', () => { injectHostGamesAndSfx(); bindMegaSockets(); setTimeout(() => { injectHostGamesAndSfx(); bindMegaSockets(); }, 1300); });
 })();
-} catch (e) { console.error('Widget NEW_ARENAS_WIDGET error:', e); }
+} catch (e) { console.error('Widget NEW_ARENAS_WIDGET:', e); }
 
 // === PROMAX_VOICE_WIDGET ===
 try {
@@ -3359,7 +3121,7 @@ try {
     setTimeout(bindProMaxSocket, 1000);
   });
 })();
-} catch (e) { console.error('Widget PROMAX_VOICE_WIDGET error:', e); }
+} catch (e) { console.error('Widget PROMAX_VOICE_WIDGET:', e); }
 
 
 // === GUARANTEE SERVER LIST LOADS IMMEDIATELY ===

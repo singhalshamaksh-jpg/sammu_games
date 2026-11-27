@@ -2117,7 +2117,7 @@ module.exports = function initMultiServers(app, io) {
           modal = document.createElement('div');
           modal.id = 'aiConsoleModal';
           modal.style.cssText = 'position:fixed;inset:0;background:rgba(7,11,25,0.95);z-index:99999998;display:none;align-items:center;justify-content:center;padding:12px;';
-          modal.innerHTML = '<div style="background:#0f172a;border:2px solid #38bdf8;border-radius:20px;padding:14px;width:100%;max-width:420px;color:#fff;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:900;font-size:15px;color:#38bdf8;">🤖 AI CONSOLE</span><button onclick="document.getElementById('aiConsoleModal').style.display='none'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕ Close</button></div><div style="display:flex;gap:6px;margin-bottom:8px;"><input id="aiCmdInput" placeholder="AI Command..." style="flex:1;padding:9px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:12px;box-sizing:border-box;"><textarea id="aiCodeInput" placeholder="Optional Code..." style="width:100%;height:60px;margin-top:6px;padding:8px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;box-sizing:border-box;font-family:monospace;"></textarea></div><button onclick="sendAiCommand()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;font-size:13px;cursor:pointer;">🚀 Send</button><div id="aiCommandList" style="margin-top:10px;max-height:220px;overflow-y:auto;"></div></div>';
+          modal.innerHTML = '<div style="background:#0f172a;border:2px solid #38bdf8;border-radius:20px;padding:14px;width:100%;max-width:420px;color:#fff;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:900;font-size:15px;color:#38bdf8;">🤖 AI CONSOLE</span><button onclick="document.getElementById(\\'aiConsoleModal\\').style.display=\\'none\\'" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:4px 9px;font-weight:bold;cursor:pointer;">✕ Close</button></div><div style="display:flex;gap:6px;margin-bottom:8px;"><input id="aiCmdInput" placeholder="AI Command..." style="flex:1;padding:9px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:12px;box-sizing:border-box;"><textarea id="aiCodeInput" placeholder="Optional Code..." style="width:100%;height:60px;margin-top:6px;padding:8px;border-radius:10px;border:1.5px solid #38bdf8;background:#090d16;color:#fff;font-size:11px;box-sizing:border-box;font-family:monospace;"></textarea></div><button onclick="sendAiCommand()" style="width:100%;padding:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;font-size:13px;cursor:pointer;">🚀 Send</button><div id="aiCommandList" style="margin-top:10px;max-height:220px;overflow-y:auto;"></div></div>';
           document.body.appendChild(modal);
         }
         modal.style.display = 'flex';
@@ -3694,7 +3694,7 @@ module.exports = function initMultiServers(app, io) {
             clearInterval(st.interval);
             islandByServer.delete(srvId);
             io.to(srvId).emit('islandEnd', { _serverId: srvId });
-            const rat = Object.entries(st.greedMap).sort((a, b) => b - a);
+            const rat = Object.entries(st.greedMap).sort((a, b) => b.at(1) - a.at(1)).at(0);
             io.to(srvId).emit('message', {
                 username: "Sammu's Bot",
                 text: `🚁🎉 **RESCUE HELICOPTER ARRIVED!** The squad survived 4 days on Castaway Island!\n🐍 **Biggest Ration Hoarder:** **${rat ? `${rat} (${rat}x)` : 'Nobody — Pure Teamwork!'}**`,
@@ -4572,8 +4572,8 @@ module.exports = function initMultiServers(app, io) {
             // 2. Challenge Someone to a 3-Card Battle (!duelcard <name> [bet])
             if (low.startsWith('!duelcard ')) {
                 const parts = clean.slice(10).replace('@', '').trim().split(/\s+/);
-                const targetName = parts;
-                const bet = Math.max(50, Math.min(500, parseInt(parts, 10) || 100));
+                const targetName = parts.at(0);
+                const bet = Math.max(50, Math.min(500, parseInt(parts.at(1), 10) || 100));
                 if (!targetName || targetName.toLowerCase() === sKey) return;
 
                 if ((playerCards.get(sKey) || []).length === 0) {

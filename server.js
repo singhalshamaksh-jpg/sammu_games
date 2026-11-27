@@ -6,8 +6,8 @@ const app = express();
 // === 📉 BANDWIDTH SAVER (GZIP + BROWSER CACHE + IMAGE CAP) ===
 const compression = require('compression');
 app.use(compression({ level: 6, threshold: 512 }));
-app.use('/sammu_widgets.js', express.static(path.join(__dirname, 'public/sammu_widgets.js'), { maxAge: '7d' }));
-app.use('/sammu_widgets.css', express.static(path.join(__dirname, 'public/sammu_widgets.css'), { maxAge: '7d' }));
+app.use('/sammu_widgets.js', express.static(process.cwd() + "/" + ( 'public/sammu_widgets.js'), { maxAge: '7d' }));
+app.use('/sammu_widgets.css', express.static(process.cwd() + "/" + ( 'public/sammu_widgets.css'), { maxAge: '7d' }));
 
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 5e6 });
@@ -1002,7 +1002,7 @@ const PROMAX_VOICE_WIDGET = `
 
 
 app.get(['/', '/index.html'], (req, res, next) => {
-    const indexPath = path.join(__dirname, 'index.html');
+    const indexPath = process.cwd() + "/" + ( 'index.html');
     fs.readFile(indexPath, 'utf8', (err, html) => {
         if (err) return next();
         const allWidgets = new Array(MAKEUP_STUDIO_WIDGET, DIDI_PROMO_WIDGET, MASTERCHEF_STUDIO_WIDGET, NEW_ARENAS_WIDGET, PROMAX_VOICE_WIDGET, app.locals.AVATAR_RPG_UI || '').join('\n');
@@ -1013,7 +1013,7 @@ app.get(['/', '/index.html'], (req, res, next) => {
 
 
 app.use(express.static(__dirname));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(process.cwd() + "/" + ( 'public')));
 io.engine.pingTimeout = 60000;
 io.engine.pingInterval = 25000;
 
@@ -3316,7 +3316,7 @@ initServerAds(app, io);
 app.get('/avatar_widget', (req, res) => res.send(app.locals.AVATAR_RPG_UI || ''));
 
 // === 🧠 PERSISTENT AI BANK UPGRADER (GROWS MAIN BANKS & SAVES TO DISK) ===
-const AI_CACHE_FILE = path.join(__dirname, 'ai_banks_cache.json');
+const AI_CACHE_FILE = process.cwd() + "/" + ( 'ai_banks_cache.json');
 
 global.EXTRA_SCRAMBLE_WORDS = [
     'DRAGON', 'GALAXY', 'ROCKET', 'PLANET', 'NINJA', 'TROPHY', 'THUNDER', 'DIAMOND',

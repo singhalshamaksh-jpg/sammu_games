@@ -1,0 +1,2506 @@
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Localtonet | Expose Localhost to Internet - Secure Tunneling</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <link rel="canonical" href="https://localtonet.com/" />
+    <link rel="alternate" hreflang="en" href="https://localtonet.com/" />
+    <link rel="alternate" hreflang="tr" href="https://localtonet.com/tr/" />
+    <link rel="alternate" hreflang="es" href="https://localtonet.com/es/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://localtonet.com/pt-br/" />
+    <link rel="alternate" hreflang="ru" href="https://localtonet.com/ru/" />
+    <link rel="alternate" hreflang="uk" href="https://localtonet.com/uk/" />
+    <link rel="alternate" hreflang="ar" href="https://localtonet.com/ar/" />
+    <link rel="alternate" hreflang="zh-Hans" href="https://localtonet.com/zh/" />
+    <link rel="alternate" hreflang="de" href="https://localtonet.com/de/" />
+    <link rel="alternate" hreflang="fr" href="https://localtonet.com/fr/" />
+    <link rel="alternate" hreflang="ja" href="https://localtonet.com/ja/" />
+    <link rel="alternate" hreflang="ko" href="https://localtonet.com/ko/" />
+    <link rel="alternate" hreflang="id" href="https://localtonet.com/id/" />
+    <link rel="alternate" hreflang="vi" href="https://localtonet.com/vi/" />
+    <link rel="alternate" hreflang="nl" href="https://localtonet.com/nl/" />
+    <link rel="alternate" hreflang="pl" href="https://localtonet.com/pl/" />
+    <link rel="alternate" hreflang="it" href="https://localtonet.com/it/" />
+    <link rel="alternate" hreflang="ms" href="https://localtonet.com/ms/" />
+    <link rel="alternate" hreflang="bn" href="https://localtonet.com/bn/" />
+    <link rel="alternate" hreflang="fa" href="https://localtonet.com/fa/" />
+    <link rel="alternate" hreflang="hi" href="https://localtonet.com/hi/" />
+    <link rel="alternate" hreflang="ur" href="https://localtonet.com/ur/" />
+    <link rel="alternate" hreflang="tl" href="https://localtonet.com/fil/" />
+    <link rel="alternate" hreflang="ta" href="https://localtonet.com/ta/" />
+    <link rel="alternate" hreflang="ha" href="https://localtonet.com/ha/" />
+    <link rel="alternate" hreflang="x-default" href="https://localtonet.com/" />
+
+    <meta name="description" content="Localtonet is a multi-protocol tunneling platform that securely exposes apps, APIs, devices, proxies and AI agents to the internet without network complexity." />
+    <meta name="keywords" content="localhost tunneling, expose localhost, secure tunnel, ngrok alternative, http tunnel, tcp tunnel, udp tunnel, port forwarding, reverse proxy, webhook testing, api testing, remote access tunnel, custom domain tunnel, mobile proxy, ai agent exposure, device to internet tunnel, secure localhost access, localtonet" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://localtonet.com/" />
+    <meta property="og:title" content="Localtonet - Expose Localhost to Internet" />
+    <meta property="og:description" content="Localtonet is a multi-protocol tunneling platform that securely exposes apps, APIs, devices, proxies and AI agents to the internet without network complexity." />
+    <meta property="og:image" content="https://localtonet.com/homepage/logobluenot.png" />
+    <meta property="og:site_name" content="Localtonet" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://localtonet.com/" />
+    <meta name="twitter:title" content="Localtonet - Expose Localhost to Internet" />
+    <meta name="twitter:description" content="Localtonet is a multi-protocol tunneling platform that securely exposes apps, APIs, devices, proxies and AI agents to the internet without network complexity." />
+    <meta name="twitter:image" content="https://localtonet.com/homepage/logobluenot.png" />
+    <meta name="twitter:site" content="@localtonet" />
+
+    <link rel="icon" href="/homepage/images/favicon.ico" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="https://localtonet.com/sitemap.xml">
+
+    <link href="/homepage/css/tailwind.site.min.css?v=X9jjgQwmttBD1vRA60Y5H-1_XHXaw8WUeNJO4-Xvfqw" rel="stylesheet" />
+    <link href="/homepage/css/site-header.css?v=1.0.4&amp;v=JMoWbbBMoAB5U_Of5gPopSs1pdSS7J-TWuBJHd9KTKw" rel="stylesheet" />
+    <link href="/homepage/css/site-footer.css?v=VXh45RlFWRiio79fnI-pmA6oYQsBjyjt2HE3WPF1Flo" rel="stylesheet" />
+
+        <template id="deferred-icon-css">
+            <link href="/homepage/libs/%40iconscout/unicons/css/line.css" rel="stylesheet">
+            <link href="/common/font-awesome.min.css?v=lNfScWT8MV9BqIHoeDtp9TY6a01iyXAB837UL0q7e-8" rel="stylesheet" />
+        </template>
+        <script>
+            (function () {
+                var loaded = false;
+                var painted = !(window.PerformanceObserver && (PerformanceObserver.supportedEntryTypes || []).indexOf("paint") >= 0);
+                function inject() {
+                    var template = document.getElementById("deferred-icon-css");
+                    if (loaded && painted && template) {
+                        document.head.appendChild(template.content);
+                        template.remove();
+                    }
+                }
+                addEventListener("load", function () {
+                    loaded = true;
+                    inject();
+                    // Safety net: never leave the icons unloaded if no paint entry arrives
+                    setTimeout(function () { painted = true; inject(); }, 3000);
+                });
+                if (!painted) {
+                    new PerformanceObserver(function (list, observer) {
+                        if (list.getEntriesByName("first-contentful-paint").length) {
+                            painted = true;
+                            observer.disconnect();
+                            inject();
+                        }
+                    }).observe({ type: "paint", buffered: true });
+                }
+            })();
+        </script>
+
+    <noscript>
+        <link href="/common/font-awesome.min.css?v=lNfScWT8MV9BqIHoeDtp9TY6a01iyXAB837UL0q7e-8" rel="stylesheet" />
+        <link href="/homepage/libs/%40iconscout/unicons/css/line.css" rel="stylesheet">
+    </noscript>
+
+    <script type="application/ld&#x2B;json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://localtonet.com/#organization",
+      "name": "Localtonet",
+      "url": "https://localtonet.com/",
+      "logo": "https://localtonet.com/homepage/logoblue.png",
+      "sameAs": [
+        "https://community.localtonet.com",
+        "https://status.localtonet.com",
+        "https://twitter.com/localtonet",
+        "https://github.com/localtonet",
+        "https://t.me/localtonetsupport"
+      ],
+      "contactPoint": [{
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "support@localtonet.com",
+        "availableLanguage": ["English"]
+      }]
+    }
+    </script>
+
+    <script type="application/ld&#x2B;json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://localtonet.com/#website",
+      "url": "https://localtonet.com/",
+      "name": "Localtonet",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://localtonet.com/#organization" }
+    }
+    </script>
+
+    <link rel="dns-prefetch" href="//www.googletagmanager.com" />
+
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-2XMRM9PZYN', { send_page_view: false });
+
+    function loadGA() {
+        if (window._gaLoaded) return;
+        window._gaLoaded = true;
+
+        var s = document.createElement('script');
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-2XMRM9PZYN';
+        s.async = true;
+        document.head.appendChild(s);
+
+        s.onload = function () {
+            var sendPV = function () { gtag('event', 'page_view'); };
+            if ('requestIdleCallback' in window) requestIdleCallback(sendPV, { timeout: 2000 });
+            else setTimeout(sendPV, 1000);
+        };
+    }
+
+    // Loaded on the first interaction only: an idle-timer load pulled gtag into every
+    // Lighthouse/PageSpeed run (third-party cookies, console errors, long tasks).
+    ['pointerdown', 'pointermove', 'scroll', 'keydown', 'touchstart'].forEach(function (e) {
+        window.addEventListener(e, loadGA, { once: true, passive: true });
+    });
+</script>
+
+
+    
+
+
+
+    
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <script type="application/ld&#x2B;json">
+        {"@context":"https://schema.org","@type":"WebPage","@id":"https://localtonet.com/#webpage","url":"https://localtonet.com/","name":"Localtonet - Expose Localhost to Internet","inLanguage":"en","isPartOf":{"@id":"https://localtonet.com/#website"},"about":{"@id":"https://localtonet.com/#organization"},"primaryImageOfPage":{"@type":"ImageObject","url":"https://localtonet.com/homepage/logobluenot.png"}}
+    </script>
+
+    <script type="application/ld&#x2B;json">
+        {"@context":"https://schema.org","@type":"Service","@id":"https://localtonet.com/#service","name":"Localhost Tunneling (HTTP/HTTPS, TCP, UDP, Proxy(HTTP/SOCKS))","serviceType":"Reverse-proxy tunneling platform","provider":{"@id":"https://localtonet.com/#organization"},"areaServed":"Worldwide","url":"https://localtonet.com/","description":"Localtonet exposes local and private services to the internet securely with automatic SSL, IP allowlists, reserved ports, and more.","category":"Developer tools","offers":[{"@type":"Offer","name":"Free","price":"0","priceCurrency":"USD"},{"@type":"Offer","name":"Pay-as-you-go","price":"2.00","priceCurrency":"USD","description":"Per tunnel, per month, unlimited bandwidth"}],"hasOfferCatalog":{"@type":"OfferCatalog","name":"Tunnel Types","itemListElement":[{"@type":"Offer","itemOffered":{"@type":"Service","name":"HTTP / HTTPS"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"TCP"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"UDP"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"UDP / TCP Mixed"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"TLS"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"File Server"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Proxy Server (HTTP/SOCKS5)"}}]}}
+    </script>
+
+    <link href="/homepage/css/homepage.css?v=1.0.10&amp;v=CafpinfpkufAkZkwY09xD1MiuNgEqwTqgKi7ybgitvw" rel="stylesheet">
+
+</head>
+
+<body class="font-nunito text-base text-black bg-white dark:text-white dark:bg-slate-900">
+    <script>
+        var defaultThemeMode = "light";
+        var themeMode = localStorage.getItem("data-theme") !== null ? localStorage.getItem("data-theme") : defaultThemeMode;
+        if (themeMode === "system") {
+            themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("class", themeMode);
+    </script>
+    <header id="topnav" class="site-header">
+    <div class="sh-inner">
+        <a class="sh-logo" aria-label="Localtonet home" href="/">
+            <img src="/homepage/logoblue-160x130.webp" class="inline-block dark:hidden" alt="Localtonet" width="80" height="65" />
+            <img src="/homepage/logo-160x130.webp" class="hidden dark:inline-block" alt="Localtonet" width="80" height="65" />
+        </a>
+
+        <nav class="sh-nav" id="siteNav" aria-label="Main">
+            <ul class="sh-links">
+                <li><a href="/" class="sub-menu-item">Home</a></li>
+                <li><a href="/documents" class="sub-menu-item">Documents</a></li>
+                <li><a href="/pricing" class="sub-menu-item">Pricing</a></li>
+                <li><a href="/download" class="sub-menu-item">Downloads</a></li>
+                <li><a href="/blog" class="sub-menu-item">Blog</a></li>
+                <li><a href="https://community.localtonet.com" target="_blank" rel="noopener" class="sub-menu-item">Community</a></li>
+                <li><a href="/contact" class="sub-menu-item">Contact</a></li>
+            </ul>
+
+            <div class="sh-theme" role="group" aria-label="Theme">
+                <span class="sh-theme-label" aria-hidden="true">Theme</span>
+                <div class="sh-theme-seg">
+                    <button type="button" data-sh-theme="light" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        Light
+                    </button>
+                    <button type="button" data-sh-theme="dark" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        Dark
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="sh-actions">
+            <a class="sh-cta" href="/dashboard">Dashboard</a>
+            <button type="button" class="sh-toggle" data-sh-toggle aria-controls="siteNav" aria-expanded="false" aria-label="Open menu" data-label-open="Open menu" data-label-close="Close menu">
+                <span class="sh-toggle-lines" aria-hidden="true"><span></span><span></span><span></span></span>
+            </button>
+        </div>
+    </div>
+</header>
+<div class="sh-scrim" data-sh-close aria-hidden="true"></div>
+
+
+    <main id="main-content">
+        
+
+<section class="home-hero relative w-full overflow-hidden py-28 lg:py-36 bg-gradient-to-b from-white to-indigo-50/50 dark:from-slate-900 dark:to-slate-800">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+        <div class="absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-[42rem] rounded-full blur-3xl opacity-40 bg-indigo-200/40 dark:bg-indigo-500/20"></div>
+    </div>
+
+    <div class="container mx-auto text-center">
+        <div lang="en" dir="ltr" translate="no" id="localtonet-slgn" class="relative inline-flex items-center gap-2 px-3 py-1 rounded-full ring-1 ring-indigo-200/70 dark:ring-indigo-500/30 font-medium text-indigo-700 dark:text-indigo-200 mb-5" style="opacity: 1;">
+            <span class="rounded-md font-semibold bg-gradient-to-r from-indigo-600 to-fuchsia-500 shadow-sm inline-flex items-center gap-1">local</span>
+            <span class="slgn-mid">
+                <span>host</span>
+                <svg aria-hidden="true" class="w-10 h-2" viewBox="0 0 80 8" fill="none">
+                    <path d="M1 4 C20 4, 20 4, 39 4" stroke="url(#g1)" stroke-width="2" stroke-linecap="round" />
+                    <defs>
+                        <linearGradient id="g1" x1="0" y1="0" x2="80" y2="0">
+                            <stop offset="0" stop-color="#818cf8" />
+                            <stop offset="1" stop-color="#e879f9" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="px-1 rounded-md text-white shadow-sm inline-flex items-center gap-1 ltnt-arrow-chip">
+                    <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </span>
+                <svg aria-hidden="true" class="w-10 h-2" viewBox="0 0 80 8" fill="none">
+                    <path d="M41 4 C60 4, 60 4, 79 4" stroke="url(#g2)" stroke-width="2" stroke-linecap="round" />
+                    <defs>
+                        <linearGradient id="g2" x1="0" y1="0" x2="80" y2="0">
+                            <stop offset="0" stop-color="#e879f9" />
+                            <stop offset="1" stop-color="#818cf8" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span>inter</span>
+            </span>
+            <span class="slgn-to">to</span>
+            <span class="rounded-md font-semibold shadow-sm inline-flex items-center gap-1 ltnt-net-chip">net</span>
+        </div>
+
+        <div class="home-hero__body max-w-3xl">
+            <h1 class="home-hero__title font-bold tracking-tight leading-tight text-3xl lg:text-4xl mb-3">
+                Expose localhost <span class="home-hero__nowrap">in seconds</span>
+            </h1>
+
+            <p class="home-hero__sub text-base sm:text-lg lg:text-xl leading-relaxed text-slate-600 dark:text-slate-300">
+                <span class="typewrite-new font-medium text-slate-800 dark:text-slate-100 inline-block min-h-[3.2em]"
+                      data-period="3000"
+                      data-type="[&quot;Apps • APIs • Services&quot;,&quot;HTTP / TCP / UDP / TLS tunnels&quot;,&quot;Custom domains &amp; reserved ports&quot;,&quot;Mobile Proxy via Android&quot;,&quot;Game servers over TCP/UDP&quot;,&quot;Webhook testing &amp; debugging&quot;,&quot;SSH remote access&quot;]"><span class="wrap is-visible">Apps • APIs • Services</span></span>
+            </p>
+
+            <div class="home-hero__cta flex justify-center gap-4 flex-wrap">
+                <a href="/register" class="btn btn-sm bg-indigo-600 hover:bg-indigo-700 border-indigo-600 hover:border-indigo-700 text-white rounded-md">
+                    <svg class="home-icon mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Get Started Free
+                </a>
+                <a href="/documents" class="btn btn-sm bg-transparent hover:bg-indigo-600 border-indigo-600 text-indigo-600 hover:text-white rounded-md">
+                    <svg class="home-icon mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Documents
+                </a>
+            </div>
+
+            <div class="home-hero__note text-sm text-slate-500 dark:text-slate-400">
+                Start free • Upgrade when you need more
+            </div>
+
+            <div class="home-hero__platforms">
+                <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[15px]">
+                    <a href="/download#windows" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-indigo-300 dark:hover:ring-indigo-500 hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10 transition text-slate-700 dark:text-slate-300">
+                        <img src="/homepage/images/downloadspage/windows-logo.png" alt="Windows" class="h-6 w-auto mr-1" width="24" height="24"> Windows
+                    </a>
+
+                    <span class="hidden md:inline h-5 w-px bg-slate-300 dark:bg-slate-700"></span>
+
+                    <a href="/download#macos" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-indigo-300 dark:hover:ring-indigo-500 hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10 transition text-slate-700 dark:text-slate-300">
+                        <img src="/homepage/images/downloadspage/icons8-apple-logo-120.png" alt="macOS" class="h-6 w-auto mr-1" width="24" height="24"> macOS
+                    </a>
+
+                    <span class="hidden md:inline h-5 w-px bg-slate-300 dark:bg-slate-700"></span>
+
+                    <a href="/download#linux" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-indigo-300 dark:hover:ring-indigo-500 hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10 transition text-slate-700 dark:text-slate-300">
+                        <img src="/homepage/images/downloadspage/linux-logo.png" alt="Linux" class="h-6 w-auto mr-1" width="24" height="24"> Linux
+                    </a>
+
+                    <span class="hidden md:inline h-5 w-px bg-slate-300 dark:bg-slate-700"></span>
+
+                    <a href="/download#android" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-indigo-300 dark:hover:ring-indigo-500 hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10 transition text-slate-700 dark:text-slate-300">
+                        <img src="/homepage/images/downloadspage/android-logo.png" alt="Android" class="h-6 w-auto mr-1" width="24" height="24"> Android
+                    </a>
+
+                    <span class="hidden md:inline h-5 w-px bg-slate-300 dark:bg-slate-700"></span>
+
+                    <a href="/download#docker" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-indigo-300 dark:hover:ring-indigo-500 hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10 transition text-slate-700 dark:text-slate-300">
+                        <img src="/homepage/images/downloadspage/docker-logo.png" alt="Docker" class="h-6 w-auto mr-1" width="24" height="24"> Docker
+                    </a>
+
+                    <span class="hidden md:inline h-5 w-px bg-slate-300 dark:bg-slate-700"></span>
+
+                    <a href="/download" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-indigo-300 dark:hover:ring-indigo-500 hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10 transition text-slate-700 dark:text-slate-300">
+                        <svg viewBox="0 0 24 24" class="h-6 w-6" fill="currentColor" aria-hidden="true">
+                            <circle cx="5" cy="12" r="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <circle cx="19" cy="12" r="2" />
+                        </svg> Other
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <a href="#tunnel-types" class="home-hero__scroll" aria-label="Scroll to tunnel types">
+        <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </a>
+</section>
+
+<section id="tunnel-types" class="relative" style="margin-bottom: 70px;">
+    <div class="container">
+        <div class="tt-head">
+            <h2 class="mb-4 md:text-3xl text-2xl font-semibold">Tunnel Types</h2>
+        </div>
+
+        <div class="relative">
+            <button id="tunnelPrev" type="button" class="tt-nav tt-nav--prev" aria-label="Previous">
+                <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+
+            <div id="tTrack" class="relative overflow-hidden" role="group" aria-label="Tunnel types">
+                <div id="tInner" class="tt-row">
+                    <a href="/documents/https" data-card="tunnel" class="tt-card">
+                        <span class="tt-card__icon"><svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+                        <h3 class="tt-card__title">HTTP / HTTPS</h3>
+                        <p class="tt-card__desc">Give a local web app a public HTTPS URL, with automatic SSL and custom domains.</p>
+                        <ul class="tt-card__tags" aria-label="Best for"><li>Web apps</li><li>APIs</li><li>Webhooks</li></ul>
+                        <span class="tt-card__more">Read the guide <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    </a>
+
+                    <a href="/documents/tcp" data-card="tunnel" class="tt-card">
+                        <span class="tt-card__icon"><svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
+                        <h3 class="tt-card__title">TCP</h3>
+                        <p class="tt-card__desc">Reach any TCP service from anywhere, with no port forwarding or static IP.</p>
+                        <ul class="tt-card__tags" aria-label="Best for"><li>SSH</li><li>RDP</li><li>Databases</li></ul>
+                        <span class="tt-card__more">Read the guide <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    </a>
+
+                    <a href="/documents/tls" data-card="tunnel" class="tt-card">
+                        <span class="tt-card__icon"><svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                        <h3 class="tt-card__title">TLS</h3>
+                        <p class="tt-card__desc">Encrypted TCP with TLS passthrough, so your service keeps its own certificate.</p>
+                        <ul class="tt-card__tags" aria-label="Best for"><li>Own certificate</li><li>MQTTS</li></ul>
+                        <span class="tt-card__more">Read the guide <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    </a>
+
+                    <a href="/documents/udp" data-card="tunnel" class="tt-card">
+                        <span class="tt-card__icon"><svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+                        <h3 class="tt-card__title">UDP</h3>
+                        <p class="tt-card__desc">Forward UDP traffic to a local port for real-time, latency-sensitive services.</p>
+                        <ul class="tt-card__tags" aria-label="Best for"><li>Game servers</li><li>VoIP</li><li>DNS</li></ul>
+                        <span class="tt-card__more">Read the guide <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    </a>
+
+                    <a href="/documents/udp-tcp" data-card="tunnel" class="tt-card">
+                        <span class="tt-card__icon"><svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 8 21 12 17 16"/><polyline points="7 8 3 12 7 16"/><line x1="3" y1="12" x2="21" y2="12"/></svg></span>
+                        <h3 class="tt-card__title">UDP / TCP Mixed</h3>
+                        <p class="tt-card__desc">One tunnel for services that need both TCP and UDP on the same port.</p>
+                        <ul class="tt-card__tags" aria-label="Best for"><li>Game servers</li><li>Voice servers</li></ul>
+                        <span class="tt-card__more">Read the guide <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    </a>
+
+                    <a href="/documents/file-server" data-card="tunnel" class="tt-card">
+                        <span class="tt-card__icon"><svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
+                        <h3 class="tt-card__title">File Server</h3>
+                        <p class="tt-card__desc">Share a local folder as a link anyone can open in a browser. No web server needed.</p>
+                        <ul class="tt-card__tags" aria-label="Best for"><li>Folder sharing</li><li>Downloads</li></ul>
+                        <span class="tt-card__more">Read the guide <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    </a>
+
+                    <a href="/documents/proxy-server" data-card="tunnel" class="tt-card">
+                        <span class="tt-card__icon"><svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                        <h3 class="tt-card__title">Proxy Server</h3>
+                        <p class="tt-card__desc">Turn your computer or Android phone into an HTTP or SOCKS5 proxy endpoint.</p>
+                        <ul class="tt-card__tags" aria-label="Best for"><li>Mobile proxy</li><li>IP rotation</li></ul>
+                        <span class="tt-card__more">Read the guide <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    </a>
+                </div>
+            </div>
+
+            <button id="tunnelNext" type="button" class="tt-nav tt-nav--next" aria-label="Next">
+                <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+        </div>
+    </div>
+</section>
+
+<section class="home-deferred home-how relative md:py-24 py-16 bg-gray-50 dark:bg-slate-800">
+    <div class="container">
+        <div class="grid grid-cols-1 pb-8 text-center">
+            <h2 class="mb-6 md:text-3xl text-2xl md:leading-normal leading-normal font-semibold">How It Works</h2>
+                <p>Localtonet creates an outbound, encrypted Tunnel from your device to the Localtonet Servers.</p>
+                <p>We give you a secure public URL that forwards traffic back down that tunnel to your local service.</p>
+        </div>
+        <div class="how-it-works-diagram">
+            <div class="hiw">
+                <div class="hiw-node hiw-node--client">
+                    <span class="hiw-node__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        <span class="hiw-node__step">1</span>
+                    </span>
+                    <span class="hiw-node__text">
+                        <span class="hiw-node__title">Clients</span>
+                        <span class="hiw-node__sub">Internet</span>
+                    </span>
+                </div>
+
+                <div class="hiw-link hiw-link--web">
+                    <span class="hiw-link__label">Web Requests</span>
+                    <span class="hiw-link__track" aria-hidden="true"><span class="hiw-link__pulse"></span></span>
+                    <code class="hiw-chip" translate="no">myapp.localto.net</code>
+                </div>
+
+                <div class="hiw-node hiw-node--server">
+                    <span class="hiw-node__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                        <span class="hiw-node__step">2</span>
+                    </span>
+                    <span class="hiw-node__text">
+                        <span class="hiw-node__title"><span translate="no">Localtonet</span> Servers</span>
+                        <span class="hiw-node__sub">Cloud Infrastructure</span>
+                    </span>
+                </div>
+
+                <div class="hiw-link hiw-link--tunnel">
+                    <span class="hiw-link__label">
+                        <svg class="hiw-link__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>Encrypted Tunnel</span>
+                    </span>
+                    <span class="hiw-link__track" aria-hidden="true"><span class="hiw-link__pulse"></span></span>
+                </div>
+
+                <div class="hiw-zone">
+                    <span class="hiw-zone__label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <span>Your Device</span>
+                    </span>
+                </div>
+
+                <div class="hiw-node hiw-node--app">
+                    <span class="hiw-node__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                        <span class="hiw-node__step">3</span>
+                    </span>
+                    <span class="hiw-node__text">
+                        <span class="hiw-node__title">Localtonet App</span>
+                        <span class="hiw-node__sub hiw-node__sub--live"><span class="hiw-node__dot" aria-hidden="true"></span>Tunnel active ✓</span>
+                    </span>
+                </div>
+
+                <div class="hiw-link hiw-link--local">
+                    <span class="hiw-link__track" aria-hidden="true"><span class="hiw-link__pulse"></span></span>
+                </div>
+
+                <div class="hiw-node hiw-node--service">
+                    <span class="hiw-node__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                        <span class="hiw-node__step">4</span>
+                    </span>
+                    <span class="hiw-node__text">
+                        <span class="hiw-node__title">Local Service</span>
+                        <code class="hiw-chip" translate="no">localhost:3000</code>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="features" class="home-deferred relative md:py-24 py-16">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+        <div class="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-indigo-50/60 to-transparent dark:from-indigo-500/5"></div>
+    </div>
+    <div class="container">
+        <div class="grid grid-cols-1 text-center mb-12">
+            <span class="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-4 mx-auto">
+                <i class="fa-solid fa-cubes-stacked mr-2"></i> Powerful Features
+            </span>
+            <h2 class="mb-4 text-3xl md:text-4xl font-bold tracking-tight">Everything You Need</h2>
+            <p class="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg">Comprehensive tunneling solution with enterprise-grade features for developers, teams, and businesses.</p>
+        </div>
+        <div class="grid lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-6">
+            <!-- Any Protocol -->
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-network-wired"></i>
+                </div>
+                <div class="text-center">
+                    <span class="feature-badge feature-badge-protocol">
+                        <i class="fa-solid fa-bolt"></i> Multi-Protocol
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><a href="/blog/multi-protocol-secure-tunneling-localtonet" class="feature-card-link" target="_blank" rel="noopener noreferrer">Any Protocol</a></h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Tunnel any TCP or UDP based protocol through our secure network.</p>
+                    <div class="feature-list">
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> HTTP/HTTPS &amp; WebSocket</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> TCP, UDP &amp; TLS</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> SSH, RDP &amp; Database</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Game servers &amp; VoIP</div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Runs Everywhere -->
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-laptop-code"></i>
+                </div>
+                <div class="text-center">
+                    <span class="feature-badge feature-badge-platform">
+                        <i class="fa-solid fa-microchip"></i> Cross-Platform
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><a href="/blog/localtonet-runs-everywhere" class="feature-card-link" target="_blank" rel="noopener noreferrer">Runs Everywhere</a></h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Single portable binary with zero dependencies across all platforms.</p>
+                    <div class="feature-list">
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Windows, macOS, Linux</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Android mobile app</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Docker &amp; containers</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> ARM &amp; x86 support</div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- IP Whitelisting -->
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="text-center">
+                    <span class="feature-badge feature-badge-security">
+                        <i class="fa-solid fa-lock"></i> Access Control
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><a href="/blog" class="feature-card-link" target="_blank" rel="noopener noreferrer">IP Whitelisting</a></h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Granular access control to protect your tunnels from unauthorized access.</p>
+                    <div class="feature-list">
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Allow/block IP ranges</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Country-based filtering</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Real-time IP logging</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Automatic threat blocking</div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Instant Domains -->
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-globe"></i>
+                </div>
+                <div class="text-center">
+                    <span class="feature-badge feature-badge-domain">
+                        <i class="fa-solid fa-link"></i> Custom URLs
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><a href="/blog/how-to-add-custom-domain-on-localtonet" class="feature-card-link" target="_blank" rel="noopener noreferrer">Instant Domains</a></h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Get public URLs instantly or bring your own custom domain.</p>
+                    <div class="feature-list">
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Free subdomains</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Custom domain mapping</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Reserved port numbers</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Wildcard DNS support</div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- SSO -->
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-fingerprint"></i>
+                </div>
+                <div class="text-center">
+                    <span class="feature-badge feature-badge-auth">
+                        <i class="fa-solid fa-key"></i> Enterprise Auth
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><a href="/documents/single-sign-on" class="feature-card-link" target="_blank" rel="noopener noreferrer">Single Sign-On</a></h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Secure your tunnels with enterprise identity providers.</p>
+                    <div class="feature-list">
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Google &amp; GitHub OAuth</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> OpenID Connect support</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Basic authentication</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Custom auth headers</div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- File Server -->
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <div class="text-center">
+                    <span class="feature-badge feature-badge-file">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> File Sharing
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><a href="/blog/secure-file-server-tunnels-with-localtonet" class="feature-card-link" target="_blank" rel="noopener noreferrer">File Server</a></h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Share any local directory with a secure public link instantly.</p>
+                    <div class="feature-list">
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Drag &amp; drop sharing</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Directory browsing</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Download/upload support</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Access permissions</div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Webhook Inspector -->
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-bug"></i>
+                </div>
+                <div class="text-center">
+                    <span class="feature-badge feature-badge-debug">
+                        <i class="fa-solid fa-magnifying-glass"></i> Debug Tools
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><a href="/documents/logs-and-inspection" class="feature-card-link" target="_blank" rel="noopener noreferrer">Webhook Inspector</a></h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Capture, inspect, replay and modify HTTP traffic in real-time.</p>
+                    <div class="feature-list">
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Request/response capture</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Replay requests</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Modify and replay</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Filter by date</div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Automatic HTTPS -->
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-certificate"></i>
+                </div>
+                <div class="text-center">
+                    <span class="feature-badge feature-badge-ssl">
+                        <i class="fa-solid fa-shield"></i> Auto SSL
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><a href="/blog" class="feature-card-link" target="_blank" rel="noopener noreferrer">Automatic HTTPS</a></h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Free SSL/TLS certificates auto-provisioned via Let&#x27;s Encrypt.</p>
+                    <div class="feature-list">
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Auto certificate renewal</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> Custom domain SSL</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> TLS 1.3 support</div>
+                        <div class="feature-list-item"><i class="fa-solid fa-check"></i> End-to-end encryption</div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- Additional Features Banner -->
+        <div class="mt-12 p-6 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-500/30">
+            <div class="flex flex-wrap items-center justify-center gap-6 md:gap-10 text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-infinity text-indigo-600 p-1.5 rounded-md bg-indigo-100 dark:bg-indigo-500/20"></i>
+                    <span class="font-medium">Unlimited Bandwidth</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-users text-purple-600 p-1.5 rounded-md bg-purple-100 dark:bg-purple-500/20"></i>
+                    <span class="font-medium">Team Collaboration</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-code text-pink-600 p-1.5 rounded-md bg-pink-100 dark:bg-pink-500/20"></i>
+                    <span class="font-medium">REST API</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-server text-cyan-600 p-1.5 rounded-md bg-cyan-100 dark:bg-cyan-500/20"></i>
+                    <span class="font-medium">Load Balancing</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-600 p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20"></i>
+                    <span class="font-medium">Request Logging</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="remote-terminal" class="home-deferred" aria-labelledby="remote-terminal-title">
+    <div class="rt-fade" aria-hidden="true"></div>
+    <div class="rt-glow rt-glow--indigo" aria-hidden="true"></div>
+    <div class="rt-glow rt-glow--fuchsia" aria-hidden="true"></div>
+
+    <div class="container rt-container">
+        <div class="rt-layout">
+            <div class="rt-copy">
+                <span class="rt-badge">
+                    <span class="rt-badge__new">NEW</span>
+                    Device Terminal
+                </span>
+                <h2 id="remote-terminal-title" class="rt-title">Any machine you own. <span class="rt-accent">A real shell in your browser.</span></h2>
+                <p class="rt-lead">Reach your home server, VPS or Raspberry Pi from anywhere, even behind NAT or a firewall. Run one command on the machine, then open its shell in your browser or from any terminal with ssh, and watch CPU, memory and disk live.</p>
+
+                <ul class="rt-chips">
+                    <li class="rt-chip">
+                        <svg class="home-icon rt-chip__icon rt-chip__icon--emerald" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        No open ports
+                    </li>
+                    <li class="rt-chip">
+                        <svg class="home-icon rt-chip__icon rt-chip__icon--amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                        2FA approval
+                    </li>
+                    <li class="rt-chip">
+                        <svg class="home-icon rt-chip__icon rt-chip__icon--sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        Connection records
+                    </li>
+                    <li class="rt-chip">
+                        <svg class="home-icon rt-chip__icon rt-chip__icon--violet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2" ry="2"/><line x1="2" y1="14" x2="4" y2="14"/><line x1="20" y1="14" x2="22" y2="14"/><line x1="15" y1="13" x2="15" y2="15"/><line x1="9" y1="13" x2="9" y2="15"/></svg>
+                        Ready for AI agents
+                    </li>
+                    <li class="rt-chip">
+                        <svg class="home-icon rt-chip__icon rt-chip__icon--indigo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <span dir="ltr" translate="no">Windows · Linux · ARM</span>
+                    </li>
+                </ul>
+
+                <div class="rt-action">
+                    <a href="/devices" class="rt-cta">
+                        Open My Devices
+                        <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                    <span class="rt-free">
+                        <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                        Free
+                    </span>
+                </div>
+            </div>
+
+            <div class="rt-stage" dir="ltr">
+                <div class="rt-term" role="img" aria-label="Example terminal: the enable command, an approval code, then a shell session on a device" lang="en" dir="ltr" translate="no">
+                    <div class="rt-term__bar">
+                        <span class="rt-term__dots"><span></span><span></span><span></span></span>
+                        <span class="rt-term__title">deploy@build-box</span>
+                        <span class="rt-term__state"><span class="rt-term__state-dot"></span>connected</span>
+                    </div>
+                    <div class="rt-term__body">
+                        <div class="rt-term__comment"># on the machine</div>
+                        <div class="rt-term__cmd"><span class="rt-term__prompt">$</span><span>localtonet --terminal enable <span class="rt-term__nowrap">--authtoken <span class="rt-term__token">YOUR_TOKEN</span></span></span></div>
+                        <div>Approval code: <span class="rt-term__code">K7QF-M2XR</span></div>
+                        <div class="rt-term__muted">Open localtonet.com/devices and enter this code.</div>
+                        <div class="rt-term__ok">Terminal enabled. Shells will run as deploy.</div>
+                        <div class="rt-term__rule"></div>
+                        <div class="rt-term__comment"># in your browser, from My Devices</div>
+                        <div class="rt-term__cmd"><span class="rt-term__prompt">deploy@build-box:~$</span><span>uname -sm</span></div>
+                        <div>Linux aarch64</div>
+                        <div class="rt-term__cmd"><span class="rt-term__prompt">deploy@build-box:~$</span><span>uptime -p</span></div>
+                        <div>up 12 days, 4 hours</div>
+                        <div class="rt-term__cmd"><span class="rt-term__prompt">deploy@build-box:~$</span><span class="rt-term__cursor"></span></div>
+                    </div>
+                </div>
+
+                <div class="rt-device" dir="ltr" role="img" aria-label="Example device card: a device shown online with live CPU, RAM and disk usage and a Terminal button">
+                    <div class="rt-device__head">
+                        <span class="rt-device__icon"><svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
+                        <span class="rt-device__id">
+                            <span class="rt-device__name" dir="ltr" translate="no">build-box</span>
+                            <span class="rt-device__os" dir="ltr" translate="no">Linux · ARM64</span>
+                        </span>
+                        <span class="rt-device__status"><span class="rt-device__dot"></span>Online</span>
+                    </div>
+                    <div class="rt-meter rt-meter--cpu">
+                        <span class="rt-meter__label">CPU</span>
+                        <span class="rt-meter__track"><span class="rt-meter__fill"></span></span>
+                        <span class="rt-meter__value" dir="ltr"></span>
+                    </div>
+                    <div class="rt-meter rt-meter--ram">
+                        <span class="rt-meter__label">RAM</span>
+                        <span class="rt-meter__track"><span class="rt-meter__fill"></span></span>
+                        <span class="rt-meter__value" dir="ltr"></span>
+                    </div>
+                    <div class="rt-meter rt-meter--disk">
+                        <span class="rt-meter__label">Disk</span>
+                        <span class="rt-meter__track"><span class="rt-meter__fill"></span></span>
+                        <span class="rt-meter__value" dir="ltr"></span>
+                    </div>
+                    <span class="rt-device__button">
+                        <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                        Terminal
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="pricing" class="home-deferred relative py-16 bg-gray-50 dark:bg-slate-800">
+    <div class="container">
+        <div class="grid lg:grid-cols-12 grid-cols-1 items-center gap-[30px]">
+            <!-- Left Side - Text Content -->
+            <div class="lg:col-span-5">
+                <div class="lg:text-left text-center">
+                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wide mb-4">
+                        <i class="fa-solid fa-tags mr-1"></i> Simple Pricing
+                    </span>
+                    <h2 class="mb-6 md:text-3xl text-2xl md:leading-normal leading-normal font-bold">
+                        Start Free, Scale<br>
+                        <span class="text-indigo-600 dark:text-indigo-400">As You Grow</span>
+                    </h2>
+
+                    <p class="text-slate-600 dark:text-slate-400 max-w-md mb-8">
+                        No hidden fees. No bandwidth limits on paid plans. Simple, transparent pricing that scales with your needs.
+                    </p>
+
+                    <!-- Key Benefits -->
+                    <div class="space-y-3 mb-8">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-check-circle text-emerald-500"></i>
+                            <span class="text-slate-700 dark:text-slate-300 ml-2">No credit card required to start</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-check-circle text-emerald-500"></i>
+                            <span class="text-slate-700 dark:text-slate-300 ml-2">Unlimited bandwidth on paid tunnels</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-check-circle text-emerald-500"></i>
+                            <span class="text-slate-700 dark:text-slate-300 ml-2">Instant activation, cancel anytime</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-check-circle text-emerald-500"></i>
+                            <span class="text-slate-700 dark:text-slate-300 ml-2">24/7 customer support</span>
+                        </div>
+                    </div>
+
+                    <a href="/register" class="btn bg-indigo-600 hover:bg-indigo-700 border-indigo-600 hover:border-indigo-700 text-white rounded-md">
+                        <i class="fa-solid fa-rocket mr-2"></i> Get Started For Free
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Side - Pricing Cards -->
+            <div class="lg:col-span-7 mt-8 lg:mt-0">
+                <div class="lg:ml-8">
+                    <div class="grid md:grid-cols-2 grid-cols-1 gap-6">
+                        <!-- Free Plan -->
+                        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-lg dark:shadow-gray-800 border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                            <div class="p-6">
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Free</h3>
+                                <div class="flex items-baseline gap-1 mb-4">
+                                    <span class="text-4xl font-bold text-indigo-600 dark:text-indigo-400">$0</span>
+                                    <span class="text-slate-500 dark:text-slate-400 ml-1">/month</span>
+                                </div>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Quick, simple tunnels for development and demos</p>
+
+                                <div class="space-y-4 mb-6">
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-500 w-4"></i>
+                                        <span><strong>1</strong> Tunnel (any type)</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-clock text-amber-500 w-4 mr-1"></i>
+                                        <span><strong>1 GB</strong> Bandwidth / month</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-clock text-amber-500 w-4 mr-1"></i>
+                                        <span><strong>30 min</strong> Tunnel Timeout</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-500 w-4"></i>
+                                        <span>Auto SSL/TLS Certificates</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-500 w-4"></i>
+                                        <span>Basic Authentication</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-500 w-4"></i>
+                                        <span>API Management</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-500 w-4"></i>
+                                        <span>Request Inspection</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-500 w-4"></i>
+                                        <span>Header Modification</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-500 w-4"></i>
+                                        <span>Web Application Firewall</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-500 w-4"></i>
+                                        <span>Virtual Private Network (VPN)</span>
+                                    </div>
+                                </div>
+
+                                <a href="/register" class="block w-full text-center py-3 px-4 rounded-lg border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-indigo-600 hover:text-white transition-all duration-300">
+                                    Try Free
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Pro Plan -->
+                        <div class="relative bg-indigo-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                            <!-- Popular Badge -->
+                            <div class="absolute top-4 right-4">
+                                <span class="relative inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-extrabold tracking-wide text-white bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 shadow-lg shadow-orange-500/30">
+                                    <span class="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 blur opacity-40"></span>
+                                    <span class="relative">POPULAR</span>
+                                </span>
+                            </div>
+
+                            <div class="p-6 text-white">
+                                <h3 class="text-lg font-bold mb-2">Pay-as-you-go</h3>
+                                <div class="flex items-baseline gap-1 mb-4">
+                                    <span class="text-4xl font-bold">$2</span>
+                                    <span class="text-white ml-1">/mo per tunnel</span>
+                                </div>
+                                <p class="text-sm text-white/80 mb-3">
+                                    Built for production, teams, and custom domains
+                                </p>
+
+                                <a href="/blog/introducing-pay-as-you-go-pricing-for-localtonet" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mb-5 px-3 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-xs font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 hover:border-white/40">
+                                    <i class="fa-solid fa-circle-info" style="margin-inline-end: 8px;"></i>
+                                    How does Pay-as-you-go work?
+                                </a>
+
+                                <div class="space-y-4 mb-6">
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-300 w-4"></i>
+                                        <span>All Free Features</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-300 w-4"></i>
+                                        <span><strong>Unlimited</strong> Tunnels</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-300 w-4"></i>
+                                        <span><strong>Unlimited</strong> Bandwidth</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-300 w-4"></i>
+                                        <span><strong>No</strong> Tunnel Timeout</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-300 w-4"></i>
+                                        <span>Custom Domains &amp; Ports</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-300 w-4"></i>
+                                        <span>IP Whitelisting</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-300 w-4"></i>
+                                        <span>SSO (Single Sign-On)</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <i class="fa-solid fa-check text-emerald-300 w-4"></i>
+                                        <span>Team Management</span>
+                                    </div>
+                                </div>
+
+                                <a href="/register" class="block w-full text-center py-3 px-4 rounded-lg bg-white text-indigo-600 font-semibold hover:bg-indigo-50 transition-all duration-300">
+                                    Get Started
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="server-map" class="home-deferred relative md:py-16 py-8">
+
+    <div class="grid grid-cols-1 text-center">
+        <h2 class="mb-3 text-2xl md:text-3xl font-semibold tracking-tight">Global Server Network</h2>
+        <p class="text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">Explore our global edge servers delivering high-speed and secure Localtonet tunnels worldwide</p>
+    </div>
+
+    <div class="map-wrap mt-3">
+        <img class="map" src="/homepage/images/map.png" alt="Global Network Map" loading="lazy" width="1260" height="630">
+        <div class="flag-pin lt-tr-ist"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/tr.svg" alt="Turkey"><div class="tip"><span class="name">Istanbul</span></div></div>
+        <div class="flag-pin lt-us-ckg"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/us.svg" alt="United States"><div class="tip"><span class="name">Chicago</span></div></div>
+        <div class="flag-pin lt-es-md"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/es.svg" alt="Spain"><div class="tip"><span class="name">Madrid</span></div></div>
+        <div class="flag-pin lt-it-ar"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/it.svg" alt="Italy"><div class="tip"><span class="name">Arezzo</span></div></div>
+        <div class="flag-pin lt-cz-pr"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/cz.svg" alt="Czech Republic"><div class="tip"><span class="name">Prague</span></div></div>
+        <div class="flag-pin lt-us-dr"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/us.svg" alt="United States"><div class="tip"><span class="name">Durham</span></div></div>
+        <div class="flag-pin lt-br-so"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/br.svg" alt="Brazil"><div class="tip"><span class="name">Sao Paulo</span></div></div>
+        <div class="flag-pin lt-jp-tk"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/jp.svg" alt="Japan"><div class="tip"><span class="name">Tokyo</span></div></div>
+        <div class="flag-pin lt-hk-hk"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/hk.svg" alt="Hong Kong"><div class="tip"><span class="name">Hong Kong</span></div></div>
+        <div class="flag-pin lt-fr-pr"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/fr.svg" alt="France"><div class="tip"><span class="name">Paris</span></div></div>
+        <div class="flag-pin lt-au-sy"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/au.svg" alt="Australia"><div class="tip"><span class="name">Sydney</span></div></div>
+        <div class="flag-pin lt-ar-ad"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/ae.svg" alt="United Arab Emirates"><div class="tip"><span class="name">Abu Dhabi</span></div></div>
+        <div class="flag-pin lt-at-vi"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/at.svg" alt="Austria"><div class="tip"><span class="name">Vienna</span></div></div>
+        <div class="flag-pin lt-sg-sg"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/sg.svg" alt="Singapore"><div class="tip"><span class="name">Singapore</span></div></div>
+        <div class="flag-pin lt-in-hy"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/in.svg" alt="India"><div class="tip"><span class="name">Hyderabad</span></div></div>
+        <div class="flag-pin lt-id-jk"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/id.svg" alt="Indonesia"><div class="tip"><span class="name">Jakarta</span></div></div>
+        <div class="flag-pin lt-mx-qe"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/mx.svg" alt="Mexico"><div class="tip"><span class="name">Queretaro</span></div></div>
+        <div class="flag-pin lt-gb-ln"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/gb.svg" alt="United Kingdom"><div class="tip"><span class="name">London</span></div></div>
+        <div class="flag-pin lt-de-ds"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/de.svg" alt="Germany"><div class="tip"><span class="name">Dusseldorf</span></div></div>
+        <div class="flag-pin lt-ru-mo"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/ru.svg" alt="Russia"><div class="tip"><span class="name">Moscow</span></div></div>
+        <div class="flag-pin lt-ua-kv"><img loading="lazy" decoding="async" src="/dashboard/assets/media/flags/1x1/ua.svg" alt="Ukraine"><div class="tip"><span class="name">Kyiv</span></div></div>
+    </div>
+</section>
+
+<section id="platforms" class="home-deferred relative md:py-24 py-16 bg-gray-50 dark:bg-slate-800">
+    <div class="container">
+        <div class="grid grid-cols-1 text-center pb-10">
+            <h2 class="mb-4 md:text-3xl text-2xl font-semibold">Supported Platforms</h2>
+            <p class="max-w-xl mx-auto mb-5">Grab a native binary for your OS <span class="font-semibold">or</span> skip downloads entirely with your built‑in <code>ssh</code>.</p>
+        </div>
+        <div class="grid lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-[30px] mb-12">
+            <a href="/documents/windows" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-500 text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-3">
+                    <img src="/homepage/images/downloadspage/windows-logo.png" alt="Windows" aria-hidden="true" loading="lazy" decoding="async" class="h-10 w-auto" width="40" height="40" style="margin-inline: auto;">
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">Windows</h3>
+            </a>
+            <a href="/documents/macos" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-500 text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-3">
+                    <img src="/homepage/images/downloadspage/icons8-apple-logo-120.png" alt="macOS" aria-hidden="true" loading="lazy" decoding="async" class="h-10 w-auto" width="40" height="40" style="margin-inline: auto;">
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">macOS</h3>
+            </a>
+            <a href="/documents/linux" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-500 text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-3">
+                    <img src="/homepage/images/downloadspage/linux-logo.png" alt="Linux" aria-hidden="true" loading="lazy" decoding="async" class="h-10 w-auto" width="40" height="40" style="margin-inline: auto;">
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">Linux</h3>
+            </a>
+            <a href="/documents/android" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-500 text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-3">
+                    <img src="/homepage/images/downloadspage/android-logo.png" alt="Android" aria-hidden="true" loading="lazy" decoding="async" class="h-10 w-auto" width="40" height="40" style="margin-inline: auto;">
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">Android</h3>
+            </a>
+            <a href="/documents/docker" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-500 text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-3">
+                    <img src="/homepage/images/downloadspage/docker-logo.png" alt="Docker" aria-hidden="true" loading="lazy" decoding="async" class="h-10 w-auto" width="40" height="40" style="margin-inline: auto;">
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">Docker</h3>
+            </a>
+        </div>
+        <div class="flex items-center justify-center mb-12 select-none">
+            <span class="inline-block h-px bg-slate-300 dark:bg-slate-600 flex-1"></span>
+            <span class="mx-4 text-sm uppercase tracking-widest text-slate-500 dark:text-slate-400">OR</span>
+            <span class="inline-block h-px bg-slate-300 dark:bg-slate-600 flex-1"></span>
+        </div>
+        <div class="max-w-3xl mx-auto">
+            <div class="bg-indigo-50 dark:bg-slate-700/40 border border-indigo-500/40 rounded-xl p-6 text-center shadow-sm">
+                <h3 class="text-indigo-600 dark:text-indigo-400 text-lg md:text-xl font-semibold mb-2 flex items-center justify-center">
+                    <a href="/documents/zero-install-ssh" class="flex items-center">
+                        <i class="fa-solid fa-terminal mr-2"></i>Zero‑install via SSH
+                    </a>
+                </h3>
+                <p class="text-slate-700 dark:text-slate-300 text-sm md:text-base">
+                    Create a tunnel ▸ open <strong>Settings → Show SSH Command</strong> ▸ copy &amp; run the one‑liner we generate. No binaries, no setup.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="mcp" class="home-deferred relative md:py-24 py-16 overflow-hidden">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0">
+        <div class="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl"></div>
+        <div class="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl"></div>
+    </div>
+    <div class="container relative">
+        <div class="grid grid-cols-1 text-center pb-10">
+            <div class="inline-flex items-center gap-2 mx-auto rounded-full px-3 py-1 text-xs font-bold tracking-wide bg-indigo-600/10 text-indigo-700 dark:text-indigo-300 dark:bg-indigo-500/10 mb-4">
+                <span class="relative flex h-1.5 w-1.5">
+                    <span class="mcp-ping animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-500 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-600"></span>
+                </span>
+                NEW
+            </div>
+            <h2 class="mb-4 md:text-4xl text-2xl font-bold">Localtonet <span class="text-indigo-600 dark:text-indigo-400">MCP</span>: Let Your AI Agent Manage Your Tunnels</h2>
+            <p class="max-w-2xl mx-auto mb-5 text-slate-600 dark:text-slate-400">Connect any MCP-compatible AI assistant, such as Claude or Cursor, to Localtonet and manage tunnels, auth tokens, token groups, servers, and SSO providers using natural language.</p>
+            <div class="mcp-badges flex flex-wrap items-center justify-center gap-2 mb-10">
+                <span class="mcp-badge inline-flex items-center text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                    <i class="fa-solid fa-bolt text-indigo-500 mr-1.5"></i>Streamable HTTP
+                </span>
+                <span class="mcp-badge inline-flex items-center text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                    <i class="fa-solid fa-lock text-indigo-500 mr-1.5"></i>Bearer Token Auth
+                </span>
+                <span class="mcp-badge inline-flex items-center text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                    <i class="fa-solid fa-robot text-indigo-500 mr-1.5"></i>Claude, Cursor &amp; More
+                </span>
+            </div>
+        </div>
+
+        <div class="mcp-content-grid grid lg:grid-cols-12 grid-cols-1 gap-8 items-stretch">
+            <div class="mcp-feature-card lg:col-span-5 p-6 md:p-8 rounded-2xl shadow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:shadow-gray-800 flex flex-col">
+                <div class="mcp-feature-grid grid sm:grid-cols-2 grid-cols-1 gap-6">
+                    <div class="mcp-feature flex items-start gap-3">
+                        <div class="mcp-feature-icon mcp-feature-icon-indigo flex-shrink-0 w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-robot text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                        <div class="mcp-feature-copy">
+                            <h3 class="font-semibold mb-1">Natural Language Control</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">Ask your AI agent to create, start, stop, or delete tunnels without touching the dashboard.</p>
+                        </div>
+                    </div>
+                    <div class="mcp-feature flex items-start gap-3">
+                        <div class="mcp-feature-icon mcp-feature-icon-violet flex-shrink-0 w-11 h-11 rounded-xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-key text-violet-600 dark:text-violet-400"></i>
+                        </div>
+                        <div class="mcp-feature-copy">
+                            <h3 class="font-semibold mb-1">Auth Token Management</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">Manage auth tokens and token groups directly through conversation with your agent.</p>
+                        </div>
+                    </div>
+                    <div class="mcp-feature flex items-start gap-3">
+                        <div class="mcp-feature-icon mcp-feature-icon-emerald flex-shrink-0 w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-server text-emerald-600 dark:text-emerald-400"></i>
+                        </div>
+                        <div class="mcp-feature-copy">
+                            <h3 class="font-semibold mb-1">Server &amp; SSO Management</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">Configure servers and SSO providers from any MCP-compatible client.</p>
+                        </div>
+                    </div>
+                    <div class="mcp-feature flex items-start gap-3">
+                        <div class="mcp-feature-icon mcp-feature-icon-amber flex-shrink-0 w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-shield-halved text-amber-600 dark:text-amber-400"></i>
+                        </div>
+                        <div class="mcp-feature-copy">
+                            <h3 class="font-semibold mb-1">Secure by Design</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">Authenticated with a Bearer API key over Streamable HTTP transport.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mcp-actions mt-auto pt-6 flex flex-wrap gap-3">
+                    <a href="/documents/mcp-server" class="mcp-action inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                        Learn More<span class="mcp-sr-only"> about Localtonet MCP</span>
+                        <i class="fa-solid fa-arrow-right text-xs opacity-90"></i>
+                    </a>
+                    <a href="https://localtonet.com/.well-known/mcp-server-card" class="mcp-action inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition">
+                        <i class="fa-solid fa-id-card text-xs"></i>
+                        Server Card
+                    </a>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7">
+                <div class="mcp-code-block">
+                    <div class="mcp-code-header">
+                        <div class="mcp-dots" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="mcp-code-title">
+                            <span class="mcp-code-icon"><i class="fa-solid fa-plug"></i></span>
+                            <span>mcp-server-config.json</span>
+                        </div>
+                        <button type="button" class="mcp-copy-btn" data-copy-target="mcp-json-snippet" aria-label="Copy MCP configuration" aria-live="polite">
+                            <i class="fa-solid fa-copy"></i>
+                            <span class="hidden sm:inline">Copy</span>
+                        </button>
+                    </div>
+                    <pre class="mcp-code-body"><code id="mcp-json-snippet"><span class="jp">{</span>
+  <span class="jk">"endpoint"</span><span class="jp">:</span> <span class="js">"/mcp"</span><span class="jp">,</span>
+  <span class="jk">"transport"</span><span class="jp">:</span> <span class="js">"Streamable HTTP"</span><span class="jp">,</span>
+  <span class="jk">"authentication"</span><span class="jp">:</span> <span class="js">"Authorization: Bearer &lt;your-api-key&gt;"</span><span class="jp">,</span>
+  <span class="jk">"description"</span><span class="jp">:</span> <span class="js">"Connect any MCP-compatible AI (Claude, Cursor, etc.) to manage your Localtonet tunnels, auth tokens, token groups, servers, and SSO providers via natural language."</span><span class="jp">,</span>
+  <span class="jk">"documentationUrl"</span><span class="jp">:</span> <span class="js">"https://localtonet.com/mcp-info"</span><span class="jp">,</span>
+  <span class="jk">"serverCard"</span><span class="jp">:</span> <span class="js">"https://localtonet.com/.well-known/mcp-server-card"</span>
+<span class="jp">}</span></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        (function () {
+            var btn = document.querySelector('#mcp .mcp-copy-btn');
+            if (!btn) return;
+            btn.addEventListener('click', function () {
+                var target = document.getElementById(btn.getAttribute('data-copy-target'));
+                if (!target) return;
+
+                var finish = function (ok) {
+                    var icon = btn.querySelector('i');
+                    var label = btn.querySelector('span');
+                    var prevIcon = icon.className;
+                    var prevLabel = label.textContent;
+                    icon.className = ok ? 'fa-solid fa-check' : 'fa-solid fa-xmark';
+                    label.textContent = ok ? "Copied" : "Failed";
+                    btn.classList.toggle('is-copied', ok);
+                    setTimeout(function () {
+                        icon.className = prevIcon;
+                        label.textContent = prevLabel;
+                        btn.classList.remove('is-copied');
+                    }, 1800);
+                };
+
+                var text = target.innerText;
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(function () { finish(true); }, function () { finish(false); });
+                } else {
+                    var ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    var ok = false;
+                    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+                    document.body.removeChild(ta);
+                    finish(ok);
+                }
+            });
+        })();
+    </script>
+</section>
+
+<section id="use-cases" class="home-deferred relative py-20 bg-gray-50 dark:bg-slate-800 overflow-hidden">
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center mb-14">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wide mb-4">
+                <i class="fa-solid fa-lightbulb mr-2"></i> Use Cases
+            </span>
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">Built for Every Scenario</h2>
+            <p class="max-w-2xl mx-auto text-slate-600 dark:text-slate-400 text-lg mb-5">
+                From rapid prototyping to production-grade edge access, see how teams use Localtonet every day.
+            </p>
+        </div>
+
+        <!-- Use Cases Grid -->
+        <div class="use-case-grid">
+            <!-- Developer Previews -->
+            <article class="use-case-card" style="--uc-accent:#4f46e5; --uc-accent-rgb:79,70,229;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-code-branch"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">Developer Previews</h3>
+                        <p class="use-case-description">
+                            Share in-progress builds with clients instantly. Works behind NAT, CGNAT, or strict firewalls. No staging deploy needed.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">React</span><span class="use-case-tag">Next.js</span><span class="use-case-tag">Laravel</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Webhook Testing -->
+            <article class="use-case-card" style="--uc-accent:#9333ea; --uc-accent-rgb:147,51,234;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-bug"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">Webhook &amp; API Testing</h3>
+                        <p class="use-case-description">
+                            Capture, inspect, and replay webhooks from Stripe, GitHub, Twilio, or any third-party service in real-time.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">Stripe</span><span class="use-case-tag">GitHub</span><span class="use-case-tag">Slack</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Game Servers -->
+            <article class="use-case-card" style="--uc-accent:#059669; --uc-accent-rgb:5,150,105;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">Game Server Hosting</h3>
+                        <p class="use-case-description">
+                            Host Minecraft, Valheim, or any TCP/UDP game server without router port forwarding. Friends join via public URL.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">Minecraft</span><span class="use-case-tag">Valheim</span><span class="use-case-tag">CS2</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- IoT & Home Lab -->
+            <article class="use-case-card" style="--uc-accent:#d97706; --uc-accent-rgb:217,119,6;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">IoT &amp; Home Lab Access</h3>
+                        <p class="use-case-description">
+                            Access Raspberry Pi, Home Assistant, NAS, or any home lab device securely from anywhere in the world.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">Raspberry Pi</span><span class="use-case-tag">Home Assistant</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Mobile Proxy -->
+            <article class="use-case-card" style="--uc-accent:#0891b2; --uc-accent-rgb:8,145,178;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-mobile-screen"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">Mobile Proxy Networks</h3>
+                        <p class="use-case-description">
+                            Turn Android phones into rotating mobile proxies. Perfect for geo-testing, ad verification, and data collection.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">HTTP Proxy</span><span class="use-case-tag">SOCKS5</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Remote Desktop -->
+            <article class="use-case-card" style="--uc-accent:#e11d48; --uc-accent-rgb:225,29,72;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-desktop"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">Remote Desktop &amp; SSH</h3>
+                        <p class="use-case-description">
+                            Enable secure RDP or SSH access to isolated machines without VPN complexity. Works through any firewall.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">RDP</span><span class="use-case-tag">SSH</span><span class="use-case-tag">VNC</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Internal Dashboards -->
+            <article class="use-case-card" style="--uc-accent:#2563eb; --uc-accent-rgb:37,99,235;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">Internal Dashboards</h3>
+                        <p class="use-case-description">
+                            Securely expose Grafana, Prometheus, or admin panels with HTTPS and SSO authentication built-in.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">Grafana</span><span class="use-case-tag">Prometheus</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Education -->
+            <article class="use-case-card" style="--uc-accent:#7c3aed; --uc-accent-rgb:124,58,237;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">Education &amp; Workshops</h3>
+                        <p class="use-case-description">
+                            Students demo projects live to instructors. Bootcamps run hands-on labs without cloud infrastructure costs.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">Bootcamps</span><span class="use-case-tag">Universities</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Edge APIs -->
+            <article class="use-case-card" style="--uc-accent:#0d9488; --uc-accent-rgb:13,148,136;">
+                <div class="use-case-layout">
+                    <div class="use-case-icon" aria-hidden="true">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <div class="use-case-content">
+                        <h3 class="use-case-title">Edge API Services</h3>
+                        <p class="use-case-description">
+                            Run local APIs as public endpoints with custom domains. Perfect for microservices, dev gateways, and hybrid architectures.
+                        </p>
+                        <div class="use-case-tags">
+                            <span class="use-case-tag">REST</span><span class="use-case-tag">GraphQL</span><span class="use-case-tag">gRPC</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section id="works-with" class="home-deferred relative md:py-24 py-16">
+    <div class="container">
+        <div class="grid grid-cols-1 text-center pb-10">
+            <h2 class="mb-4 md:text-3xl text-2xl font-semibold">Works With…</h2>
+            <p class="max-w-xl mx-auto">Popular environments &amp; protocols you can tunnel through Localtonet.</p>
+        </div>
+        <div class="relative">
+            <button id="worksPrev" class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 h-10 w-10 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-indigo-400 shadow-sm items-center justify-center" aria-label="Previous">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div id="wTrack" class="relative overflow-hidden">
+                <div id="wInner" class="flex flex-nowrap items-stretch gap-5 px-1 md:px-4 py-1 w-max">
+                    <a href="/documents/using-localtonet-with-ssh" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-terminal"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">SSH</h3>
+                    </a>
+                    <a href="/documents/using-localtonet-with-rdp" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-display"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Remote Desktop</h3>
+                    </a>
+                    <a href="/documents/using-localtonet-with-minecraft" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-cube"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Minecraft</h3>
+                    </a>
+                    <a href="/documents/https" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-globe"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Web Servers</h3>
+                    </a>
+                    <a href="/documents/tls" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-lock"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">HTTPS / TLS</h3>
+                    </a>
+                    <a href="/documents/using-localtonet-with-smtp" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-envelope"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">SMTP / Mail</h3>
+                    </a>
+                    <a href="/documents/using-localtonet-with-mysql" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-database"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">SQL / NoSQL</h3>
+                    </a>
+                    <a href="/documents/docker" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-brands fa-docker"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Docker</h3>
+                    </a>
+                    <a href="/documents/cli-reference" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-brands fa-github"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">GitHub Actions</h3>
+                    </a>
+                    <a href="/documents/os" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-microchip"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">IoT Devices</h3>
+                    </a>
+                    <a href="/documents/tcp" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-network-wired"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Local LAN</h3>
+                    </a>
+                    <a href="/documents/https" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-plug"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">WebSocket</h3>
+                    </a>
+                    <a href="/documents/vpn-manager" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-key"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">VPN Gateways</h3>
+                    </a>
+                    <a href="/documents/udp-tcp" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-gamepad"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Game Servers</h3>
+                    </a>
+                    <a href="/documents/https" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-chart-line"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Grafana</h3>
+                    </a>
+                    <a href="/documents/https" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-brands fa-jenkins"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Jenkins</h3>
+                    </a>
+                    <a href="/documents/android" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-brands fa-android"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Android</h3>
+                    </a>
+                    <a href="/documents/proxy-server" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-signal"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Mobile / 4G</h3>
+                    </a>
+                    <a href="/documents/https" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-code"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">REST APIs</h3>
+                    </a>
+                    <a href="/documents/using-localtonet-with-virtual-hosts" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-window-maximize"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Virtual Hosts</h3>
+                    </a>
+                    <a href="/documents/tcp" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-memory"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Redis / Cache</h3>
+                    </a>
+                    <a href="/documents/file-server" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-upload"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">FTP / Transfer</h3>
+                    </a>
+                    <a href="/documents/webhook" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Webhooks</h3>
+                    </a>
+                    <a href="/documents/tcp" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-handshake-simple"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">gRPC</h3>
+                    </a>
+                    <a href="/documents/linux" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-brands fa-raspberry-pi"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Raspberry Pi</h3>
+                    </a>
+                    <a href="/documents/run-as-a-service" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-desktop"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Windows Services</h3>
+                    </a>
+                    <a href="/documents/custom-domains" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-cloud"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Cloudflare DNS</h3>
+                    </a>
+                    <a href="/documents/supported-tunnels" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-globe"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Any TCP-UDP Based Tool</h3>
+                    </a>
+                    <a href="/documents/cli-reference" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-cogs"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Every CLI Tool</h3>
+                    </a>
+                    <a href="/documents/auth-tokens" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-diagram-project"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">CI/CD Pipelines</h3>
+                    </a>
+                    <a href="/documents/supported-tunnels" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-sitemap"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Custom Protocols</h3>
+                    </a>
+                    <a href="/documents/tcp" data-card="works" class="group relative shrink-0 w-[220px] md:w-[250px] block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center">
+                        <div class="text-indigo-600 group-hover:text-white text-3xl mb-1"><i class="fa-solid fa-boxes-stacked"></i></div>
+                        <h3 class="font-semibold group-hover:text-white">Legacy Systems</h3>
+                    </a>
+                </div>
+            </div>
+
+            <button id="worksNext" class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 h-10 w-10 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-indigo-400 shadow-sm items-center justify-center" aria-label="Next">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</section>
+
+<section id="proxy-operators" class="home-deferred" aria-labelledby="proxy-operators-title">
+    <div class="po-fade" aria-hidden="true"></div>
+    <div class="po-glow po-glow--indigo" aria-hidden="true"></div>
+    <div class="po-glow po-glow--fuchsia" aria-hidden="true"></div>
+    <div class="container po-container">
+        <div class="po-head">
+            <p class="po-badge"><span class="po-badge__icon"><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg></span>For proxy operators</p>
+            <h2 id="proxy-operators-title" class="po-title">Run proxies on <span class="po-accent">your own devices</span></h2>
+            <p class="po-lead">Phones, USB modems and any device that runs Localtonet become proxies with a public endpoint. You keep the hardware, the IPs and the customers.</p>
+        </div>
+        <div class="po-grid">
+                <a class="po-card po-card--mobile" href="/mobile-proxy">
+                    <span class="po-card__top">
+                        <span class="po-card__icon"><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span>
+                        <span class="po-card__go" aria-hidden="true"><svg class="po-ico cmp-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+                    </span>
+                    <h3>Mobile proxy</h3>
+                    <p>Turn an Android phone into a 4G/5G proxy with its own mobile IP and IP rotation.</p>
+                    <ul>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> No root needed for IP rotation</li>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> No port forwarding or VPS</li>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Works behind CGNAT</li>
+                    </ul>
+                    <span class="po-card__more">Explore <svg class="po-ico cmp-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+                </a>
+                <a class="po-card po-card--rotating" href="/rotating-proxy">
+                    <span class="po-card__top">
+                        <span class="po-card__icon"><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg></span>
+                        <span class="po-card__go" aria-hidden="true"><svg class="po-ico cmp-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+                    </span>
+                    <h3>Rotating proxy</h3>
+                    <p>One endpoint that rotates over your own devices, with a separate login for each client.</p>
+                    <ul>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Rotating HTTP and SOCKS5</li>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> A login for each client</li>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Sticky sessions</li>
+                    </ul>
+                    <span class="po-card__more">Explore <svg class="po-ico cmp-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+                </a>
+                <a class="po-card po-card--farm" href="/proxy-farm">
+                    <span class="po-card__top">
+                        <span class="po-card__icon"><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></svg></span>
+                        <span class="po-card__go" aria-hidden="true"><svg class="po-ico cmp-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+                    </span>
+                    <h3>Proxy farm</h3>
+                    <p>Manage many phones and USB modems together: health, bulk rotation and restart, SMS.</p>
+                    <ul>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Bulk rotate and restart</li>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> Phones and USB modems</li>
+                            <li><svg class="po-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg> SMS and USSD</li>
+                    </ul>
+                    <span class="po-card__more">Explore <svg class="po-ico cmp-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+                </a>
+        </div>
+    </div>
+</section>
+
+<section id="mobile-edge" class="home-deferred relative md:py-24 py-16 bg-gray-50 dark:bg-slate-800">
+    <div class="container">
+        <div class="grid grid-cols-1 text-center pb-10">
+            <h2 class="mb-4 md:text-3xl text-2xl font-semibold">Mobile &amp; Edge Tools</h2>
+            <p class="max-w-2xl mx-auto mb-5">Take your tunnels beyond the desktop. Use phones, USB modems, and edge devices.</p>
+        </div>
+        <div class="grid lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-[30px]">
+            <a href="/blog/turn-your-phone-into-a-mobile-rotating-proxy-without-root" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-2">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">Phone as Proxy</h3>
+                <p class="text-sm group-hover:text-white/50 mt-1">Share your mobile data IP as an HTTP/SOCKS proxy.</p>
+            </a>
+            <a href="/blog/wi-fi-split-in-localtonet" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-2">
+                    <i class="fa-solid fa-wifi"></i>
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">Wi‑Fi Split</h3>
+                <p class="text-sm group-hover:text-white/50 mt-1">Boost proxy throughput using split paths.</p>
+            </a>
+            <a href="/blog/how-to-remotely-restart-phones-without-root" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-2">
+                    <i class="fa-brands fa-android"></i>
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">Owner Mode</h3>
+                <p class="text-sm group-hover:text-white/50 mt-1">Enroll &amp; remotely reboot Android devices (no root).</p>
+            </a>
+            <a href="/blog/how-to-use-usb-devices-for-proxies" class="group block p-6 rounded-xl shadow bg-white dark:bg-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all text-center">
+                <div class="text-indigo-600 group-hover:text-white text-4xl mb-2">
+                    <i class="fa-brands fa-usb"></i>
+                </div>
+                <h3 class="text-lg font-semibold group-hover:text-white">USB Modem Proxies</h3>
+                <p class="text-sm group-hover:text-white/50 mt-1">Extend Localtonet to USB data sticks &amp; modems.</p>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section id="analytics" class="home-deferred relative md:py-24 py-16 overflow-hidden bg-white dark:bg-slate-900">
+
+    <div aria-hidden="true" class="analytics-grid pointer-events-none absolute inset-0"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-violet-500/10 blur-3xl"></div>
+
+    <div class="container relative">
+        <div class="grid lg:grid-cols-12 grid-cols-1 gap-10 lg:gap-14 items-center">
+            <div class="lg:col-span-5">
+                <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold tracking-wide bg-indigo-600/10 text-indigo-700 dark:text-indigo-300 dark:bg-indigo-500/10">
+                    <span class="relative flex h-2 w-2" aria-hidden="true">
+                        <span class="absolute inline-flex h-full w-full rounded-full bg-indigo-500 opacity-40"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-indigo-600"></span>
+                    </span>
+                    DEVELOPER API
+                </span>
+
+                <h2 class="mt-5 md:text-4xl text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Automate every stage of your tunnel lifecycle
+                </h2>
+                <p class="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
+                    Create, control, and remove tunnels from your own tools. The Localtonet REST API fits naturally into CI/CD pipelines, preview environments, and on-demand infrastructure workflows.
+                </p>
+
+                <div class="mt-7 grid sm:grid-cols-2 grid-cols-1 gap-4">
+                    <div class="api-feature-card flex items-start rounded-xl p-4 backdrop-blur">
+                        <span class="api-feature-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" aria-hidden="true">
+                            <i class="fa-solid fa-bolt"></i>
+                        </span>
+                        <div>
+                            <h3 class="api-feature-title text-sm font-semibold">On-demand</h3>
+                            <p class="api-feature-description mt-1 text-xs leading-relaxed">Launch endpoints only when your workflow needs them.</p>
+                        </div>
+                    </div>
+                    <div class="api-feature-card flex items-start rounded-xl p-4 backdrop-blur">
+                        <span class="api-feature-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" aria-hidden="true">
+                            <i class="fa-solid fa-code-branch"></i>
+                        </span>
+                        <div>
+                            <h3 class="api-feature-title text-sm font-semibold">Pipeline-ready</h3>
+                            <p class="api-feature-description mt-1 text-xs leading-relaxed">Connect tunnel actions to builds and deployments.</p>
+                        </div>
+                    </div>
+                    <div class="api-feature-card flex items-start rounded-xl p-4 backdrop-blur">
+                        <span class="api-feature-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400" aria-hidden="true">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </span>
+                        <div>
+                            <h3 class="api-feature-title text-sm font-semibold">Easy to integrate</h3>
+                            <p class="api-feature-description mt-1 text-xs leading-relaxed">Use simple REST calls from any language or platform.</p>
+                        </div>
+                    </div>
+                    <div class="api-feature-card flex items-start rounded-xl p-4 backdrop-blur">
+                        <span class="api-feature-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400" aria-hidden="true">
+                            <i class="fa-solid fa-sliders"></i>
+                        </span>
+                        <div>
+                            <h3 class="api-feature-title text-sm font-semibold">Full control</h3>
+                            <p class="api-feature-description mt-1 text-xs leading-relaxed">Start, stop, and clean up without touching the agent.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="lg:col-span-1">
+            </div>
+            <div class="lg:col-span-6 mt-5">
+                <div class="api-console overflow-hidden rounded-2xl" aria-label="Localtonet V2 API endpoint examples">
+                    <div class="console-header flex items-center justify-between border-b px-5 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex gap-1.5" aria-hidden="true">
+                                <span class="h-2.5 w-2.5 rounded-full bg-rose-400"></span>
+                                <span class="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
+                                <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <span class="console-title text-xs font-semibold">Localtonet API</span>
+                            <span class="console-version rounded-md bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">V2</span>
+                        </div>
+                        <span class="inline-flex items-center gap-2 rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true"></span>
+                            Ready
+                        </span>
+                    </div>
+
+                    <div class="endpoint-scroll" tabindex="0" role="region" aria-label="Scrollable V2 API endpoint list">
+                    <div class="endpoint-list p-3 sm:p-5">
+                        <div class="endpoint-row flex items-center gap-3 rounded-xl px-3 py-3.5">
+                            <span class="w-16 shrink-0 rounded-md bg-sky-500/10 px-2 py-1 text-center text-[10px] font-bold text-sky-600 dark:text-sky-400">GET</span>
+                            <code class="endpoint-path min-w-0">/api/v2/tunnels</code>
+                            <span class="endpoint-description ml-auto shrink-0 whitespace-nowrap text-xs">List tunnels</span>
+                        </div>
+                        <div class="endpoint-row flex items-center gap-3 rounded-xl px-3 py-3.5">
+                            <span class="w-16 shrink-0 rounded-md bg-emerald-500/10 px-2 py-1 text-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400">POST</span>
+                            <code class="endpoint-path min-w-0">/api/v2/tunnels/http/random-subdomain</code>
+                            <span class="endpoint-description ml-auto shrink-0 whitespace-nowrap text-xs">Create HTTP tunnel</span>
+                        </div>
+                        <div class="endpoint-row flex items-center gap-3 rounded-xl px-3 py-3.5">
+                            <span class="w-16 shrink-0 rounded-md bg-emerald-500/10 px-2 py-1 text-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400">POST</span>
+                            <code class="endpoint-path min-w-0">/api/v2/tunnels/tcp-udp</code>
+                            <span class="endpoint-description ml-auto shrink-0 whitespace-nowrap text-xs">Create TCP/UDP tunnel</span>
+                        </div>
+                        <div class="endpoint-row flex items-center gap-3 rounded-xl px-3 py-3.5">
+                            <span class="w-16 shrink-0 rounded-md bg-emerald-500/10 px-2 py-1 text-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400">POST</span>
+                            <code class="endpoint-path min-w-0">/api/v2/tunnels/{tunnelId}/actions/start</code>
+                            <span class="endpoint-description ml-auto shrink-0 whitespace-nowrap text-xs">Start tunnel</span>
+                        </div>
+                        <div class="endpoint-row flex items-center gap-3 rounded-xl px-3 py-3.5">
+                            <span class="w-16 shrink-0 rounded-md bg-amber-500/10 px-2 py-1 text-center text-[10px] font-bold text-amber-600 dark:text-amber-400">POST</span>
+                            <code class="endpoint-path min-w-0">/api/v2/tunnels/{tunnelId}/actions/stop</code>
+                            <span class="endpoint-description ml-auto shrink-0 whitespace-nowrap text-xs">Stop tunnel</span>
+                        </div>
+                        <div class="endpoint-row flex items-center gap-3 rounded-xl px-3 py-3.5">
+                            <span class="method-delete w-16 shrink-0 rounded-md px-2 py-1 text-center text-[10px] font-bold">DELETE</span>
+                            <code class="endpoint-path min-w-0">/api/v2/tunnels/{tunnelId}</code>
+                            <span class="endpoint-description ml-auto shrink-0 whitespace-nowrap text-xs">Delete tunnel</span>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div class="console-footer border-t px-5 py-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <span class="analytics-icon-text console-meta flex items-center text-xs">
+                                <i class="fa-solid fa-shield-halved text-emerald-500" aria-hidden="true"></i>
+                                Token-based access
+                            </span>
+                            <div class="console-meta flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
+                                <span>REST</span><span aria-hidden="true">•</span><span>JSON</span><span aria-hidden="true">•</span><span>HTTPS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-docs-panel flex flex-col gap-4 rounded-b-2xl border-x border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" aria-hidden="true">
+                            <i class="fa-solid fa-book-open"></i>
+                        </span>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Ready to start building?</p>
+                            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Explore authentication, schemas, and live examples.</p>
+                        </div>
+                    </div>
+                    <div class="api-docs-cta-wrap flex sm:justify-end">
+                        <a href="/api/index.html" target="_blank" rel="noopener noreferrer" class="analytics-button inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+                            Explore API docs
+                            <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="home-deferred home-insights" aria-labelledby="home-insights-title">
+    <div class="home-insights-glow home-insights-glow-top" aria-hidden="true"></div>
+    <div class="home-insights-glow home-insights-glow-bottom" aria-hidden="true"></div>
+
+    <div class="container home-insights-container">
+        <header class="home-insights-header">
+            <div class="home-insights-heading">
+                <span class="home-insights-eyebrow">
+                    <i class="fa-regular fa-newspaper" aria-hidden="true"></i>
+                    From the Localtonet blog
+                </span>
+                <h2 id="home-insights-title">Read our latest news <span>&amp; guides</span></h2>
+                <p>Practical walkthroughs, product updates, and expert tips to help you get more from every tunnel.</p>
+            </div>
+            <a href="/blog" class="home-insights-all">
+                View all posts
+                <span aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+        </header>
+
+        <div class="home-insights-grid">
+            <article class="home-insights-featured">
+                <a href="/blog/turn-your-phone-into-a-mobile-rotating-proxy-without-root" target="_blank" aria-describedby="insight-mobile-description">
+                    <div class="home-insights-visual home-insights-visual-mobile" aria-hidden="true">
+                        <div class="home-insights-orbit home-insights-orbit-one"></div>
+                        <div class="home-insights-orbit home-insights-orbit-two"></div>
+                        <div class="home-insights-phone">
+                            <span class="home-insights-phone-speaker"></span>
+                            <i class="fa-solid fa-signal"></i>
+                            <span class="home-insights-phone-status">Proxy active</span>
+                            <span class="home-insights-phone-ip">Mobile IP</span>
+                        </div>
+                        <span class="home-insights-visual-chip home-insights-chip-secure"><i class="fa-solid fa-shield-halved"></i> No root</span>
+                        <span class="home-insights-visual-chip home-insights-chip-ready"><i class="fa-solid fa-circle-check"></i> Ready</span>
+                    </div>
+                    <div class="home-insights-featured-content">
+                        <div class="home-insights-meta">
+                            <span class="home-insights-category"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i> Mobile Proxy</span>
+                            <span>10 min read</span>
+                        </div>
+                        <h3>Turn Your Phone into a Mobile Proxy </h3>
+                        <span>(No Root Needed)</span>
+                        <p id="insight-mobile-description">Use the Localtonet Android app to securely share mobile data as a reliable proxy endpoint. No advanced setup required.</p>
+                        <span class="home-insights-read">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+                    </div>
+                </a>
+            </article>
+
+            <div class="home-insights-list">
+                <article class="home-insights-card home-insights-card-pricing">
+                    <a href="/blog/introducing-pay-as-you-go-pricing-for-localtonet" target="_blank" aria-describedby="insight-pricing-description">
+                        <div class="home-insights-card-icon" aria-hidden="true"><i class="fa-solid fa-bolt"></i></div>
+                        <div class="home-insights-card-content">
+                            <div class="home-insights-meta">
+                                <span class="home-insights-category">Product news</span>
+                                <span>7 min read</span>
+                            </div>
+                            <h3>Introducing Pay-as-you-go Pricing</h3>
+                            <p id="insight-pricing-description">A simple monthly price per tunnel, charged hourly from your Balance while it runs, with unlimited bandwidth.</p>
+                            <span class="home-insights-read">Learn more <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+                        </div>
+                    </a>
+                </article>
+
+                <article class="home-insights-card home-insights-card-start">
+                    <a href="/blog/multi-protocol-secure-tunneling-localtonet" target="_blank" aria-describedby="insight-start-description">
+                        <div class="home-insights-card-icon" aria-hidden="true"><i class="fa-solid fa-terminal"></i></div>
+                        <div class="home-insights-card-content">
+                            <div class="home-insights-meta">
+                                <span class="home-insights-category">Getting started</span>
+                                <span>28 min read</span>
+                            </div>
+                            <h3>Secure Tunneling for Any Protocol</h3>
+                            <p id="insight-start-description">Install, authenticate, and publish your first local service in minutes.</p>
+                            <span class="home-insights-read">Start the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+                        </div>
+                    </a>
+                </article>
+            </div>
+        </div>
+
+        <div class="home-insights-mobile-all">
+            <a href="/blog" class="home-insights-all">View all posts <span aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span></a>
+        </div>
+    </div>
+</section>
+
+<section id="faq" class="home-deferred home-faq" aria-labelledby="home-faq-title">
+    <div class="home-faq-container home-faq-grid">
+        <header class="home-faq-intro">
+            <span class="home-faq-eyebrow">Getting started</span>
+            <h2 id="home-faq-title">Frequently asked <span>questions.</span></h2>
+            <p>The essentials about setup, devices, public endpoints and pricing. Open a question for a quick answer.</p>
+            <a href="/documents" class="home-faq-guide">Explore the documentation <span aria-hidden="true">→</span></a>
+            <div><a href="/faq" class="home-faq-guide">See all questions <span aria-hidden="true">→</span></a></div>
+        </header>
+        <div class="home-faq-list">
+                <details class="home-faq-item" open="open">
+                    <summary>
+                        <span>Do I need port forwarding or a public IP?</span>
+                        <span class="home-faq-toggle" aria-hidden="true"></span>
+                    </summary>
+                    <div class="home-faq-answer">
+                        <p>No. Localtonet creates an outbound connection from your device and gives your local service a public endpoint. It works behind NAT or CGNAT without changing your router&#x27;s port forwarding settings.</p>
+                        <a href="/documents">See how to set up a tunnel <span aria-hidden="true">→</span></a>
+                    </div>
+                </details>
+                <details class="home-faq-item">
+                    <summary>
+                        <span>Can I connect multiple devices to one account?</span>
+                        <span class="home-faq-toggle" aria-hidden="true"></span>
+                    </summary>
+                    <div class="home-faq-answer">
+                        <p>Yes. Create a separate token for each device in your dashboard, then use that token in the Localtonet app on that device. You can manage each device and its tunnels separately.</p>
+                        <a href="/dashboard">Open your dashboard <span aria-hidden="true">→</span></a>
+                    </div>
+                </details>
+                <details class="home-faq-item">
+                    <summary>
+                        <span>Can I keep the same public address for my tunnel?</span>
+                        <span class="home-faq-toggle" aria-hidden="true"></span>
+                    </summary>
+                    <div class="home-faq-answer">
+                        <p>Yes. Reserve a domain or port so your tunnel keeps the same public endpoint when it reconnects. You can also connect your own domain to a web tunnel. Configure these options in your dashboard.</p>
+                        <a href="/dashboard">Manage your tunnels <span aria-hidden="true">→</span></a>
+                    </div>
+                </details>
+                <details class="home-faq-item">
+                    <summary>
+                        <span>How do Balance and Pay-as-you-go work?</span>
+                        <span class="home-faq-toggle" aria-hidden="true"></span>
+                    </summary>
+                    <div class="home-faq-answer">
+                        <p>Add credit to your Balance to use paid features. Paid tunnels are billed hourly, and their usage cost is deducted from that credit. You can view your remaining Balance and usage history in your account, then top up when needed.</p>
+                        <a href="/blog/introducing-pay-as-you-go-pricing-for-localtonet">Read the Pay-as-you-go guide <span aria-hidden="true">→</span></a>
+                    </div>
+                </details>
+                <details class="home-faq-item">
+                    <summary>
+                        <span>Can I open a terminal on my own machine from the browser?</span>
+                        <span class="home-faq-toggle" aria-hidden="true"></span>
+                    </summary>
+                    <div class="home-faq-answer">
+                        <p>Yes. Run localtonet --terminal enable --authtoken YOUR_TOKEN on the machine and approve the short code in your dashboard. A Terminal button then opens a real shell in your browser. The device only makes outbound connections, so there is no inbound port to open and no SSH server to install. Opening a shell requires two-factor approval. Localtonet keeps a record of each connection (when and from which IP address), but it does not store the commands you type or their output.</p>
+                        <a href="/devices">Open My Devices <span aria-hidden="true">→</span></a>
+                    </div>
+                </details>
+        </div>
+    </div>
+</section>
+
+<section class="home-deferred home-support" aria-labelledby="home-support-title">
+    <div class="home-faq-container home-support-content">
+        <div class="home-support-copy">
+            <span class="home-support-eyebrow">We’re here to help</span>
+            <h2 id="home-support-title">Still have a question?</h2>
+            <p>Get help with Balance, custom domains or setting up your first tunnel.</p>
+        </div>
+        <div class="home-support-actions">
+            <a href="/contact" class="home-support-primary">Contact support <span aria-hidden="true">→</span></a>
+            <a href="/documents" class="home-support-secondary">Read the docs</a>
+        </div>
+    </div>
+</section>
+
+<script src="/homepage/js/homepage.js?v=1.0.5&amp;v=TALWHcrXqI3VrkDAGcnjXuTPDEouICIfThhTXjBxpYs" defer></script>
+
+    </main>
+
+    <footer class="site-footer">
+    <div class="site-footer-container">
+        <div class="site-footer-grid">
+            <div class="site-footer-brand">
+                <div class="site-footer-brand-copy">
+                    <a href="/" class="site-footer-logo" aria-label="Localtonet home"><img src="/homepage/logo.png" alt="Localtonet" width="80" height="65" loading="lazy" /></a>
+                    <p>Secure tunnels for localhost.<br />Free tools for your connection.</p>
+                </div>
+                <div class="site-footer-brand-actions">
+                    <a class="site-footer-cta" href="/download">Get Localtonet <span aria-hidden="true">→</span></a>
+                    <div class="site-footer-social" aria-label="Follow Localtonet">
+                        <a href="https://twitter.com/localtonet" target="_blank" rel="noopener noreferrer" aria-label="Localtonet on X"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg></a>
+                        <a href="https://github.com/localtonet" target="_blank" rel="noopener noreferrer" aria-label="Localtonet on GitHub"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></a>
+                        <a href="https://community.localtonet.com" aria-label="Localtonet community"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></a>
+                        <a href="https://t.me/localtonetsupport" target="_blank" rel="noopener noreferrer" aria-label="Localtonet on Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></a>
+                    </div>
+                </div>
+            </div>
+            <nav class="site-footer-column" aria-labelledby="footer-product-title">
+                <h2 id="footer-product-title">Localtonet</h2>
+                <ul>
+                    <li><a href="/pricing">Pricing</a></li>
+                    <li><a href="/alternatives">Alternatives</a></li>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/download">Downloads</a></li>
+                    <li><a href="/partners">Partners</a></li>
+                </ul>
+            </nav>
+            <nav class="site-footer-column" aria-labelledby="footer-resources-title">
+                <h2 id="footer-resources-title">Resources</h2>
+                <ul>
+                    <li><a href="/documents">Documentation</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/api/">API reference</a></li>
+                    <li><a href="/blog">Guides &amp; blog</a></li>
+                </ul>
+            </nav>
+            <nav class="site-footer-column" aria-labelledby="footer-support-title">
+                <h2 id="footer-support-title">Support</h2>
+                <ul>
+                    <li><a href="/contact">Contact support</a></li>
+                    <li><a href="https://community.localtonet.com/feedback">Share feedback</a></li>
+                    <li><a href="https://status.localtonet.com" target="_blank" rel="noopener noreferrer">Status</a></li>
+                    <li><a href="/abuse">Report abuse</a></li>
+                </ul>
+            </nav>
+            <nav class="site-footer-column site-footer-tools" aria-labelledby="footer-tools-title">
+                <h2 id="footer-tools-title">Tools</h2>
+                <ul>
+                    <li><a href="/tools">IP Tools</a></li>
+                    <li><a href="/tools/speed-test">Speed Test</a></li>
+                    <li><a href="/tools/proxy-check">Proxy Checker</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="site-footer-bottom">
+            <p>© 2026 Localtonet. All rights reserved.</p>
+                <details class="lang-picker">
+        <summary aria-label="Choose language">
+                <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/us.svg" width="16" height="16" alt="English" aria-hidden="true" loading="lazy" decoding="async">
+            <span>English</span>
+            <svg class="lang-picker-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5-5 5 5"/></svg>
+        </summary>
+        <div class="lang-picker-panel">
+            <input type="search" class="lang-picker-search" placeholder="Search languages" aria-label="Search languages" autocomplete="off" spellcheck="false" hidden>
+                <ul>
+                        <li data-lang-search="English English en us">
+                            <a href="/" data-no-localize lang="en" data-lang-switch="/language/en?returnUrl=%2F" aria-current="true">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/us.svg" width="16" height="16" alt="English" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">English</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Türkçe Turkish tr tr">
+                            <a href="/tr/" data-no-localize lang="tr" data-lang-switch="/language/tr?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/tr.svg" width="16" height="16" alt="Türkçe" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Türkçe</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Español Spanish es es">
+                            <a href="/es/" data-no-localize lang="es" data-lang-switch="/language/es?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/es-plain.svg" width="16" height="16" alt="Español" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Español</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Português (Brasil) Portuguese (Brazil) pt-br br">
+                            <a href="/pt-br/" data-no-localize lang="pt-BR" data-lang-switch="/language/pt-br?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/br.svg" width="16" height="16" alt="Português (Brasil)" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Português (Brasil)</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Русский Russian ru ru">
+                            <a href="/ru/" data-no-localize lang="ru" data-lang-switch="/language/ru?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/ru.svg" width="16" height="16" alt="Русский" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Русский</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Українська Ukrainian uk ua">
+                            <a href="/uk/" data-no-localize lang="uk" data-lang-switch="/language/uk?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/ua.svg" width="16" height="16" alt="Українська" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Українська</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="العربية Arabic ar sa">
+                            <a href="/ar/" data-no-localize lang="ar" data-lang-switch="/language/ar?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/sa.svg" width="16" height="16" alt="العربية" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="rtl">العربية</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="简体中文 Chinese (Simplified) zh cn">
+                            <a href="/zh/" data-no-localize lang="zh-Hans" data-lang-switch="/language/zh?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/cn.svg" width="16" height="16" alt="简体中文" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">简体中文</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Deutsch German de de">
+                            <a href="/de/" data-no-localize lang="de" data-lang-switch="/language/de?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/de.svg" width="16" height="16" alt="Deutsch" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Deutsch</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Français French fr fr">
+                            <a href="/fr/" data-no-localize lang="fr" data-lang-switch="/language/fr?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/fr.svg" width="16" height="16" alt="Français" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Français</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="日本語 Japanese ja jp">
+                            <a href="/ja/" data-no-localize lang="ja" data-lang-switch="/language/ja?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/jp.svg" width="16" height="16" alt="日本語" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">日本語</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="한국어 Korean ko kr">
+                            <a href="/ko/" data-no-localize lang="ko" data-lang-switch="/language/ko?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/kr.svg" width="16" height="16" alt="한국어" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">한국어</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Bahasa Indonesia Indonesian id id">
+                            <a href="/id/" data-no-localize lang="id" data-lang-switch="/language/id?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/id.svg" width="16" height="16" alt="Bahasa Indonesia" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Bahasa Indonesia</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Tiếng Việt Vietnamese vi vn">
+                            <a href="/vi/" data-no-localize lang="vi" data-lang-switch="/language/vi?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/vn.svg" width="16" height="16" alt="Tiếng Việt" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Tiếng Việt</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Nederlands Dutch nl nl">
+                            <a href="/nl/" data-no-localize lang="nl" data-lang-switch="/language/nl?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/nl.svg" width="16" height="16" alt="Nederlands" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Nederlands</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Polski Polish pl pl">
+                            <a href="/pl/" data-no-localize lang="pl" data-lang-switch="/language/pl?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/pl.svg" width="16" height="16" alt="Polski" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Polski</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Italiano Italian it it">
+                            <a href="/it/" data-no-localize lang="it" data-lang-switch="/language/it?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/it.svg" width="16" height="16" alt="Italiano" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Italiano</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Bahasa Melayu Malay ms my">
+                            <a href="/ms/" data-no-localize lang="ms" data-lang-switch="/language/ms?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/my.svg" width="16" height="16" alt="Bahasa Melayu" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Bahasa Melayu</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="বাংলা Bengali bn bd">
+                            <a href="/bn/" data-no-localize lang="bn" data-lang-switch="/language/bn?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/bd.svg" width="16" height="16" alt="বাংলা" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">বাংলা</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="فارسی Persian fa ir">
+                            <a href="/fa/" data-no-localize lang="fa" data-lang-switch="/language/fa?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/ir.svg" width="16" height="16" alt="فارسی" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="rtl">فارسی</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="हिन्दी Hindi hi in">
+                            <a href="/hi/" data-no-localize lang="hi" data-lang-switch="/language/hi?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/in.svg" width="16" height="16" alt="हिन्दी" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">हिन्दी</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="اردو Urdu ur pk">
+                            <a href="/ur/" data-no-localize lang="ur" data-lang-switch="/language/ur?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/pk.svg" width="16" height="16" alt="اردو" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="rtl">اردو</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Filipino Filipino fil ph">
+                            <a href="/fil/" data-no-localize lang="fil" data-lang-switch="/language/fil?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/ph.svg" width="16" height="16" alt="Filipino" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Filipino</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="தமிழ் Tamil ta in">
+                            <a href="/ta/" data-no-localize lang="ta" data-lang-switch="/language/ta?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/in.svg" width="16" height="16" alt="தமிழ்" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">தமிழ்</span>
+                            </a>
+                        </li>
+                        <li data-lang-search="Hausa Hausa ha ng">
+                            <a href="/ha/" data-no-localize lang="ha" data-lang-switch="/language/ha?returnUrl=%2F">
+                                    <img class="lang-picker-flag" src="/dashboard/assets/media/flags/1x1/ng.svg" width="16" height="16" alt="Hausa" aria-hidden="true" loading="lazy" decoding="async">
+                                <span dir="ltr">Hausa</span>
+                            </a>
+                        </li>
+                </ul>
+        </div>
+    </details>
+    <style>
+        .lang-picker { position: relative; font-size: 12px; }
+        /* Neutral pill by default (the login page can be light); the dark site footer gets light tones. The list panel is always dark. */
+        .lang-picker summary { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; color: #7e8299; padding: 6px 12px; border: 1px solid rgba(126, 130, 153, .35); border-radius: 999px; transition: border-color .15s ease, color .15s ease; }
+        .lang-picker summary::-webkit-details-marker { display: none; }
+        .lang-picker summary:hover, .lang-picker[open] summary { color: #4f6bff; border-color: #4f6bff; }
+        .site-footer-bottom .lang-picker summary { color: #c3cee0; border-color: #29354c; background: rgba(255, 255, 255, .03); }
+        .site-footer-bottom .lang-picker summary:hover, .site-footer-bottom .lang-picker[open] summary { color: #fff; border-color: #4f6bff; }
+        .lang-picker summary:focus-visible { outline: 2px solid #4f6bff; outline-offset: 2px; }
+        .lang-picker-caret { flex: none; opacity: .7; transition: transform .15s ease; }
+        .lang-picker[open] .lang-picker-caret { transform: rotate(180deg); }
+        .lang-picker-panel { position: absolute; bottom: calc(100% + 6px); inset-inline-start: 0; z-index: 20; display: flex; flex-direction: column; gap: 6px; width: 220px; max-height: min(360px, 60vh); padding: 6px; background: #111a2e; border: 1px solid #29354c; border-radius: 10px; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
+        .lang-picker-search { flex: none; width: 100%; box-sizing: border-box; padding: 7px 10px; font: inherit; color: #e0e7ff; background: #0b1324; border: 1px solid #29354c; border-radius: 6px; outline: none; }
+        .lang-picker-search:focus { border-color: #4f6bff; }
+        .lang-picker-search::placeholder { color: #6f7f99; }
+        .lang-picker ul { flex: 1 1 auto; min-height: 0; margin: 0; padding: 0; list-style: none; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #29354c transparent; }
+        .lang-picker li[hidden] { display: none; }
+        .lang-picker form { display: contents; }
+        .lang-picker .lang-picker-panel a, .lang-picker .lang-picker-panel button { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; color: #c3cee0; text-decoration: none; }
+        .lang-picker .lang-picker-panel button { width: 100%; margin: 0; border: 0; background: none; font: inherit; line-height: inherit; text-align: start; cursor: pointer; }
+        .lang-picker-flag { flex: none; border-radius: 50%; object-fit: cover; }
+        .lang-picker .lang-picker-panel a:hover, .lang-picker .lang-picker-panel a:focus-visible,
+        .lang-picker .lang-picker-panel button:hover, .lang-picker .lang-picker-panel button:focus-visible { background: #1c2740; color: #fff; }
+        .lang-picker .lang-picker-panel a[aria-current], .lang-picker .lang-picker-panel button[aria-current] { background: #1c2740; color: #fff; font-weight: 600; }
+    </style>
+    <script>
+        (function () {
+            var pickers = document.querySelectorAll('details.lang-picker');
+            Array.prototype.forEach.call(pickers, function (picker) {
+                if (picker.dataset.ready) return;
+                picker.dataset.ready = '1';
+                var search = picker.querySelector('.lang-picker-search');
+                var list = picker.querySelector('ul');
+                var items = Array.prototype.slice.call(list.querySelectorAll('li'));
+                search.hidden = false;
+                function filter() {
+                    var q = search.value.trim().toLowerCase();
+                    items.forEach(function (li) { li.hidden = q !== '' && li.getAttribute('data-lang-search').toLowerCase().indexOf(q) < 0; });
+                }
+                search.addEventListener('input', filter);
+                search.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') { picker.open = false; picker.querySelector('summary').focus(); }
+                    else if (e.key === 'Enter') {
+                        var first = items.filter(function (li) { return !li.hidden; })[0];
+                        if (first) { e.preventDefault(); first.querySelector('a, button').click(); }
+                    }
+                });
+                picker.addEventListener('toggle', function () {
+                    if (!picker.open) return;
+                    search.value = '';
+                    filter();
+                    var current = list.querySelector('[aria-current]');
+                    if (current) list.scrollTop = current.parentNode.offsetTop - list.offsetTop - (list.clientHeight - current.offsetHeight) / 2;
+                    search.focus({ preventScroll: true });
+                });
+                // Plain clicks go through the /language/ switch so the cookie follows the choice (otherwise the cookie
+                // would send an English link straight back to the old language); new-tab clicks keep the direct URL.
+                list.addEventListener('click', function (e) {
+                    var a = e.target.closest ? e.target.closest('a[data-lang-switch]') : null;
+                    var switchHref = a ? a.getAttribute('data-lang-switch') : '';
+                    if (!switchHref || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    window.location.href = switchHref;
+                });
+                document.addEventListener('click', function (e) { if (picker.open && !picker.contains(e.target)) picker.open = false; });
+            });
+        })();
+    </script>
+
+            <nav aria-label="Legal and trust links">
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+                <a href="/sla" title="Service Level Agreement">SLA</a>
+                <a href="/dpa" title="Data Processing Agreement">DPA</a>
+                <a href="/blog/is-localtonet-safe">Trust &amp; safety</a>
+            </nav>
+        </div>
+    </div>
+</footer>
+
+
+    <div class="fixed -right-2 theme-switch-wrap" style="top: 60%; z-index: 1000 !important;" title="Drag to move">
+    <span class="relative inline-block rotate-90">
+        <input type="checkbox"
+               class="checkbox opacity-0 absolute"
+               id="chk"
+               autocomplete="off"
+               aria-label="Switch between light and dark theme" />
+        <label class="label bg-slate-900 dark:bg-white shadow dark:shadow-gray-800 cursor-pointer rounded-full flex justify-between items-center p-1 w-14 h-8" for="chk">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events: none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events: none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <span class="ball bg-white dark:bg-slate-900 rounded-full absolute top-[2px] left-[2px] w-7 h-7"></span>
+        </label>
+    </span>
+</div>
+
+<script>
+    (function () {
+        try {
+            var raw = localStorage.getItem("theme-switch-pos");
+            if (!raw) return;
+            var p = JSON.parse(raw);
+            if (typeof p.left !== "number" || typeof p.top !== "number") return;
+            var el = document.querySelector(".theme-switch-wrap");
+            if (!el) return;
+            el.style.left = p.left + "px";
+            el.style.top = p.top + "px";
+            el.style.setProperty("right", "auto", "important");
+            el.style.setProperty("bottom", "auto", "important");
+        } catch (e) { }
+    })();
+
+    (function () {
+        var root = document.documentElement;
+        var chk = document.getElementById("chk");
+        var ball = document.querySelector(".theme-switch-wrap .ball");
+        if (!chk) return;
+
+        function sync(instant) {
+            var dark = root.classList.contains("dark");
+            if (chk.checked === dark) return;
+            if (instant && ball) ball.style.transition = "none";
+            chk.checked = dark;
+            if (instant && ball) {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () { ball.style.transition = ""; });
+                });
+            }
+        }
+
+        sync(true);
+
+        if (window.MutationObserver) {
+            new MutationObserver(function () { sync(false); }).observe(root, { attributes: true, attributeFilter: ["class"] });
+        }
+
+        // A page restored from the back/forward cache keeps the theme it had when it was left; pick up a change
+        // made on another page since then.
+        window.addEventListener("pageshow", function (e) {
+            if (!e.persisted) return;
+            var mode = null;
+            try { mode = localStorage.getItem("data-theme"); } catch (err) { }
+            if (mode === "system") mode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            if (mode !== "dark" && mode !== "light") return;
+            if (ball) ball.style.transition = "none";
+            root.classList.remove(mode === "dark" ? "light" : "dark");
+            root.classList.add(mode);
+            if (root.hasAttribute("data-theme")) root.setAttribute("data-theme", mode);
+            sync(true);
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () { if (ball) ball.style.transition = ""; });
+            });
+        });
+    })();
+</script>
+
+<script src="/common/theme-switcher-drag.js?v=1.0.1&amp;v=llYIFNzagCCsZ_vTysGp1Z3ErBhTfS8vpfIFIg1ZVis" defer></script>
+
+
+    <link href="/community/community.css?v=1.2.5" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript>
+    <link href="/community/community.css?v=1.2.5" rel="stylesheet">
+</noscript>
+
+<a id="chatButton" class="chat-button">
+    <img src="/logo-34x34.png" srcset="/logo-34x34.png 1x, /logo-68x68.png 2x" style="width: 34px; height: 34px;" width="34" height="34" loading="lazy" decoding="async" alt="Support" />
+</a>
+
+<div class="chat-overlay" id="chatOverlay" style="display:none;"></div>
+
+<div id="chatModal" class="chat-modal" role="dialog" aria-modal="true" aria-label="Support menu" style="display:none;">
+    <div class="chat-panel-header">
+        <div class="chat-panel-header-inner">
+            <div class="chat-header-icon">
+                <picture>
+                    <source srcset="/logo-42x42.webp 1x, /logo-84x84.webp 2x" type="image/webp" />
+                    <img src="/logo-42x42.png" srcset="/logo-42x42.png 1x, /logo-84x84.png 2x" style="display: block; width: 40px; height: 40px;" width="40" height="40" loading="lazy" decoding="async" alt="Support" />
+                </picture>
+            </div>
+            <div class="chat-header-text">
+                <h3>How can we help you?</h3>
+                <p><span class="chat-status-dot"></span>Support team is online</p>
+            </div>
+        </div>
+        <button class="close-modal" id="chatCloseBtn" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="chat-cards">
+            <a href="/support/tickets" target="_blank" class="chat-card">
+                <div class="chat-card-icon orange">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8" />
+                        <path d="M3 9h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        <circle cx="7" cy="7" r="1" fill="currentColor" />
+                        <circle cx="10" cy="7" r="1" fill="currentColor" />
+                        <path d="M7 13h4M7 16h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        <circle cx="18" cy="17" r="3.5" fill="#ff6b6b" stroke="white" stroke-width="1.2" />
+                        <text x="18" y="19.5" text-anchor="middle" font-size="5" font-weight="700" fill="white" font-family="Sora,sans-serif">3</text>
+                    </svg>
+                </div>
+                <div class="chat-card-text">
+                    <strong>Support Tickets</strong>
+                    <span>Open tickets for any issue or bug and track them until fully resolved.</span>
+                </div>
+                <div class="chat-card-arrow">
+                    <svg class="rtl-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                </div>
+            </a>
+
+        <a href="/contact" target="_blank" class="chat-card">
+            <div class="chat-card-icon teal">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
+            </div>
+            <div class="chat-card-text">
+                <strong>Contact Us</strong>
+                <span>Send us an email or connect via live chat for direct support.</span>
+            </div>
+            <div class="chat-card-arrow">
+                <svg class="rtl-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+            </div>
+        </a>
+
+        <a href="https://t.me/localtonetsupport" target="_blank" class="chat-card" rel="noopener">
+            <div class="chat-card-icon blue">
+                <svg viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" /></svg>
+            </div>
+            <div class="chat-card-text">
+                <strong>Telegram Support</strong>
+                <span>Chat with our support team instantly on Telegram @localtonetsupport.</span>
+            </div>
+            <div class="chat-card-arrow">
+                <svg class="rtl-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+            </div>
+        </a>
+
+        <a href="https://community.localtonet.com" target="_blank" class="chat-card" rel="noopener">
+            <div class="chat-card-icon purple">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" /></svg>
+            </div>
+            <div class="chat-card-text">
+                <strong>Community</strong>
+                <span>Report bugs, share feedback, and connect with Localtonet users.</span>
+            </div>
+            <div class="chat-card-arrow">
+                <svg class="rtl-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+            </div>
+        </a>
+    </div>
+
+    <div class="chat-panel-footer">
+        <span>Localtonet</span>
+        <div class="chat-footer-dot"></div>
+        <a href="/privacy">Privacy</a>
+        <div class="chat-footer-dot"></div>
+        <a href="/terms">Terms</a>
+    </div>
+</div>
+
+<script>
+    // Floating support/chat widget is not needed for the initial paint, so defer its
+    // script until the browser is idle (or shortly after load as a fallback) instead
+    // of competing with LCP-critical resources.
+    (function () {
+        function loadCommunityScript() {
+            var s = document.createElement('script');
+            s.src = '/community/community.js?v=1.2.1';
+            document.body.appendChild(s);
+        }
+
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(loadCommunityScript, { timeout: 3000 });
+        } else {
+            window.addEventListener('load', function () {
+                setTimeout(loadCommunityScript, 1000);
+            });
+        }
+    })();
+</script>
+
+
+    <script src="/homepage/js/app.js?v=1.0.3&amp;v=nSSQBqASkhFBLXKyUOn2TyXcFv-ulw7sX5R78CIZ9Uc" defer></script>
+    <script src="/homepage/js/site-header.js?v=1.0.3&amp;v=m6IAYMqYpuV9BlKVhVggiBTxsZ4rD3IsBZwuZl2bsqA" defer></script>
+
+    
+</body>
+</html>

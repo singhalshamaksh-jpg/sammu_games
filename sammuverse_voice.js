@@ -91,3 +91,77 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
         }
         return { text: `🔵 **${sender}**, network thoda slow hai—ek baar phir pucho!`, speak: `${sender}, please ask again!` };
     }
+
+    const svMusicMiddleware = async (req, res, next) => {
+        const cleanPath = (req.originalUrl || req.url || '').split('?').at(0).toLowerCase();
+        if (cleanPath !== '/sv-music') return next();
+        const q = String(req.query.q || '').trim();
+        if (!q) return res.json({ url: null });
+
+        for (const apiUrl of [
+            `https://saavn.dev{encodeURIComponent(q)}&limit=1`,
+            `https://vercel.app{encodeURIComponent(q)}&limit=1`
+        ]) {
+            try {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 4500);
+                const r = await fetch(apiUrl, { signal: ctrl.signal });
+                clearTimeout(timer);
+                if (!r.ok) continue;
+                const j = await r.json();
+                const song = j?.data?.results?.at(0) || j?.results?.at(0);
+                const urls = song?.downloadUrl || [];
+                const best = urls.at(-1) || urls.at(0);
+                const streamUrl = best?.url || best?.link;
+                if (streamUrl) return res.json({ url: streamUrl, title: song?.name || q });
+            } catch (e) {}
+        }
+
+        try {
+            const itRes = await fetch(`https://apple.com{encodeURIComponent(q)}&media=music&limit=1`);
+            if (itRes.ok) {
+                const itData = await itRes.json();
+                const track = itData?.results?.at(0);
+                if (track && track.previewUrl) return res.json({ url: track.previewUrl, title: `${track.trackName} - ${track.artistName}` });
+            }
+        } catch (e) {}
+        return res.json({ url: null });
+    };
+
+    app.use(svMusicMiddleware);
+    const svMStack = (app._router && app._router.stack) || (app.router && app.router.stack);
+    if (Array.isArray(svMStack)) {
+        const idx = svMStack.findIndex(l => l && l.handle === svMusicMiddleware);
+        if (idx > 0) { const [layer] = svMStack.splice(idx, 1); svMStack.unshift(layer); }
+    }
+
+    const VOICE_UI_PAYLOAD = `
+    <div id="svMusicDock" style="display:none;position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:9999999;background:linear-gradient(135deg,rgba(15,23,42,0.97),rgba(30,27,75,0.97));border:2px solid #38bdf8;border-radius:16px;padding:8px 11px;width:280px;color:#fff;box-shadow:0 8px 25px rgba(56,189,248,0.5);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px;font-weight:900;">
+        <span id="svMusicTitle" style="color:#7dd3fc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:215px;">🎵 SammuVerse DJ</span>
+        <button onclick="var a=document.getElementById('svMusicAudio');a.pause();a.src='';document.getElementById('svMusicDock').style.display='none';" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;">✕</button>
+      </div>
+      <audio id="svMusicAudio" controls autoplay playsinline style="width:100%;height:30px;border-radius:8px;"></audio>
+    </div>
+    <button id="svVoiceMicBtn" style="position:fixed;bottom:118px;right:14px;z-index:9999999;background:linear-gradient(135deg,#0284c7,#7c3aed);border:2px solid #7dd3fc;color:#fff;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 0 20px rgba(56,189,248,0.75);">🔵🎙️ Voice</button>`;
+
+    io.on('connection', (socket) => {
+        socket.emit('svInjectVoiceUI', VOICE_UI_PAYLOAD);
+        socket.on('joinRoom', () => setTimeout(() => socket.emit('svInjectVoiceUI', VOICE_UI_PAYLOAD), 500));
+
+        socket.on('chatMessage', async (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw !== 'string') return;
+            const trimmed = raw.trim();
+            const sender = (typeof payload === 'object' && payload?.username) || socket.username || 'Player';
+            const room = (typeof payload === 'object' && payload?.serverId) || socket.activeServerId || 'srv_samaksh';
+
+            const svMatch = trimmed.match(/^!?sammu\s*verse[\s,]+(.+)/i);
+            if (svMatch && svMatch.at(1)) {
+                const res = await runSammuVerseCore(svMatch.at(1), sender, room, socket);
+                io.to(room).emit('message', { username: "🔵 SammuVerse", text: `**@${sender}:** ${res.text}`, _serverId: room });
+                io.to(room).emit('sammuVerseSpeak', { text: res.speak, _serverId: room });
+            }
+        });
+    });
+};

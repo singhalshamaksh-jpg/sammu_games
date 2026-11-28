@@ -5252,5 +5252,112 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
 })();
 </script>
 
+
+<canvas id="svDjClubCanvas" style="display:none;pointer-events:none;position:fixed;inset:0;width:100vw;height:100vh;z-index:999980;"></canvas>
+<script id="svDjClubBoot">
+(function() {
+  if (window._svDjClubInstalled) return;
+  window._svDjClubInstalled = true;
+  var djActive = false, djAnim = null, djParticles = [];
+
+  function startDjVisuals() {
+    var c = document.getElementById('svDjClubCanvas');
+    if (!c) return;
+    c.style.display = 'block';
+    c.width = window.innerWidth || 800;
+    c.height = window.innerHeight || 600;
+    var ctx = c.getContext('2d');
+    var cols = ['#00f5d4', '#ff007f', '#a855f7', '#38bdf8', '#facc15'];
+    djParticles = Array.from({ length: 38 }, function() {
+      return { x: Math.random() * c.width, y: Math.random() * c.height, vy: -(1 + Math.random() * 2.5), r: 2 + Math.random() * 4, col: cols[Math.floor(Math.random() * cols.length)] };
+    });
+
+    if (djAnim) cancelAnimationFrame(djAnim);
+    function render(now) {
+      if (!djActive) { ctx.clearRect(0, 0, c.width, c.height); c.style.display = 'none'; return; }
+      var W = c.width, H = c.height, t = now * 0.003;
+      ctx.clearRect(0, 0, W, H);
+
+      // Sweeping Neon Club Spotlights (transparent so chat stays 100% readable)
+      for (var s = 0; s < 2; s++) {
+        var angle = Math.sin(t + s * 2.2) * 0.55;
+        var originX = s === 0 ? W * 0.2 : W * 0.8;
+        ctx.save();
+        ctx.translate(originX, 0);
+        ctx.rotate(angle);
+        var grad = ctx.createLinearGradient(0, 0, 0, H * 0.85);
+        grad.addColorStop(0, s === 0 ? 'rgba(56,189,248,0.22)' : 'rgba(236,72,153,0.22)');
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(20, 0); ctx.lineTo(180, H * 0.85); ctx.lineTo(-180, H * 0.85); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+
+      // Bottom Equalizer Neon Bars
+      var bars = 26, bw = W / bars;
+      for (var i = 0; i < bars; i++) {
+        var bh = 18 + Math.abs(Math.sin(t * 2.4 + i * 0.55) * Math.cos(t * 1.7 - i * 0.3)) * 58;
+        ctx.fillStyle = cols[i % cols.length];
+        ctx.globalAlpha = 0.28;
+        ctx.fillRect(i * bw + 2, H - bh, bw - 4, bh);
+      }
+
+      // Floating Neon Sparks
+      ctx.globalAlpha = 0.7;
+      for (var p of djParticles) {
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.col; ctx.fill();
+        p.y += p.vy;
+        if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+      }
+      ctx.globalAlpha = 1;
+      djAnim = requestAnimationFrame(render);
+    }
+    djAnim = requestAnimationFrame(render);
+  }
+
+  window.playNextDjTrack = async function() {
+    var dock = document.getElementById('svMusicDock');
+    if (!dock) {
+      dock = document.createElement('div'); dock.id = 'svMusicDock';
+      dock.style.cssText = 'position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:9999999;background:rgba(15,23,42,0.97);border:2px solid #00f5d4;border-radius:16px;padding:8px 11px;width:295px;color:#fff;box-shadow:0 8px 25px rgba(0,245,212,0.45);';
+      dock.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px;font-weight:900;"><span id="svMusicTitle" style="color:#00f5d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px;">🎧 AI DJ Non-Stop</span><div style="display:flex;gap:4px;"><button onclick="playNextDjTrack()" title="Next Song" style="background:#0284c7;border:none;color:#fff;border-radius:6px;padding:2px 7px;cursor:pointer;">⏭️</button><button onclick="window._stopAllDj()" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;">✕</button></div></div><audio id="svMusicAudio" controls autoplay playsinline style="width:100%;height:30px;border-radius:8px;"></audio>';
+      document.body.appendChild(dock);
+    }
+    var title = document.getElementById('svMusicTitle'), audio = document.getElementById('svMusicAudio');
+    dock.style.display = 'block';
+    title.textContent = '🎧 Mixing next track...';
+    audio.onended = function() { if (djActive) window.playNextDjTrack(); };
+    try {
+      var r = await fetch('/sv-music?q=random');
+      var data = await r.json();
+      if (data && data.url) {
+        title.textContent = '🎧 ' + data.title;
+        audio.src = data.url;
+        audio.play().catch(function() { title.textContent = '▶️ Tap Play: ' + data.title; });
+      }
+    } catch (e) {}
+  };
+
+  window._stopAllDj = function() {
+    djActive = false;
+    var a = document.getElementById('svMusicAudio'), d = document.getElementById('svMusicDock');
+    if (a) { a.pause(); a.src = ''; }
+    if (d) d.style.display = 'none';
+  };
+
+  var wait = setInterval(function() {
+    if (typeof socket === 'undefined') return;
+    clearInterval(wait);
+    socket.on('svDjMode', function(d) {
+      if (d && d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
+      djActive = Boolean(d && d.on);
+      if (djActive) { startDjVisuals(); window.playNextDjTrack(); }
+      else { window._stopAllDj(); }
+    });
+  }, 400);
+})();
+</script>
+
 </body>
 </html>

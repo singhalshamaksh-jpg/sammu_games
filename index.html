@@ -5359,5 +5359,52 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
 })();
 </script>
 
+
+<script id="svUltraSmoothBooster">
+(function() {
+  if (window._svUltraSmoothApplied) return;
+  window._svUltraSmoothApplied = true;
+
+  // 1. Throttle heavy background DOM-scanning intervals to save phone CPU & battery
+  var origSetInterval = window.setInterval;
+  window.setInterval = function(fn, ms) {
+    var src = fn ? fn.toString() : '';
+    if (ms && ms < 2500 && (src.indexOf('querySelectorAll') !== -1 || src.indexOf('renderV6Panels') !== -1 || src.indexOf('renderV5StoryMode') !== -1)) {
+      ms = 3500;
+    }
+    return origSetInterval.apply(this, [fn, ms].concat(Array.prototype.slice.call(arguments, 2)));
+  };
+
+  // 2. Keep only the latest 70 chat messages in DOM so mobile scrolling never freezes
+  function attachChatPruner() {
+    var boxes = Array.from(document.querySelectorAll('#chatBox, #messages, .chat-messages, [id*="chat"]'))
+      .filter(function(el) { return el.tagName === 'DIV' && el.scrollHeight >= el.clientHeight; });
+    var box = boxes[0];
+    if (!box || box.dataset.svPruned) return;
+    box.dataset.svPruned = '1';
+    box.style.webkitOverflowScrolling = 'touch';
+
+    new MutationObserver(function() {
+      while (box.children.length > 70) {
+        box.removeChild(box.firstElementChild);
+      }
+      box.querySelectorAll('img:not([loading])').forEach(function(img) {
+        img.loading = 'lazy';
+        img.decoding = 'async';
+      });
+    }).observe(box, { childList: true });
+  }
+  setTimeout(attachChatPruner, 1500);
+
+  // 3. Pause background visual loops when tab/screen is minimized
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden && typeof window._stopAllDj === 'function') {
+      var c = document.getElementById('svDjClubCanvas');
+      if (c) c.style.display = 'none';
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

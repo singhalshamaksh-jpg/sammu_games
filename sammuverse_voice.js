@@ -111,3 +111,87 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
 
         return `Maine "${topic}" search kiya (${debugErr || 'NoKey'})—thoda aur clear pucho ya key check karo!`;
     }
+
+    async function runSammuVerseCore(query, sender, srvId, socket) {
+        const q = query.trim();
+        const low = q.toLowerCase();
+
+        const playMatch = q.match(/^(?:play|bajao|chalao|gaana|song)\s+(.+)/i);
+        if (playMatch && playMatch[1]) {
+            const songName = playMatch[1].trim();
+            socket.emit('svPlayMusic', { query: songName, by: sender, _serverId: srvId });
+            return { text: `🎵 Playing ${songName}`, speak: `Playing ${songName} for you, ${sender}` };
+        }
+        if (/^(stop song|stop music|pause music|gaana band)/i.test(low)) {
+            socket.emit('svStopMusic', { _serverId: srvId });
+            return { text: `⏹️ Music stopped`, speak: `Music stopped` };
+        }
+        if (/^(hi|hello|hlo|hey|namaste|kaise ho|kya haal|how are you|wassup|sup)\b/i.test(low)) {
+            const reply = `Hello ${sender}! Main bilkul mast hoon! Batao kya help karoon—koi song bajaoon, game start karoon, ya koi sawaal puchna hai?`;
+            return { text: `🔵 ${reply}`, speak: reply };
+        }
+        if (/\b(time|samay|baje)\b/.test(low)) {
+            const t = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+            return { text: `⏰ Abhi India mein ${t} IST baj rahe hain`, speak: `Abhi India mein ${t} baj rahe hain, ${sender}` };
+        }
+        if (low.includes('water')) { socket.emit('openWaterIo'); return { text: `💧 Opening Water.io`, speak: `Opening Water dot I O!` }; }
+        if (low.includes('imposter')) { launchServerWordImposter(srvId); return { text: `🕵️ Starting Word Imposter`, speak: `Starting Word Imposter!` }; }
+        if (low.includes('mafia')) { socket.onevent({ type: 2, nsp: '/', data: ['chatMessage', '!mafia'] }); return { text: `🔪 Starting Mafia Party`, speak: `Starting Mafia Party!` }; }
+        if (low.includes('dragon') || low.includes('boss')) { socket.onevent({ type: 2, nsp: '/', data: ['chatMessage', '!boss'] }); return { text: `🐉 Summoning Dragon Raid`, speak: `Summoning Shadow Dragon Raid!` }; }
+        if (low.includes('heist') || low.includes('bank')) { socket.onevent({ type: 2, nsp: '/', data: ['chatMessage', '!heist'] }); return { text: `🏦 Starting Bank Heist`, speak: `Starting Mega Bank Heist!` }; }
+
+        if (!svMemory.has(srvId)) svMemory.set(srvId, []);
+        const hist = svMemory.get(srvId);
+        const knowledge = await fetchAllKnowingAnswer(q, sender, hist);
+        hist.push({ role: 'user', parts: [{ text: q }] }, { role: 'model', parts: [{ text: knowledge }] });
+        while (hist.length > 8) hist.shift();
+        return { text: `🔵 ${knowledge}`, speak: knowledge };
+    }
+
+    const svMusicMiddleware = async (req, res, next) => {
+        const cleanPath = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
+        if (cleanPath !== '/sv-music') return next();
+        const q = String(req.query.q || '').trim();
+        if (!q) return res.json({ url: null });
+
+        for (const apiUrl of [
+            `https://saavn.dev{encodeURIComponent(q)}&limit=1`,
+            `https://vercel.app{encodeURIComponent(q)}&limit=1`
+        ]) {
+            const r = await httpsReqJson(apiUrl, 'GET', {}, null, 5000);
+            if (r.ok && r.data) {
+                const song = (r.data.data && Array.isArray(r.data.data.results) ? r.data.data.results[0] : null) || (Array.isArray(r.data.results) ? r.data.results[0] : null);
+                const urls = Array.isArray(song && song.downloadUrl) ? song.downloadUrl : [];
+                const best = urls[urls.length - 1] || urls[0];
+                const streamUrl = best && (best.url || best.link);
+                if (streamUrl) return res.json({ url: streamUrl, title: song.name || q });
+            }
+        }
+
+        const itRes = await httpsReqJson(`https://apple.com{encodeURIComponent(q)}&media=music&limit=1`, 'GET', {}, null, 5000);
+        if (itRes.ok && itRes.data && Array.isArray(itRes.data.results) && itRes.data.results[0]) {
+            const track = itRes.data.results[0];
+            if (track.previewUrl) return res.json({ url: track.previewUrl, title: `${track.trackName} - ${track.artistName}` });
+        }
+        return res.json({ url: null });
+    };
+
+    app.use(svMusicMiddleware);
+    const svMStack = (app._router && app._router.stack) || (app.router && app.router.stack);
+    if (Array.isArray(svMStack)) {
+        const idx = svMStack.findIndex(l => l && l.handle === svMusicMiddleware);
+        if (idx > 0) { const [layer] = svMStack.splice(idx, 1); svMStack.unshift(layer); }
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('svVoiceQuery', async (payload) => {
+            const q = (payload && typeof payload.text === 'string') ? payload.text.trim() : '';
+            if (!q) return;
+            const sender = socket.username || 'Player';
+            const room = (payload && payload.serverId) || socket.activeServerId || 'srv_samaksh';
+            const cleanQ = q.replace(/^!?(?:sammu|samu|sami|sammy|summer|some)\s*(?:verse|first|universe|worth)[\s,]*/i, '').trim() || 'hello';
+            const res = await runSammuVerseCore(cleanQ, sender, room, socket);
+            socket.emit('sammuVerseSpeak', { text: res.speak, subtitle: res.text, _serverId: room });
+        });
+    });
+};

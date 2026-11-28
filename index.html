@@ -298,31 +298,60 @@
 
         <button onclick="enterLobby()">ENTER LOBBY 🚀</button>
 
-        <div id="pre-lobby-ad" style="margin-top:14px;padding:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;text-align:center;">
-            <div style="font-size:0.65rem;color:#6b7280;letter-spacing:1px;margin-bottom:4px;">ADVERTISEMENT</div>
-            <div style="min-height:250px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-                <!-- PASTE YOUR ADSTERRA 300x250 BANNER SCRIPT HERE -->
-              <div id="didiPromoBox" style="display: none; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left;">
-    <div>
-        <div style="font-size: 11px; font-weight: 800; color: #f472b6; letter-spacing: 0.8px; text-transform: uppercase;">
-            ✨ Live Squad Spotlight
-        </div>
-        <div style="font-size: 15px; font-weight: 700; color: #ffffff; margin: 2px 0;">
-            verma_diary_18 ❤️
-        </div>
-        <div style="font-size: 12px; color: #cbd5e1;">
-            Didi is in the arena! Support her channel before entering!
-        </div>
-    </div>
+        <div id="pre-lobby-ad" style="margin-top:14px;">
+  <!-- Odd Servers (1, 3, 5, 7, 9, 11, 13, 15): Verma Diary 18 -->
+  <div id="vermaSpotlightCard" style="background:linear-gradient(135deg,#1e1b4b,#4c0519);border:2px solid #f472b6;border-radius:16px;padding:12px 14px;text-align:center;color:#fff;box-shadow:0 0 22px rgba(244,114,182,0.35);">
+    <div style="font-size:10px;font-weight:900;color:#f9a8d4;letter-spacing:0.6px;text-transform:uppercase;">✨ Must-Watch Creator Spotlight</div>
+    <div style="font-size:16px;font-weight:900;margin:4px 0;color:#fff;">🎬 verma_diary_18 ❤️</div>
+    <div style="font-size:12px;color:#fbcfe8;margin-bottom:9px;line-height:1.4;">Pure aesthetic vibes, reels & daily moments everyone in the lobby is talking about! 👀🔥</div>
+    <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:linear-gradient(90deg,#ec4899,#f43f5e);color:#fff;text-decoration:none;padding:7px 18px;border-radius:999px;font-size:12px;font-weight:900;box-shadow:0 4px 14px rgba(244,63,94,0.45);">👀 Check Out Channel ▶️</a>
+  </div>
 
-    <a href="https://youtube.com" 
-       target="_blank" 
-       rel="noopener noreferrer" 
-       style="background: linear-gradient(135deg, #ec4899, #f43f5e); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 13px; padding: 10px 16px; border-radius: 10px; white-space: nowrap; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);">
-        🔔 Subscribe
-    </a>
-</div>  
-            </div>
+  <!-- Even Servers (2, 4, 6, 8, 10, 12, 14, 16): Oshwin Sharma Art -->
+  <div id="oshwinSpotlightCard" style="display:none;background:linear-gradient(135deg,#0f172a,#3b0764,#831843);border:2px solid #facc15;border-radius:16px;padding:12px 14px;text-align:center;color:#fff;box-shadow:0 0 24px rgba(250,204,21,0.4);">
+    <div style="font-size:10px;font-weight:900;color:#fde047;letter-spacing:0.6px;text-transform:uppercase;">🤯 Hand-Drawn Art That Looks Like a Real Photo!</div>
+    <div style="font-size:16px;font-weight:900;margin:4px 0;color:#fff;">🎨 Oshwin Sharma Art ✨</div>
+    <div style="font-size:12px;color:#fef08a;margin-bottom:9px;line-height:1.4;">Wait till you see her hyper-realistic pencil portraits—you won't believe they're drawn by hand! 🖌️🔥</div>
+    <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:linear-gradient(90deg,#ef4444,#f59e0b);color:#fff;text-decoration:none;padding:7px 18px;border-radius:999px;font-size:12px;font-weight:900;box-shadow:0 4px 14px rgba(239,68,68,0.5);">🎨 See Her Art on YouTube ▶️</a>
+  </div>
+</div>
+<script id="svDualSisterSpotlight">
+(function() {
+  var ODD_SRVS = ['srv_samaksh','srv_zoro','srv_moon','srv_izzan','srv_sus','srv_advait','srv_zaira','srv_sid'];
+  var EVEN_SRVS = ['srv_lounge','srv_milly','srv_heer','srv_ishika','srv_sarah','srv_ruwii','srv_shubhi','srv_antim'];
+  var vEnabled = true, oEnabled = true;
+
+  function syncSpotlightCards() {
+    var vCard = document.getElementById('vermaSpotlightCard');
+    var oCard = document.getElementById('oshwinSpotlightCard');
+    var wrap = document.getElementById('pre-lobby-ad');
+    if (!vCard || !oCard) return;
+
+    var sid = window.selectedServerId || 'srv_samaksh';
+    var isEven = EVEN_SRVS.indexOf(sid) !== -1;
+
+    var showV = vEnabled && !isEven;
+    var showO = oEnabled && isEven;
+
+    vCard.style.display = showV ? 'block' : 'none';
+    oCard.style.display = showO ? 'block' : 'none';
+    if (wrap) wrap.style.display = (showV || showO) ? 'block' : 'none';
+  }
+
+  setInterval(syncSpotlightCards, 600);
+
+  var w = setInterval(function() {
+    if (typeof socket === 'undefined') return;
+    clearInterval(w);
+    socket.on('vermaAdState', function(state) { vEnabled = Boolean(state); syncSpotlightCards(); });
+    socket.on('oshwinAdState', function(state) { oEnabled = Boolean(state); syncSpotlightCards(); });
+    socket.on('serverAccessGranted', function(srv) {
+      if (srv && srv.id) window.selectedServerId = srv.id;
+      syncSpotlightCards();
+    });
+  }, 400);
+})();
+</script>
         </div>
 
         <div style="margin-top:12px;padding:10px 12px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:14px;font-size:0.78rem;color:#cbd5e1;line-height:1.45;">

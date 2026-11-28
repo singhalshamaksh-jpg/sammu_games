@@ -123,7 +123,15 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             }
         }
 
-        return `Maine "${topic}" search kiya (${debugErr || 'NoKey'})—thoda aur clear pucho ya key check karo!`;
+        const wSearch = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(topic)}&format=json&srlimit=1`);
+        if (wSearch.ok && wSearch.data && wSearch.data.query && Array.isArray(wSearch.data.query.search) && wSearch.data.query.search.length > 0) {
+            const title = wSearch.data.query.search.at(0).title;
+            const wSum = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(title)}`);
+            if (wSum.ok && wSum.data && wSum.data.extract) {
+                return wSum.data.extract.split('. ').slice(0, 2).join('. ') + '.';
+            }
+        }
+        return `Haan ${sender}! Main SammuVerse hoon—mujhse time, games, shayari, ya koi bhi song play karne ko bolo!`;
     }
 
     async function runSammuVerseCore(query, sender, srvId, socket) {
@@ -226,7 +234,7 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             if (!q) return;
             const sender = socket.username || 'Player';
             const room = (payload && payload.serverId) || socket.activeServerId || 'srv_samaksh';
-            const cleanQ = q.replace(/^!?(?:sammu|samu|sami|sammy|summer|some)\s*(?:verse|first|universe|worth)[\s,]*/i, '').trim() || 'hello';
+            const cleanQ = q.replace(/^!?(?:sammu|samu|sami|sammy|summer|some|samo)\s*(?:verse|first|universe|worth|words|word|voice|bus|box)?[\s,]*/i, '').trim() || 'hello';
             const res = await runSammuVerseCore(cleanQ, sender, room, socket);
             io.to(room).emit('message', { username: "🔵 SammuVerse", text: `**@${sender}:** ${res.text}`, _serverId: room });
             socket.emit('sammuVerseSpeak', { text: res.speak, subtitle: res.text, _serverId: room });

@@ -5178,7 +5178,7 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
       var said = (res && res[0] && res[0].transcript || '').trim();
       if (!said) return;
 
-      var wakeMatch = said.match(/(?:sammu|samu|sami|sammy|summer|some)\s*(?:verse|first|universe|worth)/i);
+      var wakeMatch = said.match(/(?:sammu|samu|sami|sammy|summer|some|samo)\s*(?:verse|first|universe|worth|words|word|voice|bus|box)/i);
       if (wakeMatch) {
         var after = said.slice(wakeMatch.index + wakeMatch[0].length).replace(/^[,\.\s]+/, '').trim();
         if (!res.isFinal) {

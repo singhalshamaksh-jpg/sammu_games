@@ -53,6 +53,20 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
     const { launchServerWordImposter } = helpers;
     const svMemory = new Map();
 
+    // === ⚡ SERVER ANTI-LAG & RAM GUARD ===
+    if (io && io.engine && io.engine.opts) {
+        io.engine.opts.perMessageDeflate = { threshold: 256 };
+        io.engine.opts.httpCompression = { threshold: 256 };
+    }
+    if (!global._svMemGuardStarted) {
+        global._svMemGuardStarted = true;
+        setInterval(() => {
+            if (svMemory.size > 30) svMemory.clear();
+            if (typeof global.gc === 'function') global.gc();
+        }, 10 * 60 * 1000);
+    }
+
+
     async function fetchAllKnowingAnswer(query, sender, history) {
         const sys = "You are SammuVerse, the original all-knowing Hinglish & English voice assistant of SammuGames. Reply in 2-3 crisp, natural sentences under 260 chars suitable for voice speech.";
         let debugErr = '';

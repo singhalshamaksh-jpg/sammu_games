@@ -1,6 +1,15 @@
 
 const fs = require('fs');
-const path = require('path')
+const path = require('path');
+try {
+    const envPath = path.join(__dirname, '.env');
+    if (fs.existsSync(envPath)) {
+        fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
+            const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)\s*$/);
+            if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+        });
+    }
+} catch (e) {}
 require('events').EventEmitter.defaultMaxListeners = 100;
 
 
@@ -965,7 +974,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function (body) {
-            if (typeof body === 'string' && body.includes('</body>')) {
+            if (false && typeof body === 'string') {
                 body = body.replace('</body>', MULTI_SERVER_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -1507,7 +1516,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function (body) {
-            if (typeof body === 'string' && body.includes('</body>')) {
+            if (false && typeof body === 'string') {
                 body = body.replace('</body>', WORD_IMPOSTER_WIDGET + '\n</body>');
             }
             return origSend.call(this, body);
@@ -1734,7 +1743,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>')) {
+            if (false && typeof body === 'string') {
                 body = body.replace('</body>', ZORO_ISOLATION_SCRIPT + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2111,7 +2120,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>')) {
+            if (false && typeof body === 'string') {
                 body = body.replace('</body>', PHONK_DJ_WIDGET + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2203,7 +2212,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>')) {
+            if (false && typeof body === 'string') {
                 body = body.replace('</body>', AI_CONSOLE_WIDGET + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2481,7 +2490,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('proFilterBar')) {
+            if (false && typeof body === 'string' && !body.includes('proFilterBar')) {
                 body = body.replace('</body>', PHONK_PRO_UPGRADE + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2565,7 +2574,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('mafiaModal')) {
+            if (false && typeof body === 'string' && !body.includes('mafiaModal')) {
                 body = body.replace('</body>', MAFIA_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2678,7 +2687,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('royaleBar')) {
+            if (false && typeof body === 'string' && !body.includes('royaleBar')) {
                 body = body.replace('</body>', ROYALE_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -2910,7 +2919,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('zombieBar')) {
+            if (false && typeof body === 'string' && !body.includes('zombieBar')) {
                 body = body.replace('</body>', ZOMBIE_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -3218,7 +3227,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('raidBar')) {
+            if (false && typeof body === 'string' && !body.includes('raidBar')) {
                 body = body.replace('</body>', COOP_PARTY_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -3490,7 +3499,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('bluffBar')) {
+            if (false && typeof body === 'string' && !body.includes('bluffBar')) {
                 body = body.replace('</body>', BLUFF_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -3688,7 +3697,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('islandBar')) {
+            if (false && typeof body === 'string' && !body.includes('islandBar')) {
                 body = body.replace('</body>', ISLAND_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -3730,10 +3739,10 @@ module.exports = function initMultiServers(app, io) {
             clearInterval(st.interval);
             islandByServer.delete(srvId);
             io.to(srvId).emit('islandEnd', { _serverId: srvId });
-            const rat = Object.entries(st.greedMap).sort((a, b) => b - a);
+            const rat = Object.entries(st.greedMap).sort((a, b) => b.at(1) - a.at(1)).at(0);
             io.to(srvId).emit('message', {
                 username: "Sammu's Bot",
-                text: `🚁🎉 **RESCUE HELICOPTER ARRIVED!** The squad survived 4 days on Castaway Island!\n🐍 **Biggest Ration Hoarder:** **${rat ? rat : 'Nobody — Pure Teamwork!'}**`,
+                text: `🚁🎉 **RESCUE HELICOPTER ARRIVED!** The squad survived 4 days on Castaway Island!\n🐍 **Biggest Ration Hoarder:** **${rat ? `${rat.at(0)} (${rat.at(1)}x)` : 'Nobody — Pure Teamwork!'}**`,
                 _serverId: srvId
             });
             return;
@@ -4010,7 +4019,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('cleanRaidBar')) {
+            if (false && typeof body === 'string' && !body.includes('cleanRaidBar')) {
                 body = body.replace('</body>', PARTY_ALL_IN_ONE_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -4216,7 +4225,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('bootSocketPartyUI')) {
+            if (false && typeof body === 'string' && !body.includes('bootSocketPartyUI')) {
                 body = body.replace('</body>', SOCKET_UI_BOOT + '\n</body>');
             }
             return origSend.call(this, body);
@@ -4302,7 +4311,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('wpFloatingBadge')) {
+            if (false && typeof body === 'string' && !body.includes('wpFloatingBadge')) {
                 body = body.replace('</body>', SERVER_WP_PACK + '\n</body>');
             }
             return origSend.call(this, body);
@@ -4376,7 +4385,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('renderFlexCard')) {
+            if (false && typeof body === 'string' && !body.includes('renderFlexCard')) {
                 body = body.replace('</body>', GACHA_FLEX_SCRIPT + '\n</body>');
             }
             return origSend.call(this, body);
@@ -4608,8 +4617,8 @@ module.exports = function initMultiServers(app, io) {
             // 2. Challenge Someone to a 3-Card Battle (!duelcard <name> [bet])
             if (low.startsWith('!duelcard ')) {
                 const parts = clean.slice(10).replace('@', '').trim().split(/\s+/);
-                const targetName = parts;
-                const bet = Math.max(50, Math.min(500, parseInt(parts, 10) || 100));
+                const targetName = parts.at(0);
+                const bet = Math.max(50, Math.min(500, parseInt(parts.at(1), 10) || 100));
                 if (!targetName || targetName.toLowerCase() === sKey) return;
 
                 if ((playerCards.get(sKey) || []).length === 0) {
@@ -4770,7 +4779,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('courtBar')) {
+            if (false && typeof body === 'string' && !body.includes('courtBar')) {
                 body = body.replace('</body>', COURT_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -7566,7 +7575,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svBootLoaded')) {
+            if (false && typeof body === 'string' && !body.includes('_svBootLoaded')) {
                 body = body.replace('</body>', SV_PAGE_BOOT_TAG + '\n</body>');
             }
             return origSend.call(this, body);
@@ -8116,7 +8125,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svWorldRaidHud')) {
+            if (false && typeof body === 'string' && !body.includes('svWorldRaidHud')) {
                 body = body.replace('</body>', WORLD_RAID_HUD_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -8262,7 +8271,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svGlobalLbHooked')) {
+            if (false && typeof body === 'string' && !body.includes('_svGlobalLbHooked')) {
                 body = body.replace('</body>', GLOBAL_LB_CLIENT_SCRIPT + '\n</body>');
             }
             return origSend.call(this, body);
@@ -8464,7 +8473,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_globalAudioEngineInstalled')) {
+            if (false && typeof body === 'string' && !body.includes('_globalAudioEngineInstalled')) {
                 body = body.replace('</body>', GLOBAL_CHAT_AND_GAME_AUDIO + '\n</body>');
             }
             return origSend.call(this, body);
@@ -8990,7 +8999,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('hkCreatorModal')) {
+            if (false && typeof body === 'string' && !body.includes('hkCreatorModal')) {
                 body = body.replace('</body>', HK_CREATOR_PANEL_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -9122,7 +9131,7 @@ module.exports = function initMultiServers(app, io) {
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_inAppPatchApplied')) {
+            if (false && typeof body === 'string' && !body.includes('_inAppPatchApplied')) {
                 body = body.replace('</body>', IN_APP_BROWSER_PATCH_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -9657,7 +9666,7 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('_svV5Installed')) {
+            if (false && typeof body === 'string' && !body.includes('_svV5Installed')) {
                 body = body.replace('</body>', V5_EXPANSION_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -9823,7 +9832,7 @@ div>') +
 
         const prof = ensureV6Profile(cleanName);
         const v6 = prof.v6;
-        const chObj = W2_CHAPTERS.find(c => c.ch === b.w2Chapter) || W2_CHAPTERS;
+        const chObj = W2_CHAPTERS.find(c => c.ch === b.w2Chapter) || W2_CHAPTERS.at(0);
         const diffMult = b.w2Diff === 'nightmare' ? 2.5 : (b.w2Diff === 'hard' ? 1.6 : 1.0);
 
         let stars = 1;
@@ -10336,7 +10345,7 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuverseV6CleanUI')) {
+            if (false && typeof body === 'string' && !body.includes('sammuverseV6CleanUI')) {
                 body = body.replace('</body>', V6_COMPLETE_CLIENT_BUNDLE + '\n</body>');
             }
             return origSend.call(this, body);
@@ -10485,7 +10494,7 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('svV6SocketReceiver')) {
+            if (false && typeof body === 'string' && !body.includes('svV6SocketReceiver')) {
                 body = body.replace('</body>', V6_SOCKET_RECEIVER + '\n</body>');
             }
             return origSend.call(this, body);
@@ -10546,7 +10555,7 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuAntiLagBooster')) {
+            if (false && typeof body === 'string' && !body.includes('sammuAntiLagBooster')) {
                 body = body.replace('</body>', ANTI_LAG_BOOSTER_UI + '\n</body>');
             }
             return origSend.call(this, body);
@@ -10915,7 +10924,7 @@ div>') +
                     res.on('end', () => {
                         try {
                             const parsed = JSON.parse(raw);
-                            if (parsed.error) console.error('Upstash Error:', parsed.error);
+                            if (parsed.error) // silenced: // silenced: console.error('Upstash Error:', parsed.error);
                             resolve(parsed && parsed.result !== undefined ? parsed.result : null);
                         } catch (e) { resolve(null); }
                     });
@@ -10940,7 +10949,7 @@ div>') +
     };
 
     saveEconomyDB = function() {
-        try { fs.writeFileSync(ECO_DB_FILE, JSON.stringify(playerWallet, null, 2)); } catch (e) {}
+        try { fs.writeFileSync(ECONOMY_DB_FILE, JSON.stringify({ wallets: Object.fromEntries(playerWallet), cards: Object.fromEntries(playerCards) }, null, 2)); } catch (e) {}
         _ecoDirty = true;
     };
 
@@ -10952,7 +10961,7 @@ div>') +
         }
         if (_ecoDirty) {
             _ecoDirty = false;
-            upstashCmd(['SET', 'sammu_economy', JSON.stringify(playerWallet)]);
+            upstashCmd(['SET', 'sammu_economy', JSON.stringify({ wallets: Object.fromEntries(playerWallet), cards: Object.fromEntries(playerCards) })]);
         }
     }, 15000);
       // ============================================================================
@@ -11037,12 +11046,19 @@ div>') +
                     tsunami: ['tsunami', '🌊 Aqua Alert', `🌊📱 **${sender}** ne phone hila kar **5-Second Tsunami** laa di!`],
                     bijli: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`],
                     powercut: ['bijli', '⚡ Bijli Vibhag', `🕯️🔦 **${sender}** ne **BIJLI KAAT DI**! Ungli se flashlight chalao!`]
-            };
-            // 2. SammuVerse AI (!ai <question>) — Dual Key + Free Models
+                };
+                const entry = map[cmd];
+                if (entry) {
+                    const [fxType, botName, botMsg] = entry;
+                    io.to(srvId).emit('chaosEvent', { type: fxType, from: sender, target: 'all', colors, _serverId: srvId });
+                    return io.to(srvId).emit('message', { username: botName, text: botMsg, _serverId: srvId });
+                }
+            }
+
+            // 2. SammuVerse AI (!ai <question>) — Dual Key + Working Models
             const aiMatch = trimmed.match(/^!ai\s+(.+)/i);
             if (!aiMatch) return;
             const question = aiMatch.at(1).trim();
-            }
             if (!aiRoomMemory.has(srvId)) aiRoomMemory.set(srvId, []);
             const history = aiRoomMemory.get(srvId);
             history.push({ role: 'user', content: `[${sender}]: ${question}` });
@@ -11057,51 +11073,42 @@ Rules:
 5. VISUAL FX: If user asks for rain, holi, fireworks, aurora, meteor, tsunami, or power cut, append ONE of [FX:holi], [FX:barish], [FX:diwali], [FX:aurora], [FX:meteor], [FX:tsunami], or [FX:bijli] at the end.`;
 
             try {
-                const apiKeys = [process.env.HACKCLUB_AI_KEY, process.env.HACKCLUB_AI_KEY_2].filter(Boolean);
-                const models = ['particle-ai/particle-1:free', 'nvidia/nemotron-3.5-super-vl:free'];
+                const gemKey = process.env.GEMINI_API_KEY;
                 let reply = '';
                 let lastErr = '';
 
-                outerLoop:
-                for (const key of apiKeys) {
-                    for (const mdl of models) {
-                        try {
-                            const ctrl = new AbortController();
-                            const timeout = setTimeout(() => ctrl.abort(), 8000);
-                            const aiRes = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
-
-                                method: 'POST',
-                                signal: ctrl.signal,
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${key}`
-                                },
-                                body: JSON.stringify({
-                                    model: mdl,
-                                    messages: [{ role: 'system', content: systemPrompt }, ...history],
-                                    max_tokens: 3000,
-                                    temperature: 0.85
-                                })
-                            });
-                            clearTimeout(timeout);
-
-                            const aiData = await aiRes.json();
-                            const firstChoice = Array.isArray(aiData?.choices) ? aiData.choices.at(0) : null;
-                            if (firstChoice?.message?.content) {
-                                reply = firstChoice.message.content;
-                                break outerLoop;
-                            }
-                            lastErr = aiData?.error?.message || `HTTP ${aiRes.status}`;
-                        } catch (e) {
-                            lastErr = e.message || 'Timeout';
-                        }
+                if (gemKey) {
+                    try {
+                        const ctrl = new AbortController();
+                        const timeout = setTimeout(() => ctrl.abort(), 9000);
+                        const contents = history.map(m => ({
+                            role: m.role === 'assistant' ? 'model' : 'user',
+                            parts: [{ text: m.content }]
+                        }));
+                        const base = ['https:/', '://googleapis.com', 'v1beta', 'models', ''].join('/');
+                        const url = base + 'gemini-2.5-flash:generateContent?key=' + gemKey;
+                        const aiRes = await fetch(url, {
+                            method: 'POST',
+                            signal: ctrl.signal,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                systemInstruction: { parts: [{ text: systemPrompt }] },
+                                contents,
+                                generationConfig: { maxOutputTokens: 1200, temperature: 0.85 }
+                            })
+                        });
+                        clearTimeout(timeout);
+                        const aiData = await aiRes.json();
+                        const cand = aiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (cand) reply = cand;
+                        else lastErr = aiData?.error?.message || ('HTTP ' + aiRes.status);
+                    } catch (e) {
+                        lastErr = e.message || 'Timeout';
                     }
                 }
 
                 if (!reply) {
-                    reply = apiKeys.length === 0
-                        ? '⚠️ Add HACKCLUB_AI_KEY in Railway Variables!'
-                        : `⚠️ AI Busy (${lastErr})`;
+                    reply = !gemKey ? '⚠️ Add GEMINI_API_KEY in .env!' : ('⚠️ AI Busy (' + lastErr + ')');
                 }
 
                 reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/\s+/g, ' ').trim();
@@ -11120,7 +11127,7 @@ Rules:
                     io.to(srvId).emit('chaosEvent', { type: fxType, from: 'SammuVerse AI', target: sender, colors, _serverId: srvId });
                 }
 
-                if (reply.length > 300) reply = reply.slice(0, 297).trimEnd() + '...';
+                if (reply.length > 2400) reply = reply.slice(0, 2397).trimEnd() + '...';
                 history.push({ role: 'assistant', content: reply });
                 while (history.length > 10) history.shift();
 
@@ -11334,7 +11341,7 @@ Rules:
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece3And4Boot')) {
+            if (false && typeof body === 'string' && !body.includes('piece3And4Boot')) {
                 body = body.replace('</body>', PIECE3_AND_4_HTML + '\n</body>');
             }
             return origSend.call(this, body);
@@ -11528,7 +11535,7 @@ Rules:
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('piece5FxBoot')) {
+            if (false && typeof body === 'string' && !body.includes('piece5FxBoot')) {
                 body = body.replace('</body>', PIECE5_PART1 + '\n</body>');
             }
             return origSend.call(this, body);
@@ -11794,5 +11801,215 @@ Rules:
     // ==================== END PIECE 6 ====================
                     
 
-   return OG_HOSTS;     
+    // === 💧 WATER.IO LOBBY BUTTON & !WATERIO CHAT LAUNCHER ===
+    const WATERIO_LAUNCHER_UI = `
+    <script id="waterIoLauncherUI">
+    (function() {
+      if (window._waterIoLauncherBound) return;
+      window._waterIoLauncherBound = true;
+
+      function injectWaterBtn() {
+        if (document.getElementById('btnLaunchWaterIo')) return;
+        const anchor = Array.from(document.querySelectorAll('button')).find(b => /sammuverse|phonk dj|castaway island|hoop shootout/i.test(b.textContent || ''));
+        if (anchor && anchor.parentElement) {
+          const btn = anchor.cloneNode(true);
+          btn.id = 'btnLaunchWaterIo';
+          btn.removeAttribute('onclick');
+          btn.textContent = '💧 Water.io';
+          btn.style.background = 'linear-gradient(90deg, #0284c7, #06b6d4)';
+          btn.onclick = function(e) {
+            e.preventDefault();
+            window.location.href = '/waterio';
+          };
+          anchor.parentElement.appendChild(btn);
+        }
+      }
+      setInterval(injectWaterBtn, 2500);
+
+      const waitWaterSock = setInterval(function() {
+        if (typeof socket === 'undefined') return;
+        clearInterval(waitWaterSock);
+        socket.on('openWaterIo', function() {
+          window.location.href = '/waterio';
+        });
+      }, 600);
+    })();
+    </script>`;
+
+    app.use((req, res, next) => {
+        const origSend = res.send;
+        res.send = function(body) {
+            if (false && typeof body === 'string' && !body.includes('waterIoLauncherUI')) {
+                body = body.replace('</body>', WATERIO_LAUNCHER_UI + '\n</body>');
+            }
+            return origSend.call(this, body);
+        };
+        next();
+    });
+
+    io.on('connection', (socket) => {
+        socket.on('chatMessage', (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw === 'string' && /^!(waterio|water\.io)$/i.test(raw.trim())) {
+                socket.emit('openWaterIo');
+            }
+        });
+    });
+
+   
+// === 🧠 MULTIMODAL SAMMUBRAIN AI (LIVE WEB SEARCH + THINKING + TEXT2IMG + IMG2IMG + VOICE) ===
+const lastUserImage = new Map(); // Stores each user's last shared image URL/data for !edit
+
+async function liveWebSearch(query) {
+    let snippets = [];
+    try {
+        const wRes = await fetch(`https://wikipedia.org{encodeURIComponent(query)}&format=json&srlimit=2`);
+        const wData = await wRes.json();
+        for (const h of (wData?.query?.search || [])) {
+            snippets.push(`${h.title}: ${h.snippet.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&#039;/g, "'")}`);
+        }
+    } catch (e) {}
+    try {
+        const dRes = await fetch(`https://duckduckgo.com{encodeURIComponent(query)}&format=json&no_html=1`);
+        const dData = await dRes.json();
+        if (dData.AbstractText) snippets.unshift(dData.AbstractText);
+    } catch (e) {}
+    return snippets.join(" | ").slice(0, 650);
+}
+
+async function runSammuBrain(userPrompt, username) {
+    const webFacts = await liveWebSearch(userPrompt);
+    const sysPrompt = `You are SammuVerse AI, a witty, smart Hinglish & English buddy in SammuGames Universe. Live Web Facts: [${webFacts || 'None'}]. First write a 1-line thought starting with "💭 Thought: ", then on a new line write your crisp reply under 350 chars.`;
+
+    const hcKeys = Object.entries(process.env)
+        .filter(([k, v]) => /HACKCLUB|PARTICLE|HC_AI/i.test(k) && v && v.trim().length > 8)
+        .map(([, v]) => v.trim());
+
+    for (const key of hcKeys) {
+        try {
+            const res = await fetch("https://hackclub.com", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "qwen/qwen3-32b",
+                    messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
+                    max_tokens: 320,
+                    temperature: 0.65
+                })
+            });
+            if (res.ok) {
+                const d = await res.json();
+                const txt = d?.choices?.at(0)?.message?.content;
+                if (txt && txt.trim()) return txt.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+            }
+        } catch (e) {}
+    }
+
+    try {
+        const pRes = await fetch("https://pollinations.ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
+                model: "openai"
+            })
+        });
+        if (pRes.ok) {
+            const pText = await pRes.text();
+            if (pText && pText.trim() && !pText.includes("<!DOCTYPE")) return pText.trim().slice(0, 480);
+        }
+    } catch (e) {}
+
+    if (webFacts) return `💭 Thought: Searching live web for "${userPrompt}"...\n🌐 ${webFacts.slice(0, 360)}`;
+    return `💭 Thought: Connecting to SammuGames core...\n🔥 Online hoon ${username} bro! Try !imagine <prompt> ya !edit <change dress>!`;
+}
+
+// Public temporary image bridge so Pollinations Img2Img can fetch user's uploaded photo
+const tempEditImages = new Map();
+app.get('/ai-temp-img/:id', (req, res) => {
+    const dataUrl = tempEditImages.get(req.params.id);
+    if (!dataUrl) return res.status(404).send('Expired');
+    const m = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+    if (!m) return res.status(400).send('Invalid');
+    res.set('Content-Type', m.at(1));
+    res.send(Buffer.from(m.at(2), 'base64'));
+});
+
+io.on('connection', (socket) => {
+    // Track any image shared by a user so `!edit <prompt>` knows which photo to transform!
+    socket.on('chatImage', (payload) => {
+        const img = typeof payload === 'object' ? (payload.image || payload.img || payload.url) : payload;
+        if (typeof img === 'string' && img.startsWith('data:image')) {
+            const imgId = `${socket.id}_${Date.now()}`;
+            tempEditImages.set(imgId, img);
+            setTimeout(() => tempEditImages.delete(imgId), 10 * 60 * 1000);
+            lastUserImage.set((socket.username || socket.id).toLowerCase(), imgId);
+            lastUserImage.set('__latest_room__', imgId);
+        }
+    });
+
+    socket.on('chatMessage', async (payload) => {
+        const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+        if (typeof raw !== 'string') return;
+        const trimmed = raw.trim();
+        const uname = socket.username || 'Player';
+        const room = socket.activeServerId || 'srv_main';
+
+        // 1. !ai or !aivoice -> Live Web Search + Thinking + Voice Speak
+        if (/^!(ai|aivoice)\s+/i.test(trimmed)) {
+            const isVoice = /^!aivoice/i.test(trimmed);
+            const question = trimmed.replace(/^!(ai|aivoice)\s+/i, '').trim();
+            if (!question) return;
+            const answer = await runSammuBrain(question, uname);
+            io.to(room).emit('message', {
+                username: isVoice ? '🎙️ SammuBrain Voice AI' : '🧠 SammuBrain AI',
+                text: `@${uname}: ${answer}`,
+                _serverId: room
+            });
+            if (isVoice) {
+                const cleanSpeech = answer.replace(/💭 Thought:[^\n]+\n?/, '').replace(/[*#_`~]/g, '');
+                io.to(room).emit('sammuAiSpeak', { text: cleanSpeech, _serverId: room });
+            }
+        }
+
+        // 2. !imagine <prompt> -> Free Keyless Flux Text-to-Image
+        else if (/^!imagine\s+/i.test(trimmed)) {
+            const prompt = trimmed.replace(/^!imagine\s+/i, '').trim();
+            if (!prompt) return;
+            const seed = Math.floor(Math.random() * 999999);
+            const imgUrl = `https://pollinations.ai{encodeURIComponent(prompt)}?width=512&height=512&seed=${seed}&nologo=true`;
+            io.to(room).emit('message', {
+                username: '🎨 SammuArt AI',
+                text: `@${uname} generated: **${prompt}**\n<img src="${imgUrl}" style="max-width:260px;border-radius:12px;margin-top:6px;border:2px solid #a855f7;" loading="lazy"/>`,
+                _serverId: room
+            });
+        }
+
+        // 3. !edit <dress/style prompt> -> Image-to-Image Outfit & Style Transformer
+        else if (/^!edit\s+/i.test(trimmed)) {
+            const editPrompt = trimmed.replace(/^!edit\s+/i, '').trim();
+            const imgId = lastUserImage.get(uname.toLowerCase()) || lastUserImage.get('__latest_room__');
+            if (!imgId || !tempEditImages.has(imgId)) {
+                socket.emit('message', {
+                    username: '👗 SammuStyle AI',
+                    text: `@${uname}: 📸 Pehle chat mein ek **photo upload** karo, phir likho \`!edit ${editPrompt || 'change dress to royal black jacket'}\`!`,
+                    _serverId: room
+                });
+                return;
+            }
+            const host = socket.handshake.headers.host;
+            const proto = host && host.includes('ngrok') ? 'https' : 'http';
+            const srcUrl = `${proto}://${host}/ai-temp-img/${imgId}`;
+            const seed = Math.floor(Math.random() * 999999);
+            const editedUrl = `https://pollinations.ai{encodeURIComponent(editPrompt)}?model=kontext&image=${encodeURIComponent(srcUrl)}&width=512&height=512&seed=${seed}&nologo=true`;
+            io.to(room).emit('message', {
+                username: '👗 SammuStyle AI',
+                text: `@${uname} transformed outfit/style (**${editPrompt}**):\n<img src="${editedUrl}" style="max-width:260px;border-radius:12px;margin-top:6px;border:2px solid #ec4899;" loading="lazy"/>`,
+                _serverId: room
+            });
+        }
+    });
+});
+
+    return OG_HOSTS;     
 };

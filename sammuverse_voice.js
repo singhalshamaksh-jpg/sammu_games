@@ -82,9 +82,10 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
         const hcHost = ['ai', 'hackclub', 'com'].join('.');
         const hcEndpoint = 'https://' + hcHost + '/proxy/v1/chat/completions';
 
+        // particle-ai/particle-1:free FIRST for text; vision models when outfit photo is uploaded
         const models = imageBase64
-            ? ['google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'qwen/qwen2.5-vl-72b-instruct']
-            : ['qwen/qwen3-32b', 'google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'meta-llama/llama-3.3-70b-instruct'];
+            ? ['google/gemini-2.5-flash', 'openai/gpt-4o-mini']
+            : ['particle-ai/particle-1:free', 'qwen/qwen3-32b'];
 
         const userContent = imageBase64
             ? [
@@ -93,30 +94,35 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
               ]
             : `[${sender}]: ${query}`;
 
-        for (const hKey of hcKeys) {
-            const hcMsgs = [
-                { role: 'system', content: sys },
-                ...history.slice(-14).map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: (m.parts && m.parts.at(0) && m.parts.at(0).text) || '' })),
-                { role: 'user', content: userContent }
-            ];
-            for (const mdl of models) {
-                const res = await httpsReqJson(
-                    hcEndpoint,
-                    'POST',
-                    { Authorization: `Bearer ${hKey}` },
-                    { model: mdl, messages: hcMsgs, max_tokens: 340, temperature: 0.8 },
-                    12000
-                );
-                if (res.ok && res.data && Array.isArray(res.data.choices) && res.data.choices.length > 0) {
-                    const txt = res.data.choices.at(0)?.message?.content || '';
-                    if (txt.trim()) {
-                        return txt.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/[*#_`~]/g, '').trim();
+        const hcMsgs = [
+            { role: 'system', content: sys },
+            ...history.slice(-14).map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: (m.parts && m.parts.at(0) && m.parts.at(0).text) || '' })),
+            { role: 'user', content: userContent }
+        ];
+
+        for (const mdl of models) {
+            try {
+                // Race both keys simultaneously so the valid key wins in ~1.5s without waiting for the deleted key!
+                const answer = await Promise.any(hcKeys.map(async (hKey) => {
+                    const res = await httpsReqJson(
+                        hcEndpoint,
+                        'POST',
+                        { Authorization: `Bearer ${hKey}` },
+                        { model: mdl, messages: hcMsgs, max_tokens: 340, temperature: 0.8 },
+                        9000
+                    );
+                    if (res.ok && res.data && Array.isArray(res.data.choices) && res.data.choices.length > 0) {
+                        const txt = res.data.choices.at(0)?.message?.content || '';
+                        const clean = txt.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/[*#_`~]/g, '').trim();
+                        if (clean) return clean;
                     }
-                }
-            }
+                    throw new Error('Model/Key skip');
+                }));
+                if (answer) return answer;
+            } catch (e) {}
         }
 
-        return `Arre ${sender}, abhi server pe thodi bheed hai—2 second baad phir pucho!`;
+        return `Arre ${sender}, ek second ruk—network thoda saans le raha hai, phir pucho!`;
     }
 
     async function runSammuVerseCore(query, sender, srvId, socket) {
@@ -132,7 +138,22 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             return { text: `⏹️ **AI DJ Mode OFF!**`, speak: `DJ Mode turned off.` };
         }
 
+        // Auto-detect local song
         const playMatch = q.match(/^(?:play|bajao|chalao|gaana|song)\s+(.+)/i);
+        if (!playMatch) {
+            try {
+                const songsDir = path.join(__dirname, 'public', 'songs');
+                const cleanLow = low.replace(/\bchecks\b/g, 'cheques').replace(/[^a-z0-9\s]/g, '').trim();
+                if (cleanLow.length >= 3 && fs.existsSync(songsDir)) {
+                    const files = fs.readdirSync(songsDir).filter(fn => /\.(opus|mp3|m4a|ogg)$/i.test(fn));
+                    const hit = files.find(fn => fn.toLowerCase().includes(cleanLow));
+                    if (hit) {
+                        io.to(srvId).emit('svPlayMusic', { query: cleanLow, url: '/songs/' + encodeURIComponent(hit), title: hit.replace(/\.[^.]+$/, ''), by: sender, _serverId: srvId });
+                        return { text: `🎵 Playing ${hit.replace(/\.[^.]+$/, '')}`, speak: `Playing ${hit.replace(/\.[^.]+$/, '')}` };
+                    }
+                }
+            } catch (e) {}
+        }
         if (playMatch && playMatch[1]) {
             const songName = playMatch[1].trim();
             io.to(srvId).emit('svPlayMusic', { query: songName, by: sender, _serverId: srvId });

@@ -123,9 +123,9 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             }
         }
 
-        const wSearch = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(topic)}&format=json&srlimit=1`);
-        if (wSearch.ok && wSearch.data && wSearch.data.query && Array.isArray(wSearch.data.query.search) && wSearch.data.query.search.length > 0) {
-            const title = wSearch.data.query.search.at(0).title;
+        const wSearch2 = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(topic)}&format=json&srlimit=1`);
+        if (wSearch2.ok && wSearch2.data && wSearch2.data.query && Array.isArray(wSearch.data.query.search) && wSearch.data.query.search.length > 0) {
+            const title = wSearch2.data.query.search.at(0).title;
             const wSum = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(title)}`);
             if (wSum.ok && wSum.data && wSum.data.extract) {
                 return wSum.data.extract.split('. ').slice(0, 2).join('. ') + '.';

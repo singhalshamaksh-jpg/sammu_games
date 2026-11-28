@@ -135,11 +135,11 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
         const playMatch = q.match(/^(?:play|bajao|chalao|gaana|song)\s+(.+)/i);
         if (playMatch && playMatch[1]) {
             const songName = playMatch[1].trim();
-            socket.emit('svPlayMusic', { query: songName, by: sender, _serverId: srvId });
+            io.to(srvId).emit('svPlayMusic', { query: songName, by: sender, _serverId: srvId });
             return { text: `🎵 Playing ${songName}`, speak: `Playing ${songName} for you, ${sender}` };
         }
         if (/^(stop song|stop music|pause music|gaana band)/i.test(low)) {
-            socket.emit('svStopMusic', { _serverId: srvId });
+            io.to(srvId).emit('svStopMusic', { _serverId: srvId });
             return { text: `⏹️ Music stopped`, speak: `Music stopped` };
         }
         if (/^(hi|hello|hlo|hey|namaste|kaise ho|kya haal|how are you|wassup|sup)\b/i.test(low)) {
@@ -242,6 +242,12 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             const ans = await fetchAllKnowingAnswer(q, sender, [], img);
             io.to(room).emit('message', { username: "🔵 SammuVerse", text: `**@${sender} (Outfit/Vision):** 👕✨ ${ans}`, _serverId: room });
             socket.emit('sammuVerseSpeak', { text: ans, subtitle: ans, _serverId: room });
+        });
+
+        socket.on('svHubPlayAll', (d) => {
+            if (!d || !d.query) return;
+            const room = d.serverId || socket.activeServerId || 'srv_samaksh';
+            io.to(room).emit('svPlayMusic', { query: d.query, url: d.url || '', title: d.title || d.query, by: socket.username || 'DJ', _serverId: room });
         });
 
         socket.on('svVoiceQuery', async (payload) => {

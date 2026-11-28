@@ -5247,6 +5247,12 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
       }
       var title = document.getElementById('svMusicTitle'), audio = document.getElementById('svMusicAudio');
       dock.style.display = 'block'; title.textContent = '⏳ Finding: ' + d.query;
+      if (d && d.url) {
+        title.textContent = '🎵 ' + (d.title || d.query);
+        audio.src = d.url;
+        audio.play().catch(function() { title.textContent = '▶️ Tap Play: ' + (d.title || d.query); });
+        return;
+      }
       try {
         var r = await fetch('/sv-music?q=' + encodeURIComponent(d.query));
         var data = await r.json();
@@ -5477,6 +5483,10 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
   };
 
   window._playHubTrack = function(url, titleText) {
+    if (typeof socket !== 'undefined') {
+      socket.emit('svHubPlayAll', { query: titleText, url: url, title: titleText, serverId: window.selectedServerId || 'srv_samaksh' });
+      return;
+    }
     var dock = document.getElementById('svMusicDock');
     if (!dock) {
       if (window.playNextDjTrack) window.playNextDjTrack();

@@ -10924,7 +10924,7 @@ div>') +
                     res.on('end', () => {
                         try {
                             const parsed = JSON.parse(raw);
-                            if (parsed.error) console.error('Upstash Error:', parsed.error);
+                            if (parsed.error) // silenced: // silenced: console.error('Upstash Error:', parsed.error);
                             resolve(parsed && parsed.result !== undefined ? parsed.result : null);
                         } catch (e) { resolve(null); }
                     });

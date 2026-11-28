@@ -1,3 +1,4 @@
+require('events').EventEmitter.defaultMaxListeners = 100;
 process.on('uncaughtException', (err) => console.error('Prevented Crash:', err));
 process.on('unhandledRejection', (err) => console.error('Prevented Rejection:', err));
 const express = require('express');
@@ -6,8 +7,8 @@ const app = express();
 // === 📉 BANDWIDTH SAVER (GZIP + BROWSER CACHE + IMAGE CAP) ===
 const compression = require('compression');
 app.use(compression({ level: 6, threshold: 512 }));
-app.use('/sammu_widgets.js', express.static(process.cwd() + "/" + ( 'public/sammu_widgets.js'), { maxAge: '7d' }));
-app.use('/sammu_widgets.css', express.static(process.cwd() + "/" + ( 'public/sammu_widgets.css'), { maxAge: '7d' }));
+app.use('/sammu_widgets.js', express.static(process.cwd() + "/" + ( 'public/sammu_widgets.js'), { maxAge: 0, etag: false }));
+app.use('/sammu_widgets.css', express.static(process.cwd() + "/" + ( 'public/sammu_widgets.css'), { maxAge: 0, etag: false }));
 
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 5e6 });

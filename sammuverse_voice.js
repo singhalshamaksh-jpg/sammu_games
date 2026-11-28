@@ -153,6 +153,15 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
         if (cleanPath !== '/sv-music') return next();
         const q = String(req.query.q || '').trim();
         if (!q) return res.json({ url: null });
+        try {
+            const songsDir = path.join(__dirname, 'public', 'songs');
+            if (fs.existsSync(songsDir)) {
+                const cleanQ = q.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const files = fs.readdirSync(songsDir);
+                const match = files.find(fn => fn.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQ));
+                if (match) return res.json({ url: '/songs/' + encodeURIComponent(match), title: match.replace(/\.[^.]+$/, '') });
+            }
+        } catch (e) {}
 
         for (const apiUrl of [
             `https://saavn.dev{encodeURIComponent(q)}&limit=1`,
@@ -191,6 +200,7 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             const room = (payload && payload.serverId) || socket.activeServerId || 'srv_samaksh';
             const cleanQ = q.replace(/^!?(?:sammu|samu|sami|sammy|summer|some)\s*(?:verse|first|universe|worth)[\s,]*/i, '').trim() || 'hello';
             const res = await runSammuVerseCore(cleanQ, sender, room, socket);
+            io.to(room).emit('message', { username: "🔵 SammuVerse", text: `**@${sender}:** ${res.text}`, _serverId: room });
             socket.emit('sammuVerseSpeak', { text: res.speak, subtitle: res.text, _serverId: room });
         });
     });

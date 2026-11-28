@@ -161,6 +161,17 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             const reply = `Hello ${sender}! Main bilkul mast hoon! Batao kya help karoon—koi song bajaoon, game start karoon, ya koi sawaal puchna hai?`;
             return { text: `🔵 ${reply}`, speak: reply };
         }
+                if (/\b(shayari|shayri|poetry|poem|sher|seedhe mauth)\b/i.test(low)) {
+            const lines = [
+                "Maina tu gaati reh, aasmaan tera hai—kohra chhantega zaroor, bas hausla rakhna!",
+                "Hoshiyar rehna is duniya ki bheed mein, yahan har chehre ke peeche ek kahani chhupi hai!",
+                "Pankh faila ke udna seekh mere dost, zameen par toh har koi chalta hai!",
+                "Kalam chale toh duniya hilti hai—Seedhe Mauth style, seedha dil pe lagti hai!"
+            ];
+            const pick = lines[Math.floor(Math.random() * lines.length)];
+            return { text: `🎙️✨ ${pick}`, speak: pick };
+        }
+
         if (/\b(time|samay|baje)\b/.test(low)) {
             const t = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
             return { text: `⏰ Abhi India mein ${t} IST baj rahe hain`, speak: `Abhi India mein ${t} baj rahe hain, ${sender}` };

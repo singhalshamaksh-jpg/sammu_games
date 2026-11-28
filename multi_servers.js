@@ -10997,108 +10997,66 @@ div>') +
     });
                    
            // ============================================================================
-    // 🔵 SAMMUVERSE (ALEXA-STYLE VOICE & SMART ROOM ASSISTANT)
+    // 🔵 SAMMUVERSE VOICE & MUSIC HOOK
     // ============================================================================
-    async function runSammuVerseAlexa(query, sender, srvId, socket) {
-        const q = query.trim();
-        const low = q.toLowerCase();
+    require('./sammuverse_voice')(app, io, { getCoins, launchServerWordImposter, triggerServerAnimeQuiz });
 
-        // 1. Time & Date (IST)
-        if (/\b(time|samay|baje)\b/.test(low)) {
-            const t = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
-            return { text: `⏰ Abhi India mein **${t} IST** baj rahe hain, ${sender}!`, speak: `Abhi India mein ${t} baj rahe hain, ${sender}` };
-        }
-        if (/\b(date|day|tarikh|aaj)\b/.test(low)) {
-            const d = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            return { text: `📅 Aaj **${d}** hai!`, speak: `Aaj ${d} hai` };
-        }
-
-        // 2. Quick Calculator (e.g. "SammuVerse 45 * 12")
-        if (/^[0-9+\-*/().\s]+$/.test(q) && /[+\-*/]/.test(q)) {
-            try {
-                const ans = Function('"use strict";return (' + q + ')')();
-                if (Number.isFinite(ans)) {
-                    return { text: `🧮 **${q} = ${ans}**`, speak: `The answer is ${ans}` };
-                }
-            } catch (e) {}
-        }
-
-        // 3. Alexa Room & Game Triggers
-        if (low.includes('water') || low.includes('waterio')) {
-            socket.emit('openWaterIo');
-            return { text: `💧 Launching **Water.io** for you!`, speak: `Launching Water dot I O for you!` };
-        }
-        if (low.includes('imposter')) {
-            launchServerWordImposter(srvId);
-            return { text: `🕵️ Starting **Word Imposter**!`, speak: `Starting Word Imposter!` };
-        }
-        if (low.includes('mafia')) {
-            socket.onevent({ type: 2, nsp: '/', data: ['chatMessage', '!mafia'] });
-            return { text: `🔪 Starting **Mafia Party**!`, speak: `Starting Mafia Party!` };
-        }
-        if (low.includes('dragon') || low.includes('boss')) {
-            socket.onevent({ type: 2, nsp: '/', data: ['chatMessage', '!boss'] });
-            return { text: `🐉 Summoning **Shadow Dragon Raid**!`, speak: `Summoning Shadow Dragon Raid!` };
-        }
-        if (low.includes('heist') || low.includes('bank')) {
-            socket.onevent({ type: 2, nsp: '/', data: ['chatMessage', '!heist'] });
-            return { text: `🏦 Starting **Mega Bank Heist**!`, speak: `Starting Mega Bank Heist!` };
-        }
-        if (low.includes('anime quiz') || low.includes('quiz')) {
-            triggerServerAnimeQuiz(srvId);
-            return { text: `🎌 Starting an **Anime Quiz**!`, speak: `Starting an Anime Quiz!` };
-        }
-        if (low.includes('coins') || low.includes('balance') || low.includes('wallet')) {
-            const bal = getCoins(sender);
-            return { text: `🪙 **${sender}**, tumhare wallet mein **${bal.toLocaleString()} Coins** hain!`, speak: `${sender}, you have ${bal} coins in your wallet.` };
-        }
-        if (/^(hi|hello|hey|kaise ho|kya haal)/.test(low)) {
-            return { text: `🔵 Hello **${sender}**! Main **SammuVerse** hoon—tumhara Alexa assistant! Mujhse time, math, games, ya koi bhi sawaal pucho!`, speak: `Hello ${sender}! I am SammuVerse, your assistant. Ask me anything!` };
-        }
-
-        // 4. General Knowledge Lookup (Wikipedia Summary API)
-        try {
-            const cleanTopic = q.replace(/^(who is|what is|tell me about|define|explain|kaun hai|kya hai)\s+/i, '').trim();
-            const wikiRes = await fetch(`https://wikipedia.org{encodeURIComponent(cleanTopic)}`);
-            if (wikiRes.ok) {
-                const data = await wikiRes.json();
-                if (data && data.extract) {
-                    const shortAns = data.extract.split('. ').slice(0, 2).join('. ') + '.';
-                    return { text: `🌐 **${data.title}:** ${shortAns}`, speak: shortAns };
-                }
-            }
-        } catch (e) {}
-
-        return {
-            text: `🔵 **${sender}**, try saying: *"SammuVerse what is the time"*, *"SammuVerse 25 * 16"*, *"SammuVerse who is Naruto"*, or *"SammuVerse start imposter"*!`,
-            speak: `${sender}, try asking me for the time, math, general knowledge, or to start a game!`
-        };
-    }
-
-    const SAMMUVERSE_ALEXA_CLIENT = `
-    <script id="sammuVerseAlexaBoot">
+    const SAMMUVERSE_UI = `
+    <div id="svMusicDock" style="display:none;position:fixed;bottom:74px;left:12px;z-index:999992;background:linear-gradient(135deg,rgba(15,23,42,0.96),rgba(30,27,75,0.96));border:2px solid #38bdf8;border-radius:16px;padding:8px 11px;width:265px;color:#fff;box-shadow:0 8px 25px rgba(56,189,248,0.45);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px;font-weight:900;">
+        <span id="svMusicTitle" style="color:#7dd3fc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:205px;">🎵 SammuVerse DJ</span>
+        <button onclick="var a=document.getElementById('svMusicAudio');a.pause();a.src='';document.getElementById('svMusicDock').style.display='none';" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;">✕</button>
+      </div>
+      <audio id="svMusicAudio" controls autoplay playsinline style="width:100%;height:30px;border-radius:8px;"></audio>
+    </div>
+    <button id="svVoiceMicBtn" style="position:fixed;bottom:74px;right:14px;z-index:999993;background:linear-gradient(135deg,#0284c7,#7c3aed);border:2px solid #7dd3fc;color:#fff;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 0 18px rgba(56,189,248,0.6);">🔵🎙️ Speak</button>
+    <script id="sammuVerseCoreBoot">
     (function() {
-      if (window._sammuAlexaBound) return;
-      window._sammuAlexaBound = true;
-
+      if (window._sammuVerseCoreBound) return;
+      window._sammuVerseCoreBound = true;
       window.speakSammuVerse = function(text) {
         try {
           if (!('speechSynthesis' in window) || !text) return;
           window.speechSynthesis.cancel();
-          const utter = new SpeechSynthesisUtterance(String(text).slice(0, 260));
-          utter.lang = 'en-IN';
-          utter.rate = 1.03;
-          utter.pitch = 1.08;
-          window.speechSynthesis.speak(utter);
+          const u = new SpeechSynthesisUtterance(String(text).slice(0, 280));
+          u.lang = 'en-IN'; u.rate = 1.02; u.pitch = 1.06;
+          window.speechSynthesis.speak(u);
         } catch (e) {}
       };
+      const micBtn = document.getElementById('svVoiceMicBtn');
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR && micBtn) {
+        const rec = new SR(); rec.lang = 'en-IN'; rec.interimResults = false; let on = false;
+        rec.onstart = () => { on = true; micBtn.textContent = '🔴 Listening...'; };
+        rec.onend = () => { on = false; micBtn.textContent = '🔵🎙️ Speak'; };
+        rec.onresult = (e) => {
+          const said = e.results?.[0]?.[0]?.transcript || '';
+          if (!said.trim()) return;
+          const cmd = /^sammu\s*verse/i.test(said.trim()) ? said.trim() : ('SammuVerse ' + said.trim());
+          if (typeof socket !== 'undefined') socket.emit('chatMessage', { text: cmd, serverId: window.selectedServerId || 'srv_samaksh' });
+        };
+        micBtn.onclick = () => { try { on ? rec.stop() : rec.start(); } catch (e) {} };
+      } else if (micBtn) { micBtn.style.display = 'none'; }
 
       const waitSock = setInterval(() => {
         if (typeof socket === 'undefined') return;
         clearInterval(waitSock);
-        socket.on('sammuVerseSpeak', (d) => {
-          if (d && d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
-          if (d && d.text) window.speakSammuVerse(d.text);
+        socket.on('sammuVerseSpeak', (d) => { if (!d?._serverId || !window.selectedServerId || d._serverId === window.selectedServerId) window.speakSammuVerse(d.text); });
+        socket.on('svPlayMusic', async (d) => {
+          if (d?._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
+          const dock = document.getElementById('svMusicDock'), title = document.getElementById('svMusicTitle'), audio = document.getElementById('svMusicAudio');
+          if (!dock || !audio) return;
+          dock.style.display = 'block'; title.textContent = '⏳ Finding: ' + d.query;
+          try {
+            const r = await fetch('/sv-music?q=' + encodeURIComponent(d.query));
+            const data = await r.json();
+            if (data?.url) { title.textContent = '🎵 ' + data.title; audio.src = data.url; audio.play().catch(() => {}); }
+            else title.textContent = '❌ Song not found';
+          } catch (e) { title.textContent = '⚠️ Music stream busy'; }
+        });
+        socket.on('svStopMusic', () => {
+          const a = document.getElementById('svMusicAudio'), d = document.getElementById('svMusicDock');
+          if (a) { a.pause(); a.src = ''; } if (d) d.style.display = 'none';
         });
       }, 500);
     })();
@@ -11107,33 +11065,12 @@ div>') +
     app.use((req, res, next) => {
         const origSend = res.send;
         res.send = function(body) {
-            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuVerseAlexaBoot')) {
-                body = body.replace('</body>', SAMMUVERSE_ALEXA_CLIENT + '\n</body>');
+            if (typeof body === 'string' && body.includes('</body>') && !body.includes('sammuVerseCoreBoot')) {
+                body = body.replace('</body>', SAMMUVERSE_UI + '\n</body>');
             }
             return origSend.call(this, body);
         };
         next();
-    });
-
-    io.on('connection', (socket) => {
-        socket.on('chatMessage', async (payload) => {
-            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
-            if (typeof raw !== 'string') return;
-            const trimmed = raw.trim();
-            const sender = (typeof payload === 'object' && payload?.username) || socket.username || 'Player';
-            const room = (typeof payload === 'object' && payload?.serverId) || socket.activeServerId || 'srv_samaksh';
-
-            const alexaMatch = trimmed.match(/^!?sammuverse[\s,]+(.+)/i);
-            if (alexaMatch && alexaMatch[1]) {
-                const res = await runSammuVerseAlexa(alexaMatch[1], sender, room, socket);
-                io.to(room).emit('message', {
-                    username: "🔵 SammuVerse",
-                    text: `**@${sender}:** ${res.text}`,
-                    _serverId: room
-                });
-                io.to(room).emit('sammuVerseSpeak', { text: res.speak, _serverId: room });
-            }
-        });
     });
 
     return OG_HOSTS;     

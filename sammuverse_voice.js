@@ -180,43 +180,40 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
     }
 
     const svMusicMiddleware = async (req, res, next) => {
-        const cleanPath = (req.originalUrl || req.url || '').split('?')[0].toLowerCase();
+        const cleanPath = (req.originalUrl || req.url || '').split('?').at(0).toLowerCase();
         if (cleanPath !== '/sv-music') return next();
-        const q = String(req.query.q || '').trim();
+        const q = String(req.query.q || '').replace(/\b(?:song|songs|gaana|music|track|please|pls)\b/gi, '').trim();
         if (!q) return res.json({ url: null });
+
+        // 1. Check local downloaded .opus/.mp3 files in public/songs/ first!
         try {
             const songsDir = path.join(__dirname, 'public', 'songs');
             if (fs.existsSync(songsDir)) {
-                const cleanQ = q.toLowerCase().replace(/[^a-z0-9]/g, '');
-                const files = fs.readdirSync(songsDir);
-                const audioFiles = files.filter(fn => /\.(opus|mp3|m4a|ogg)$/i.test(fn));
-                if (cleanQ === 'random' && audioFiles.length > 0) {
-                    const pick = audioFiles[Math.floor(Math.random() * audioFiles.length)];
-                    return res.json({ url: '/songs/' + encodeURIComponent(pick), title: pick.replace(/\.[^.]+$/, '') });
+                const audioFiles = fs.readdirSync(songsDir).filter(fn => /\.(opus|mp3|m4a|ogg)$/i.test(fn));
+                if (audioFiles.length > 0) {
+                    if (q.toLowerCase() === 'random') {
+                        const pick = audioFiles[Math.floor(Math.random() * audioFiles.length)];
+                        return res.json({ url: '/songs/' + encodeURIComponent(pick), title: pick.replace(/\.[^.]+$/, '') });
+                    }
+                    const words = q.toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+                    const match = audioFiles.find(fn => {
+                        const lowFn = fn.toLowerCase();
+                        return words.length > 0 && words.every(w => lowFn.includes(w));
+                    }) || audioFiles.find(fn => fn.toLowerCase().includes(q.toLowerCase()));
+                    if (match) {
+                        return res.json({ url: '/songs/' + encodeURIComponent(match), title: match.replace(/\.[^.]+$/, '') });
+                    }
                 }
-                const match = audioFiles.find(fn => fn.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQ));
-                if (match) return res.json({ url: '/songs/' + encodeURIComponent(match), title: match.replace(/\.[^.]+$/, '') });
             }
         } catch (e) {}
 
-        for (const apiUrl of [
-            `https://saavn.dev{encodeURIComponent(q)}&limit=1`,
-            `https://vercel.app{encodeURIComponent(q)}&limit=1`
-        ]) {
-            const r = await httpsReqJson(apiUrl, 'GET', {}, null, 5000);
-            if (r.ok && r.data) {
-                const song = (r.data.data && Array.isArray(r.data.data.results) ? r.data.data.results[0] : null) || (Array.isArray(r.data.results) ? r.data.results[0] : null);
-                const urls = Array.isArray(song && song.downloadUrl) ? song.downloadUrl : [];
-                const best = urls[urls.length - 1] || urls[0];
-                const streamUrl = best && (best.url || best.link);
-                if (streamUrl) return res.json({ url: streamUrl, title: song.name || q });
+        // 2. Fallback to iTunes Search API (reliable HTTPS)
+        const itRes = await httpsReqJson(`https://apple.com{encodeURIComponent(q)}&media=music&limit=1`, 'GET', {}, null, 5500);
+        if (itRes.ok && itRes.data && Array.isArray(itRes.data.results) && itRes.data.results.length > 0) {
+            const track = itRes.data.results.at(0);
+            if (track && track.previewUrl) {
+                return res.json({ url: track.previewUrl, title: `${track.trackName} - ${track.artistName}` });
             }
-        }
-
-        const itRes = await httpsReqJson(`https://apple.com{encodeURIComponent(q)}&media=music&limit=1`, 'GET', {}, null, 5000);
-        if (itRes.ok && itRes.data && Array.isArray(itRes.data.results) && itRes.data.results[0]) {
-            const track = itRes.data.results[0];
-            if (track.previewUrl) return res.json({ url: track.previewUrl, title: `${track.trackName} - ${track.artistName}` });
         }
         return res.json({ url: null });
     };

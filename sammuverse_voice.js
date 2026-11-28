@@ -192,6 +192,17 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
 
     const svMusicMiddleware = async (req, res, next) => {
         const cleanPath = (req.originalUrl || req.url || '').split('?').at(0).toLowerCase();
+        if (cleanPath === '/sv-songs') {
+            try {
+                const songsDir = path.join(__dirname, 'public', 'songs');
+                if (!fs.existsSync(songsDir)) return res.json({ songs: [] });
+                const list = fs.readdirSync(songsDir)
+                    .filter(fn => /\.(opus|mp3|m4a|ogg)$/i.test(fn))
+                    .map(fn => ({ file: fn, title: fn.replace(/\.[^.]+$/, ''), url: '/songs/' + encodeURIComponent(fn) }))
+                    .sort((a, b) => a.title.localeCompare(b.title));
+                return res.json({ songs: list });
+            } catch (e) { return res.json({ songs: [] }); }
+        }
         if (cleanPath !== '/sv-music') return next();
         const q = String(req.query.q || '').replace(/\b(?:song|songs|gaana|music|track|please|pls)\b/gi, '').trim();
         if (!q) return res.json({ url: null });

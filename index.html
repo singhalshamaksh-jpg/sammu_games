@@ -5087,6 +5087,11 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
 
 
 
+
+
+
+
+
 <style id="svWaChatFix">
   #svInlineMicBtn {
     width: 38px !important; min-width: 38px !important; max-width: 38px !important;
@@ -5109,7 +5114,7 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
 <div id="svNeonWakeFrame"></div>
 <script id="svVoiceClientHook">
 (function() {
-  var wakeActiveUntil = 0, wakeTimer = null, standbyOn = false, rec = null;
+  var wakeActiveUntil = 0, wakeTimer = null, standbyOn = false, rec = null, isSpeaking = false;
 
   function trigger5SecNeonWindow(initialCmd) {
     wakeActiveUntil = Date.now() + 5000;
@@ -5138,7 +5143,6 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
     window._svOrbTimer = setTimeout(function() { orb.style.opacity = '0'; setTimeout(function() { orb.style.display = 'none'; }, 250); }, 5500);
   }
 
-
   function mountWhatsAppMic() {
     if (document.getElementById('svInlineMicBtn')) return;
     var inp = document.querySelector('input[placeholder*="Message" i], input[placeholder*="command" i], #msgInput, #messageInput');
@@ -5161,14 +5165,19 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
     rec = new SR(); rec.lang = 'en-IN'; rec.continuous = true; rec.interimResults = false;
 
     rec.onstart = function() { standbyOn = true; mic.textContent = '🟢'; };
-    rec.onend = function() { if (standbyOn) { try { rec.start(); } catch (e) {} } else { mic.textContent = '🎙️'; } };
+    rec.onend = function() {
+      if (standbyOn && !isSpeaking) { setTimeout(function() { try { rec.start(); } catch (e) {} }, 250); }
+      else if (!standbyOn) { mic.textContent = '🎙️'; }
+    };
     rec.onresult = function(e) {
+      if (isSpeaking) return;
       var last = e.results && e.results.item ? e.results.item(e.results.length - 1) : null;
       var alt = last && last.item ? last.item(0) : null;
       var said = ((alt && alt.transcript) || '').trim();
       if (!said) return;
 
-      var wakeMatch = said.match(/sammu\s*verse|samu\s*verse|samiverse/i);
+      // Matches "SammuVerse" + common Google STT spellings ("Samu first", "Summer verse", "Sammy verse")
+      var wakeMatch = said.match(/(?:sammu|samu|sami|sammy|summer|some)\s*(?:verse|first|universe|worth)/i);
       if (wakeMatch) {
         var afterWake = said.slice(wakeMatch.index + wakeMatch.at(0).length).replace(/^[,\.\s]+/, '').trim();
         trigger5SecNeonWindow(afterWake);
@@ -5179,7 +5188,11 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
 
     function autoArmSammuVerse() {
       if (standbyOn || !rec) return;
-      try { if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); rec.start(); } catch (e) {}
+      try {
+        if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+        rec.start();
+        showVoiceOrb('🟢 SammuVerse Listening — Say "SammuVerse" anytime!');
+      } catch (e) {}
     }
     ['pointerdown', 'touchstart', 'click'].forEach(function(ev) { window.addEventListener(ev, autoArmSammuVerse, { once: true, passive: true }); });
 
@@ -5204,9 +5217,16 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
       if (d && d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
       if (d && d.subtitle) showVoiceOrb(d.subtitle);
       if ('speechSynthesis' in window && d && d.text) {
+        isSpeaking = true;
+        try { if (rec) rec.stop(); } catch (e) {}
         window.speechSynthesis.cancel();
         var u = new SpeechSynthesisUtterance(String(d.text).slice(0, 280));
-        u.lang = 'en-IN'; u.rate = 1.02; window.speechSynthesis.speak(u);
+        u.lang = 'en-IN'; u.rate = 1.02;
+        u.onend = u.onerror = function() {
+          isSpeaking = false;
+          if (standbyOn && rec) { try { rec.start(); } catch (e) {} }
+        };
+        window.speechSynthesis.speak(u);
       }
     });
     socket.on('svPlayMusic', async function(d) {
@@ -5223,8 +5243,11 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
       try {
         var r = await fetch('/sv-music?q=' + encodeURIComponent(d.query));
         var data = await r.json();
-        if (data && data.url) { title.textContent = '🎵 ' + data.title; audio.src = data.url; audio.play().catch(function() {}); }
-        else title.textContent = '❌ Song not found';
+        if (data && data.url) {
+          title.textContent = '🎵 ' + data.title;
+          audio.src = data.url;
+          audio.play().catch(function() { title.textContent = '▶️ Tap Play: ' + data.title; });
+        } else title.textContent = '❌ Song not found';
       } catch (e) { title.textContent = '⚠️ Music busy'; }
     });
     socket.on('svStopMusic', function() { var a = document.getElementById('svMusicAudio'), d = document.getElementById('svMusicDock'); if (a) { a.pause(); a.src = ''; } if (d) d.style.display = 'none'; });

@@ -11009,7 +11009,7 @@ div>') +
       </div>
       <audio id="svMusicAudio" controls autoplay playsinline style="width:100%;height:30px;border-radius:8px;"></audio>
     </div>
-    <button id="svVoiceMicBtn" style="position:fixed;bottom:74px;right:14px;z-index:999993;background:linear-gradient(135deg,#0284c7,#7c3aed);border:2px solid #7dd3fc;color:#fff;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 0 18px rgba(56,189,248,0.6);">🔵🎙️ Speak</button>
+    
     <script id="sammuVerseCoreBoot">
     (function() {
       if (window._sammuVerseCoreBound) return;

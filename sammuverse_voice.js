@@ -3,12 +3,14 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
     const svMemory = new Map();
 
     async function fetchAllKnowingAnswer(query, sender, history) {
+        const sys = "You are SammuVerse, the original all-knowing Hinglish & English voice assistant of SammuGames. Reply in 2-3 short, natural, friendly sentences under 260 chars suitable for voice speech.";
+
+        // 1. Try GEMINI_API_KEY first
         const gemKey = (process.env.GEMINI_API_KEY || '').trim();
         if (gemKey) {
             try {
                 const ctrl = new AbortController();
                 const t = setTimeout(() => ctrl.abort(), 7000);
-                const sys = "You are SammuVerse, the original all-knowing Hinglish & English voice assistant of SammuGames. Reply in 2-3 short, friendly sentences under 260 chars suitable for natural voice speech.";
                 const contents = [...history, { role: 'user', parts: [{ text: `[${sender}]: ${query}` }] }];
                 const res = await fetch(`https://googleapis.com{gemKey}`, {
                     method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json' },
@@ -24,32 +26,37 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             } catch (e) {}
         }
 
-        const topic = query
-            .replace(/^(who is|who was|what is|what are|tell me about|explain|define|how to make|recipe of|kaun hai|kya hai|batao|ki recipe)\s+/i, '')
-            .replace(/\s+(ki recipe|kya hai|kaun hai)$/i, '')
-            .replace(/[?!.]+$/, '')
-            .trim();
+        // 2. Try HACKCLUB_AI_KEY & HACKCLUB_AI_KEY_2 backup
+        const hcKeys = [process.env.HACKCLUB_AI_KEY, process.env.HACKCLUB_AI_KEY_2].map(k => (k || '').trim()).filter(Boolean);
+        for (const hKey of hcKeys) {
+            try {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), 7000);
+                const hcMsgs = [{ role: 'system', content: sys }, ...history.map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.parts?.at(0)?.text || '' })), { role: 'user', content: `[${sender}]: ${query}` }];
+                const res = await fetch('https://hackclub.com', {
+                    method: 'POST', signal: ctrl.signal,
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${hKey}` },
+                    body: JSON.stringify({ model: 'qwen/qwen3-32b', messages: hcMsgs, max_tokens: 260, temperature: 0.75 })
+                });
+                clearTimeout(t);
+                if (res.ok) {
+                    const d = await res.json();
+                    const choice = Array.isArray(d && d.choices) ? d.choices.at(0) : null;
+                    const txt = choice && choice.message && choice.message.content;
+                    if (txt && txt.trim()) return txt.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/[*#_`~]/g, '').trim();
+                }
+            } catch (e) {}
+        }
 
+        // 3. Wikipedia Instant Fallback
+        const topic = query.replace(/^(who is|what is|tell me about|kaun hai|kya hai|batao)\s+/i, '').replace(/[?!.]+$/, '').trim();
         try {
-            const dRes = await fetch(`https://duckduckgo.com{encodeURIComponent(topic)}&format=json&no_html=1&skip_disambig=1`);
-            if (dRes.ok) {
-                const ddg = await dRes.json();
-                if (ddg.AbstractText) return ddg.AbstractText.split('. ').slice(0, 2).join('. ') + '.';
-                if (ddg.Answer) return String(ddg.Answer);
-            }
-        } catch (e) {}
-
-        try {
-            const sRes = await fetch(`https://wikipedia.org{encodeURIComponent(topic)}&format=json&srlimit=1`, {
-                headers: { 'User-Agent': 'SammuGamesBot/1.0' }
-            });
+            const sRes = await fetch(`https://wikipedia.org{encodeURIComponent(topic)}&format=json&srlimit=1`, { headers: { 'User-Agent': 'SammuGamesBot/1.0' } });
             if (sRes.ok) {
                 const sData = await sRes.json();
-                const hit = sData && sData.query && Array.isArray(sData.query.search) ? sData.query.search.at(0) : null;
+                const hit = sData?.query?.search?.at(0);
                 if (hit && hit.title) {
-                    const sumRes = await fetch(`https://wikipedia.org{encodeURIComponent(hit.title)}`, {
-                        headers: { 'User-Agent': 'SammuGamesBot/1.0' }
-                    });
+                    const sumRes = await fetch(`https://wikipedia.org{encodeURIComponent(hit.title)}`, { headers: { 'User-Agent': 'SammuGamesBot/1.0' } });
                     if (sumRes.ok) {
                         const sum = await sumRes.json();
                         if (sum && sum.extract) return sum.extract.split('. ').slice(0, 2).join('. ') + '.';
@@ -58,7 +65,7 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             }
         } catch (e) {}
 
-        return `Maine ${topic} ke baare mein search kiya—short mein bolun toh yeh ek interesting topic hai! Full AI chat ke liye dot env mein GEMINI_API_KEY add kar lo.`;
+        return `Maine ${topic} ke baare mein search kiya par abhi network busy hai—thodi der mein phir pucho!`;
     }
 
     async function runSammuVerseCore(query, sender, srvId, socket) {

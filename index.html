@@ -5413,5 +5413,121 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
 })();
 </script>
 
+
+<div id="svDjHubModal" style="display:none;position:fixed;inset:0;z-index:9999999;background:rgba(6,10,24,0.92);backdrop-filter:blur(8px);padding:14px;overflow-y:auto;">
+  <div style="max-width:440px;margin:20px auto;background:linear-gradient(145deg,#0f172a,#1e1b4b);border:2px solid #38bdf8;border-radius:20px;padding:14px;color:#fff;box-shadow:0 0 35px rgba(56,189,248,0.45);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:15px;font-weight:900;color:#38bdf8;">🎧 SammuVerse DJ & AI Hub</span>
+      <button onclick="document.getElementById('svDjHubModal').style.display='none'" style="width:30px!important;min-width:30px!important;height:28px!important;padding:0!important;background:#ef4444;border:none;color:#fff;border-radius:8px;font-weight:900;cursor:pointer;">✕</button>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <input id="svSongSearchInp" oninput="window._filterSvSongs(this.value)" placeholder="🔍 Search Shubh, Karan Aujla, Aura Phonk..." style="flex:1;padding:9px 12px;border-radius:12px;border:1px solid #38bdf8;background:#020617;color:#fff;font-size:13px;outline:none;" />
+      <button onclick="if(window.playNextDjTrack) window.playNextDjTrack();" style="width:44px!important;min-width:44px!important;height:38px!important;padding:0!important;background:#0284c7;border:none;border-radius:12px;color:#fff;font-size:16px;cursor:pointer;" title="Random Track">🔀</button>
+    </div>
+
+    <div id="svSongListBox" style="max-height:230px;overflow-y:auto;background:rgba(2,6,23,0.75);border:1px solid rgba(56,189,248,0.3);border-radius:14px;padding:6px;margin-bottom:12px;">
+      <div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px;">Loading your local songs...</div>
+    </div>
+
+    <div style="background:rgba(2,6,23,0.85);border:1px solid #a855f7;border-radius:14px;padding:10px;">
+      <div style="font-size:12px;font-weight:800;color:#d8b4fe;margin-bottom:6px;">🔵 Ask or Voice Chat with SammuVerse</div>
+      <div id="svHubAiReply" style="font-size:12px;color:#e0f2fe;background:rgba(30,41,59,0.7);padding:8px 10px;border-radius:10px;margin-bottom:8px;min-height:36px;">Tap 🎙️ or type below to talk with SammuVerse!</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input id="svHubAiInp" onkeydown="if(event.key==='Enter') window._sendHubAi()" placeholder="Ask anything or say play song..." style="flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid #7c3aed;background:#0f172a;color:#fff;font-size:12px;outline:none;" />
+        <button onclick="var m=document.getElementById('svInlineMicBtn'); if(m) m.click();" style="width:36px!important;min-width:36px!important;height:34px!important;padding:0!important;background:#7c3aed;border:none;border-radius:10px;color:#fff;font-size:15px;cursor:pointer;">🎙️</button>
+        <button onclick="window._sendHubAi()" style="width:40px!important;min-width:40px!important;height:34px!important;padding:0!important;background:#0284c7;border:none;border-radius:10px;color:#fff;font-weight:900;cursor:pointer;">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="svDjHubController">
+(function() {
+  var allSongs = [];
+
+  window.openSammuDjHub = async function() {
+    var modal = document.getElementById('svDjHubModal');
+    if (!modal) return;
+    modal.style.display = 'block';
+    try {
+      var r = await fetch('/sv-songs');
+      var d = await r.json();
+      allSongs = Array.isArray(d && d.songs) ? d.songs : [];
+      window._filterSvSongs(document.getElementById('svSongSearchInp')?.value || '');
+    } catch (e) {}
+  };
+
+  window._filterSvSongs = function(q) {
+    var box = document.getElementById('svSongListBox');
+    if (!box) return;
+    var low = String(q || '').toLowerCase().trim();
+    var filtered = low ? allSongs.filter(function(s) { return s.title.toLowerCase().includes(low); }) : allSongs;
+    if (!filtered.length) {
+      box.innerHTML = '<div style="text-align:center;padding:14px;color:#94a3b8;font-size:12px;">No matching songs found</div>';
+      return;
+    }
+    box.innerHTML = filtered.map(function(s) {
+      var safeUrl = s.url.replace(/'/g, "\'");
+      var safeTitle = s.title.replace(/</g, '&lt;').replace(/'/g, "\'");
+      return '<div onclick="window._playHubTrack(\'' + safeUrl + '\', \'' + safeTitle + '\')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.07);cursor:pointer;border-radius:8px;font-size:12px;">' +
+        '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:85%;color:#f1f5f9;">🎵 ' + s.title.replace(/</g, '&lt;') + '</span>' +
+        '<span style="color:#38bdf8;font-weight:900;">▶️</span></div>';
+    }).join('');
+  };
+
+  window._playHubTrack = function(url, titleText) {
+    var dock = document.getElementById('svMusicDock');
+    if (!dock) {
+      if (window.playNextDjTrack) window.playNextDjTrack();
+    }
+    setTimeout(function() {
+      var d = document.getElementById('svMusicDock'), t = document.getElementById('svMusicTitle'), a = document.getElementById('svMusicAudio');
+      if (d && t && a) {
+        d.style.display = 'block';
+        t.textContent = '🎵 ' + titleText;
+        a.src = url;
+        a.play().catch(function() {});
+      }
+    }, 100);
+  };
+
+  window._sendHubAi = function() {
+    var inp = document.getElementById('svHubAiInp');
+    var txt = (inp && inp.value || '').trim();
+    if (!txt) return;
+    inp.value = '';
+    var rep = document.getElementById('svHubAiReply');
+    if (rep) rep.textContent = '⏳ Thinking...';
+    if (typeof socket !== 'undefined') {
+      socket.emit('svVoiceQuery', { text: txt, serverId: window.selectedServerId || 'srv_samaksh' });
+    }
+  };
+
+  // Hook existing "Phonk DJ" button in the top bar so tapping it opens our new DJ & AI Hub
+  setInterval(function() {
+    document.querySelectorAll('button').forEach(function(b) {
+      if (!b.dataset.svDjHooked && /phonk\s*dj/i.test(b.textContent || '')) {
+        b.dataset.svDjHooked = '1';
+        b.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          window.openSammuDjHub();
+        }, true);
+      }
+    });
+  }, 1200);
+
+  var w = setInterval(function() {
+    if (typeof socket === 'undefined') return;
+    clearInterval(w);
+    socket.on('sammuVerseSpeak', function(d) {
+      var rep = document.getElementById('svHubAiReply');
+      if (rep && d && d.subtitle) rep.textContent = d.subtitle.replace(/\*\*/g, '');
+    });
+  }, 400);
+})();
+</script>
+
 </body>
 </html>

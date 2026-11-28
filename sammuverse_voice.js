@@ -116,6 +116,15 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
         const q = query.trim();
         const low = q.toLowerCase();
 
+                if (/\b(dj mode on|party mode|dj on|non stop|nonstop|club mode)\b/i.test(low)) {
+            io.to(srvId).emit('svDjMode', { on: true, by: sender, _serverId: srvId });
+            return { text: `🎧🔥 **AI DJ PARTY MODE ON!** Non-stop songs + neon club visuals activated!`, speak: `AI DJ Party Mode activated! Let's vibe, ${sender}!` };
+        }
+        if (/\b(dj mode off|party mode off|dj off|stop dj)\b/i.test(low)) {
+            io.to(srvId).emit('svDjMode', { on: false, _serverId: srvId });
+            return { text: `⏹️ **AI DJ Mode OFF!**`, speak: `DJ Mode turned off.` };
+        }
+
         const playMatch = q.match(/^(?:play|bajao|chalao|gaana|song)\s+(.+)/i);
         if (playMatch && playMatch[1]) {
             const songName = playMatch[1].trim();
@@ -158,7 +167,12 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             if (fs.existsSync(songsDir)) {
                 const cleanQ = q.toLowerCase().replace(/[^a-z0-9]/g, '');
                 const files = fs.readdirSync(songsDir);
-                const match = files.find(fn => fn.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQ));
+                const audioFiles = files.filter(fn => /\.(opus|mp3|m4a|ogg)$/i.test(fn));
+                if (cleanQ === 'random' && audioFiles.length > 0) {
+                    const pick = audioFiles[Math.floor(Math.random() * audioFiles.length)];
+                    return res.json({ url: '/songs/' + encodeURIComponent(pick), title: pick.replace(/\.[^.]+$/, '') });
+                }
+                const match = audioFiles.find(fn => fn.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQ));
                 if (match) return res.json({ url: '/songs/' + encodeURIComponent(match), title: match.replace(/\.[^.]+$/, '') });
             }
         } catch (e) {}

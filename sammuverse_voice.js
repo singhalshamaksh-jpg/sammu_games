@@ -86,7 +86,7 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             ];
             for (const mdl of ['qwen/qwen3-32b', 'openai/gpt-4o-mini', 'meta-llama/llama-3.3-70b-instruct']) {
                 const res = await httpsReqJson(
-                    'https://hackclub.com',
+                    'https://://hackclub.com/proxy/v1/chat/completions',
                     'POST', { Authorization: `Bearer ${hKey}` },
                     { model: mdl, messages: hcMsgs, max_tokens: 280, temperature: 0.75 }
                 );

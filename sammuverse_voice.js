@@ -84,7 +84,7 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
 
         const models = imageBase64
             ? ['google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'qwen/qwen2.5-vl-72b-instruct']
-            : ['particle-ai/particle-1:free', 'qwen/qwen3-32b', 'google/gemini-2.5-flash'];
+            : ['qwen/qwen3-32b', 'google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'meta-llama/llama-3.3-70b-instruct'];
 
         const userContent = imageBase64
             ? [
@@ -248,6 +248,21 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             if (!d || !d.query) return;
             const room = d.serverId || socket.activeServerId || 'srv_samaksh';
             io.to(room).emit('svPlayMusic', { query: d.query, url: d.url || '', title: d.title || d.query, by: socket.username || 'DJ', _serverId: room });
+        });
+
+        socket.on('chatMessage', async (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw !== 'string') return;
+            const trimmed = raw.trim();
+            const sender = (typeof payload === 'object' && payload && payload.username) || socket.username || 'Player';
+            const room = (typeof payload === 'object' && payload && payload.serverId) || socket.activeServerId || 'srv_samaksh';
+
+            const m = trimmed.match(/^(?:!ai|!?sammu\s*verse)[\s,]+(.+)/i);
+            if (m && m.at(1)) {
+                const res = await runSammuVerseCore(m.at(1), sender, room, socket);
+                io.to(room).emit('message', { username: "🔵 SammuVerse", text: `**@${sender}:** ${res.text}`, _serverId: room });
+                socket.emit('sammuVerseSpeak', { text: res.speak, subtitle: res.text, _serverId: room });
+            }
         });
 
         socket.on('svVoiceQuery', async (payload) => {

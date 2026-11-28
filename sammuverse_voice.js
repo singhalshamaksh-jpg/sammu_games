@@ -67,71 +67,56 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
     }
 
 
-    async function fetchAllKnowingAnswer(query, sender, history) {
-        const sys = "You are SammuVerse, the original all-knowing Hinglish & English voice assistant of SammuGames. Reply in 2-3 crisp, natural sentences under 260 chars suitable for voice speech.";
-        let debugErr = '';
+    async function fetchAllKnowingAnswer(query, sender, history, imageBase64 = null) {
+        const nowIST = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'short' });
+        const sys = [
+            "You are SammuVerse, a custom all-knowing AI assistant built exclusively to run the SammuVerse & SammuGames universe (created by Sammu & Samaksh).",
+            `Current live date & time in India (IST): ${nowIST}.`,
+            "Rules: You know everything—science, history, world facts, dates, anime, coding, and recipes.",
+            "Speak in natural, witty Hinglish with a funny, playful roast vibe (lighthearted desi humor, no heavy abuse).",
+            "Remember and use the previous 7 conversation turns naturally. Keep replies crisp (2-4 sentences, under 320 chars) with no markdown symbols so voice speech sounds smooth.",
+            "If an image or outfit is shared, rate the outfit out of 10 with funny, honest Hinglish drip feedback!"
+        ].join(" ");
 
-        // 1. Try GEMINI_API_KEY
-        const gemKey = getCleanEnv('GEMINI_API_KEY');
-        if (gemKey) {
-            const contents = [...history, { role: 'user', parts: [{ text: `[${sender}]: ${query}` }] }];
-            for (const mdl of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
-                const res = await httpsReqJson(
-                    `https://googleapis.com{mdl}:generateContent?key=${gemKey}`,
-                    'POST', {},
-                    { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { maxOutputTokens: 280, temperature: 0.75 } }
-                );
-                if (res.ok && res.data && res.data.candidates && res.data.candidates.length > 0) {
-                    const parts = res.data.candidates[0]?.content?.parts || [];
-                    const txt = parts.map(p => p.text || '').join(' ').trim();
-                    if (txt) return txt.replace(/[*#_`~]/g, '').trim();
-                }
-                debugErr = `Gem:${res.status}`;
-            }
-        }
-
-        // 2. Try HACKCLUB_AI_KEY & HACKCLUB_AI_KEY_2
         const hcKeys = [getCleanEnv('HACKCLUB_AI_KEY'), getCleanEnv('HACKCLUB_AI_KEY_2')].filter(Boolean);
+        const hcHost = ['ai', 'hackclub', 'com'].join('.');
+        const hcEndpoint = 'https://' + hcHost + '/proxy/v1/chat/completions';
+
+        const models = imageBase64
+            ? ['google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'qwen/qwen2.5-vl-72b-instruct']
+            : ['particle-ai/particle-1:free', 'qwen/qwen3-32b', 'google/gemini-2.5-flash'];
+
+        const userContent = imageBase64
+            ? [
+                { type: 'text', text: `[${sender}]: ${query || 'Rate my outfit out of 10 with funny Hinglish drip feedback!'}` },
+                { type: 'image_url', image_url: { url: imageBase64 } }
+              ]
+            : `[${sender}]: ${query}`;
+
         for (const hKey of hcKeys) {
             const hcMsgs = [
                 { role: 'system', content: sys },
-                ...history.map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: (m.parts && m.parts[0] && m.parts[0].text) || '' })),
-                { role: 'user', content: `[${sender}]: ${query}` }
+                ...history.slice(-14).map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: (m.parts && m.parts.at(0) && m.parts.at(0).text) || '' })),
+                { role: 'user', content: userContent }
             ];
-            for (const mdl of ['qwen/qwen3-32b', 'openai/gpt-4o-mini', 'meta-llama/llama-3.3-70b-instruct']) {
+            for (const mdl of models) {
                 const res = await httpsReqJson(
-                    'https://://hackclub.com/proxy/v1/chat/completions',
-                    'POST', { Authorization: `Bearer ${hKey}` },
-                    { model: mdl, messages: hcMsgs, max_tokens: 280, temperature: 0.75 }
+                    hcEndpoint,
+                    'POST',
+                    { Authorization: `Bearer ${hKey}` },
+                    { model: mdl, messages: hcMsgs, max_tokens: 340, temperature: 0.8 },
+                    12000
                 );
-                if (res.ok && res.data && res.data.choices && res.data.choices.length > 0) {
-                    const txt = res.data.choices[0]?.message?.content || '';
-                    if (txt.trim()) return txt.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/[*#_`~]/g, '').trim();
+                if (res.ok && res.data && Array.isArray(res.data.choices) && res.data.choices.length > 0) {
+                    const txt = res.data.choices.at(0)?.message?.content || '';
+                    if (txt.trim()) {
+                        return txt.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/[*#_`~]/g, '').trim();
+                    }
                 }
-                debugErr = `HC:${res.status}`;
             }
         }
 
-        // 3. Guaranteed Wikipedia + DuckDuckGo Knowledge Fallback
-        const topic = query.replace(/^(who is|what is|tell me about|how to make|recipe of|kaun hai|kya hai|batao|ki recipe)\s+/i, '').replace(/[?!.]+$/, '').trim();
-        const wSearch = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(topic)}&format=json&srlimit=1`);
-        if (wSearch.ok && wSearch.data?.query?.search?.length > 0) {
-            const title = wSearch.data.query.search[0].title;
-            const wSum = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(title)}`);
-            if (wSum.ok && wSum.data?.extract) {
-                return wSum.data.extract.split('. ').slice(0, 2).join('. ') + '.';
-            }
-        }
-
-        const wSearch2 = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(topic)}&format=json&srlimit=1`);
-        if (wSearch2.ok && wSearch2.data && wSearch2.data.query && Array.isArray(wSearch.data.query.search) && wSearch.data.query.search.length > 0) {
-            const title = wSearch2.data.query.search.at(0).title;
-            const wSum = await httpsReqJson(`https://wikipedia.org{encodeURIComponent(title)}`);
-            if (wSum.ok && wSum.data && wSum.data.extract) {
-                return wSum.data.extract.split('. ').slice(0, 2).join('. ') + '.';
-            }
-        }
-        return `Haan ${sender}! Main SammuVerse hoon—mujhse time, games, shayari, ya koi bhi song play karne ko bolo!`;
+        return `Arre ${sender}, abhi server pe thodi bheed hai—2 second baad phir pucho!`;
     }
 
     async function runSammuVerseCore(query, sender, srvId, socket) {
@@ -186,7 +171,7 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
         const hist = svMemory.get(srvId);
         const knowledge = await fetchAllKnowingAnswer(q, sender, hist);
         hist.push({ role: 'user', parts: [{ text: q }] }, { role: 'model', parts: [{ text: knowledge }] });
-        while (hist.length > 8) hist.shift();
+        while (hist.length > 14) hist.shift();
         return { text: `🔵 ${knowledge}`, speak: knowledge };
     }
 
@@ -248,6 +233,17 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
     }
 
     io.on('connection', (socket) => {
+        socket.on('svVisionQuery', async (payload) => {
+            const img = payload && typeof payload.image === 'string' ? payload.image : '';
+            if (!img) return;
+            const q = (payload && typeof payload.text === 'string' && payload.text.trim()) || 'Rate my outfit out of 10 with funny Hinglish drip feedback!';
+            const sender = socket.username || 'Player';
+            const room = (payload && payload.serverId) || socket.activeServerId || 'srv_samaksh';
+            const ans = await fetchAllKnowingAnswer(q, sender, [], img);
+            io.to(room).emit('message', { username: "🔵 SammuVerse", text: `**@${sender} (Outfit/Vision):** 👕✨ ${ans}`, _serverId: room });
+            socket.emit('sammuVerseSpeak', { text: ans, subtitle: ans, _serverId: room });
+        });
+
         socket.on('svVoiceQuery', async (payload) => {
             const q = (payload && typeof payload.text === 'string') ? payload.text.trim() : '';
             if (!q) return;

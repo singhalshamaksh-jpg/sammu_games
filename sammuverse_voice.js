@@ -161,7 +161,7 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
             const reply = `Hello ${sender}! Main bilkul mast hoon! Batao kya help karoon—koi song bajaoon, game start karoon, ya koi sawaal puchna hai?`;
             return { text: `🔵 ${reply}`, speak: reply };
         }
-                if (/\b(shayari|shayri|poetry|poem|sher|seedhe mauth)\b/i.test(low)) {
+                if (/\b(shayari|shayri|shairi|shayeri|shyri|shayiri|poetry|poem|sher|seedhe mauth)\b/i.test(low)) {
             const lines = [
                 "Maina tu gaati reh, aasmaan tera hai—kohra chhantega zaroor, bas hausla rakhna!",
                 "Hoshiyar rehna is duniya ki bheed mein, yahan har chehre ke peeche ek kahani chhupi hai!",

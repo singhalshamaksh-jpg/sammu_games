@@ -102,3 +102,72 @@ module.exports = function initSammuVerseVoice(app, io, helpers) {
         while (hist.length > 8) hist.shift();
         return { text: `🔵 ${knowledge}`, speak: knowledge };
     }
+
+    const svMusicMiddleware = async (req, res, next) => {
+        const cleanPath = (req.originalUrl || req.url || '').split('?').at(0).toLowerCase();
+        if (cleanPath !== '/sv-music') return next();
+        const q = String(req.query.q || '').trim();
+        if (!q) return res.json({ url: null });
+
+        for (const apiUrl of [
+            `https://saavn.dev{encodeURIComponent(q)}&limit=1`,
+            `https://vercel.app{encodeURIComponent(q)}&limit=1`
+        ]) {
+            try {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 4500);
+                const r = await fetch(apiUrl, { signal: ctrl.signal });
+                clearTimeout(timer);
+                if (!r.ok) continue;
+                const j = await r.json();
+                const song = (j && j.data && Array.isArray(j.data.results) ? j.data.results.at(0) : null) || (j && Array.isArray(j.results) ? j.results.at(0) : null);
+                const urls = Array.isArray(song && song.downloadUrl) ? song.downloadUrl : [];
+                const best = urls.at(-1) || urls.at(0);
+                const streamUrl = best && (best.url || best.link);
+                if (streamUrl) return res.json({ url: streamUrl, title: song.name || q });
+            } catch (e) {}
+        }
+
+        try {
+            const itRes = await fetch(`https://apple.com{encodeURIComponent(q)}&media=music&limit=1`);
+            if (itRes.ok) {
+                const itData = await itRes.json();
+                const track = Array.isArray(itData && itData.results) ? itData.results.at(0) : null;
+                if (track && track.previewUrl) return res.json({ url: track.previewUrl, title: `${track.trackName} - ${track.artistName}` });
+            }
+        } catch (e) {}
+        return res.json({ url: null });
+    };
+
+    app.use(svMusicMiddleware);
+    const svMStack = (app._router && app._router.stack) || (app.router && app.router.stack);
+    if (Array.isArray(svMStack)) {
+        const idx = svMStack.findIndex(l => l && l.handle === svMusicMiddleware);
+        if (idx > 0) { const [layer] = svMStack.splice(idx, 1); svMStack.unshift(layer); }
+    }
+
+    io.on('connection', (socket) => {
+        socket.on('svVoiceQuery', async (payload) => {
+            const q = (payload && typeof payload.text === 'string') ? payload.text.trim() : '';
+            if (!q) return;
+            const sender = socket.username || 'Player';
+            const room = (payload && payload.serverId) || socket.activeServerId || 'srv_samaksh';
+            const cleanQ = q.replace(/^!?sammu\s*verse[\s,]*/i, '').trim() || 'hello';
+            const res = await runSammuVerseCore(cleanQ, sender, room, socket);
+            socket.emit('sammuVerseSpeak', { text: res.speak, subtitle: res.text, _serverId: room });
+        });
+
+        socket.on('chatMessage', async (payload) => {
+            const raw = (typeof payload === 'object' && payload) ? payload.text : payload;
+            if (typeof raw !== 'string') return;
+            const sender = (typeof payload === 'object' && payload && payload.username) || socket.username || 'Player';
+            const room = (typeof payload === 'object' && payload && payload.serverId) || socket.activeServerId || 'srv_samaksh';
+            const svMatch = raw.trim().match(/^!?sammu\s*verse[\s,]+(.+)/i);
+            if (svMatch && svMatch.at(1)) {
+                const res = await runSammuVerseCore(svMatch.at(1), sender, room, socket);
+                io.to(room).emit('message', { username: "🔵 SammuVerse", text: `**@${sender}:** ${res.text}`, _serverId: room });
+                socket.emit('sammuVerseSpeak', { text: res.speak, subtitle: res.text, _serverId: room });
+            }
+        });
+    });
+};

@@ -5083,73 +5083,47 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
 
 
 
+
+
+
+
 <style id="svWaChatFix">
   #svInlineMicBtn {
-    width: 38px !important;
-    min-width: 38px !important;
-    max-width: 38px !important;
-    height: 38px !important;
-    padding: 0 !important;
-    margin: 0 5px 0 0 !important;
-    border-radius: 50% !important;
-    flex: 0 0 38px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 16px !important;
-    background: linear-gradient(135deg, #0284c7, #7c3aed) !important;
-    border: none !important;
-    color: #fff !important;
-    cursor: pointer !important;
+    width: 38px !important; min-width: 38px !important; max-width: 38px !important;
+    height: 38px !important; padding: 0 !important; margin: 0 5px 0 0 !important;
+    border-radius: 50% !important; flex: 0 0 38px !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+    font-size: 16px !important; background: linear-gradient(135deg, #0284c7, #7c3aed) !important;
+    border: none !important; color: #fff !important; cursor: pointer !important;
+  }
+  #svNeonWakeFrame {
+    display: none; position: fixed; inset: 0; pointer-events: none; z-index: 9999998;
+    box-shadow: inset 0 0 28px 6px #00f5d4, inset 0 0 55px 10px #7c3aed;
+    border: 3px solid #38bdf8; animation: svNeonPulse 1s infinite alternate;
+  }
+  @keyframes svNeonPulse {
+    from { box-shadow: inset 0 0 22px 4px #00f5d4, inset 0 0 45px 8px #7c3aed; }
+    to   { box-shadow: inset 0 0 38px 9px #38bdf8, inset 0 0 70px 14px #ec4899; }
   }
 </style>
+<div id="svNeonWakeFrame"></div>
 <script id="svVoiceClientHook">
 (function() {
-  function mountWhatsAppMic() {
-    var oldBanner = document.getElementById('svVoiceMicBtn');
-    if (oldBanner) oldBanner.remove();
-    if (document.getElementById('svInlineMicBtn')) return;
+  var wakeActiveUntil = 0, wakeTimer = null, standbyOn = false, rec = null;
 
-    var inp = document.querySelector('input[placeholder*="Message" i], input[placeholder*="command" i], #msgInput, #messageInput');
-    if (!inp || !inp.parentElement) return;
-    inp.style.setProperty('flex', '1 1 auto', 'important');
-    inp.style.setProperty('min-width', '0', 'important');
-    inp.style.setProperty('width', 'auto', 'important');
-
-    var btns = Array.from(inp.parentElement.querySelectorAll('button'));
-    var sendBtn = btns.at(-1);
-    if (!sendBtn) return;
-    sendBtn.style.setProperty('flex', '0 0 auto', 'important');
-    sendBtn.style.setProperty('width', '42px', 'important');
-
-    btns.forEach(function(b) {
-      if (b !== sendBtn && /mic|🎙|🎤/i.test((b.id || '') + (b.title || '') + (b.textContent || ''))) b.remove();
-    });
-
-    var mic = document.createElement('button');
-    mic.id = 'svInlineMicBtn';
-    mic.type = 'button';
-    mic.textContent = '🎙️';
-    sendBtn.parentElement.insertBefore(mic, sendBtn);
-
-    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    var rec = new SR(); rec.lang = 'en-IN'; rec.interimResults = false; var on = false;
-
-    rec.onstart = function() { on = true; mic.textContent = '🔴'; showVoiceOrb('🎙️ Listening... Speak to SammuVerse'); };
-    rec.onend = function() { on = false; mic.textContent = '🎙️'; };
-    rec.onresult = function(e) {
-      var r0 = e.results && e.results.item ? e.results.item(0) : null;
-      var a0 = r0 && r0.item ? r0.item(0) : null;
-      var said = (a0 && a0.transcript) || '';
-      if (!said.trim()) return;
-      showVoiceOrb('🔵 "' + said.trim() + '"');
-      if (typeof socket !== 'undefined') socket.emit('svVoiceQuery', { text: said.trim(), serverId: window.selectedServerId || 'srv_samaksh' });
-    };
-    mic.onclick = function(e) {
-      e.preventDefault(); e.stopPropagation();
-      try { if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); on ? rec.stop() : rec.start(); } catch (err) {}
-    };
+  function trigger5SecNeonWindow(initialCmd) {
+    wakeActiveUntil = Date.now() + 5000;
+    var frame = document.getElementById('svNeonWakeFrame');
+    if (frame) frame.style.display = 'block';
+    showVoiceOrb('✨ SammuVerse Active (5s)... Speak now!');
+    clearTimeout(wakeTimer);
+    wakeTimer = setTimeout(function() {
+      if (Date.now() >= wakeActiveUntil && frame) frame.style.display = 'none';
+    }, 5100);
+    if (initialCmd && typeof socket !== 'undefined') {
+      showVoiceOrb('🔵 "' + initialCmd + '"');
+      socket.emit('svVoiceQuery', { text: initialCmd, serverId: window.selectedServerId || 'srv_samaksh' });
+    }
   }
 
   function showVoiceOrb(txt) {
@@ -5163,44 +5137,6 @@ const wins = (prof.powerWins && prof.powerWins[pow]) || 0;
     clearTimeout(window._svOrbTimer);
     window._svOrbTimer = setTimeout(function() { orb.style.opacity = '0'; setTimeout(function() { orb.style.display = 'none'; }, 250); }, 5500);
   }
-
-  setInterval(mountWhatsAppMic, 700);
-
-  var waitSock = setInterval(function() {
-    if (typeof socket === 'undefined') return;
-    clearInterval(waitSock);
-    socket.on('svInjectVoiceUI', mountWhatsAppMic);
-    socket.on('sammuVerseSpeak', function(d) {
-      if (d && d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
-      if (d && d.subtitle) showVoiceOrb(d.subtitle);
-      if ('speechSynthesis' in window && d && d.text) {
-        window.speechSynthesis.cancel();
-        var u = new SpeechSynthesisUtterance(String(d.text).slice(0, 280));
-        u.lang = 'en-IN'; u.rate = 1.02; window.speechSynthesis.speak(u);
-      }
-    });
-    socket.on('svPlayMusic', async function(d) {
-      if (d && d._serverId && window.selectedServerId && d._serverId !== window.selectedServerId) return;
-      var dock = document.getElementById('svMusicDock');
-      if (!dock) {
-        dock = document.createElement('div'); dock.id = 'svMusicDock';
-        dock.style.cssText = 'position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:9999999;background:rgba(15,23,42,0.97);border:2px solid #38bdf8;border-radius:16px;padding:8px 11px;width:280px;color:#fff;box-shadow:0 8px 25px rgba(56,189,248,0.5);';
-        dock.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px;font-weight:900;"><span id="svMusicTitle" style="color:#7dd3fc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:215px;">🎵 SammuVerse DJ</span><button onclick="var a=document.getElementById(\'svMusicAudio\');a.pause();a.src=\'\';document.getElementById(\'svMusicDock\').style.display=\'none\';" style="background:#ef4444;border:none;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;">✕</button></div><audio id="svMusicAudio" controls autoplay playsinline style="width:100%;height:30px;border-radius:8px;"></audio>';
-        document.body.appendChild(dock);
-      }
-      var title = document.getElementById('svMusicTitle'), audio = document.getElementById('svMusicAudio');
-      dock.style.display = 'block'; title.textContent = '⏳ Finding: ' + d.query;
-      try {
-        var r = await fetch('/sv-music?q=' + encodeURIComponent(d.query));
-        var data = await r.json();
-        if (data && data.url) { title.textContent = '🎵 ' + data.title; audio.src = data.url; audio.play().catch(function() {}); }
-        else title.textContent = '❌ Song not found';
-      } catch (e) { title.textContent = '⚠️ Music busy'; }
-    });
-    socket.on('svStopMusic', function() { var a = document.getElementById('svMusicAudio'), d = document.getElementById('svMusicDock'); if (a) { a.pause(); a.src = ''; } if (d) d.style.display = 'none'; });
-  }, 400);
-})();
-</script>
 
 </body>
 </html>
